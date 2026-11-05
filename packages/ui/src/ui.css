@@ -365,6 +365,50 @@ body {
   }
 }
 
+/* Sub-tabs (SubTabs): the parts of one page tab, as a row of small pills
+   that wraps on narrow screens. */
+.hubra-subtabs .mantine-Tabs-list {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hubra-subtabs .mantine-Tabs-tab {
+  padding: 6px 14px;
+  min-height: 34px;
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+  color: var(--hb-text-2, #5e5873);
+  border: 1px solid var(--hb-border, #e4e1ec);
+  background: var(--hb-surface, transparent);
+}
+
+.hubra-subtabs .mantine-Tabs-tab:hover {
+  background: var(--hb-surface-2, transparent);
+  color: var(--hb-text, #1a1625);
+}
+
+.hubra-subtabs .mantine-Tabs-tab[data-active] {
+  border-color: var(--mantine-color-acc-filled);
+  background: var(--mantine-color-acc-light);
+  color: var(--mantine-color-acc-light-color);
+}
+
+/* On phones the page tabs are pills too, so the sub-tabs sit under a line
+   and drop their border: two rows of the same pills read as one list. */
+@media (max-width: 47.99em) {
+  .hubra-subtabs {
+    border-top: 1px solid var(--hb-border, #e4e1ec);
+    padding-top: 12px;
+  }
+
+  .hubra-subtabs .mantine-Tabs-tab {
+    padding: 4px 12px;
+    min-height: 32px;
+    border-color: transparent;
+    background: transparent;
+  }
+}
+
 /* Build commit in the lower right corner (BuildBadge): there to look up,
    not to be noticed. Under notifications and dialogs, gone on phones. */
 .hubra-build {

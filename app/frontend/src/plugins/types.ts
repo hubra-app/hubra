@@ -21,6 +21,12 @@ export interface PluginTab extends Gated {
   /** A translation key. */
   label: string
   component: ComponentType
+  /**
+   * The page tab this one sits under as a sub-tab, if the screen groups its
+   * tabs. On `finance`: `bookings`, `planning` or `setup`. Without it the
+   * tab is a page tab of its own.
+   */
+  group?: string
 }
 
 /** A component the app renders at one of its slots (see `PluginSlot`). */

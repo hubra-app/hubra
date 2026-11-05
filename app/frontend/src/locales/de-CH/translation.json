@@ -1095,9 +1095,7 @@
     "settings": {
       "tab": "Einstellungen",
       "saved": "Einstellungen gespeichert",
-      "invoicesTitle": "Rechnungen und Mahnungen",
-      "bankHint": "Das Konto und die Adresse auf den QR-Rechnungen stellst du in den Einstellungen des Vereins ein.",
-      "openBank": "Bankangaben öffnen"
+      "invoicesTitle": "Rechnungen und Mahnungen"
     },
     "summary": {
       "title": "Nach Kategorie",
@@ -1199,7 +1197,12 @@
     "transactionNotFound": "Diese Buchung gibt es nicht (mehr).",
     "transactionNo": "Buchung {{id}}",
     "markCompleted": "Als abgeschlossen markieren",
-    "direction": "Richtung"
+    "direction": "Richtung",
+    "groups": {
+      "bookings": "Buchungen",
+      "planning": "Budget & Beiträge",
+      "billing": "Abrechnung"
+    }
   },
   "functions": {
     "assignHolder": "Person zuweisen",
@@ -2209,7 +2212,8 @@
       "financeSettings": "Finanzen › Einstellungen",
       "recurring": "Finanzen › Wiederkehrend",
       "feeBasis": "Finanzen › Beitragsgrundlage",
-      "attendance": "Vereinsleben › Anwesenheit"
+      "attendance": "Vereinsleben › Anwesenheit",
+      "bankAccount": "Finanzen › Bank & QR-Rechnung"
     },
     "emailVerify": {
       "banner": "Deine private E-Mail-Adresse ist noch nicht bestätigt. Einige Funktionen sind erst danach verfügbar.",
@@ -2228,7 +2232,7 @@
       "categories": "Kategorien",
       "dashboard": "Dashboard",
       "events": "Anlässe",
-      "externalParties": "Extern",
+      "externalParties": "Externe Parteien",
       "finance": "Finanzen",
       "functionMail": "Funktions-Adressen",
       "functions": "Funktionen",

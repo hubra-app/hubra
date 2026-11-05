@@ -1824,7 +1824,7 @@
   "shell.nav.categories": "Kategorien",
   "shell.nav.dashboard": "Dashboard",
   "shell.nav.events": "Anlässe",
-  "shell.nav.externalParties": "Extern",
+  "shell.nav.externalParties": "Externe Parteien",
   "shell.nav.finance": "Finanzen",
   "shell.nav.functionMail": "Funktions-Adressen",
   "shell.nav.functions": "Funktionen",
@@ -2802,8 +2802,6 @@
   "finance.settings.tab": "Einstellungen",
   "finance.settings.saved": "Einstellungen gespeichert",
   "finance.settings.invoicesTitle": "Rechnungen und Mahnungen",
-  "finance.settings.bankHint": "Das Konto und die Adresse auf den QR-Rechnungen stellst du in den Einstellungen des Vereins ein.",
-  "finance.settings.openBank": "Bankangaben öffnen",
   "settings.tabs.membership": "Mitgliedschaft",
   "settings.tabs.bank": "Bank & QR-Rechnung",
   "shell.breadcrumbs.financeSettings": "Finanzen › Einstellungen",
@@ -3465,5 +3463,9 @@
   "apiAccess.unused": "noch nicht genutzt",
   "apiAccess.end": "Beenden",
   "apiAccess.endTitle": "Zugang beenden?",
-  "apiAccess.endBody": "Die App oder das Skript kann danach nichts mehr lesen. Wer es nutzt, muss neu verbinden."
+  "apiAccess.endBody": "Die App oder das Skript kann danach nichts mehr lesen. Wer es nutzt, muss neu verbinden.",
+  "finance.groups.bookings": "Buchungen",
+  "finance.groups.planning": "Budget & Beiträge",
+  "finance.groups.billing": "Abrechnung",
+  "shell.breadcrumbs.bankAccount": "Finanzen › Bank & QR-Rechnung"
 }
