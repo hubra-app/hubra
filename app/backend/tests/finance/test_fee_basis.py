@@ -184,3 +184,34 @@ def test_route_previews_a_choice_with_tier_effects(
     assert tier["name"] == "Anteil"
     assert tier["yearly_now"] == 70  # 1 % of the saved 7000
     assert tier["yearly"] == 130  # 1 % of the previewed 13000
+
+
+def test_a_registered_source_with_its_own_period(app, db, books, monkeypatch):
+    monkeypatch.setattr(fb, "_BASIS_SOURCES", dict(fb._BASIS_SOURCES))
+    lines = [{"category_id": None, "name": "Halle", "amount": 1200, "items": []}]
+    fb.register_basis_source(
+        "ledger", "finance.books", lambda today: (lines, {"year": today.year})
+    )
+
+    def enabled(code, **_):
+        return code in ("finance", "finance.books")
+
+    with (
+        _config(fee_basis_source="ledger"),
+        patch("hubra.core.modules.is_enabled", side_effect=enabled),
+    ):
+        basis = fee_basis(today=date(2026, 10, 31))
+    assert basis["sources"][:3] == ["manual", "recurring", "last_year"]
+    assert "ledger" in basis["sources"]
+    assert basis["period"] == {"year": 2026}
+    assert basis["total"] == 1200
+
+    # With the module that provides it switched off, the sum is only the extra.
+    with (
+        _config(fee_basis_source="ledger", fee_basis_extra=50),
+        patch("hubra.core.modules.is_enabled", side_effect=lambda code, **_: code == "finance"),
+    ):
+        basis = fee_basis(today=date(2026, 10, 31))
+    assert "ledger" not in basis["sources"]
+    assert basis["note"] == "NO_LEDGER"
+    assert basis["total"] == 50

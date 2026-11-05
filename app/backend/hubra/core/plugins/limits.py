@@ -17,6 +17,9 @@ The checks:
   old form, ``/api/v1/<name>``, is moved there and the old path keeps
   working (``api_areas.add_plugin_prefix``). The platform and global areas
   are refused, and so is a prefix that Hubra or another plugin already uses.
+  An official plugin may add routes below the prefix of a module it depends
+  on (a bookkeeping plugin under ``/api/v1/app/finance``) and keep that
+  module's permission keys with ``perm_prefix``.
 - Tables are the plugin's own: none of Hubra's tenant tables.
 - Processes and in-transaction event handlers are for official plugins
   (signed with Hubra's key, or shipped with Hubra) only.
@@ -134,11 +137,23 @@ def check(module, spec, taken_prefixes: dict[str, str], core_tables: set[str]):
             # own; it doesn't own everything below it.
             if owner == module.code or other in ("/", V1, APP, GLOBAL, PLATFORM):
                 continue
+            if official and owner in module.depends_on and _under(new, other):
+                continue  # extends a module it depends on; Flask matches by rule
             if _under(new, other) or _under(other, new):
                 raise LimitError(
                     f"route prefix {bp.url_prefix!r} overlaps {other} of {owner}"
                 )
-        taken_prefixes[new] = module.code
+        if (
+            bp.perm_prefix
+            and bp.perm_prefix != module.code
+            and (not official or bp.perm_prefix not in module.depends_on)
+        ):
+            raise LimitError(
+                f"module {module.code} may only use the permission keys of a"
+                f" module it depends on, not {bp.perm_prefix!r}"
+                + ("" if official else " (official plugins only)")
+            )
+        taken_prefixes.setdefault(new, module.code)
         blueprints.append(dataclasses.replace(bp, url_prefix=new))
 
     # 3. Own tables only.

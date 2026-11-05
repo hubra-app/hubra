@@ -77,6 +77,7 @@ A plugin's frontend can put a component into these places of the club app
 | `settings.module.actions` | a module's row in Einstellungen › Module | `code`, `configured`, `name` |
 | `apps.connection` | a connected app's details | `connection`, `onChange` |
 | `invoice.actions` | next to an invoice's buttons: the member's open invoices and the invoice page | `invoice`, `onChange` |
+| `dashboard.stats` | the club overview's numbers row (Dashboard › Übersicht); render a `StatTile` | none |
 
 ## Route paths
 
@@ -85,6 +86,27 @@ form, `/api/v1/<name>`, is served under `/api/v1/app/<name>` and the old
 path is rewritten to it, so its frontend and outside links keep working.
 One prefix for core and plugin features means a feature that moves into a
 plugin keeps its URLs.
+
+### Extending a Hubra module
+
+An official plugin may serve routes below the prefix of a module it depends
+on, and keep that module's permission keys, so a feature that moves out of
+Hubra keeps its URLs and every role keeps its rights:
+
+```python
+module = Module(
+    code="finance.books",
+    depends_on=("finance",),
+    blueprints=(
+        Blueprint("hubra_books.routes", "books_bp", "/api/v1/app/finance",
+                  perm_prefix="finance"),
+    ),
+)
+```
+
+`perm_prefix` replaces the blueprint's name in its keys
+(`finance.transactions.read`, not `books.transactions.read`). Other plugins
+can only use their own module code.
 
 ## Events
 
@@ -102,6 +124,13 @@ module = Module(
     events_in_transaction=("invoice.paid",),
 )
 ```
+
+Invoices announce themselves with `invoice.created` (`invoice_id`,
+`category_id`), `invoice.updated` (`invoice_id`, `was_paid`, `changed`) and
+`invoice.deleted` (`invoice_id`, `transaction_id`). Hubra's finance module
+books the income that follows each invoice from these
+(`hubra/api/finance/bookings.py`), and `invoice.paid` (`member_id`,
+`invoice_id`) still comes when an invoice is paid.
 
 In a plugin test that calls `emit()` directly, commit afterwards
 (`db.session.commit()`): that is when the handler runs.

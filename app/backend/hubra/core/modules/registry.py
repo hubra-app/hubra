@@ -166,10 +166,13 @@ class ModuleRegistry:
 
     def register_blueprints(self, app: Flask) -> None:
         from hubra.core.api_areas import canonical_path
+        from hubra.core.permissions import register_perm_prefix
 
         for m in self.all():
             for bp in m.blueprints:
                 blueprint = self._blueprint(bp)
+                if bp.perm_prefix:
+                    register_perm_prefix(blueprint.name, bp.perm_prefix)
                 # A plugin built before the API areas (hubra.core.api_areas)
                 # may still name an old prefix: mount it at the new one.
                 app.register_blueprint(

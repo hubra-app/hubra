@@ -78,9 +78,22 @@ logger = logging.getLogger(__name__)
 _PERM_CACHE_TTL = 300  # 5 minutes
 
 
+# Flask blueprint name -> the key prefix its routes use instead of the name
+# (``Blueprint.perm_prefix`` in a module manifest).
+_PERM_PREFIXES: dict[str, str] = {}
+
+
+def register_perm_prefix(blueprint_name: str, prefix: str) -> None:
+    """Let *blueprint_name*'s routes check ``<prefix>.<resource>.<action>``."""
+    _PERM_PREFIXES[blueprint_name] = prefix
+
+
 def _derive_perm_key(blueprint_name: str | None, resource: str, action: str) -> str:
     """Build a structured permission key from blueprint + resource + action."""
-    prefix = blueprint_name.removesuffix("_bp") if blueprint_name else "app"
+    if blueprint_name and blueprint_name in _PERM_PREFIXES:
+        prefix = _PERM_PREFIXES[blueprint_name]
+    else:
+        prefix = blueprint_name.removesuffix("_bp") if blueprint_name else "app"
     return f"{prefix}.{resource}.{action}"
 
 

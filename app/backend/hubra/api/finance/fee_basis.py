@@ -40,6 +40,18 @@ _preview_total: ContextVar[Decimal | None] = ContextVar(
 # code -> (module code that must be on, function(year) -> lines or None)
 _PLUGIN_SOURCES: dict[str, tuple[str, Callable[[int], list[dict] | None]]] = {}
 
+# Sources that work out their own period: code -> (module code that must be
+# on, function(today) -> (lines, period)). ``recurring`` and ``last_year``
+# register here, so whoever keeps the books can provide them.
+BasisSource = Callable[[date], tuple[list[dict], dict | None]]
+_BASIS_SOURCES: dict[str, tuple[str, BasisSource]] = {}
+
+
+def register_basis_source(code: str, module: str, fn: BasisSource):
+    """Provide a source whose *fn(today)* returns (lines, period), period
+    being shown as is ({"from", "to"} or {"year"}) or None."""
+    _BASIS_SOURCES[code] = (module, fn)
+
 
 def register_source(code: str, module: str, lines: Callable[[int], list[dict] | None]):
     """Let a plugin provide a source: *lines(year)* returns the year's lines
@@ -68,7 +80,7 @@ def basis_settings(overrides: dict | None = None) -> dict:
 
     config = {**get_config("finance"), **(overrides or {})}
     source = config.get("fee_basis_source") or "manual"
-    if source not in SOURCES:
+    if source not in SOURCES and source not in _BASIS_SOURCES:
         source = "manual"
     manual = config.get("fee_basis_manual")
     return {
@@ -164,14 +176,28 @@ def _last_year_lines(today: date) -> tuple[list[dict], date, date]:
     return lines, start, end
 
 
+def _recurring_source(today: date) -> tuple[list[dict], dict | None]:
+    return _recurring_lines(), None
+
+
+def _last_year_source(today: date) -> tuple[list[dict], dict | None]:
+    lines, start, end = _last_year_lines(today)
+    return lines, {"from": start.isoformat(), "to": end.isoformat()}
+
+
+register_basis_source("recurring", "finance", _recurring_source)
+register_basis_source("last_year", "finance", _last_year_source)
+
+
 def available_sources() -> list[str]:
-    """The built-in sources, and plugin sources whose module is on."""
+    """``manual``, and the registered sources whose module is on."""
     from hubra.core.modules import is_enabled
 
-    sources = [code for code in SOURCES if code not in ("budget",)]
-    for code, (module, _lines) in _PLUGIN_SOURCES.items():
-        if is_enabled(module):
-            sources.append(code)
+    sources = ["manual"]
+    for registry in (_BASIS_SOURCES, _PLUGIN_SOURCES):
+        for code, (module, _fn) in registry.items():
+            if code not in sources and is_enabled(module):
+                sources.append(code)
     return sources
 
 
@@ -183,11 +209,12 @@ def fee_basis(overrides: dict | None = None, today: date | None = None) -> dict:
     lines: list[dict] = []
     period = None
     note = None
-    if source == "recurring":
-        lines = _recurring_lines()
-    elif source == "last_year":
-        lines, start, end = _last_year_lines(today)
-        period = {"from": start.isoformat(), "to": end.isoformat()}
+    if source in _BASIS_SOURCES:
+        if source in available_sources():
+            found, period = _BASIS_SOURCES[source][1](today)
+            lines = [{**line, "amount": _decimal(line.get("amount"))} for line in found]
+        else:
+            note = f"NO_{source.upper()}"
     elif source == "budget":
         year = _billing_year(today)[0].year
         provider = _PLUGIN_SOURCES.get("budget")

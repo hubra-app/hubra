@@ -302,7 +302,7 @@ def _generate_invoices(today: date | None = None) -> dict:
 
         from hubra.api.finance.services import _link_pending_transaction
 
-        _link_pending_transaction(invoice, member.id)
+        _link_pending_transaction(invoice)
 
         logger.info(
             "invoice_generated member_id=%s tier=%s price_type=%s amount=%s invoice_id=%s",

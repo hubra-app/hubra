@@ -129,6 +129,12 @@ module = Module(
             ),
         ),
     ),
+    # The income booking that follows each invoice (api/finance/bookings.py).
+    events={
+        "invoice.created": "hubra.api.finance.bookings:on_invoice_created",
+        "invoice.updated": "hubra.api.finance.bookings:on_invoice_updated",
+        "invoice.deleted": "hubra.api.finance.bookings:on_invoice_deleted",
+    },
     tables=(
         "transactions",
         "invoices",

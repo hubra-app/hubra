@@ -3,6 +3,7 @@ plugin dependencies (docs/plugins.md)."""
 
 from __future__ import annotations
 
+import dataclasses
 from pathlib import Path
 
 import pytest
@@ -127,6 +128,56 @@ def test_check_refuses_a_prefix_someone_has(tmp_path):
         with pytest.raises(LimitError):
             check(Module(code="demo", name="Demo", blueprints=(bp(prefix),)),
                   spec(tmp_path), dict(taken), set())
+
+
+def test_official_plugins_may_extend_a_module_they_depend_on(tmp_path):
+    taken = {"/api/v1/app/finance": "finance"}
+    books = Module(
+        code="finance.books",
+        name="Books",
+        depends_on=("finance",),
+        blueprints=(
+            Blueprint("hubra_demo.routes", "books_bp", "/api/v1/app/finance",
+                      perm_prefix="finance"),
+        ),
+    )
+    m = check(books, spec(tmp_path, status="official"), dict(taken), set())
+    assert m.blueprints[0].perm_prefix == "finance"
+    # A community plugin, or one that doesn't depend on the module, may not.
+    with pytest.raises(LimitError):
+        check(books, spec(tmp_path), dict(taken), set())
+    with pytest.raises(LimitError):
+        check(dataclasses.replace(books, depends_on=()),
+              spec(tmp_path, status="official"), dict(taken), set())
+
+
+def test_perm_prefix_is_limited_to_dependencies(tmp_path):
+    def module(prefix, depends=("finance",)):
+        return Module(code="demo", name="D", depends_on=depends, blueprints=(
+            Blueprint("hubra_demo.routes", "demo_bp", "/api/v1/demo",
+                      perm_prefix=prefix),))
+
+    check(module("demo"), spec(tmp_path), {}, set())  # its own code is fine
+    check(module("finance"), spec(tmp_path, status="official"), {}, set())
+    for m, status in ((module("finance"), "community"),
+                      (module("members"), "official")):
+        with pytest.raises(LimitError, match="permission keys"):
+            check(m, spec(tmp_path, status=status), {}, set())
+
+
+def test_perm_prefix_renames_the_keys_a_blueprint_checks():
+    from hubra.core.permissions import (
+        _PERM_PREFIXES,
+        _derive_perm_key,
+        register_perm_prefix,
+    )
+
+    register_perm_prefix("books_bp", "finance")
+    try:
+        assert _derive_perm_key("books_bp", "transactions", "read") == "finance.transactions.read"
+        assert _derive_perm_key("other_bp", "x", "read") == "other.x.read"
+    finally:
+        _PERM_PREFIXES.pop("books_bp")
 
 
 def test_check_refuses_code_outside_the_plugin(tmp_path):
