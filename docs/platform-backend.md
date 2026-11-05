@@ -25,7 +25,7 @@ sign-in staying on the club backend (`HUBRA_ROLE=club` = app + global).
 
 | | App backend | Global backend | Platform backend |
 | --- | --- | --- | --- |
-| Image | `ghcr.io/hubra-app/hubra/backend` | `ghcr.io/hubra-app/hubra/global-backend` | `ghcr.io/hubra-app/hubra/platform-backend` |
+| Image | `ghcr.io/hubra-app/hubra/app-backend` | `ghcr.io/hubra-app/hubra/global-backend` | `ghcr.io/hubra-app/hubra/platform-backend` |
 | `HUBRA_ROLE` | `app` | `global` | `platform` |
 | API paths | `/api/v1/app`, plugin routes | `/api/v1/global` | `/api/v1/platform` |
 | Shared paths | `/health`, `/api/v1/global/health`, `/api/v1/global/version`, `/api/v1/global/instance` | same | same |
@@ -39,7 +39,7 @@ One Dockerfile (`app/backend/Dockerfile`), four images:
 
 | Image | Target | Holds | `HUBRA_ROLE` |
 | --- | --- | --- | --- |
-| `backend` | `backend` (the default) | every file | unset (`all`): Compose, and the k3s app backend until it moves to `app-backend` |
+| `backend` | `backend` (the default) | every file | unset (`all`): Compose |
 | `app-backend` | `role`, `ROLE=app` | the app role's files | `app` |
 | `global-backend` | `role`, `ROLE=global` | the global role's files | `global` |
 | `platform-backend` | `role`, `ROLE=platform` | the platform role's files | `platform` |
@@ -61,6 +61,12 @@ restart it. A change to a club page leaves `platform-backend` and
 migrations or a club service most roles use rebuilds them all: most of the
 backend's code is on every list. Each release still has one version for
 all of them, and its `images.yaml` pins each image by its own digest.
+
+On k3s the app backend, its worker and the Discord gateway run
+`app-backend` (`deploy/app/backend.yaml`). An overlay pinned to a build from
+before the role images can point `app-backend` at that `backend` build
+(`newName`) until it pins a release that has `app-backend`; the Contabo
+overlay does that.
 
 The API areas and the old paths that lead to them are in
 `app/backend/hubra/core/api_areas.py` (see [API areas](#api-areas) below); the

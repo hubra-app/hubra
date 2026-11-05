@@ -89,14 +89,21 @@ configMapGenerator:
 images:
   - name: ghcr.io/hubra-app/hubra/backend
     newTag: sha-66d4e53
-  # Sign-in, account and public data (/api/v1/global). Same build as
-  # backend; bump it alone to roll only sign-in.
+  # The club app: API, worker and Discord gateway (/api/v1/app). Until the
+  # first release with role images is pinned, the full backend build above
+  # runs here (it serves the app role too); the digest block from that
+  # release has an app-backend line, which replaces this entry.
+  - name: ghcr.io/hubra-app/hubra/app-backend
+    newName: ghcr.io/hubra-app/hubra/backend
+    newTag: sha-66d4e53
+  # Sign-in, account and public data (/api/v1/global). Its own image, with
+  # only the global role's code; bump it alone to roll only sign-in.
   - name: ghcr.io/hubra-app/hubra/global-backend
     newTag: sha-66d4e53
-  # Platform API, platform worker, beat and the init step (migrations). Same
-  # build as backend; keep it at the backend's version or newer. A platform-
-  # only fix: bump just this line, and the club pods don't restart.
-  # (docs/platform-backend.md)
+  # Platform API, platform worker, beat and the init step (migrations). Its
+  # own image, with only the platform's code; keep it at the app backend's
+  # version or newer. A platform-only fix: bump just this line, and the club
+  # pods don't restart. (docs/platform-backend.md)
   - name: ghcr.io/hubra-app/hubra/platform-backend
     newTag: sha-66d4e53
   - name: ghcr.io/hubra-app/hubra/frontend

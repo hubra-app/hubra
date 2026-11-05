@@ -53,7 +53,7 @@ spec:
         # The platform backend migrates; this waits until it has (up to
         # SCHEMA_WAIT_TIMEOUT, default 15 min, then the pod restarts).
         - name: schema-wait
-          image: hubra/backend
+          image: hubra/app-backend
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
@@ -63,7 +63,7 @@ spec:
         # which only this backend loads (the platform init step leaves it).
         # startup_lock: two pods starting together take turns.
         - name: club-permissions
-          image: hubra/backend
+          image: hubra/app-backend
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
@@ -75,7 +75,7 @@ spec:
           volumeMounts: [{ name: settings, mountPath: /etc/hubra }]
       containers:
         - name: backend
-          image: hubra/backend
+          image: hubra/app-backend
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
@@ -120,7 +120,7 @@ spec:
         runAsGroup: 1000
       containers:
         - name: celery-worker
-          image: hubra/backend
+          image: hubra/app-backend
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
@@ -224,7 +224,7 @@ spec:
         runAsGroup: 1000
       containers:
         - name: discord-gateway
-          image: hubra/backend
+          image: hubra/app-backend
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
