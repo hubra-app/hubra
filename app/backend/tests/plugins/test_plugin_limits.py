@@ -105,6 +105,14 @@ def test_an_old_plugin_path_reaches_the_new_one():
         api_areas._PLUGIN_PREFIXES.pop("/api/v1/zzdemo", None)
 
 
+def test_a_core_blueprint_on_the_site_root_blocks_no_plugin(tmp_path):
+    # Core serves /.well-known/oauth-* from a blueprint without a prefix.
+    taken = {"/": "core", "/api/v1/app": "core"}
+    m = check(Module(code="demo", name="Demo", blueprints=(bp("/api/v1/app/demo"),)),
+              spec(tmp_path), taken, set())
+    assert m.blueprints[0].url_prefix == "/api/v1/app/demo"
+
+
 def test_check_moves_routes_into_the_club_area(tmp_path):
     taken: dict[str, str] = {}
     m = check(Module(code="demo", name="Demo", blueprints=(bp("/api/v1/demo"),)),
