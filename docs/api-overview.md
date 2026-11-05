@@ -2,9 +2,9 @@
 
 All endpoints live under `https://api.hubra.club/api/v1/`. In production, an
 external Traefik terminates TLS and routes `api.hubra.club` directly to the
-Flask backend (`backend:5000`). Caddy is not in the API path.
+Flask backends (port 5000).
 
-For the complete endpoint reference, see [`app/backend/API.md`](../app/backend/API.md).
+For every route, see [`app/backend/API.md`](../app/backend/API.md).
 
 The API has three areas (`app/backend/hubra/core/api_areas.py`):
 
@@ -79,11 +79,11 @@ responses include `Vary: Origin` so shared caches don't cross-serve headers.
 
 | Blueprint         | Base path                | Key endpoints                                                                                                                                                    |
 | ----------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Auth**          | `/api/v1/global/auth/`          | `login`, `refresh`, `logout`, `forgot-password`, `reset-password`, `bootstrap`, `bootstrap-status` (public)                                                     |
+| **Auth**          | `/api/v1/global/auth/`          | `login`, `login/mfa`, `passkey/*`, `signup`, `refresh`, `logout`, `switch-tenant`, `forgot-password`, `reset-password` |
 | **Account**       | `/api/v1/global/account/`       | `GET /` (profile), `PATCH /` (update), `change-password`, `permissions`, `sessions`, `devices`, `invoices`, `groups`, `mail-settings`, `verify-email`           |
 | **Members**       | `/api/v1/app/members/`       | `GET /`, `POST /`, `GET /<id>`, `PATCH /<id>`, `DELETE /<id>`, `archive`, `unarchive`, `disable`, `enable`, `provision`, `set-password`, `export`, `count`      |
 | **Groups**        | `/api/v1/app/groups/`        | `GET /`, `POST /`, `GET /<id>`, `PATCH /<id>`, `DELETE /<id>`, `GET /<id>/members`, `POST /<id>/members/<mid>`, `DELETE /<id>/members/<mid>`, `count`            |
-| **Finance**       | `/api/v1/app/finance/`       | Transactions CRUD, transaction-categories CRUD, invoices CRUD, `bulk`, `remind`, `overview`, external-parties CRUD, `qr-bill.pdf`                               |
+| **Finance**       | `/api/v1/app/finance/`       | Invoices CRUD, `bulk`, `remind`, `qr-bill.pdf`, external parties, fee basis. Transactions, categories and the overview are the Finances plugin (module `finance.books`), under the same prefix |
 | **Mail**          | `/api/v1/app/mail/`          | Mailboxes, addresses, aliases, system-addresses, member-mail provisioning, group/function mail, `test`, `reconcile`                                             |
 | **Applications**  | `/api/v1/app/applications/`  | `GET /`, `GET /<id>`, `approve`, `decline`, `DELETE /<id>` (people ask to join on SSO)                                                                              |
 | **Events**        | `/api/v1/app/events/`        | CRUD, `POST /<id>/attendees/<mid>`, `DELETE /<id>/attendees/<mid>`                                                                                               |
@@ -102,9 +102,8 @@ responses include `Vary: Origin` so shared caches don't cross-serve headers.
 | **Platform**      | `/api/v1/platform/` (global permissions `platform.diagnostics`, `platform.settings`) | `settings`, `mail/test`, `health`, `permissions`, `mail-server` (live list of the shared WildDuck, `DELETE /<type>/<id>` orphans, `reconcile`) |
 | **Dashboard**     | `/api/v1/app/dashboard/`     | `summary` (aggregated counts)                                                                                                                                    |
 | **System**        | `/api/v1/platform/system/`        | `permissions` (catalog)                                                                                                                                          |
-| **Health**        | `/api/v1/`               | `GET /health` (public, cached; details under Platform above)                                                                                                    |
-| **Version**       | `/api/v1/`               | `GET /version`, `GET /version/changelog`                                                                                                                        |
-| **Setup**         | `/api/v1/setup/`         | `status`, `complete`                                                                                                                                             |
+| **Health**        | `/health`, `/api/v1/global/health` | Public, cached; details under Platform above                                                                                  |
+| **Version**       | `/api/v1/global/version/` | `GET /`, `changelog`, `roadmap`                                                                                                  |
 
 ## Permissions
 
@@ -114,7 +113,8 @@ The permission key is derived as `<blueprint>.<resource>.<action>` (e.g.
 checks and receive `permissions: ["*"]`.
 
 Run `flask sync-permissions` to populate the Permission table from decorated
-routes. See [`app/backend/API.md`](../app/backend/API.md) for the full catalog.
+routes. Club roles and their permissions are edited in the club app under
+Roles; the catalog of every key is `GET /api/v1/app/permissions`.
 
 | Key pattern                | Description                                        |
 | -------------------------- | -------------------------------------------------- |
@@ -123,7 +123,7 @@ routes. See [`app/backend/API.md`](../app/backend/API.md) for the full catalog.
 | `members.members.update`   | Edit members                                       |
 | `members.members.delete`   | Delete members                                     |
 | `members.members.export`   | Export member data                                 |
-| `finance.transactions.*`   | Transaction CRUD                                   |
+| `finance.transactions.*`   | Transaction CRUD (Finances plugin)                 |
 | `finance.invoices.*`       | Invoice CRUD, bulk, remind                         |
 | `mail.mailboxes.*`         | Mailbox and alias management                       |
 | `applications.*.approve`   | Review and approve membership applications         |
