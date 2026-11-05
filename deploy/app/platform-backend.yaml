@@ -52,15 +52,13 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
-          # startup_lock: two pods starting together take turns. The platform
-          # role, like the image: sync-permissions here seeds the platform
-          # roles; the club catalog is the app backend's (club-permissions in
-          # backend.yaml), which loads the club routes and plugins.
+          # startup_lock: two pods starting together take turns. No HUBRA_ROLE
+          # yet: while the platform image still holds every route, this also
+          # fills the club permission catalog, like club-permissions in
+          # backend.yaml does.
           command: ["python", "-m", "hubra.core.startup_lock", "sh", "-c", "flask db upgrade && flask sync-tenant-schemas && flask sync-permissions && flask seed --skip-migrate && flask ensure-superadmins && flask plugins sync && flask modules seal-secrets"]
           envFrom: [{ secretRef: { name: hubra-env } }]
-          env:
-            - { name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }
-            - { name: HUBRA_ROLE, value: platform }
+          env: [{ name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }]
           volumeMounts: [{ name: settings, mountPath: /etc/hubra }]
       containers:
         - name: backend

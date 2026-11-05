@@ -30,7 +30,7 @@ sign-in staying on the club backend (`HUBRA_ROLE=club` = app + global).
 | API paths | `/api/v1/app`, plugin routes | `/api/v1/global` | `/api/v1/platform` |
 | Shared paths | `/health`, `/api/v1/global/health`, `/api/v1/global/version`, `/api/v1/global/instance` | same | same |
 | Celery | `celery-worker`: the default queue (invoices, reminders, mail, push, Discord bot, plugin jobs) | none (its tasks go to the default queue) | `platform-worker`: queue `platform` (backups and restores, health and infra checks, upgrades, plugin updates, quotas, platform alerts, platform Discord log) |
-| Start-up | waits until the schema is migrated (`python -m hubra.core.schema_wait`), then fills the club permission catalog (`flask sync-permissions`) | waits, the same | runs the init step: `flask db upgrade`, `sync-permissions` (platform roles), `seed`, `ensure-superadmins`, `plugins sync`, `modules seal-secrets` |
+| Start-up | waits until the schema is migrated (`python -m hubra.core.schema_wait`), then fills the club permission catalog (`flask sync-permissions`) | waits, the same | runs the init step: `flask db upgrade`, `sync-permissions`, `seed`, `ensure-superadmins`, `plugins sync`, `modules seal-secrets` |
 | Celery beat | | | runs the platform image |
 
 The three images are one build published under three names (`images.yml`
@@ -63,8 +63,10 @@ The club permission catalog comes from the club routes and plugins, so only
 a backend that loads them fills it (`roles.loads_club_routes`: roles `all`,
 `club`, `app`). On k3s that is the app backend's `club-permissions` init
 container, after `schema-wait`; with `docker-compose.platform.yml` the
-`club-init` step. The platform init step runs `flask sync-permissions` with
-`HUBRA_ROLE=platform`, which then seeds only the platform roles. A club
+`club-init` step. The platform init step runs without `HUBRA_ROLE` while the
+platform image still holds every route, so it fills the catalog too; once
+each role has its own image it runs with `HUBRA_ROLE=platform` and seeds only
+the platform roles. A club
 permission checked by a route of another area (connected apps and
 translation suggestions, on the global backend) is declared in the `core`
 module's `permissions` too, so the app backend keeps it in the catalog;

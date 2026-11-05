@@ -184,9 +184,6 @@ spec:
           envFrom: [{ secretRef: { name: hubra-env } }]
           env:
             - { name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }
-            # The platform image holds only the platform's routes; beat
-            # needs none (schedules name their tasks).
-            - { name: HUBRA_ROLE, value: platform }
             - { name: HUBRA_PLATFORM_QUEUE, value: platform }
           volumeMounts:
             - { name: settings, mountPath: /etc/hubra }
