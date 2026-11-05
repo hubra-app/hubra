@@ -205,7 +205,7 @@ def _votes(case_ids: list[int]) -> dict[int, int]:
         .where(SupportCaseVote.case_id.in_(case_ids))
         .group_by(SupportCaseVote.case_id)
     ).all()
-    return {cid: n for cid, n in rows}
+    return dict(rows)
 
 
 def _comment_counts(case_ids: list[int], *, staff: bool) -> dict[int, int]:
@@ -217,7 +217,7 @@ def _comment_counts(case_ids: list[int], *, staff: bool) -> dict[int, int]:
     if not staff:
         stmt = stmt.where(SupportCaseComment.internal.is_(False))
     rows = db.session.execute(stmt.group_by(SupportCaseComment.case_id)).all()
-    return {cid: n for cid, n in rows}
+    return dict(rows)
 
 
 def _iso(value: datetime | None) -> str | None:

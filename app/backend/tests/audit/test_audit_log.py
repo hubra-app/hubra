@@ -125,7 +125,7 @@ def test_pagination(client, db, auth_headers, seeded_db):
         db, seeded_db, first="Dana", last="Page", email="dana@test.ch"
     )
 
-    for i in range(3):
+    for _ in range(3):
         log_audit(member.id, "paginate_test", "Member", member.id, "Dana Page")
     db.session.commit()
 

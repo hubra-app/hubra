@@ -142,13 +142,13 @@ def make_celery(app: Flask) -> Celery:
             *_module_task_imports(),
         ],
     )
-    conf: dict = dict(
-        broker_url=broker,
-        result_backend="cache+memory://" if testing else broker,
-        task_serializer="json",
-        result_serializer="json",
-        accept_content=["json"],
-        beat_schedule={
+    conf: dict = {
+        "broker_url": broker,
+        "result_backend": "cache+memory://" if testing else broker,
+        "task_serializer": "json",
+        "result_serializer": "json",
+        "accept_content": ["json"],
+        "beat_schedule": {
             "generate-invoices-daily": {
                 "task": "hubra.core.tasks.finance_tasks.generate_invoices_task",
                 "schedule": crontab(hour=8, minute=0),
@@ -268,11 +268,11 @@ def make_celery(app: Flask) -> Celery:
                 "schedule": crontab(minute=25),
             },
         },
-        broker_connection_retry_on_startup=False,
-        timezone="UTC",
+        "broker_connection_retry_on_startup": False,
+        "timezone": "UTC",
         # One send per schedule slot even with several beats; see scheduling.py.
-        beat_scheduler="hubra.core.tasks.scheduling:HubraScheduler",
-    )
+        "beat_scheduler": "hubra.core.tasks.scheduling:HubraScheduler",
+    }
     conf["beat_schedule"].update(_module_schedules())
     # Platform tasks on their own queue when a platform worker runs them
     # (HUBRA_PLATFORM_QUEUE; hubra.core.roles).

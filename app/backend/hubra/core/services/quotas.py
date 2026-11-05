@@ -66,7 +66,7 @@ def plan_limits(plan: str) -> dict[str, int | None]:
     try:
         return plans.limits(plan)
     except Exception:  # noqa: BLE001  (database hiccup: no limits)
-        return {kind: None for kind in KINDS}
+        return dict.fromkeys(KINDS)
 
 
 def overrides(tenant: Tenant) -> dict[str, int | None]:

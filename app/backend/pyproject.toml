@@ -29,3 +29,7 @@ filterwarnings = [
     # producing a ResourceWarning that is harmless in tests.
     "ignore::ResourceWarning",
 ]
+
+[tool.ruff.lint]
+# ruff's defaults (E4, E7, E9, F) plus bugbear and comprehension checks.
+extend-select = ["B", "C4"]

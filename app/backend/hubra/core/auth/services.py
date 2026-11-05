@@ -44,7 +44,7 @@ def _extract_browser_family(headers) -> str:
             if brand in sec_ch_ua:
                 return brand
     ua = headers.get("User-Agent", "") or ""
-    for pattern, family in [
+    for pattern, _family in [
         (_UA_RE, None),
     ]:
         m = pattern.search(ua)

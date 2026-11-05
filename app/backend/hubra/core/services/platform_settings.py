@@ -49,7 +49,7 @@ channel that takes the audit entries off the log.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable
+from collections.abc import Callable
 
 from flask import current_app
 from sqlalchemy import event, select, text

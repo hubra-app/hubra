@@ -428,8 +428,8 @@ def load(registry, app=None) -> PluginSet:
                 spec.error = f"{type(exc).__name__}: {exc}"
                 continue
             taken = trial
-            for before, m in zip(declared, modules):
-                for orig, bp in zip(before.blueprints, m.blueprints):
+            for before, m in zip(declared, modules, strict=False):
+                for orig, bp in zip(before.blueprints, m.blueprints, strict=False):
                     add_plugin_prefix("/" + orig.url_prefix.strip("/"), bp.url_prefix)
             spec.modules = modules
             spec.loaded = True

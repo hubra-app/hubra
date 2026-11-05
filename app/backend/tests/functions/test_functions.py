@@ -518,20 +518,20 @@ def test_resolve_alias_targets_empty_falls_back_to_postmaster(db, seeded_db):
 
 def _make_function_mma(db, fn, *, domain="club.ch", **overrides):
     """Helper: create a mailbox-type function MMA."""
-    defaults = dict(
-        address=f"{fn.name.lower()}@{domain}",
-        address_type="mailbox",
-        is_protected=True,
-        is_enabled=True,
-        owner_type="function",
-        owner_id=fn.id,
-        kind="function",
-        enabled=True,
-        local_part=fn.name.lower(),
-        domain=domain,
-        provisioning_status="provisioned",
-        wildduck_id="wd-fn-001",
-    )
+    defaults = {
+        "address": f"{fn.name.lower()}@{domain}",
+        "address_type": "mailbox",
+        "is_protected": True,
+        "is_enabled": True,
+        "owner_type": "function",
+        "owner_id": fn.id,
+        "kind": "function",
+        "enabled": True,
+        "local_part": fn.name.lower(),
+        "domain": domain,
+        "provisioning_status": "provisioned",
+        "wildduck_id": "wd-fn-001",
+    }
     defaults.update(overrides)
     addr = ManagedMailAddress(**defaults)
     db.session.add(addr)

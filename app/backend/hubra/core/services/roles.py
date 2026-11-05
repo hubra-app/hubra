@@ -198,7 +198,7 @@ class RolesService:
             .where(Member.archived_at.is_(None), Member.deleted_at.is_(None))
             .group_by(holds.c[0])
         ).all()
-        return {role_id: count for role_id, count in rows}
+        return dict(rows)
 
     @staticmethod
     def list() -> list[Role]:

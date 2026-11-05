@@ -174,7 +174,7 @@ def _incr(writes: dict[str, dict[str, int]], maxes: dict[str, int] | None = None
                 current = client.hmget(first, list(maxes))
                 higher = {
                     f: v
-                    for (f, v), old in zip(maxes.items(), current)
+                    for (f, v), old in zip(maxes.items(), current, strict=False)
                     if old is None or int(old) < v
                 }
                 if higher:
@@ -599,8 +599,8 @@ def summary(hours: int = 24, now: datetime | None = None) -> dict:
     routes = _routes(req)
     total = {"b": [0] * (len(BUCKETS) + 1), "s": [0] * 6}
     for r in routes.values():
-        total["b"] = [a + b for a, b in zip(total["b"], r["b"])]
-        total["s"] = [a + b for a, b in zip(total["s"], r["s"])]
+        total["b"] = [a + b for a, b in zip(total["b"], r["b"], strict=False)]
+        total["s"] = [a + b for a, b in zip(total["s"], r["s"], strict=False)]
         for k in ("n", "ms", "db", "q", "slow"):
             total[k] = total.get(k, 0) + r.get(k, 0)
     rows = sorted(
@@ -761,7 +761,7 @@ def error_details(hours: int = 24, now: datetime | None = None,
     requests_by_route = {label: r.get("n", 0) for label, r in _routes(req).items()}
 
     timeline = []
-    for t, h in zip(slots, totals):
+    for t, h in zip(slots, totals, strict=False):
 
         def n(name: str, h=h) -> int:
             return int(float(h.get(name, 0)))
@@ -781,7 +781,7 @@ def error_details(hours: int = 24, now: datetime | None = None,
         at = at.replace(minute=at.minute - at.minute % 10, second=0, microsecond=0)
     codes: dict[str, int] = {}
     routes: dict[str, dict] = {}
-    for t, h in zip(slots, errs):
+    for t, h in zip(slots, errs, strict=False):
         if at is not None and t != at:
             continue
         for label, by_code in _error_fields([h]).items():

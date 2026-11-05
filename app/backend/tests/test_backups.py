@@ -639,7 +639,7 @@ class TestScopedBackups:
 
         a, b = _club(db), _club(db)
         for club in (a, b):
-            for i in range(9):
+            for _ in range(9):
                 _club_record(db, club)
         for r in BackupRecord.query.filter(
             BackupRecord.tenant_id.in_([a.id, b.id])

@@ -234,7 +234,7 @@ def _plugin_counts(ids: list[int]) -> dict[int, int]:
         )
         .group_by(TenantFeature.tenant_id)
     ).all()
-    return {tid: n for tid, n in rows}
+    return dict(rows)
 
 
 # ── Public API ──────────────────────────────────────────────────────────────
