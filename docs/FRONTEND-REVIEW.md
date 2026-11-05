@@ -4,7 +4,7 @@ Review date: 2026-07-10
 Scope: `app/frontend/` (main COS app), `app/admin-frontend/` (admin portal), `app/sso-frontend/` (SSO/identity portal)
 Stack: React 19 + TypeScript + Vite + TanStack Query v5 + React Router 7 + Mantine 7 + @mantine/form + zod + i18next (main frontend only)
 
-This review supersedes the previous `app/frontend/FRONTEND-REVIEW.md` (2026-07-09), which covered only the main frontend. Several findings from that review have been fixed and are noted in "What's already good" below.
+This review supersedes the previous frontend review (2026-07-09, since removed), which covered only the main frontend. Several findings from that review have been fixed and are noted in "What's already good" below.
 
 ---
 

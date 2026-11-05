@@ -29,7 +29,7 @@ tracking, not for auth.)
 
 ## 1. Cookie SameSite + Domain + path
 
-**Applied in `app/backend/hubra/config.py`:**
+**Applied in `app/backend/hubra/core/config.py`:**
 
 ```python
 JWT_TOKEN_LOCATION: list = ["cookies"]
@@ -87,7 +87,7 @@ CSRF double-submit**: the frontend SPA at `cos.vollbuild.ch/` reads
 `JWT_COOKIE_CSRF_PROTECT=True` — a readable CSRF cookie plus a required
 `X-CSRF-TOKEN` header on `POST`/`PUT`/`PATCH`/`DELETE`. The `X-CSRF-TOKEN`
 header is in the CORS `Allow-Headers` list, and the frontend sends it on every
-state-changing request (`app/frontend/src/api/client.ts`).
+state-changing request (`packages/api-client/src/client.ts`).
 
 ---
 
@@ -242,7 +242,7 @@ snippets are retained as legacy reference but no longer referenced.
 
 - API base URL → `https://api.vollbuild.ch/api` (`VITE_API_BASE`, compose env).
 - Every request sends `credentials: 'include'` (`apiFetch` in
-  `app/frontend/src/api/client.ts`). Without this the cookie isn't sent and
+  `packages/api-client/src/client.ts`). Without this the cookie isn't sent and
   every call 401s.
 - On state-changing requests, the `X-CSRF-TOKEN` header is read from the
   `csrf_access_token` cookie and sent (refresh uses `csrf_refresh_token`).
@@ -274,6 +274,6 @@ CSP `connect-src`, logout `unset_jwt_cookies`, cookie `SameSite=Lax` /
 | Item                             | File                             | Action                                                                                                                    |
 | -------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | HSTS `preload` flag              | `hubra/__init__.py`          | Add `; preload` to the HSTS value when domain is submitted to the preload list                                            |
-| WildDuck API HTTPS               | `hubra/config.py`            | Assert `WILDDUCK_API_URL.startswith("https://")` in production startup check                                              |
-| Frontend `apiFetch` content-type | `app/frontend/src/api/client.ts` | Check `Content-Type: application/json` before calling `.json()` to avoid confusing errors when a proxy returns HTML       |
+| WildDuck API HTTPS               | `hubra/core/config.py`            | Assert `WILDDUCK_API_URL.startswith("https://")` in production startup check                                              |
+| Frontend `apiFetch` content-type | `packages/api-client/src/client.ts` | Check `Content-Type: application/json` before calling `.json()` to avoid confusing errors when a proxy returns HTML       |
 | Old domain redirect              | `docker-compose.override.yaml`   | `cos.public.reyki.net` → `cos.vollbuild.ch` redirect is configured; remove the redirect labels once migration is complete |
