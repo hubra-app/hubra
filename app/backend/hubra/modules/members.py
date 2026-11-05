@@ -1,6 +1,6 @@
 """Members: directory, membership applications and tiers."""
 
-from hubra.core.modules import Blueprint, Module, NavItem
+from hubra.core.modules import Blueprint, Module, NavItem, Schedule
 
 module = Module(
     code="members",
@@ -56,5 +56,15 @@ module = Module(
         "membership_tiers",
         "payment_plans",
         "applications",
+    ),
+    tasks=("hubra.core.tasks.digest_tasks",),
+    # The weekly digest goes out on Monday morning, club time; the hourly
+    # run finds the hour in each club's time zone.
+    schedule=(
+        Schedule(
+            "weekly-digest",
+            "hubra.core.tasks.digest_tasks.send_weekly_digests_task",
+            3600,
+        ),
     ),
 )

@@ -1,0 +1,31 @@
+{{ t('mail.email.weekly_digest.intro', club_name=club_name) | striptags }}
+{% if events %}
+
+{{ t('mail.email.weekly_digest.events') }}
+{% for e in events %}
+- {{ e.title }}: {{ e.when }}{% if e.location %} · {{ e.location }}{% endif %}{% if e.signed_up %} · {{ t('mail.email.weekly_digest.signed_up') }}{% endif %}
+{% if e.url %}  {{ e.url }}
+{% endif %}{% endfor %}{% if more_events %}{{ t('mail.email.weekly_digest.more', count=more_events) }}
+{% endif %}{% endif %}
+{% if posts %}
+
+{{ t('mail.email.weekly_digest.posts') }}
+{% for p in posts %}
+- {{ p.title }}{% if p.summary %}: {{ p.summary }}{% endif %}
+{% if p.url %}  {{ p.url }}
+{% endif %}{% endfor %}{% if more_posts %}{{ t('mail.email.weekly_digest.more', count=more_posts) }}
+{% endif %}{% endif %}
+{% if polls %}
+
+{{ t('mail.email.weekly_digest.polls') }}
+{% for p in polls %}
+- {{ p.question }}{% if p.closes %} ({{ t('mail.email.weekly_digest.closes', when=p.closes) }}){% endif %}
+{% if p.url %}  {{ p.url }}
+{% endif %}{% endfor %}{% if more_polls %}{{ t('mail.email.weekly_digest.more', count=more_polls) }}
+{% endif %}{% endif %}
+{% if portal_url %}
+
+{{ t('mail.email.weekly_digest.button') }}: {{ portal_url }}
+{% endif %}
+
+{{ t('mail.email.weekly_digest.settings_note') }}

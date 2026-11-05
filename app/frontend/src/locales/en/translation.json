@@ -243,6 +243,8 @@
       "push": "Push",
       "mail": "E-mail",
       "pushHint": "Push only reaches devices where you turned push on below.",
+      "digest": "Weekly summary by e-mail",
+      "digestHint": "Every Monday morning: the week's events, new posts and polls you can still vote in.",
       "topics": {
         "posts": "New posts",
         "events": "New events",
