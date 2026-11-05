@@ -113,3 +113,19 @@ def test_listed_files_and_prune_agree(tmp_path):
     assert left == {f for f in listed if f.startswith("hubra/") and f.endswith(".py")}
     assert "migrations/env.py" in listed
     assert not any(f.startswith("tests/") for f in listed)
+
+
+def test_images_build_each_role_from_its_file_list():
+    """images.yml has one role image per role, built from the Dockerfile's
+    role target, and the Dockerfile prunes with role_files.py."""
+    import yaml
+
+    workflow = yaml.safe_load((BACKEND.parents[1] / ".github/workflows/images.yml").read_text())
+    entries = workflow["jobs"]["build"]["strategy"]["matrix"]["include"]
+    roles = {e["image"]: e.get("role") for e in entries if e.get("target") == "role"}
+    assert roles == {"app-backend": "app", "global-backend": "global", "platform-backend": "platform"}
+    dockerfile = (BACKEND / "Dockerfile").read_text()
+    assert "scripts/role_files.py \"$ROLE\" --root /src --prune" in dockerfile
+    assert "ENV HUBRA_ROLE=${ROLE}" in dockerfile
+    # The default target (Compose builds without one) is the full image.
+    assert dockerfile.rstrip().rsplit("FROM ", 1)[1].startswith("base AS backend")

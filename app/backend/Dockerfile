@@ -1,8 +1,17 @@
 # Built from the repository root, like the frontends. No plugins are shipped:
 # platform admins install them from the Marketplace (plugins.hubra.club).
+#
+# Two kinds of image (docs/platform-backend.md, "Images"):
+#
+#   target backend (the default): every file, HUBRA_ROLE unset (all). The one
+#     image of a Compose install.
+#   target role, --build-arg ROLE=app|global|platform: only the hubra modules
+#     that role imports (scripts/role_files.py), with HUBRA_ROLE set to it, so
+#     every process started from it (API, worker, beat, init step) is that
+#     role. images.yml publishes app-backend, global-backend, platform-backend.
 
-# ── API, Celery worker and beat ─────────────────────────────────────────────
-FROM python:3.13-slim-bookworm@sha256:fcbd8dfc2605ba7c2eca646846c5e892b2931e41f6227985154a596f26ab8ed7
+# ── Shared base: Python packages and system tools ──────────────────────────
+FROM python:3.13-slim-bookworm@sha256:fcbd8dfc2605ba7c2eca646846c5e892b2931e41f6227985154a596f26ab8ed7 AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 
@@ -37,6 +46,29 @@ RUN adduser --disabled-password --gecos "" appuser
 RUN mkdir -p /celerybeat /var/lib/hubra/files \
     && chown appuser:appuser /celerybeat /var/lib/hubra/files
 
+EXPOSE 5000
+
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--threads", "4", "--timeout", "120", "wsgi:app"]
+
+# ── One role's files ─────────────────────────────────────────────────────────
+FROM base AS role-files
+ARG ROLE
+COPY app/backend/ /src/
+RUN test -n "$ROLE" \
+    && python /src/scripts/role_files.py "$ROLE" --root /src --prune \
+    && rm -rf /src/scripts /src/tests
+
+# ── One role's image: app-backend, global-backend, platform-backend ─────────
+FROM base AS role
+ARG ROLE
+COPY --from=role-files /src/ /app/
+ENV HUBRA_ROLE=${ROLE}
+ARG GIT_SHA=""
+ENV HUBRA_GIT_SHA=${GIT_SHA}
+USER appuser
+
+# ── Every file, every role (Compose; the default target) ────────────────────
+FROM base AS backend
 COPY app/backend/ .
 
 # The commit this image was built from (images.yml passes it). Manage shows it
@@ -46,7 +78,3 @@ ARG GIT_SHA=""
 ENV HUBRA_GIT_SHA=${GIT_SHA}
 
 USER appuser
-
-EXPOSE 5000
-
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--threads", "4", "--timeout", "120", "wsgi:app"]

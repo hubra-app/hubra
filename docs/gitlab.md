@@ -14,7 +14,7 @@ tag v1.2.3 ── release.yml: checks, images, approval ──▶ ghcr.io/hubra-
 | Pipeline on GitLab | Jobs |
 | --- | --- |
 | `main`, merge requests | `backend` (ruff, pytest), `frontends` (lint, build, plugin frontends), `compose`, `kubernetes` (kustomize + kubeconform of every overlay), `shellcheck`, close to `.github/workflows/ci.yml` |
-| tag `v1.2.3` or `v1.2.3-rc.1` | the checks, then `release-notes` waits for GitHub to push the seven images of that version, looks up their digests, and `release` creates a GitLab Release with the changelog and the digests |
+| tag `v1.2.3` or `v1.2.3-rc.1` | the checks, then `release-notes` waits for GitHub to push the images of that version, looks up their digests, and `release` creates a GitLab Release with the changelog and the digests |
 
 Only tags in semver form (`v` + `MAJOR.MINOR.PATCH`, optional `-pre.release`)
 start a release. Any other tag runs nothing.
