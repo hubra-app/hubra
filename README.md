@@ -80,8 +80,9 @@ for the production cluster, meant for a GitOps tool such as Flux.
 ## Images, CI and releases
 
 The images are built by GitHub Actions (`.github/workflows/images.yml`) and
-pushed to `ghcr.io/hubra-app/hubra/*`: `backend` (also published as
-`global-backend` and `platform-backend`), `frontend`, `admin-frontend`,
+pushed to `ghcr.io/hubra-app/hubra/*`: `backend` (every role, for Compose),
+`app-backend`, `global-backend` and `platform-backend` (one role each, see
+[docs/platform-backend.md](docs/platform-backend.md)), `frontend`, `admin-frontend`,
 `sso-frontend`, `support-frontend`, `mcp`, and for mail `haraka`, `zonemta`
 and `cert-watcher`. To save Actions minutes they are built only for a release
 or by hand, and only images whose files changed are rebuilt; the others get
@@ -133,14 +134,26 @@ GitHub release of each plugin.
 
 | Plugin | What it does | Version |
 | --- | --- | --- |
+| [Assistant](https://github.com/hubra-app/hubra-plugin-assistant) | Writing help for the board: drafts of posts, invitations, reminders and minutes with Claude, using the club's own API key | [1.0.0](https://github.com/hubra-app/hubra-plugin-assistant/releases/tag/v1.0.0) |
 | [Bank file import](https://github.com/hubra-app/hubra-plugin-bank-import) | Import camt.053, camt.054, MT940 and CSV statements and match payments to invoices | [1.2.0](https://github.com/hubra-app/hubra-plugin-bank-import/releases/tag/v1.2.0) |
-| [Budgets](https://github.com/hubra-app/hubra-plugin-budgets) | A yearly budget per category, compared with what was booked | [1.1.0](https://github.com/hubra-app/hubra-plugin-budgets/releases/tag/v1.1.0) |
-| [Codes](https://github.com/hubra-app/hubra-plugin-codes) | Door codes, lock combinations and passcodes, encrypted with the club's key | [2.0.0](https://github.com/hubra-app/hubra-plugin-codes/releases/tag/v2.0.0) |
-| [Discord](https://github.com/hubra-app/hubra-plugin-discord) | The Hubra bot: announcements, roles, group channels, events, polls and reminders | [2.5.0](https://github.com/hubra-app/hubra-plugin-discord/releases/tag/v2.5.0) |
-| [Guides](https://github.com/hubra-app/hubra-plugin-guides) | A usage guide per machine or tool, shown on the inventory item | [1.1.0](https://github.com/hubra-app/hubra-plugin-guides/releases/tag/v1.1.0) |
+| [Board](https://github.com/hubra-app/hubra-plugin-board) | Board tasks per function, a year planner, contracts with notice reminders, and the general meeting | [1.0.0](https://github.com/hubra-app/hubra-plugin-board/releases/tag/v1.0.0) |
+| [Booking](https://github.com/hubra-app/hubra-plugin-booking) | Rooms and equipment on a calendar, with approvals and fees on the member's invoice | [1.0.0](https://github.com/hubra-app/hubra-plugin-booking/releases/tag/v1.0.0) |
+| [Budgets](https://github.com/hubra-app/hubra-plugin-budgets) | A yearly budget per category with an owner, compared with what was booked | [1.3.0](https://github.com/hubra-app/hubra-plugin-budgets/releases/tag/v1.3.0) |
+| [Codes](https://github.com/hubra-app/hubra-plugin-codes) | Door codes, lock combinations and passcodes, encrypted with the club's key | [2.0.1](https://github.com/hubra-app/hubra-plugin-codes/releases/tag/v2.0.1) |
+| [Community](https://github.com/hubra-app/hubra-plugin-community) | Photo albums, a skills and lending directory, an idea box, a welcome checklist and jubilees | [1.0.0](https://github.com/hubra-app/hubra-plugin-community/releases/tag/v1.0.0) |
+| [Discord](https://github.com/hubra-app/hubra-plugin-discord) | The Hubra bot: announcements, roles, group channels, events, polls and reminders | [2.7.1](https://github.com/hubra-app/hubra-plugin-discord/releases/tag/v2.7.1) |
+| [Documents](https://github.com/hubra-app/hubra-plugin-documents) | The club's document library: folders, uploads and access per role or group | [1.0.0](https://github.com/hubra-app/hubra-plugin-documents/releases/tag/v1.0.0) |
+| [Forms](https://github.com/hubra-app/hubra-plugin-forms) | Forms and surveys, with answers as a summary, a table or a CSV | [1.0.0](https://github.com/hubra-app/hubra-plugin-forms/releases/tag/v1.0.0) |
+| [Guides](https://github.com/hubra-app/hubra-plugin-guides) | A usage guide per machine or tool, shown on the inventory item | [1.3.1](https://github.com/hubra-app/hubra-plugin-guides/releases/tag/v1.3.1) |
 | [Inventory](https://github.com/hubra-app/hubra-plugin-inventory) | Tools, machines and materials, with owners, checkouts and inductions | [2.1.0](https://github.com/hubra-app/hubra-plugin-inventory/releases/tag/v2.1.0) |
-| [Keys](https://github.com/hubra-app/hubra-plugin-keys) | Who holds which key, card or fob, with a handover log | [1.1.0](https://github.com/hubra-app/hubra-plugin-keys/releases/tag/v1.1.0) |
+| [Kasse](https://github.com/hubra-app/hubra-plugin-kasse) | Expense claims, a drinks and materials tab with QR codes, and collective orders | [1.0.0](https://github.com/hubra-app/hubra-plugin-kasse/releases/tag/v1.0.0) |
+| [Keys](https://github.com/hubra-app/hubra-plugin-keys) | Who holds which key, card or fob, with a handover log | [1.2.1](https://github.com/hubra-app/hubra-plugin-keys/releases/tag/v1.2.1) |
+| [Letters](https://github.com/hubra-app/hubra-plugin-letters) | Serial letters as one PDF for window envelopes, or printed and posted by Pingen | [1.0.0](https://github.com/hubra-app/hubra-plugin-letters/releases/tag/v1.0.0) |
+| [Messengers](https://github.com/hubra-app/hubra-plugin-messengers) | Announcements and reminders in the club's Telegram, Signal or Matrix group | [1.0.0](https://github.com/hubra-app/hubra-plugin-messengers/releases/tag/v1.0.0) |
+| [Online payments](https://github.com/hubra-app/hubra-plugin-payments) | Members pay invoices by card or TWINT through the club's own Stripe account | [1.0.0](https://github.com/hubra-app/hubra-plugin-payments/releases/tag/v1.0.0) |
 | [Shared inbox (IMAP)](https://github.com/hubra-app/hubra-plugin-imap-inbox) | Read club mailboxes hosted anywhere inside Hubra | [1.1.0](https://github.com/hubra-app/hubra-plugin-imap-inbox/releases/tag/v1.1.0) |
+| [Supporters](https://github.com/hubra-app/hubra-plugin-supporters) | Sponsor packages and invoices, fundraising goals, donations and pledges | [1.0.0](https://github.com/hubra-app/hubra-plugin-supporters/releases/tag/v1.0.0) |
+| [Teams](https://github.com/hubra-app/hubra-plugin-teams) | Match days for team sports: fixtures, availability, line-ups and carpooling | [1.0.0](https://github.com/hubra-app/hubra-plugin-teams/releases/tag/v1.0.0) |
 
 When a plugin is released or a new one added, follow
 [docs/plugin-releases.md](docs/plugin-releases.md) so this table, the
