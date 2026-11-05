@@ -22,7 +22,6 @@ module = Module(
             "id-badge",
             order=11,
             perms=("functions.functions.read",),
-            parent="/app/members",
         ),
     ),
     tables=("functions", "function_holders"),

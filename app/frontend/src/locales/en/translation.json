@@ -2468,7 +2468,8 @@
       "system": "Administration",
       "workspace": "Club",
       "activities": "Club life",
-      "favourites": "Favourites"
+      "favourites": "Favourites",
+      "plugins": "Add-ons"
     },
     "tooltips": {
       "dismiss": "Dismiss",
@@ -2512,7 +2513,22 @@
     },
     "more": {
       "emptyTitle": "Nothing here yet",
-      "emptyDesc": "Pages you hide in the sidebar and pages of further modules appear here."
+      "emptyDesc": "Modules appear here as soon as your club switches them on.",
+      "desc": "All of your club's modules and plugins. A card takes you straight to its page.",
+      "openApplications": "{{count}} open applications",
+      "noApplications": "No open applications",
+      "groupCount": "{{count}} groups",
+      "needsSetup": "Needs setting up",
+      "partOf": "Part of {{module}}",
+      "plugin": "Plugin",
+      "notInSidebar": "Not in the sidebar",
+      "about": {
+        "dashboard": "Overview and your own widgets",
+        "tiers": "Membership tiers and their fees",
+        "settings": "Club, modules, apps and domains",
+        "auditLog": "Who changed what, and when",
+        "translations": "Suggest translations for the app"
+      }
     },
     "customize": {
       "title": "Customise sidebar",

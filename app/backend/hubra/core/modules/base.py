@@ -49,8 +49,9 @@ class NavItem:
     path: str
     label_key: str
     icon: str
-    # Sidebar section; "more" puts the entry on the "Weitere" page instead,
-    # with the pages a person hid and the plugins' own pages.
+    # Sidebar area (workspace, activities, operations, system, me). "more"
+    # files a plugin's page under the sidebar's "Erweiterungen" area; every
+    # page also has a card on the "Weitere" overview.
     section: str = "workspace"
     order: int = 100
     perms: tuple[str, ...] = ()
@@ -58,8 +59,8 @@ class NavItem:
     # screens that host several modules as tabs (events, polls, posts).
     group: str | None = None
     # Path of the entry whose screen shows this one as a tab, instead of a
-    # sidebar row of its own (members' functions and tiers,
-    # the audit log and roles under settings).
+    # sidebar row of its own. Only for real sub-views of the same data; a
+    # page of its own gets its own row.
     parent: str | None = None
 
 

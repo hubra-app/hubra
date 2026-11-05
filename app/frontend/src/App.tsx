@@ -81,6 +81,16 @@ const MailScreen = lazy(() =>
     default: m.MailScreen,
   })),
 )
+const RolesScreen = lazy(() =>
+  import('./screens/private/system/RolesTab').then((m) => ({
+    default: m.RolesScreen,
+  })),
+)
+const AuditLogScreen = lazy(() =>
+  import('./screens/private/system/AuditLog').then((m) => ({
+    default: m.AuditLogScreen,
+  })),
+)
 const SettingsScreen = lazy(() =>
   import('./screens/private/settings/Settings').then((m) => ({
     default: m.SettingsScreen,
@@ -146,8 +156,6 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 /** Shows the page when the member holds `permKey`, or one of them for a list. */
 // Switching modules is its own permission; the other settings are for admins.
 const SETTINGS_OR_MODULES = ['settings.settings.read', 'modules.modules.write']
-// Roles and the audit log are tabs of the settings screen too.
-const ANY_SETTINGS_TAB = [...SETTINGS_OR_MODULES, 'roles.roles.create', 'audit.audit.read']
 
 function RequirePermission({ permKey, children }: { permKey: string | string[]; children: React.ReactNode }) {
   const { hasPermission } = useApp()
@@ -470,7 +478,7 @@ function PrivateRoutes() {
                 <Route
                   path="settings"
                   element={
-                    <RequirePermission permKey={ANY_SETTINGS_TAB}>
+                    <RequirePermission permKey={SETTINGS_OR_MODULES}>
                       <SettingsScreen />
                     </RequirePermission>
                   }
@@ -538,7 +546,7 @@ function PrivateRoutes() {
                   path="system"
                   element={
                     <RequirePermission permKey="roles.roles.create">
-                      <SettingsScreen />
+                      <RolesScreen />
                     </RequirePermission>
                   }
                 />
@@ -546,7 +554,7 @@ function PrivateRoutes() {
                   path="system/roles"
                   element={
                     <RequirePermission permKey="roles.roles.create">
-                      <SettingsScreen />
+                      <RolesScreen />
                     </RequirePermission>
                   }
                 />
@@ -558,7 +566,7 @@ function PrivateRoutes() {
                   path="audit-log"
                   element={
                     <RequirePermission permKey="audit.audit.read">
-                      <SettingsScreen />
+                      <AuditLogScreen />
                     </RequirePermission>
                   }
                 />

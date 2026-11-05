@@ -46,7 +46,6 @@ module = Module(
             "stairs",
             order=13,
             perms=("tiers.tiers.read",),
-            parent="/app/members",
         ),
     ),
     tables=(

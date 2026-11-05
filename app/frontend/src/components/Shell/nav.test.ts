@@ -43,23 +43,32 @@ describe('buildNav', () => {
   const paths = (nav: NavSection[]) => nav.flatMap((s) => s.items.map((i) => i.path))
 
   it('shows sub-pages as tabs, not sidebar rows', () => {
-    expect(paths(buildNav(counts, t, [members]).nav)).toEqual(['/app/members'])
+    expect(paths(buildNav(counts, t, [members]).nav)).toEqual(['/app/members', MORE_PATH])
   })
 
   it('shows the parent to someone who may open only one of its tabs', () => {
     const only = (k: string) => k === 'tiers.tiers.read'
-    expect(paths(buildNav(counts, t, [members], only).nav)).toEqual(['/app/members'])
+    expect(paths(buildNav(counts, t, [members], only).nav)).toEqual(['/app/members', MORE_PATH])
     expect(buildNav(counts, t, [members], () => false).nav).toEqual([])
   })
 
-  it('lists secondary and plugin pages under Weitere', () => {
+  it('lists every page in the sidebar by area, plugins in their own', () => {
     const { nav, more } = buildNav(counts, t, [members, codes, inbox])
-    expect(paths(nav)).toEqual(['/app/members', MORE_PATH])
-    expect(more.map((i) => i.path)).toEqual(['/app/operations/codes', '/app/inbox'])
+    expect(nav.map((s) => s.section)).toEqual(['workspace', 'operations', 'plugins', 'all'])
+    expect(paths(nav)).toEqual(['/app/members', '/app/operations/codes', '/app/inbox', MORE_PATH])
+    // Nothing is out of the sidebar, and the Weitere row has no heading.
+    expect(more).toEqual([])
+    expect(nav[nav.length - 1].label).toBe('')
   })
 
-  it('has no Weitere entry when nothing is behind it', () => {
-    expect(paths(buildNav(counts, t, [members, groups]).nav)).not.toContain(MORE_PATH)
+  it('has a card for every page, also those out of the sidebar', () => {
+    const prefs = { pinned: ['/app/groups'], hidden: ['/app/inbox'] }
+    const { nav, cards } = buildNav(counts, t, [members, groups, inbox, account], () => true, prefs)
+    expect(paths(nav)).not.toContain('/app/inbox')
+    // In the areas the pages came with; the personal pages have none.
+    expect(cards.map((s) => s.section)).toEqual(['workspace', 'plugins'])
+    expect(paths(cards)).toEqual(['/app/members', '/app/groups', '/app/inbox'])
+    expect(cards[0].items[0].module).toBe('members')
   })
 
   it('moves hidden entries to Weitere and pinned ones to the top', () => {
@@ -78,7 +87,7 @@ describe('buildNav', () => {
   it('ignores pinned and hidden entries the person may not open', () => {
     const prefs = { pinned: ['/app/members'], hidden: [] }
     const { nav, more } = buildNav(counts, t, [members, groups], () => false, prefs)
-    expect(paths(nav)).toEqual(['/app/groups'])
+    expect(paths(nav)).toEqual(['/app/groups', MORE_PATH])
     expect(more).toEqual([])
   })
 
@@ -86,7 +95,7 @@ describe('buildNav', () => {
     const events = mod('events', [navItem('/app/events', [], { order: 30 })])
     const prefs = { pinned: [], hidden: [], order: ['/app/groups', '/app/members'] }
     const { nav } = buildNav(counts, t, [members, groups, events], () => true, prefs)
-    expect(paths(nav)).toEqual(['/app/groups', '/app/members', '/app/events'])
+    expect(paths(nav)).toEqual(['/app/groups', '/app/members', '/app/events', MORE_PATH])
   })
 
   it('moves entries within their group of the customise dialog', () => {
@@ -112,6 +121,7 @@ describe('buildNav', () => {
     expect(paths(buildNav(counts, t, [members, groups], () => true, moved).nav)).toEqual([
       '/app/groups',
       '/app/members',
+      MORE_PATH,
     ])
   })
 
@@ -120,7 +130,7 @@ describe('buildNav', () => {
     const all = [members, groups, events, codes]
     const plain = { pinned: [], hidden: [], order: [], sections: {} }
     let built = buildNav(counts, t, all, () => true, plain)
-    expect(built.groups.map((g) => g.section)).toEqual(['workspace', 'activities', 'more'])
+    expect(built.groups.map((g) => g.section)).toEqual(['workspace', 'activities', 'operations'])
 
     // Down past the end of Verein: to the top of Vereinsleben.
     let prefs = moveNavEntry(plain, built.groups, built.homes, '/app/groups', 1)
@@ -128,29 +138,27 @@ describe('buildNav', () => {
     built = buildNav(counts, t, all, () => true, prefs)
     expect(built.nav[1].items.map((i) => i.path)).toEqual(['/app/groups', '/app/events'])
 
-    // Down past the end of Vereinsleben: under Weitere, which lists its pages.
+    // Out of the sidebar: only Weitere shows it, and the Weitere row lights up.
+    prefs = toggleNavMore(prefs, built.homes, '/app/operations/codes', false)
+    built = buildNav(counts, t, all, () => true, prefs)
+    expect(built.more.map((i) => i.path)).toEqual(['/app/operations/codes'])
+    expect(paths(built.nav)).not.toContain('/app/operations/codes')
+    expect(built.groups.map((g) => g.section)).toEqual(['workspace', 'activities', 'more'])
+
+    // Down past the end of Vereinsleben: out of the sidebar too.
     prefs = moveNavEntry(prefs, built.groups, built.homes, '/app/events', 1)
     built = buildNav(counts, t, all, () => true, prefs)
     expect(built.more.map((i) => i.path)).toEqual(['/app/events', '/app/operations/codes'])
-    const weitere = built.nav.flatMap((s) => s.items).find((i) => i.path === MORE_PATH)
-    expect(weitere?.children?.map((i) => i.path)).toEqual(['/app/events', '/app/operations/codes'])
 
-    // A page that starts under Weitere comes out to Betrieb, and goes back.
+    // Back into the sidebar, to the area it came from.
     prefs = toggleNavMore(prefs, built.homes, '/app/operations/codes', true)
+    expect(prefs.hidden).not.toContain('/app/operations/codes')
     built = buildNav(counts, t, all, () => true, prefs)
     expect(built.groups.find((g) => g.section === 'operations')?.items[0].path).toBe(
       '/app/operations/codes',
     )
-    prefs = toggleNavMore(prefs, built.homes, '/app/operations/codes', false)
-    built = buildNav(counts, t, all, () => true, prefs)
-    expect(built.more.map((i) => i.path)).toContain('/app/operations/codes')
-    // ... and out again to where it was before.
-    prefs = toggleNavMore(prefs, built.homes, '/app/operations/codes', true)
-    expect(prefs.hidden).not.toContain('/app/operations/codes')
-    expect(prefs.sections?.['/app/operations/codes']).toBe('operations')
 
     // Moving back into its own section drops the override.
-    built = buildNav(counts, t, all, () => true, prefs)
     prefs = moveNavEntry(prefs, built.groups, built.homes, '/app/groups', -1)
     expect(prefs.sections?.['/app/groups']).toBeUndefined()
   })
@@ -172,8 +180,12 @@ describe('getParentPath', () => {
   it('keeps built-in sub-pages on their entry', () => {
     const nav = ['/app/operations/events', '/app/finance', '/app/account/settings']
     expect(getParentPath('/app/members/tiers', nav)).toBe('/app/members')
-    expect(getParentPath('/app/audit-log', nav)).toBe('/app/settings')
-    expect(getParentPath('/app/system/roles', nav)).toBe('/app/settings')
+    expect(getParentPath('/app/members/tiers', [...nav, '/app/members/tiers'])).toBe(
+      '/app/members/tiers',
+    )
+    // Roles and the log have rows of their own.
+    expect(getParentPath('/app/audit-log/5', nav)).toBe('/app/audit-log')
+    expect(getParentPath('/app/system/roles', nav)).toBe('/app/system')
     // Polls have their own sidebar entry now.
     expect(getParentPath('/app/operations/polls', nav)).toBe('/app/operations/polls')
     expect(getParentPath('/app/dashboard/me', nav)).toBe('/app/dashboard')

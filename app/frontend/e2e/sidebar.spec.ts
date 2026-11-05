@@ -17,39 +17,40 @@ async function resetSidebar(page: Page) {
   await dialog.getByRole('button', { name: 'Fertig' }).click()
 }
 
-test.describe('settings tabs', () => {
-  test('roles and the audit log are tabs of Einstellungen', async ({ page }) => {
+test.describe('module pages', () => {
+  test('roles and the audit log have their own sidebar rows', async ({ page }) => {
     await page.goto(appUrl('settings'))
-    await expect(entry(page, '/app/audit-log')).toHaveCount(0)
-    await expect(entry(page, '/app/system')).toHaveCount(0)
+    await expect(page.getByRole('tab', { name: 'Rollen' })).toHaveCount(0)
+    await expect(page.getByRole('tab', { name: 'Protokoll' })).toHaveCount(0)
 
     for (const [name, path] of [
       ['Rollen', '/app/system'],
       ['Protokoll', '/app/audit-log'],
     ]) {
-      await page.getByRole('tab', { name }).click()
+      await entry(page, path).click()
       await expect(page).toHaveURL(new RegExp(`${path}$`))
-      await expect(page.getByRole('heading', { level: 1, name: 'Einstellungen' })).toBeVisible()
-      await expect(page.getByRole('tab', { name })).toHaveAttribute('aria-selected', 'true')
-      await expect(entry(page, '/app/settings')).toHaveAttribute('data-active', 'true')
+      await expect(page.getByRole('heading', { level: 1, name })).toBeVisible()
+      await expect(entry(page, path)).toHaveAttribute('data-active', 'true')
+      await expect(entry(page, '/app/settings')).not.toHaveAttribute('data-active', 'true')
     }
   })
 })
 
 test.describe('Weitere', () => {
-  test('opens in the sidebar to list its pages', async ({ page }) => {
+  test('shows a card for every page, each leading to it', async ({ page }) => {
     await page.goto(appUrl('dashboard'))
-    const more = sidebar(page).getByTestId('nav-more')
-    await more.click()
-    await expect(more).toHaveAttribute('aria-expanded', 'true')
-    const first = sidebar(page).getByTestId('nav-more-items').locator('a.nav-item').first()
-    const href = await first.getAttribute('href')
-    await first.click()
-    await expect(page).toHaveURL(new RegExp(`${href}$`))
-    // On one of its pages it stays open with that page highlighted, and the
-    // tabs above the page switch between them.
-    await expect(first).toHaveAttribute('data-active', 'true')
-    await expect(page.getByRole('tab').first()).toHaveAttribute('aria-selected', 'true')
+    await expect(sidebar(page).getByTestId('nav-more')).toHaveCount(0)
+    await entry(page, '/app/more').click()
+    await expect(page.getByRole('heading', { level: 1, name: 'Weitere' })).toBeVisible()
+    await expect(entry(page, '/app/more')).toHaveAttribute('data-active', 'true')
+    // No tabs across unrelated pages any more.
+    await expect(page.getByRole('tab')).toHaveCount(0)
+
+    const cards = page.getByTestId('module-card')
+    expect(await cards.count()).toBeGreaterThan(3)
+    await cards.filter({ hasText: 'Gruppen' }).click()
+    await expect(page).toHaveURL(/\/app\/groups$/)
+    await expect(entry(page, '/app/groups')).toHaveAttribute('data-active', 'true')
   })
 })
 
@@ -58,7 +59,7 @@ test.describe('own sidebar', () => {
     await resetSidebar(page)
   })
 
-  test('pinned entries move to Favoriten, hidden ones to Weitere', async ({ page }) => {
+  test('pinned entries move to Favoriten, hidden ones only show on Weitere', async ({ page }) => {
     await page.goto(appUrl('dashboard'))
     const dialog = await openCustomize(page)
     await dialog.getByRole('button', { name: 'Als Favorit anheften: Gruppen' }).click()
@@ -72,11 +73,15 @@ test.describe('own sidebar', () => {
     )
     await expect(entry(page, '/app/finance')).toHaveCount(0)
 
-    // Under Weitere, which lists it, and found by the search.
-    await sidebar(page).getByTestId('nav-more').click()
-    await sidebar(page).getByTestId('nav-more-items').getByText('Finanzen').click()
+    // Weitere has its card, and the Weitere row stands for it in the sidebar.
+    await entry(page, '/app/more').click()
+    const card = page.getByTestId('module-card').filter({ hasText: 'Finanzen' })
+    await expect(card).toContainText('Nicht in der Seitenleiste')
+    await card.click()
     await expect(page).toHaveURL(/\/app\/finance$/)
+    await expect(entry(page, '/app/more')).toHaveAttribute('data-active', 'true')
 
+    // And the search finds it.
     await page.goto(appUrl('dashboard'))
     await page.getByPlaceholder(/suchen/i).fill('Finanz')
     await page.getByText('Seite', { exact: true }).first().click()
@@ -84,7 +89,8 @@ test.describe('own sidebar', () => {
 
     // Saved on the account: a reload keeps it.
     await page.reload()
-    await expect(sidebar(page).getByTestId('nav-more-items').getByText('Finanzen')).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(entry(page, '/app/finance')).toHaveCount(0)
   })
 
   test('the arrows move an entry into the next section', async ({ page }) => {

@@ -32,8 +32,9 @@ export function useNavPrefs() {
 }
 
 /**
- * The sidebar as this person sees it, the pages behind "Weitere", and which
- * entry the current page belongs to.
+ * The sidebar as this person sees it, the cards of "Weitere", and which entry
+ * the current page belongs to. A page someone took out of the sidebar lights
+ * up the "Weitere" row instead.
  */
 export function useSidebarNav() {
   const { t } = useT()
@@ -43,17 +44,22 @@ export function useSidebarNav() {
   const counts = useNavCounts()
   usePlugins() // plugin icons arrive after the first render
   const { prefs } = useNavPrefs()
-  const { nav, more, customizable, groups, homes } = buildNav(counts, t, moduleList, hasPermission, prefs)
+  const { nav, more, cards, customizable, groups, homes } = buildNav(
+    counts,
+    t,
+    moduleList,
+    hasPermission,
+    prefs,
+  )
   const morePaths = more.map((item) => item.path)
   const parent = getParentPath(location.pathname, [...navPaths(nav), ...morePaths])
-  const currentMore = morePaths.includes(parent) ? parent : null
   return {
     nav,
     more,
+    cards,
     customizable,
     groups,
     homes,
-    activePath: currentMore ? MORE_PATH : parent,
-    currentMore,
+    activePath: morePaths.includes(parent) ? MORE_PATH : parent,
   }
 }

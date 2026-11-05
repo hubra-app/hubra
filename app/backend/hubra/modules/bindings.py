@@ -20,7 +20,7 @@ module = Module(
             "/app/operations/bindings",
             "shell.nav.bindings",
             "link",
-            section="more",
+            section="operations",
             order=30,
             perms=("bindings.bindings.read",),
         ),

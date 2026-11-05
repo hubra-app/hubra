@@ -4,7 +4,7 @@ import { IconPlus, IconTemplate, IconUsers, IconGridDots, IconList } from '@tabl
 import { Button, MultiSelect, Select, Group, Stack, SegmentedControl } from '@mantine/core'
 import { useT } from '@/locales/i18n'
 import { useToast, useAuth } from '@/context/AppContext'
-import { LoadingSpinner } from '@/components/ui'
+import { LoadingSpinner, PageHead } from '@/components/ui'
 import type { Role } from '@/api/settings'
 import { type PermissionEntry } from '@/api/system'
 import { type RoleTemplate } from '@/data/roleTemplates'
@@ -420,6 +420,17 @@ export function RolesTab() {
         onRoleChange={setRoleMembersOpen}
         onClose={() => setRoleMembersOpen(null)}
       />
+    </div>
+  )
+}
+
+/** Roles as a page of its own, with its own sidebar row. */
+export function RolesScreen() {
+  const { t } = useT()
+  return (
+    <div>
+      <PageHead title={t('shell.nav.permissions', 'Rollen')} />
+      <RolesTab />
     </div>
   )
 }
