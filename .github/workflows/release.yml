@@ -120,6 +120,8 @@ jobs:
       packages: write
       # cosign keyless: the run's OIDC token gets a short-lived certificate.
       id-token: write
+      # gh attestation verify reads the images' build provenance.
+      attestations: read
     steps:
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
@@ -134,8 +136,29 @@ jobs:
           VERSION: ${{ needs.check.outputs.version }}
           MINOR: ${{ needs.check.outputs.minor }}
           PRERELEASE: ${{ needs.check.outputs.prerelease }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           repo="ghcr.io/${GITHUB_REPOSITORY,,}"
+          # Sign only what this repository's images.yml built, by a release
+          # (a v* tag push: this run or an earlier release whose image this one
+          # reuses) or by a manual run on main. The sha- and last-build tags can
+          # be pushed by any workflow run on any branch, so the tag alone
+          # proves nothing: an image built from a feature branch (or a manual
+          # run on a tag), or one retagged by hand, has no such provenance and
+          # stops the release here, before anything is signed.
+          built_here() {
+            local json line
+            json=$(gh attestation verify "oci://$1" --repo "$GITHUB_REPOSITORY" \
+                     --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/images.yml" \
+                     --deny-self-hosted-runners --format json 2>/dev/null) || return 1
+            while IFS= read -r line; do
+              case "$line" in
+                "refs/heads/main "*|"refs/tags/v"*" push") echo "${line% *}"; return 0 ;;
+              esac
+            done < <(jq -r '[.. | objects | select(has("sourceRepositoryRef"))
+                             | "\(.sourceRepositoryRef) \(.buildTrigger // "")"] | unique[]' <<<"$json")
+            return 1
+          }
           staged="sha-${GITHUB_SHA::7}"
           tags=("$VERSION")
           if [ "$PRERELEASE" != true ]; then tags+=("$MINOR" latest); fi
@@ -146,6 +169,11 @@ jobs:
             # The digest the checks and the approval were for.
             digest="$(docker buildx imagetools inspect "$repo/$image:$staged" --format '{{json .Manifest}}' | jq -r .digest)"
             if [[ "$digest" != sha256:* ]]; then echo "::error::$repo/$image:$staged not found"; exit 1; fi
+            if ! from=$(built_here "$repo/$image@$digest"); then
+              echo "::error::$image ($digest) has no build provenance from images.yml on main or a release tag; not signing it. Run Images on main with build_all, then push a new tag."
+              exit 1
+            fi
+            echo "$image: built by images.yml on $from" >> "$GITHUB_STEP_SUMMARY"
             args=()
             for t in "${tags[@]}"; do args+=(-t "$repo/$image:$t"); done
             docker buildx imagetools create "${args[@]}" "$repo/$image@$digest"
@@ -286,4 +314,6 @@ jobs:
   mirror:
     needs: release
     uses: ./.github/workflows/mirror-gitlab.yml
-    secrets: inherit
+    # Only the secret it needs, not every secret of the repository.
+    secrets:
+      GITLAB_MIRROR_TOKEN: ${{ secrets.GITLAB_MIRROR_TOKEN }}
