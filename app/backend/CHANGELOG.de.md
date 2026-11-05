@@ -77,6 +77,7 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ### Fixed
 
+- **Ein Plugin, dessen Code nicht mehr zu Hubra passt, hält die Backends nicht mehr vom Start ab**: Ein installiertes Guides älter als 1.2.0 importiert `hubra.api.inventory`, das es in Hubra nicht mehr gibt, und jedes Backend (Verein, Anmeldung und Plattform) beendete sich beim Start. Ein Plugin, dessen Schnittstellen sich nicht laden lassen, wird jetzt übersprungen und als nicht geladen protokolliert, wie bei anderen Plugin-Fehlern.
 - **Plugins mit Routen wurden nach der OAuth-Änderung abgelehnt** («route prefix overlaps / of core»): Der Blueprint für die OAuth-Metadaten unter `/.well-known` hat kein Präfix, also sah die Plugin-Prüfung die ganze Seite als Eigentum des Kerns. Ein Kern-Blueprint auf der Wurzel gilt jetzt wie eine Bereichswurzel und blockiert kein Plugin.
 - **Plugins mit Routen laden wieder**: Seit die OAuth-Metadaten (`/.well-known/...`) als Blueprint an der Wurzel im Kern liegen, galt dieser für die Plugin-Grenzen als Besitzer jedes Pfads, und jedes Plugin mit Routen wurde abgelehnt («route prefix ... overlaps / of core»). Blueprints an der Wurzel zählen nicht mehr.
 - **Die Vereinssuche auf der Anmeldeseite geht wieder**: Seit der Aufteilung der API fragte sie einen Pfad an, den kein Backend bedient (`/api/v1/platform/system/clubs`), und scheiterte mit einem CORS-Fehler, ohne Vereine zu finden. Sie nutzt wieder `/api/v1/global/clubs`, und ein Test prüft jetzt, dass jeder Pfad, den die Apps aufrufen, eine Schnittstelle hat.
