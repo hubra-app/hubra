@@ -2022,6 +2022,25 @@
     "filter": {
       "show": "Show",
       "current": "Current members"
+    },
+    "stats": {
+      "tab": "Statistics",
+      "on": "Reference day",
+      "onHint": "Who was a member on this day",
+      "year": "Year",
+      "yearHint": "Joins and leaves",
+      "csv": "As a sheet (CSV)",
+      "total": "Members on the reference day",
+      "joins": "Joins {{year}}",
+      "leaves": "Leaves {{year}}",
+      "openFees": "Open invoices",
+      "overdue": "{{count}} overdue, {{amount}}",
+      "ages": "Age on the reference day",
+      "ageUnknown": "Without a birthday: {{count}}",
+      "months": "Joins and leaves {{year}}",
+      "byStatus": "By status",
+      "byTier": "By tier",
+      "todayNote": "Status and tier are today's."
     }
   },
   "notifications": {
@@ -2279,7 +2298,8 @@
       "feeBasis": "Finance › Fee basis",
       "attendance": "Club life › Attendance",
       "annualAccounts": "Annual accounts",
-      "bankAccount": "Finance › Bank & QR invoice"
+      "bankAccount": "Finance › Bank & QR invoice",
+      "memberStats": "Members › Statistics"
     },
     "emailVerify": {
       "banner": "Your private email address isn't verified yet. Some features are only available after that.",

@@ -33,6 +33,7 @@ section and position, or the apps show that version in English.
 
 ### Added
 
+- **Member statistics for the board**: Members › Statistics shows who was a member on a reference day (for subsidy forms, often 1 January), by age bracket, status, tier and membership type, the joins and leaves per month of a year, and open and overdue invoices for those who may read invoices. Download it as a sheet (CSV, semicolons). Status and tier are today's, as Hubra keeps no history of them.
 - **Events, posts and polls can belong to a group, and a role given for one group manages them**: the event, post and poll forms have a "Group" field. A role held for one group only (for example "Event lead" for the youth team) now lets its holder create that group's events, posts and polls, edit and delete them, handle the events' sign-ups and close the group's polls, and nothing outside the group; they can't move an item to a group they don't manage or make it club-wide. Posts and polls show their group. Visibility does not change: everyone in the club still sees everything. Migration `c6f1a8d3e2b7` adds `posts.group_id` and `polls.group_id`. See docs/club-admin-guide.md, "Roles and permissions".
 
 - **Members see their own attendance**: the personal dashboard (Dashboard › Persönlich) has a "My attendance" card once a member was expected at a training or event this year: how many dates they were there, excused or missing, the rate, and each date with what the trainer recorded (newest first). It uses the existing `GET /api/v1/app/events/attendance/me`.

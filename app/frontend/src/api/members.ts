@@ -435,3 +435,42 @@ export async function approveLeave(id: string): Promise<void> {
 export async function declineLeave(id: string): Promise<void> {
   await apiFetch(`/app/members/${id}/leave/decline`, { method: "POST" });
 }
+
+// ── Member statistics (board reports) ───────────────────────────────────────
+
+export interface MemberStats {
+  on: string;
+  year: number;
+  total: number;
+  byStatus: Record<string, number>;
+  byTier: Record<string, number>;
+  byType: Record<string, number>;
+  /** Members per age bracket on the reference day ("5-9", "65+"), youngest first. */
+  ages: { bracket: string; count: number }[];
+  ageUnknown: number;
+  months: { month: string; joins: number; leaves: number }[];
+  /** Only for those who may read invoices. */
+  fees: {
+    open: number;
+    openAmount: string;
+    overdue: number;
+    overdueAmount: string;
+    members: number;
+  } | null;
+}
+
+export function getMemberStats(on: string, year: number): Promise<MemberStats> {
+  return apiFetch<MemberStats>(`/app/members/stats?on=${on}&year=${year}`);
+}
+
+/** The same as a sheet (semicolons, for Excel and subsidy forms). */
+export async function downloadMemberStats(on: string, year: number): Promise<void> {
+  const res = await apiFetchRaw(`/app/members/stats.csv?on=${on}&year=${year}`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `mitglieder-${on}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
