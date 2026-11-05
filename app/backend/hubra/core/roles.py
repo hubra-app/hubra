@@ -50,6 +50,8 @@ SHARED_PATHS = (
     "/api/v1/global/instance",
     # OAuth server metadata (RFC 8414), at the root of the API host.
     "/.well-known/oauth-authorization-server",
+    # OpenID Connect discovery (docs/oidc.md), same place.
+    "/.well-known/openid-configuration",
 )
 
 # Celery task modules that belong to the platform: backups, health and

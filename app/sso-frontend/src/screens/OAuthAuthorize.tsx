@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
   Anchor,
@@ -6,6 +6,7 @@ import {
   Button,
   Center,
   Group,
+  List,
   Loader,
   Paper,
   Radio,
@@ -16,7 +17,7 @@ import {
   Title,
 } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
-import { IconAlertTriangle, IconPlugConnected, IconShieldCheck } from '@tabler/icons-react'
+import { IconAlertTriangle, IconLogin2, IconPlugConnected, IconShieldCheck, IconUsers } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import { SignedInFrame } from '@/components/SignedInFrame'
@@ -53,15 +54,17 @@ export function OAuthAuthorizeScreen() {
   const [error, setError] = useState<string | null>(null)
   const [leaving, setLeaving] = useState(false)
 
+  // prompt=none (OpenID): never ask; the app hears "login_required".
+  const silent = (params.prompt ?? '').split(' ').includes('none')
   useEffect(() => {
-    if (authStatus === 'anon')
+    if (authStatus === 'anon' && !silent)
       navigate(`/login?redirect=${encodeURIComponent(window.location.href)}`, { replace: true })
-  }, [authStatus, navigate])
+  }, [authStatus, navigate, silent])
 
   const consent = useQuery({
     queryKey: ['oauth-consent', params],
     queryFn: () => authApi.getOAuthConsent(params),
-    enabled: authStatus === 'authed',
+    enabled: authStatus === 'authed' || (authStatus === 'anon' && silent),
     retry: false,
   })
   const data = consent.data
@@ -130,7 +133,17 @@ export function OAuthAuthorizeScreen() {
     }
   }
 
-  if (authStatus !== 'authed' || consent.isLoading || leaving || sendBack)
+  // Signed in to this app before with the same details: no question.
+  const remembered = Boolean(data && !data.problem && data.remembered)
+  const autoSent = useRef(false)
+  useEffect(() => {
+    if (!remembered || autoSent.current) return
+    autoSent.current = true
+    void answer(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, for this request
+  }, [remembered])
+
+  if (authStatus !== 'authed' || consent.isLoading || leaving || sendBack || (remembered && !error))
     return (
       <Center h="100vh">
         <Loader />
@@ -162,6 +175,14 @@ export function OAuthAuthorizeScreen() {
     )
 
   const { client } = data
+  if (data.mode === 'identity')
+    return (
+      <SignedInFrame width={520}>
+        <Paper withBorder p="xl">
+          <IdentityConsent data={data} busy={busy} error={error} onAnswer={answer} />
+        </Paper>
+      </SignedInFrame>
+    )
   const mcp = data.resource === 'mcp'
   const write = data.scopes.includes('write')
   const platformChosen = chosen === 'platform'
@@ -308,5 +329,130 @@ export function OAuthAuthorizeScreen() {
         </Stack>
       </Paper>
     </SignedInFrame>
+  )
+}
+
+/** The badge or warning that says who registered the app. */
+function AppOrigin({ client, clubName }: { client: authApi.OAuthApp; clubName?: string }) {
+  const { tr } = useLang()
+  if (client.kind === 'club')
+    return (
+      <Group gap={6}>
+        <Badge color="green" variant="light" leftSection={<IconUsers size={12} />}>
+          {tr(`Vom Verein ${clubName ?? ''} eingerichtet`, `Set up by the club ${clubName ?? ''}`)}
+        </Badge>
+        {client.clientUri && (
+          <Anchor href={client.clientUri} target="_blank" rel="noreferrer" size="xs">
+            {new URL(client.clientUri).host}
+          </Anchor>
+        )}
+      </Group>
+    )
+  if (client.verified)
+    return (
+      <Group gap={6}>
+        <Badge color="green" variant="light" leftSection={<IconShieldCheck size={12} />}>
+          {tr('Bei Hubra registriert', 'Registered with Hubra')}
+        </Badge>
+        {client.clientUri && (
+          <Anchor href={client.clientUri} target="_blank" rel="noreferrer" size="xs">
+            {new URL(client.clientUri).host}
+          </Anchor>
+        )}
+      </Group>
+    )
+  return (
+    <Alert color="yellow" variant="light" icon={<IconAlertTriangle size={18} />}>
+      {tr(
+        `Diese App hat sich selbst angemeldet; Hubra hat sie nicht geprüft. Sie bekommt den Zugang über ${client.redirectHost ?? '?'}.`,
+        `This app registered itself; Hubra has not checked it. It receives the access through ${client.redirectHost ?? '?'}.`,
+      )}
+    </Alert>
+  )
+}
+
+/**
+ * Sign in with Hubra (OpenID Connect, docs/oidc.md): the app only learns
+ * who the person is; it reads nothing in Hubra.
+ */
+function IdentityConsent({
+  data,
+  busy,
+  error,
+  onAnswer,
+}: {
+  data: authApi.OAuthConsent
+  busy: 'allow' | 'deny' | null
+  error: string | null
+  onAnswer: (allow: boolean) => void
+}) {
+  const { tr } = useLang()
+  const { client, club } = data
+  const blocked = club !== null && !club.available
+  const shares: string[] = [tr('eine Kennung, die nur diese App kennt', 'an id only this app knows')]
+  if (data.oidc.includes('profile')) shares.push(tr('deinen Namen', 'your name'))
+  if (data.oidc.includes('email')) shares.push(tr(`deine E-Mail-Adresse (${data.user.email})`, `your email address (${data.user.email})`))
+  if (data.oidc.includes('club') && club)
+    shares.push(
+      tr(
+        `deine Mitgliedschaft in ${club.name}: Status, ob du Admin bist, deine Gruppen`,
+        `your membership of ${club.name}: status, whether you are an admin, your groups`,
+      ),
+    )
+  return (
+    <Stack gap="md">
+      <Group gap="sm" wrap="nowrap">
+        <ThemeIcon size={48} radius="xl" variant="light">
+          <IconLogin2 size={24} />
+        </ThemeIcon>
+        <div style={{ minWidth: 0 }}>
+          <Title order={2} style={{ overflowWrap: 'anywhere' }}>
+            {tr(`Bei ${client.name} anmelden`, `Sign in to ${client.name}`)}
+          </Title>
+          <Text size="sm" c="dimmed">
+            {tr(`mit deinem Hubra-Konto, ${data.user.name}`, `with your Hubra account, ${data.user.name}`)}
+          </Text>
+        </div>
+      </Group>
+      <AppOrigin client={client} clubName={club?.name} />
+      {client.description && <Text size="sm">{client.description}</Text>}
+      <Stack gap={4}>
+        <Text fw={600} size="sm">
+          {tr('Das erfährt die App', 'What the app learns')}
+        </Text>
+        <List size="sm" spacing={2}>
+          {shares.map((s) => (
+            <List.Item key={s}>{s}</List.Item>
+          ))}
+        </List>
+        <Text size="xs" c="dimmed">
+          {tr(
+            'Sie kann in Hubra nichts lesen oder ändern. Du kannst die Anmeldung jederzeit unter Mein Konto › Apps beenden.',
+            'It cannot read or change anything in Hubra. You can end the sign-in any time under My account › Apps.',
+          )}
+        </Text>
+      </Stack>
+      {blocked && (
+        <Alert color="red" variant="light" icon={<IconAlertTriangle size={18} />}>
+          {tr(
+            `Hier melden sich nur Mitglieder von ${club.name} an. Mit diesem Konto bist du dort kein aktives Mitglied.`,
+            `Only members of ${club.name} sign in here. With this account you are not an active member there.`,
+          )}
+        </Alert>
+      )}
+      {error && (
+        <Alert color="red" variant="light">
+          {error}
+        </Alert>
+      )}
+      <Group justify="flex-end">
+        <Button variant="default" loading={busy === 'deny'} disabled={busy !== null} onClick={() => onAnswer(false)}>
+          {tr('Ablehnen', 'Deny')}
+        </Button>
+        <Button loading={busy === 'allow'} disabled={busy !== null || blocked} onClick={() => onAnswer(true)}>
+          {tr('Anmelden', 'Sign in')}
+        </Button>
+      </Group>
+    </Stack>
   )
 }

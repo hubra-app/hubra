@@ -139,6 +139,7 @@ module = Module(
             "platform_oauth_bp",
             "/api/v1/platform/oauth",
         ),
+        Blueprint("hubra.api.oauth.routes", "club_oauth_bp", "/api/v1/app/oauth"),
         Blueprint(
             "hubra.api.backups.routes",
             "platform_backups_bp",

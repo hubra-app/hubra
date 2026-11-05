@@ -33,7 +33,7 @@ from urllib.parse import urlencode, urlsplit, urlunsplit
 from flask import current_app, request
 from sqlalchemy import select
 
-from hubra.core.auth import api_tokens
+from hubra.core.auth import api_tokens, oidc
 from hubra.core.extensions import db
 from hubra.core.models.api_token import ApiToken
 from hubra.core.models.oauth import OAuthClient, OAuthCode
@@ -53,7 +53,7 @@ MAX_DYNAMIC_CLIENTS = 2000
 # Dynamic apps nobody signed in with are removed after this.
 DYNAMIC_UNUSED = timedelta(days=7)
 
-ACCESS_PREFIX = {"member": "hbr_oam", "platform": "hbr_oap"}
+ACCESS_PREFIX = {"member": "hbr_oam", "platform": "hbr_oap", "identity": "hbr_oai"}
 REFRESH_PREFIX = "hbr_ort"
 _REFRESH_RE = re.compile(r"^hbr_ort_([A-Za-z0-9]{12})_([A-Za-z0-9]{43})$")
 _CLIENT_ID_LEN = 24
@@ -249,6 +249,7 @@ def make_client(
     description: str = "",
     client_uri: str | None = None,
     created_by_name: str = "",
+    tenant_id: int | None = None,
 ) -> tuple[OAuthClient, str | None]:
     """A new app; returns it with its secret (shown once) or None."""
     secret = _random(_SECRET_LEN) if confidential else None
@@ -265,6 +266,7 @@ def make_client(
         scopes=sorted(set(scopes)),
         created_by_name=created_by_name[:255],
         created_ip=(request.remote_addr or "")[:45] if request else None,
+        tenant_id=tenant_id,
     )
     db.session.add(client)
     db.session.flush()
@@ -328,13 +330,32 @@ def cleanup_dynamic() -> None:
 
 
 def parse_scope(raw: str | None, client: OAuthClient) -> list[str]:
-    """The requested OAuth scopes: ``read`` (default) and/or ``write``.
-    Unknown values (an app asking for an OpenID or MCP scope) are ignored;
-    asking for more than the app may have is an error."""
+    """The requested API scopes: ``read`` (default) and/or ``write``, or
+    none for an app that only signs people in. Unknown values (an MCP
+    scope) are ignored; asking for more than the app may have is an error."""
+    if not client.resources:
+        if {s for s in (raw or "").split()} & set(SCOPES):
+            raise OAuthError("invalid_scope", "This app only signs people in")
+        return []
     asked = {s for s in (raw or "").split() if s in SCOPES} or {"read"}
     if not asked <= set(client.scopes or ("read",)):
         raise OAuthError("invalid_scope", "This app may not ask for that")
     return sorted(asked)
+
+
+def parse_oidc_scope(raw: str | None, client: OAuthClient) -> list[str]:
+    """The OpenID Connect scopes (docs/oidc.md), only for an app that may
+    sign people in: ``openid`` and with it ``profile``, ``email`` and, for a
+    club's own app, ``club``. Others ignore them."""
+    from hubra.core.auth.oidc import OIDC_SCOPES
+
+    asked = {s for s in (raw or "").split() if s in OIDC_SCOPES}
+    if "openid" not in (client.scopes or []) or "openid" not in asked:
+        return []
+    if client.tenant_id is None:
+        asked.discard("club")
+    order = {name: i for i, name in enumerate(OIDC_SCOPES)}
+    return sorted(asked, key=order.__getitem__)
 
 
 def check_request(args) -> dict:
@@ -366,16 +387,59 @@ def check_request(args) -> dict:
 
     if args.get("response_type") != "code":
         raise bad("unsupported_response_type", "Only response_type=code")
-    challenge = args.get("code_challenge") or ""
-    if args.get("code_challenge_method") != "S256" or not re.fullmatch(
-        r"[A-Za-z0-9_\-]{43,128}", challenge
-    ):
-        raise bad("invalid_request", "PKCE with code_challenge_method=S256 is required")
     state = args.get("state")
     if state is not None and len(state) > 500:
         raise bad("invalid_request", "state: at most 500 characters")
+    oidc_scopes = parse_oidc_scope(args.get("scope"), client)
+    nonce = args.get("nonce") or None
+    if nonce is not None and len(nonce) > 255:
+        raise bad("invalid_request", "nonce: at most 255 characters")
+    prompt = set((args.get("prompt") or "").split())
+    if not prompt <= {"none", "consent", "login", "select_account"} or (
+        "none" in prompt and len(prompt) > 1
+    ):
+        raise bad("invalid_request", "prompt: none, or consent")
+    if not client.resources and not oidc_scopes:
+        raise bad("invalid_scope", "This app signs people in: ask for openid")
+    challenge = args.get("code_challenge") or ""
+    method = args.get("code_challenge_method")
+    # OAuth 2.1 §7.5.1: a confidential app's OpenID sign-in with a nonce may
+    # leave out PKCE (many website plugins do); everyone else uses it.
+    pkce_optional = bool(client.secret_hash) and "openid" in oidc_scopes and nonce
+    if challenge or method or not pkce_optional:
+        if method != "S256" or not re.fullmatch(r"[A-Za-z0-9_\-]{43,128}", challenge):
+            raise bad("invalid_request", "PKCE with code_challenge_method=S256 is required")
 
     resource = args.get("resource")
+    tenant = None
+    if client.tenant_id is not None:
+        from hubra.core.models.tenant import Tenant
+
+        tenant = db.session.get(Tenant, client.tenant_id)
+        if tenant is None or tenant.status != "active":
+            raise bad("invalid_client", "This club's app is not available")
+    if not client.resources:
+        # Sign-in only: the app reads nothing, so it names no resource.
+        if resource:
+            raise bad("invalid_target", "This app only signs people in")
+        try:
+            parse_scope(args.get("scope"), client)
+        except OAuthError as exc:
+            raise bad(exc.error, exc.description) from None
+        return {
+            "client": client,
+            "redirect_uri": redirect_uri,
+            "state": state,
+            "code_challenge": challenge,
+            "resource": "",
+            "resource_kind": None,
+            "scopes": [],
+            "oidc": oidc_scopes,
+            "nonce": nonce,
+            "prompt": sorted(prompt),
+            "mode": "identity",
+            "tenant": tenant,
+        }
     if resource:
         kind = resource_kind(resource)
         if kind is None:
@@ -402,6 +466,11 @@ def check_request(args) -> dict:
         "resource": resource_for(kind),
         "resource_kind": kind,
         "scopes": scopes,
+        "oidc": oidc_scopes,
+        "nonce": nonce,
+        "prompt": sorted(prompt),
+        "mode": "access",
+        "tenant": tenant,
     }
 
 
@@ -435,6 +504,7 @@ def make_code(
     scopes: list[str],
     days: int,
     created_by_name: str,
+    auth_time: datetime | None = None,
 ) -> str:
     code = _random(_SECRET_LEN)
     db.session.add(
@@ -446,16 +516,27 @@ def make_code(
             tenant_id=tenant.id if tenant is not None else None,
             member_id=member_id,
             scopes=sorted(set(scopes)),
-            oauth_scope=" ".join(req["scopes"]),
+            oauth_scope=" ".join([*req["scopes"], *req.get("oidc", [])]),
             resource=req["resource"],
             redirect_uri=req["redirect_uri"],
             code_challenge=req["code_challenge"],
+            nonce=req.get("nonce"),
+            auth_time=auth_time,
             days=days,
             created_by_name=created_by_name[:255],
             expires_at=_now() + CODE_TTL,
         )
     )
     return code
+
+
+def _club_of(client: OAuthClient):
+    """The club a club's own app belongs to, or None."""
+    if client.tenant_id is None:
+        return None
+    from hubra.core.models.tenant import Tenant
+
+    return db.session.get(Tenant, client.tenant_id)
 
 
 # ── Tokens ──────────────────────────────────────────────────────────────────
@@ -510,7 +591,11 @@ def exchange_code(client: OAuthClient, form) -> dict:
         raise OAuthError("invalid_grant", "This code has expired")
     if form.get("redirect_uri") and form.get("redirect_uri") != row.redirect_uri:
         raise OAuthError("invalid_grant", "redirect_uri doesn't match")
-    if not _pkce_ok(form.get("code_verifier"), row.code_challenge):
+    if row.code_challenge:
+        if not _pkce_ok(form.get("code_verifier"), row.code_challenge):
+            raise OAuthError("invalid_grant", "code_verifier doesn't match")
+    elif not client.secret_hash:
+        # Only a confidential app (it just proved its secret) skips PKCE.
         raise OAuthError("invalid_grant", "code_verifier doesn't match")
     resource = form.get("resource")
     if resource and _canonical(resource) != _canonical(row.resource):
@@ -522,6 +607,11 @@ def exchange_code(client: OAuthClient, form) -> dict:
     user = db.session.get(User, row.user_id)
     if user is None or user.is_disabled:
         raise OAuthError("invalid_grant", "This account can't sign in")
+    tenant = _club_of(client)
+    if client.tenant_id is not None and (
+        tenant is None or oidc.club_member(tenant, user.id) is None
+    ):
+        raise OAuthError("invalid_grant", "Not a member of this club")
 
     # One sign-in per app, person and club: signing in again replaces it.
     for old in db.session.scalars(
@@ -552,13 +642,24 @@ def exchange_code(client: OAuthClient, form) -> dict:
         use_count=0,
         failed_attempts=0,
         oauth_client_id=client.id,
-        resource=row.resource,
+        resource=row.resource or None,
+        oauth_scope=row.oauth_scope,
     )
     db.session.add(token)
     db.session.flush()
     row.token_id = token.id
     body = _issue(token)
     body["scope"] = row.oauth_scope
+    if "openid" in row.oauth_scope.split():
+        body["id_token"] = oidc.id_token(
+            client=client,
+            user=user,
+            scopes=row.oauth_scope.split(),
+            access_token=body["access_token"],
+            nonce=row.nonce,
+            auth_time=row.auth_time,
+            tenant=tenant,
+        )
     client.last_used_at = now
     _audit(token, "oauth.grant")
     db.session.commit()
@@ -600,9 +701,27 @@ def refresh(client: OAuthClient, form) -> dict:
         api_tokens.revoke(row, "Hubra", reason="account_reset")
         db.session.commit()
         raise OAuthError("invalid_grant", "This sign-in was ended")
+    tenant = _club_of(client)
+    if client.tenant_id is not None and (
+        tenant is None or oidc.club_member(tenant, user.id) is None
+    ):
+        api_tokens.revoke(row, "Hubra", reason="left_club")
+        db.session.commit()
+        raise OAuthError("invalid_grant", "This sign-in was ended")
     body = _issue(row)
-    writes = row.kind != "platform" and any(not _is_read(k) for k in row.scopes or [])
-    body["scope"] = "read write" if writes else "read"
+    if row.oauth_scope is not None:
+        body["scope"] = row.oauth_scope
+    else:
+        writes = row.kind != "platform" and any(not _is_read(k) for k in row.scopes or [])
+        body["scope"] = "read write" if writes else "read"
+    if "openid" in (row.oauth_scope or "").split():
+        body["id_token"] = oidc.id_token(
+            client=client,
+            user=user,
+            scopes=row.oauth_scope.split(),
+            access_token=body["access_token"],
+            tenant=tenant,
+        )
     row.last_used_at = now
     client.last_used_at = now
     db.session.commit()
@@ -674,12 +793,14 @@ def server_metadata() -> dict:
         "code_challenge_methods_supported": ["S256"],
         "token_endpoint_auth_methods_supported": list(AUTH_METHODS),
         "revocation_endpoint_auth_methods_supported": list(AUTH_METHODS),
-        "scopes_supported": list(SCOPES),
+        "scopes_supported": [*SCOPES, "openid", "profile", "email", "club"],
         "authorization_response_iss_parameter_supported": True,
         "service_documentation": "https://github.com/hubra-app/hubra/blob/main/docs/oauth.md",
     }
     if dynamic_allowed() and mcp_resource():
         meta["registration_endpoint"] = f"{base}/api/v1/global/oauth/register"
+    meta["userinfo_endpoint"] = f"{base}/api/v1/global/oauth/userinfo"
+    meta["jwks_uri"] = f"{base}/api/v1/global/oauth/jwks"
     return meta
 
 

@@ -50,6 +50,8 @@ Either way the other one answers `401 API_TOKEN_AUDIENCE`.
 
 ## Apps
 
+* **Club** apps: a club admin registers the club website or forum to sign
+  members in (sign-in only, docs/oidc.md).
 * **Registered** apps: platform admins add them in manage › Zugriff &
   Sicherheit › API-Tokens › Apps (OAuth): name, return addresses (exact; any
   port on `http://localhost`/`127.0.0.1`), the API and/or the connector,
@@ -122,8 +124,11 @@ Every sign-in and its end is a platform audit entry (`oauth.grant`,
 connector. Nothing else: the metadata path is served by the club backend,
 which the API host's `/` already reaches.
 
+## Sign in with Hubra
+
+OpenID Connect (ID tokens, userinfo, keys) and the sign-in apps clubs
+register for their own websites are in docs/oidc.md.
+
 ## Not built yet
 
-"Sign in with Hubra" for club websites and forums (OpenID Connect: ID
-tokens, `userinfo`, keys), client ID metadata documents, apps a club
-registers for itself, a mail when an app is connected.
+Client ID metadata documents, a mail when an app is connected.
