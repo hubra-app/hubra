@@ -671,6 +671,37 @@ def test_a_plugin_cannot_shadow_another_package(tmp_path):
             sys.path.remove(str(spec.path))
 
 
+def test_a_blueprint_that_fails_to_import_skips_only_its_plugin(tmp_path):
+    """A plugin route importing a module Hubra no longer has (guides < 1.2
+    and hubra.api.inventory) fails while loading, which skips the plugin,
+    instead of in register_blueprints, which stopped every worker."""
+    import sys
+
+    import yaml
+
+    src = make_plugin(tmp_path / "src")
+    pkg = src / "hubra_brokenbp"
+    (src / "hubra_hello").rename(pkg)
+    (pkg / "__init__.py").write_text(
+        "from hubra.core.modules import Blueprint, Module\n"
+        'module = Module(code="hello", name="Hello", depends_on=("members",),\n'
+        '    blueprints=(Blueprint("hubra_brokenbp.routes", "bp", "/api/v1/hello"),))\n'
+    )
+    (pkg / "routes.py").write_text("from hubra.api.no_such_area import x  # noqa\n")
+    manifest = yaml.safe_load((src / "plugin.yaml").read_text())
+    manifest["package"] = "hubra_brokenbp"
+    (src / "plugin.yaml").write_text(yaml.safe_dump(manifest))
+    spec = scan(tmp_path / "src", bundled=False)[0]
+    try:
+        with pytest.raises(ModuleNotFoundError, match="hubra.api.no_such_area"):
+            loader._import(spec)
+    finally:
+        if str(spec.path) in sys.path:
+            sys.path.remove(str(spec.path))
+        for name in [n for n in sys.modules if n.startswith("hubra_brokenbp")]:
+            del sys.modules[name]
+
+
 # ── Key purposes: one key for the index, others for the plugins ──────────────
 
 

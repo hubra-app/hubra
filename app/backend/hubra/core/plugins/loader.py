@@ -299,6 +299,12 @@ def _import(spec: Spec) -> list:
     except ModuleNotFoundError as exc:
         if exc.name != f"{pkg}.models":
             raise
+    # Its blueprints too, here where a failure only skips this plugin: in
+    # register_blueprints an import error (say of a module Hubra no longer
+    # has) would stop every worker from booting.
+    for m in modules:
+        for bp in m.blueprints:
+            getattr(importlib.import_module(bp.import_path), bp.attr)
     return [dataclasses.replace(m, plugin=spec.id) for m in modules]
 
 
