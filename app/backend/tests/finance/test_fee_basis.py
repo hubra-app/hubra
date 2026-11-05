@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from hubra.api.finance import fee_basis as fb
-from hubra.api.finance.fee_basis import fee_basis, yearly_expenses
+from hubra.api.finance.fee_basis import fee_basis
 from hubra.core.models.finance import (
     RecurringTransaction,
     Transaction,
@@ -83,39 +83,6 @@ def test_manual_keeps_the_old_setting(app, db, books):
         assert fee_basis()["total"] == 8000  # extra is for the other sources
 
 
-def test_recurring_expenses_per_year(app, db, books):
-    with _config(fee_basis_source="recurring", fee_basis_extra=400):
-        basis = fee_basis(today=date(2026, 10, 31))
-    assert basis["total"] == 12000 + 600 + 400
-    assert [(line["name"], line["amount"]) for line in basis["lines"]] == [
-        ("Miete", 12000),
-        ("Strom", 600),
-    ]
-    rent = basis["lines"][0]
-    assert rent["share"] == pytest.approx(12000 / 13000)
-    assert [item["description"] for item in rent["items"]] == ["Miete"]
-
-
-def test_last_years_confirmed_expenses(app, db, books):
-    with _config(fee_basis_source="last_year"):
-        basis = fee_basis(today=date(2026, 10, 31))
-    assert basis["period"] == {"from": "2025-01-01", "to": "2025-12-31"}
-    assert basis["total"] == 6400
-    assert {line["name"]: line["amount"] for line in basis["lines"]} == {
-        "Miete": 6000,
-        "Strom": 400,
-    }
-
-
-def test_last_year_follows_the_billing_season(app, db, books):
-    season = {"fee_anchor_month": 7, "fee_anchor_day": 1}
-    with _config(fee_basis_source="last_year", **season):
-        basis = fee_basis(today=date(2026, 10, 31))
-    # This season runs from 1 July 2026, so last season is 2025/26.
-    assert basis["period"] == {"from": "2025-07-01", "to": "2026-06-30"}
-    assert basis["total"] == 1000
-
-
 def test_budget_needs_the_plugin(app, db, books, monkeypatch):
     monkeypatch.setattr(fb, "_PLUGIN_SOURCES", {})
     with _config(fee_basis_source="budget", fee_basis_extra=100):
@@ -139,53 +106,6 @@ def test_budget_from_a_registered_plugin(app, db, books, monkeypatch):
     assert basis["total"] == 2500
 
 
-def test_pricing_uses_the_chosen_source(app, db, books):
-    from hubra.core.pricing import _get_yearly_expenses
-
-    with _config(fee_basis_source="recurring"):
-        assert _get_yearly_expenses() == Decimal("12600")
-
-
-def test_a_broken_source_falls_back_to_the_old_setting(app, db, books):
-    with (
-        _config(fee_basis_source="recurring"),
-        patch.object(fb, "_recurring_lines", side_effect=RuntimeError("boom")),
-    ):
-        assert yearly_expenses() == Decimal("7000")
-
-
-@pytest.fixture
-def share_tier(db):
-    from hubra.core.models.member import MembershipTier
-
-    tier = MembershipTier(
-        name="Anteil",
-        billing_cycle="yearly",
-        price_type="percentage",
-        percentage_value=Decimal("1"),
-    )
-    db.session.add(tier)
-    db.session.commit()
-    return tier
-
-
-def test_route_previews_a_choice_with_tier_effects(
-    client, auth_headers, db, books, share_tier
-):
-    with _config():
-        resp = client.get(f"{URL}?source=recurring&extra=400", headers=auth_headers)
-    assert resp.status_code == 200, resp.get_json()
-    body = resp.get_json()
-    assert body["source"] == "recurring"
-    assert body["total"] == 13000
-    # and "budget" when the budgets plugin is on
-    assert body["sources"][:3] == ["manual", "recurring", "last_year"]
-    (tier,) = body["tiers"]
-    assert tier["name"] == "Anteil"
-    assert tier["yearly_now"] == 70  # 1 % of the saved 7000
-    assert tier["yearly"] == 130  # 1 % of the previewed 13000
-
-
 def test_a_registered_source_with_its_own_period(app, db, books, monkeypatch):
     monkeypatch.setattr(fb, "_BASIS_SOURCES", dict(fb._BASIS_SOURCES))
     lines = [{"category_id": None, "name": "Halle", "amount": 1200, "items": []}]
@@ -194,14 +114,14 @@ def test_a_registered_source_with_its_own_period(app, db, books, monkeypatch):
     )
 
     def enabled(code, **_):
-        return code in ("finance", "finance.books")
+        return code == "finance.books"
 
     with (
         _config(fee_basis_source="ledger"),
         patch("hubra.core.modules.is_enabled", side_effect=enabled),
     ):
         basis = fee_basis(today=date(2026, 10, 31))
-    assert basis["sources"][:3] == ["manual", "recurring", "last_year"]
+    assert basis["sources"][0] == "manual"
     assert "ledger" in basis["sources"]
     assert basis["period"] == {"year": 2026}
     assert basis["total"] == 1200
@@ -209,7 +129,7 @@ def test_a_registered_source_with_its_own_period(app, db, books, monkeypatch):
     # With the module that provides it switched off, the sum is only the extra.
     with (
         _config(fee_basis_source="ledger", fee_basis_extra=50),
-        patch("hubra.core.modules.is_enabled", side_effect=lambda code, **_: code == "finance"),
+        patch("hubra.core.modules.is_enabled", return_value=False),
     ):
         basis = fee_basis(today=date(2026, 10, 31))
     assert "ledger" not in basis["sources"]

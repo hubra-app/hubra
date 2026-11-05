@@ -45,16 +45,11 @@ CORE_TO_API_LEFT = {
     "hubra.core.schemas.member": {"hubra.api.tiers.plans"},
     "hubra.core.schemas.poll": {"hubra.api.polls.services"},
     "hubra.core.seeds": {
-        "hubra.api.finance.services",
         "hubra.api.functions.services",
         "hubra.api.groups.services",
     },
     "hubra.core.services.data_requests": {"hubra.api.members.services"},
-    "hubra.core.tasks.finance_tasks": {
-        "hubra.api.finance.recurring",
-        "hubra.api.finance.services",
-        "hubra.api.finance.statement",
-    },
+    "hubra.core.tasks.finance_tasks": {"hubra.api.finance.services"},
     "hubra.core.tasks.mail_sync": {"hubra.api.mail.services"},
     "hubra.core.tasks.reminder_tasks": {
         "hubra.api.events.services",

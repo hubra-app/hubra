@@ -268,7 +268,7 @@ def run_seeds(db):
 
     # ── 2. TransactionCategories ───────────────────────────────────────────────
 
-    from hubra.api.finance.services import TransactionCategoriesService
+    from hubra.core.models.finance import TransactionCategory
 
     tx_cat_defs = [
         {"name": "Membership", "color": "#2596be"},
@@ -279,13 +279,12 @@ def run_seeds(db):
         {"name": "Other", "color": "#95a5a6"},
     ]
     for tcd in tx_cat_defs:
-        from hubra.core.models.finance import TransactionCategory
-
         existing = session.scalar(
             select(TransactionCategory).where(TransactionCategory.name == tcd["name"])
         )
         if existing is None:
-            TransactionCategoriesService.create(tcd)
+            session.add(TransactionCategory(name=tcd["name"], color=tcd["color"]))
+            session.flush()
 
     # ── 3. Vorstand group ──────────────────────────────────────────────────────
 

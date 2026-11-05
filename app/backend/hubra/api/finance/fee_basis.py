@@ -4,8 +4,9 @@ members, and how that sum comes together.
 The club picks a source in Finanzen › Beitragsgrundlage:
 
 - ``recurring``: the active recurring expenses marked as counting for fees,
-  each times its payments per year;
-- ``last_year``: the confirmed expenses of the last full billing year;
+  each times its payments per year (from the Finances plugin);
+- ``last_year``: the confirmed expenses of the last full billing year (from
+  the Finances plugin);
 - ``budget``: the expense lines of this year's approved budget, from a
   plugin that registers the source (the budgets plugin);
 - ``manual``: one typed-in number (the old ``Club.Finance.YearlyExpenses``).
@@ -20,7 +21,7 @@ import logging
 from collections.abc import Callable
 from contextlib import contextmanager
 from contextvars import ContextVar
-from datetime import date, timedelta
+from datetime import date
 from decimal import Decimal, InvalidOperation
 
 from sqlalchemy import select
@@ -41,8 +42,8 @@ _preview_total: ContextVar[Decimal | None] = ContextVar(
 _PLUGIN_SOURCES: dict[str, tuple[str, Callable[[int], list[dict] | None]]] = {}
 
 # Sources that work out their own period: code -> (module code that must be
-# on, function(today) -> (lines, period)). ``recurring`` and ``last_year``
-# register here, so whoever keeps the books can provide them.
+# on, function(today) -> (lines, period)). The Finances plugin registers
+# ``recurring`` and ``last_year`` here.
 BasisSource = Callable[[date], tuple[list[dict], dict | None]]
 _BASIS_SOURCES: dict[str, tuple[str, BasisSource]] = {}
 
@@ -119,74 +120,6 @@ def _lines_by_category(rows) -> list[dict]:
         if item is not None:
             line["items"].append(item)
     return sorted(lines.values(), key=lambda line: -line["amount"])
-
-
-def _recurring_lines() -> list[dict]:
-    from hubra.api.finance.recurring import yearly_amount
-    from hubra.core.models.finance import RecurringTransaction
-
-    rules = db.session.scalars(
-        select(RecurringTransaction)
-        .where(RecurringTransaction.type == "expense")
-        .where(RecurringTransaction.active.is_(True))
-        .where(RecurringTransaction.counts_for_fees.is_(True))
-        .where(RecurringTransaction.next_date.isnot(None))
-    ).all()
-    rows = []
-    for rule in rules:
-        amount = yearly_amount(rule)
-        rows.append(
-            (
-                rule.category,
-                {
-                    "id": rule.id,
-                    "description": rule.description,
-                    "interval": rule.interval,
-                    "amount": float(rule.amount),
-                    "yearly": float(amount),
-                },
-                amount,
-            )
-        )
-    return _lines_by_category(rows)
-
-
-def _last_year_lines(today: date) -> tuple[list[dict], date, date]:
-    from sqlalchemy import func
-
-    from hubra.core.models.finance import Transaction, TransactionCategory
-
-    this_start, _ = _billing_year(today)
-    start, end = _billing_year(this_start - timedelta(days=1))
-    rows = db.session.execute(
-        select(Transaction.category_id, func.sum(Transaction.amount))
-        .where(Transaction.status == "Completed")
-        .where(Transaction.amount < 0)
-        .where(Transaction.date >= start)
-        .where(Transaction.date <= end)
-        .group_by(Transaction.category_id)
-    ).all()
-    categories = {
-        c.id: c for c in db.session.scalars(select(TransactionCategory)).all()
-    }
-    lines = _lines_by_category(
-        (categories.get(category_id), None, abs(Decimal(str(total))))
-        for category_id, total in rows
-    )
-    return lines, start, end
-
-
-def _recurring_source(today: date) -> tuple[list[dict], dict | None]:
-    return _recurring_lines(), None
-
-
-def _last_year_source(today: date) -> tuple[list[dict], dict | None]:
-    lines, start, end = _last_year_lines(today)
-    return lines, {"from": start.isoformat(), "to": end.isoformat()}
-
-
-register_basis_source("recurring", "finance", _recurring_source)
-register_basis_source("last_year", "finance", _last_year_source)
 
 
 def available_sources() -> list[str]:

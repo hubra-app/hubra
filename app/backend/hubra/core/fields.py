@@ -69,17 +69,6 @@ FIELD_REGISTRY: dict[tuple[str, str], dict[str, str]] = {
         "due": "Due date",
         "notes": "Notes",
     },
-    # ── Finance: Transactions ─────────────────────────────────────────────
-    ("finance", "transactions"): {
-        "category_id": "Category",
-        "payee_name": "Payee",
-        "notes": "Notes",
-    },
-    # ── Finance: Transaction Categories ───────────────────────────────────
-    ("finance", "categories"): {
-        "name": "Category name",
-        "color": "Color",
-    },
     # ── Events ────────────────────────────────────────────────────────────
     ("events", "events"): {
         "title": "Title",

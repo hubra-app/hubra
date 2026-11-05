@@ -3,15 +3,10 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useT } from '@/locales/i18n'
 import { PageHead, SubTabs, Tabs } from '@/components/ui'
 import { useAuth } from '@/context/AppContext'
-import { FinanceOverviewTab } from '@/screens/private/finances/FinanceOverviewTab'
-import { TransactionsTab } from '@/screens/private/finances/TransactionsTab'
 import { InvoicesTab } from '@/screens/private/finances/InvoicesTab'
-import { TransactionCategoriesTab } from '@/screens/private/finances/TransactionCategoriesTab'
 import { ExternalPartiesTab } from '@/screens/private/finances/ExternalPartiesTab'
-import { RecurringTab } from '@/screens/private/finances/RecurringTab'
 import { FeeBasisTab } from '@/screens/private/finances/FeeBasisTab'
 import { FinanceSettingsTab } from '@/screens/private/finances/FinanceSettingsTab'
-import { AnnualAccountsTab } from '@/screens/private/finances/AnnualAccountsTab'
 import { BankSettingsCard } from '@/screens/private/settings/BankSettingsCard'
 import { PluginBoundary, usePluginTabs } from '@/plugins'
 
@@ -26,11 +21,14 @@ const PLUGIN_GROUPS: Record<string, string> = { bank: 'bookings', budgets: 'plan
 const financePath = (id: string) => `/app/finance${id === 'overview' ? '' : '/' + id}`
 
 /**
- * Finanzen in five page tabs: the overview, the invoices, the bookings,
- * planning (budgets, fee basis) and the set-up (billing rules, the lists the
- * bookings draw on, the bank account), plus the annual accounts for those who
- * may read them. Each part keeps its own address, so old links still open
- * the same page.
+ * Finanzen in up to six page tabs: the overview, the invoices, the bookings,
+ * planning (budgets, fee basis), the annual accounts and the set-up (billing
+ * rules, the lists the bookings draw on, the bank account). Each part keeps
+ * its own address, so old links still open the same page.
+ *
+ * Hubra itself brings the invoices, the fee basis and the set-up; the books
+ * (overview, transactions, recurring bookings, categories, annual accounts)
+ * are the Finances plugin's tabs, in the groups they name.
  */
 export function FinanceTabScreen() {
   const { t } = useT()
@@ -41,9 +39,8 @@ export function FinanceTabScreen() {
 
   // The path may start with the club's slug: /<club>/app/finance/<tab>.
   const path = (location.pathname.split('/app/finance')[1] ?? '').replace('/', '')
-  const active = path === '' ? 'overview' : path
 
-  const known = new Set(['bookings', 'planning', 'setup'])
+  const known = new Set(['overview', 'bookings', 'planning', 'annual', 'setup'])
   const groupOf = (pt: (typeof pluginTabs)[number]) => pt.group ?? PLUGIN_GROUPS[pt.id]
   const pluginPart = (pt: (typeof pluginTabs)[number]): Part => ({
     id: pt.id,
@@ -59,18 +56,7 @@ export function FinanceTabScreen() {
     pluginTabs.filter((pt) => groupOf(pt) === group).map(pluginPart)
 
   const groups: Group[] = [
-    {
-      id: 'overview',
-      label: t('shell.nav.overview'),
-      parts: [
-        {
-          id: 'overview',
-          label: t('shell.nav.overview'),
-          allowed: true,
-          render: () => <FinanceOverviewTab />,
-        },
-      ],
-    },
+    { id: 'overview', label: t('shell.nav.overview'), parts: pluginParts('overview') },
     {
       id: 'invoices',
       label: t('shell.nav.invoices'),
@@ -86,21 +72,7 @@ export function FinanceTabScreen() {
     {
       id: 'bookings',
       label: t('finance.groups.bookings', 'Buchungen'),
-      parts: [
-        {
-          id: 'transactions',
-          label: t('shell.nav.incomeExpenses'),
-          allowed: hasPermission('finance.transactions.read'),
-          render: () => <TransactionsTab />,
-        },
-        {
-          id: 'recurring',
-          label: t('shell.nav.recurring', 'Wiederkehrend'),
-          allowed: hasPermission('finance.transactions.read'),
-          render: () => <RecurringTab />,
-        },
-        ...pluginParts('bookings'),
-      ],
+      parts: pluginParts('bookings'),
     },
     {
       id: 'planning',
@@ -123,14 +95,7 @@ export function FinanceTabScreen() {
     {
       id: 'annual',
       label: t('shell.nav.annualAccounts', 'Jahresrechnung'),
-      parts: [
-        {
-          id: 'annual',
-          label: t('shell.nav.annualAccounts', 'Jahresrechnung'),
-          allowed: hasPermission('finance.accounts.read'),
-          render: () => <AnnualAccountsTab />,
-        },
-      ],
+      parts: pluginParts('annual'),
     },
     {
       id: 'setup',
@@ -142,12 +107,6 @@ export function FinanceTabScreen() {
           // The billing rules are the finance module's settings.
           allowed: hasPermission('modules.modules.write'),
           render: () => <FinanceSettingsTab />,
-        },
-        {
-          id: 'categories',
-          label: t('shell.nav.txCategories'),
-          allowed: hasPermission('finance.transaction_categories.read'),
-          render: () => <TransactionCategoriesTab />,
         },
         {
           id: 'external-parties',
@@ -168,6 +127,8 @@ export function FinanceTabScreen() {
     .map((g) => ({ ...g, parts: g.parts.filter((p) => p.allowed) }))
     .filter((g) => g.parts.length > 0)
 
+  // /app/finance opens the overview, or the first page there is without it.
+  const active = path === '' ? (groups[0]?.parts[0]?.id ?? 'invoices') : path
   const group = groups.find((g) => g.parts.some((p) => p.id === active))
   const part = group?.parts.find((p) => p.id === active)
 

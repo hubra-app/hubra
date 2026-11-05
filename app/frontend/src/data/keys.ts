@@ -140,7 +140,6 @@ export const qk = {
   search: {
     members: ['search-members'] as const,
     groups: ['search-groups'] as const,
-    transactions: ['search-transactions'] as const,
     plugin: ['search-plugin'] as const,
     audit: ['search-audit'] as const,
   },

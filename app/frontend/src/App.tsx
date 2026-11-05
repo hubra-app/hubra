@@ -51,11 +51,6 @@ const TierDetailScreen = lazy(() =>
     default: m.TierDetailScreen,
   })),
 )
-const TransactionDetailScreen = lazy(() =>
-  import('./screens/private/finances/TransactionDetail').then((m) => ({
-    default: m.TransactionDetailScreen,
-  })),
-)
 const AuditEntryDetailScreen = lazy(() =>
   import('./screens/private/system/AuditEntryDetail').then((m) => ({
     default: m.AuditEntryDetailScreen,
@@ -354,16 +349,6 @@ function PrivateRoutes() {
                   element={
                     <RequireModule code="finance">
                       <FinanceTabScreen />
-                    </RequireModule>
-                  }
-                />
-                <Route
-                  path="finance/transactions/:id"
-                  element={
-                    <RequireModule code="finance">
-                      <RequirePermission permKey="finance.transactions.read">
-                        <TransactionDetailScreen />
-                      </RequirePermission>
                     </RequireModule>
                   }
                 />

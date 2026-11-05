@@ -48,9 +48,8 @@ test('a plugin tab that throws leaves the rest of the screen working', async ({ 
   await page.goto(appUrl('finance/e2e-broken'))
   await expect(page.getByRole('heading', { level: 1, name: 'Finanzen' })).toBeVisible()
   await expect(page.getByRole('alert')).toBeVisible()
-  await page.getByRole('tab', { name: /Übersicht/ }).click().catch(async () => {
-    await page.getByText('Übersicht').first().click()
-  })
+  // Without the Finances plugin the first page tab is Rechnungen.
+  await page.getByRole('tab', { name: 'Rechnungen', exact: true }).click()
   await expect(page.getByRole('alert')).toHaveCount(0)
 })
 

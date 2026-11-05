@@ -6,8 +6,8 @@ from hubra.core.models.finance import Invoice, Transaction, TransactionCategory
 
 
 def test_net_month_counts_money_that_moved(client, auth_headers, db, seeded_db):
-    """Pending income (an unpaid invoice) is not this month's money yet; the
-    finance overview agrees."""
+    """Pending income (an unpaid invoice) is not this month's money yet (the
+    Finances plugin's overview agrees, tested there)."""
     category = TransactionCategory(name="Beiträge", color="#123456")
     db.session.add(category)
     db.session.flush()
@@ -41,9 +41,7 @@ def test_net_month_counts_money_that_moved(client, auth_headers, db, seeded_db):
     db.session.commit()
 
     stats = client.get("/api/v1/dashboard/summary", headers=auth_headers).get_json()["stats"]
-    overview = client.get("/api/v1/finance/overview", headers=auth_headers).get_json()
 
     assert stats["netMonth"] == 70
-    assert stats["netMonth"] == overview["netMTD"]
     assert stats["openInvoices"] == 1
     assert stats["openInvoicesAmount"] == 500
