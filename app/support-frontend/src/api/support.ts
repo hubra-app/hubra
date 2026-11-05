@@ -78,10 +78,6 @@ export function getProfile(signal?: AbortSignal) {
   return apiFetch<Profile>('/global/account/profile', { signal })
 }
 
-export function sendCase(body: NewCase) {
-  return apiFetch<SupportCase>('/global/support/cases', { method: 'POST', body: JSON.stringify(body) })
-}
-
 export function myCases() {
   return apiFetch<SupportCase[]>('/global/support/cases')
 }

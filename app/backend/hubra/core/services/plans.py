@@ -134,7 +134,7 @@ def keys() -> list[str]:
 def limits(key: str | None) -> dict[str, int | None]:
     plan = get(key)
     if plan is None:
-        return {k: None for k in LIMIT_KINDS}
+        return dict.fromkeys(LIMIT_KINDS)
     return {k: getattr(plan, f"limit_{k}") for k in LIMIT_KINDS}
 
 
@@ -443,16 +443,6 @@ def set_addon(code: str, body: dict) -> None:
         row.price_unit = "flat"
     db.session.add(row)
     db.session.flush()
-
-
-def addon_price(code: str) -> str | None:
-    row = db.session.get(PlatformAddon, code)
-    return _chf(row.price_month_chf) if row else None
-
-
-def addon_unit(code: str) -> str:
-    row = db.session.get(PlatformAddon, code)
-    return (row.price_unit if row else None) or "flat"
 
 
 # ── Public ───────────────────────────────────────────────────────────────────
