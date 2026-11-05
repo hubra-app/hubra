@@ -10,6 +10,7 @@ import { ExternalPartiesTab } from '@/screens/private/finances/ExternalPartiesTa
 import { RecurringTab } from '@/screens/private/finances/RecurringTab'
 import { FeeBasisTab } from '@/screens/private/finances/FeeBasisTab'
 import { FinanceSettingsTab } from '@/screens/private/finances/FinanceSettingsTab'
+import { AnnualAccountsTab } from '@/screens/private/finances/AnnualAccountsTab'
 import { PluginBoundary, usePluginTabs } from '@/plugins'
 
 export function FinanceTabScreen() {
@@ -33,6 +34,7 @@ export function FinanceTabScreen() {
     categories: hasPermission('finance.transaction_categories.read'),
     'external-parties': hasPermission('finance.external_parties.read'),
     'fee-basis': hasPermission('finance.overview.read'),
+    annual: hasPermission('finance.accounts.read'),
     // The billing rules are the finance module's settings.
     settings: hasPermission('modules.modules.write'),
   }
@@ -47,6 +49,7 @@ export function FinanceTabScreen() {
       id: 'external-parties',
       label: t('shell.nav.externalParties', 'Extern'),
     },
+    { id: 'annual', label: t('shell.nav.annualAccounts', 'Jahresrechnung') },
     { id: 'fee-basis', label: t('shell.nav.feeBasis', 'Beitragsgrundlage') },
     { id: 'settings', label: t('finance.settings.tab', 'Einstellungen') },
   ].filter((tb) => can[tb.id] ?? true)
@@ -66,6 +69,7 @@ export function FinanceTabScreen() {
       {tab === 'invoices' && <InvoicesTab />}
       {tab === 'categories' && <TransactionCategoriesTab />}
       {tab === 'external-parties' && <ExternalPartiesTab />}
+      {tab === 'annual' && can.annual && <AnnualAccountsTab />}
       {tab === 'fee-basis' && can['fee-basis'] && <FeeBasisTab />}
       {tab === 'settings' && can.settings && <FinanceSettingsTab />}
       {pluginTab && (

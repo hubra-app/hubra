@@ -8,7 +8,9 @@ from hubra.core.auth.helpers import get_current_member
 
 from hubra.core.permissions import member_is_admin, permission_required, require_member
 from marshmallow import ValidationError
-from hubra.core.errors import api_error
+from hubra.core.errors import api_error, raise_error
+from hubra.core.models.finance import TransactionCategory
+from hubra.core.utils import log_audit
 from hubra.core.extensions import db
 from hubra.core.schemas.finance import (
     InvoiceCreateSchema,
@@ -569,3 +571,184 @@ def send_statement_now():
     result = send_statement(month_of(month if isinstance(month, str) else None), email)
     db.session.commit()
     return jsonify(result), 202
+
+
+# ── Annual accounts (Jahresrechnung) ──────────────────────────────────────────
+
+
+def _year_arg(year: int) -> int:
+    if not 1900 <= year <= 2999:
+        raise_error(400, "VALIDATION_ERROR", "Unknown year")
+    return year
+
+
+@finance_bp.get("/accounts")
+@permission_required(
+    "accounts", "read", "View the chart of accounts and annual accounts"
+)
+def list_accounts():
+    """The chart of accounts and which account each category counts on."""
+    from hubra.api.finance import annual
+
+    data = annual.list_chart()
+    db.session.commit()  # the chart is seeded on first read
+    return jsonify(data)
+
+
+@finance_bp.post("/accounts")
+@permission_required("accounts", "update", "Change the chart of accounts")
+def create_account():
+    from hubra.api.finance import annual
+
+    account = annual.create_account(request.get_json(silent=True) or {})
+    log_audit(
+        get_current_member().id,
+        "create_account",
+        "Account",
+        account.id,
+        f"{account.number} {account.name}",
+    )
+    db.session.commit()
+    return jsonify(annual.account_dict(account)), 201
+
+
+@finance_bp.patch("/accounts/<int:id>")
+@permission_required("accounts", "update", "Change the chart of accounts")
+def update_account(id: int):
+    from hubra.api.finance import annual
+    from hubra.core.models.finance import Account
+
+    account = db.session.get(Account, id) or raise_error(
+        404, "NOT_FOUND", "Account not found"
+    )
+    annual.update_account(account, request.get_json(silent=True) or {})
+    db.session.commit()
+    return jsonify(annual.account_dict(account))
+
+
+@finance_bp.delete("/accounts/<int:id>")
+@permission_required("accounts", "update", "Change the chart of accounts")
+def delete_account(id: int):
+    from hubra.api.finance import annual
+    from hubra.core.models.finance import Account
+
+    account = db.session.get(Account, id) or raise_error(
+        404, "NOT_FOUND", "Account not found"
+    )
+    label = f"{account.number} {account.name}"
+    annual.delete_account(account)
+    log_audit(get_current_member().id, "delete_account", "Account", id, label)
+    db.session.commit()
+    return "", 204
+
+
+@finance_bp.put("/accounts/categories/<int:id>")
+@permission_required("accounts", "update", "Change the chart of accounts")
+def map_category_account(id: int):
+    """``{"accountId": int | null}``: the account a category counts on."""
+    from hubra.api.finance import annual
+
+    category = db.session.get(TransactionCategory, id) or raise_error(
+        404, "NOT_FOUND", "Category not found"
+    )
+    body = request.get_json(silent=True) or {}
+    account_id = body.get("accountId")
+    if account_id is not None and (
+        not isinstance(account_id, int) or isinstance(account_id, bool)
+    ):
+        raise_error(400, "VALIDATION_ERROR", "accountId must be a number or null")
+    annual.map_category(category, account_id)
+    db.session.commit()
+    return jsonify({"id": category.id, "accountId": category.account_id})
+
+
+@finance_bp.get("/annual")
+@permission_required(
+    "accounts", "read", "View the chart of accounts and annual accounts"
+)
+def list_fiscal_years():
+    from hubra.api.finance import annual
+
+    years = annual.years_overview()
+    db.session.commit()
+    return jsonify({"years": years, "startMonth": annual.start_month()})
+
+
+@finance_bp.get("/annual/<int:year>")
+@permission_required(
+    "accounts", "read", "View the chart of accounts and annual accounts"
+)
+def get_annual_accounts(year: int):
+    from hubra.api.finance import annual
+
+    report = annual.annual_report(_year_arg(year))
+    db.session.commit()
+    return jsonify(report)
+
+
+@finance_bp.get("/annual/<int:year>.pdf")
+@permission_required(
+    "accounts", "read", "View the chart of accounts and annual accounts"
+)
+def download_annual_accounts(year: int):
+    from io import BytesIO
+
+    from hubra.api.finance import annual
+
+    lang = (
+        "en" if (request.args.get("lang") or "").lower().startswith("en") else "de-CH"
+    )
+    report = annual.annual_report(_year_arg(year))
+    pdf = annual.annual_pdf(report, lang)
+    db.session.commit()
+    return send_file(
+        BytesIO(pdf),
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"jahresrechnung-{year}.pdf",
+    )
+
+
+@finance_bp.put("/annual/<int:year>/opening")
+@permission_required("accounts", "update", "Change the chart of accounts")
+def set_opening_balances(year: int):
+    """``{"balances": {account number: amount}}`` for an open year whose year
+    before is not closed (the first year in Hubra)."""
+    from hubra.api.finance import annual
+
+    body = request.get_json(silent=True) or {}
+    balances = body.get("balances")
+    if not isinstance(balances, dict):
+        raise_error(400, "VALIDATION_ERROR", "balances must be an object")
+    annual.set_opening(_year_arg(year), balances)
+    log_audit(
+        get_current_member().id, "set_opening_balances", "FiscalYear", year, str(year)
+    )
+    db.session.commit()
+    return jsonify(annual.annual_report(year))
+
+
+@finance_bp.post("/annual/<int:year>/close")
+@permission_required("accounts", "close", "Close and reopen a fiscal year")
+def close_fiscal_year(year: int):
+    """Store the closing balances; bookings in the year are refused after."""
+    from hubra.api.finance import annual
+
+    member = get_current_member()
+    annual.close_year(_year_arg(year), member.id)
+    log_audit(member.id, "close_fiscal_year", "FiscalYear", year, str(year))
+    db.session.commit()
+    return jsonify(annual.annual_report(year))
+
+
+@finance_bp.post("/annual/<int:year>/reopen")
+@permission_required("accounts", "close", "Close and reopen a fiscal year")
+def reopen_fiscal_year(year: int):
+    from hubra.api.finance import annual
+
+    annual.reopen_year(_year_arg(year))
+    log_audit(
+        get_current_member().id, "reopen_fiscal_year", "FiscalYear", year, str(year)
+    )
+    db.session.commit()
+    return jsonify(annual.annual_report(year))

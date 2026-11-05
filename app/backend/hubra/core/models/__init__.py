@@ -49,6 +49,8 @@ from hubra.core.models.event import (
 from hubra.core.models.poll import Poll, PollOption, PollVote, PollProxy
 from hubra.core.models.post import Post, PostLike, PostComment
 from hubra.core.models.finance import (
+    Account,
+    FiscalYear,
     Invoice,
     RecurringTransaction,
     Transaction,
@@ -160,6 +162,8 @@ __all__ = [
     "PostLike",
     "PostComment",
     "Transaction",
+    "Account",
+    "FiscalYear",
     "RecurringTransaction",
     "Invoice",
     "TransactionCategory",

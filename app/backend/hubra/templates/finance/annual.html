@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="{{ 'en' if lang.startswith('en') else 'de' }}">
+<head>
+<meta charset="utf-8">
+<style>
+  @page {
+    size: A4;
+    margin: 16mm 15mm 18mm;
+    @bottom-right {
+      content: counter(page) " / " counter(pages);
+      font-size: 8pt;
+      color: #6b7480;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 9.5pt;
+    color: #181818;
+    margin: 0;
+  }
+  .header {
+    border-bottom: 2px solid #e3eae6;
+    padding-bottom: 5mm;
+    margin-bottom: 6mm;
+  }
+  h1 { font-size: 17pt; margin: 0 0 1.5mm; }
+  .sub { color: #6b7480; font-size: 10pt; margin: 0; }
+  h2 { font-size: 11pt; margin: 7mm 0 2.5mm; }
+  .tiles { display: flex; gap: 3mm; }
+  .tile {
+    flex: 1;
+    background: #f5f1ff;
+    border-radius: 2.5mm;
+    padding: 3mm 3.5mm;
+  }
+  .tile .label { color: #5e5873; font-size: 8pt; }
+  .tile .value { font-size: 12pt; font-weight: 700; margin-top: 1mm; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  col.nr { width: 14mm; }
+  col.amt { width: 32mm; }
+  th {
+    text-align: left;
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6b7480;
+    border-bottom: 1px solid #d9dde3;
+    padding: 1.8mm 2mm 1.8mm 0;
+  }
+  td {
+    border-bottom: 1px solid #eef0f3;
+    padding: 1.6mm 2mm 1.6mm 0;
+    vertical-align: top;
+  }
+  tr { page-break-inside: avoid; }
+  .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .neg { color: #c92a2a; }
+  .pos { color: #1f7a45; }
+  .muted { color: #6b7480; }
+  tfoot td { font-weight: 700; border-bottom: none; border-top: 1px solid #d9dde3; }
+  .dot {
+    display: inline-block;
+    width: 2.2mm;
+    height: 2.2mm;
+    border-radius: 0.6mm;
+    margin-right: 1.5mm;
+  }
+  .footer { margin-top: 8mm; color: #6b7480; font-size: 8pt; }
+</style>
+</head>
+<body>
+{% set p = r.hasPrevious %}
+{% macro amount(v) %}{{ chf(v) }}{% endmacro %}
+{% macro lines(rows) %}
+  {% for l in rows %}
+  <tr>
+    <td class="muted">{{ l.number }}</td>
+    <td>{{ l.name }}</td>
+    <td class="num">{{ amount(l.amount) }}</td>
+    {% if p %}<td class="num muted">{{ amount(l.previous or 0) }}</td>{% endif %}
+  </tr>
+  {% endfor %}
+{% endmacro %}
+<div class="header">
+  <h1>{{ t('mail.email.annual_accounts.title') }} {{ r.year }}</h1>
+  <p class="sub">{{ club }} · {{ fmt_date(r.start) }} – {{ fmt_date(r.end) }}{% if not r.closed %} · {{ t('mail.email.annual_accounts.provisional') }}{% endif %}</p>
+</div>
+
+<h2>{{ t('mail.email.annual_accounts.balance_sheet') }}</h2>
+<table>
+  <colgroup><col class="nr"><col><col class="amt">{% if p %}<col class="amt">{% endif %}</colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th>{{ t('mail.email.annual_accounts.assets') }}</th>
+      <th class="num">{{ fmt_date(r.end) }}</th>
+      {% if p %}<th class="num">{{ t('mail.email.annual_accounts.previous_year') }}</th>{% endif %}
+    </tr>
+  </thead>
+  <tbody>{{ lines(r.assets) }}</tbody>
+  <tfoot>
+    <tr><td></td><td>{{ t('mail.email.annual_accounts.total_assets') }}</td><td class="num">{{ amount(r.totalAssets) }}</td>{% if p %}<td></td>{% endif %}</tr>
+  </tfoot>
+</table>
+<table style="margin-top:5mm">
+  <colgroup><col class="nr"><col><col class="amt">{% if p %}<col class="amt">{% endif %}</colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th>{{ t('mail.email.annual_accounts.liabilities_equity') }}</th>
+      <th class="num">{{ fmt_date(r.end) }}</th>
+      {% if p %}<th class="num">{{ t('mail.email.annual_accounts.previous_year') }}</th>{% endif %}
+    </tr>
+  </thead>
+  <tbody>
+    {{ lines(r.liabilities) }}
+    <tr>
+      <td class="muted">{{ r.capital.number }}</td>
+      <td>{{ r.capital.name }}</td>
+      <td class="num">{{ amount(r.capital.closing) }}</td>
+      {% if p %}<td class="num muted">{{ amount(r.capital.previous or 0) }}</td>{% endif %}
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr><td></td><td>{{ t('mail.email.annual_accounts.total_liabilities_equity') }}</td><td class="num">{{ amount(r.totalAssets) }}</td>{% if p %}<td></td>{% endif %}</tr>
+  </tfoot>
+</table>
+<p class="muted">{{ t('mail.email.annual_accounts.capital_line', opening=amount(r.capital.opening), result=amount(r.result), closing=amount(r.capital.closing)) }}</p>
+
+<h2>{{ t('mail.email.annual_accounts.income_statement') }}</h2>
+<table>
+  <colgroup><col class="nr"><col><col class="amt">{% if p %}<col class="amt">{% endif %}</colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th>{{ t('mail.email.annual_accounts.income') }}</th>
+      <th class="num">{{ r.year }}</th>
+      {% if p %}<th class="num">{{ r.year - 1 }}</th>{% endif %}
+    </tr>
+  </thead>
+  <tbody>{{ lines(r.income) }}</tbody>
+  <tfoot><tr><td></td><td>{{ t('mail.email.annual_accounts.total_income') }}</td><td class="num">{{ amount(r.totalIncome) }}</td>{% if p %}<td></td>{% endif %}</tr></tfoot>
+</table>
+<table style="margin-top:5mm">
+  <colgroup><col class="nr"><col><col class="amt">{% if p %}<col class="amt">{% endif %}</colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th>{{ t('mail.email.annual_accounts.expense') }}</th>
+      <th class="num">{{ r.year }}</th>
+      {% if p %}<th class="num">{{ r.year - 1 }}</th>{% endif %}
+    </tr>
+  </thead>
+  <tbody>{{ lines(r.expense) }}</tbody>
+  <tfoot><tr><td></td><td>{{ t('mail.email.annual_accounts.total_expense') }}</td><td class="num">{{ amount(r.totalExpense) }}</td>{% if p %}<td></td>{% endif %}</tr></tfoot>
+</table>
+<table style="margin-top:5mm">
+  <colgroup><col class="nr"><col><col class="amt">{% if p %}<col class="amt">{% endif %}</colgroup>
+  <tfoot>
+    <tr>
+      <td></td>
+      <td>{{ t('mail.email.annual_accounts.result_profit') if r.result >= 0 else t('mail.email.annual_accounts.result_loss') }}</td>
+      <td class="num {{ 'pos' if r.result >= 0 else 'neg' }}">{{ amount(r.result) }}</td>
+      {% if p %}<td class="num muted">{{ amount(r.previousResult or 0) }}</td>{% endif %}
+    </tr>
+  </tfoot>
+</table>
+
+<h2>{{ t('mail.email.annual_accounts.notes') }}</h2>
+<p class="muted">{{ t('mail.email.annual_accounts.notes_cash') }}</p>
+{% if r.notes.openInvoices.count %}<p class="muted">{{ t('mail.email.annual_accounts.notes_open_invoices', count=r.notes.openInvoices.count, amount=amount(r.notes.openInvoices.amount)) }}</p>{% endif %}
+{% if r.notes.pendingBookings %}<p class="muted">{{ t('mail.email.annual_accounts.notes_pending', count=r.notes.pendingBookings) }}</p>{% endif %}
+<p class="muted" style="margin-top:8mm">{{ t('mail.email.annual_accounts.created', date=created) }}</p>
+</body>
+</html>
