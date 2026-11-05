@@ -4,9 +4,11 @@
 
 See `.env.example` for the full list with descriptions.
 
-The mail stack is **opt-in**. Switch on the `mail` module (`flask modules enable mail`, or Settings › Modules)
-and configure the Infomaniak IMAP/SMTP variables to enable mail. If you are
-not using mail, leave the mail variables blank.
+Every mail Hubra sends (sign-in, invoices, notices) goes through an SMTP
+relay at any provider: set `SMTP_*` here or later in manage › Mail. Club
+mailboxes are the `mail` module, which needs the opt-in self-hosted mail stack
+([modules/mail/README.md](../modules/mail/README.md)). Without mail, leave the
+mail variables blank.
 
 ### Key groups
 
@@ -24,7 +26,7 @@ not using mail, leave the mail variables blank.
 | Superadmins | `SUPERADMIN_EMAILS` (comma-separated; promoted on every start, never demoted) | Optional; or `flask make-admin --email <email>` |
 | Domain      | `MAIL_HOST`, `MAIL_FROM`, `MAIL_DOMAIN`                                    | Always (mail vars only when mail enabled)                |
 | Modules     | Per club in Settings › Modules, or `flask modules enable <code>` | Always                                                   |
-| SMTP/IMAP   | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `IMAP_HOST`, `IMAP_PORT` | Mail feature enabled (Infomaniak SMTP/IMAP)        |
+| SMTP/IMAP   | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FALLBACK_*`, `IMAP_HOST`, `IMAP_PORT` | Sending mail (any SMTP relay); `IMAP_*` only for the IMAP health check |
 | Backups     | `BACKUP_S3_*`, `BACKUP_PUBLIC_KEY` (`BACKUP_PRIVATE_KEY` optional, `BACKUP_ENCRYPTION_KEY` for older backups) | Backups enabled |
 | Files       | `FILES_S3_*` (endpoint, bucket, region, access/secret key), `FILES_MAX_MB` (25), `FILES_DIR` (`/var/lib/hubra/files`, used without a bucket) | Clubs' files (e.g. the documents plugin); also in manage › Backups › Storage |
 | Payments    | `STRIPE_SECRET_KEY` (Connect platform key, `sk_test_…` for test mode) | Online invoice payments with the payments plugin (card, TWINT); better set in manage › Payments, with the platform fee |
