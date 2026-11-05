@@ -56,7 +56,7 @@ If one is missing, Discord shows "Invalid OAuth2 redirect_uri" at that step.
 | Requires OAuth2 Code Grant | **off** | Hubra adds the bot with its own OAuth flow |
 | Presence Intent | **off** | not needed |
 | Server Members Intent | **on** | the gateway process hears when someone joins a club's server (welcome message, roles on joining); without it the rest still works |
-| Message Content Intent | **off** | the bot never reads messages |
+| Message Content Intent | **on** only with support threads | the bot reads the messages of the support threads on the platform server (below); without support threads leave it off |
 
 On the **Installation** page set *Install Link* to **None** and leave
 only **Guild Install** ticked: clubs add the bot through Hubra's own link,
@@ -306,6 +306,43 @@ who linked their Discord account these roles on the platform log's server:
 - Turning it off deletes the four roles.
 - The bot needs **Manage Roles** on the platform server, and its own role
   must be above these roles (it is, for roles it made itself).
+
+### Support threads
+
+Every support case (problem report, idea, question from the app or the
+support site) can get a private thread on the platform server. Pick the
+**support channel** under manage › Discord › Kanäle › Support-Threads
+(`discord.support_channel_id`; empty: off). Then:
+
+- A new case opens a private thread `#<id> <title>` in that channel. The
+  first message is the case: text, kind, status, club, page and the
+  reporter's name (never their e-mail address), with a link into manage.
+  Cases from before get a thread with **Discord-Thread anlegen** on the
+  case in manage › Meldungen & Ideen.
+- **Reporters** with a linked Discord account join the thread
+  (`discord.support_add_reporters`, on by default; off: staff add them on
+  the case). Someone who is not on the platform server gets a one-time
+  invite (7 days) as a direct message; once they joined, the bot adds them
+  to the thread within a minute. When the direct message cannot be
+  delivered, the invite link shows on the case in manage, to pass on.
+- **More people on a case**: under *Personen* on the case, staff add
+  accounts (several at once). They see the case on the support site, may
+  answer, get answers and status changes like the reporter, and join the
+  thread the same way. Removing someone takes them out of the thread too.
+- **Messages are read every minute** into the case's comments: from staff
+  (`support.cases`) as an answer, from the reporter or an added person as
+  their comment, from anyone else as an internal note. A staff message that
+  starts with `//` stays an internal note. People on the case who are not
+  in the thread get a staff answer by mail. Attachments come along as links.
+- **The other way**: answers in manage and comments on the support site go
+  into the thread; internal notes never do. A new status is posted, and done
+  or closed archives the thread (writing in it opens it again).
+
+Needs the **Message Content Intent** (step 4), and for the bot in the
+support channel: View Channel, Send Messages, Embed Links, Send Messages in
+Threads, Create Private Threads, Manage Threads, Read Message History and
+Create Invite. A channel the bot makes from the picker gets these; the add
+link on that page asks for them once a support channel is set.
 
 ## What the bot may do on a club's server
 

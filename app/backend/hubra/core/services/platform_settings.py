@@ -43,7 +43,8 @@ every linked account goes through (see docs/discord.md). Set here only, with
 no env fallback.  ``discord.log_*`` is the platform log: the bot posts
 platform events to a channel on the platform's own server
 (``services.platform_discord``); ``discord.audit_channel_id`` is an optional
-channel that takes the audit entries off the log.
+channel that takes the audit entries off the log.  ``discord.support_*``:
+one private thread per support case (``services.support_discord``).
 """
 
 from __future__ import annotations
@@ -343,6 +344,24 @@ SPECS: tuple[Spec, ...] = (
         "there instead of the platform log, which keeps the alerts. Empty: off",
         lambda cfg: "",
         "number",
+    ),
+    Spec(
+        "discord.support_channel_id",
+        "Support channel",
+        "Channel ID on the platform's Discord server: every support case gets "
+        "a private thread there, and what is written in it becomes a comment "
+        "on the case. Empty: off",
+        lambda cfg: "",
+        "number",
+    ),
+    Spec(
+        "discord.support_add_reporters",
+        "Add reporters to the thread",
+        "on: whoever sent a case is added to its Discord thread when their "
+        "Discord is linked (people not on the platform server get an invite "
+        "as a direct message). off: staff add people by hand",
+        lambda cfg: "on",
+        "on_off",
     ),
     Spec(
         "discord.log_events",

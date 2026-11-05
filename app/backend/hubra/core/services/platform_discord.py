@@ -401,6 +401,8 @@ ACTION_LABELS: dict[str, str] = {
     "tenant_request.reject": "Vereinsanfrage abgelehnt",
     "support_case.update": "Meldung geändert",
     "support_case.merge": "Meldungen zusammengeführt",
+    "support_case.people_added": "Personen zur Meldung hinzugefügt",
+    "support_case.person_removed": "Person von der Meldung entfernt",
     "impersonation.start": "Support-Zugriff gestartet",
     "impersonation.end": "Support-Zugriff beendet",
     "impersonation.revoked": "Support-Zugriff entzogen",

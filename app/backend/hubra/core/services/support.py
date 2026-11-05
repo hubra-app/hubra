@@ -2,7 +2,8 @@
 ``core/models/support_case.py``).
 
 Who sees what:
-  * the reporter: their own cases and the comments that are not internal;
+  * the reporter, and people staff added to a case (``support_case_people``):
+    those cases and the comments that are not internal;
   * everyone signed in: the public roadmap (feature requests staff put on
     it), with votes; anyone, signed in or not: the same list without votes
     of their own (``/api/v1/roadmap``);
@@ -25,6 +26,7 @@ from hubra.core.models.support_case import (
     RoadmapVote,
     SupportCase,
     SupportCaseComment,
+    SupportCasePerson,
     SupportCaseVote,
 )
 from hubra.core.models.tenant import Tenant
@@ -299,10 +301,19 @@ def comments_for(case: SupportCase, *, staff: bool) -> list[dict]:
     return [comment_dict(c, u, staff_view=staff) for c, u in rows]
 
 
+def _added_to(user_id: int):
+    return select(SupportCasePerson.case_id).where(
+        SupportCasePerson.user_id == user_id
+    )
+
+
 def mine(user_id: int) -> list[dict]:
+    """The person's cases: sent by them, or staff added them."""
     cases = db.session.scalars(
         select(SupportCase)
-        .where(SupportCase.user_id == user_id)
+        .where(
+            or_(SupportCase.user_id == user_id, SupportCase.id.in_(_added_to(user_id)))
+        )
         .order_by(SupportCase.created_at.desc(), SupportCase.id.desc())
     ).all()
     ids = [c.id for c in cases]
@@ -316,7 +327,11 @@ def mine(user_id: int) -> list[dict]:
 
 def own_case(user_id: int, case_id: int) -> SupportCase | None:
     case = db.session.get(SupportCase, case_id)
-    if case is None or case.user_id != user_id:
+    if case is None:
+        return None
+    if case.user_id != user_id and not db.session.scalar(
+        _added_to(user_id).where(SupportCasePerson.case_id == case_id)
+    ):
         return None
     return case
 
@@ -630,6 +645,14 @@ def staff_detail(case: SupportCase) -> dict:
     item["merged"] = [
         {"id": m.id, "title": m.title, "createdAt": _iso(m.created_at)} for m in merged
     ]
+    from hubra.core.services import support_discord
+
+    item["people"] = support_discord.people_dicts(case)
+    item["discord"] = {
+        "enabled": support_discord.enabled(),
+        "threadId": case.discord_thread_id,
+        "threadUrl": support_discord.thread_url(case),
+    }
     return item
 
 
@@ -766,12 +789,24 @@ def merge(source: SupportCase, target: SupportCase, actor_id: int | None) -> Non
 
 
 def followers(case: SupportCase) -> list[User]:
-    """Who hears about a status change: the reporter and the reporters of
-    cases merged into it."""
-    ids = {case.user_id} | set(
-        db.session.scalars(
-            select(SupportCase.user_id).where(SupportCase.merged_into_id == case.id)
-        ).all()
+    """Who hears about a status change or an answer: the reporter, the
+    people staff added, and the reporters of cases merged into it."""
+    ids = (
+        {case.user_id}
+        | set(
+            db.session.scalars(
+                select(SupportCase.user_id).where(
+                    SupportCase.merged_into_id == case.id
+                )
+            ).all()
+        )
+        | set(
+            db.session.scalars(
+                select(SupportCasePerson.user_id).where(
+                    SupportCasePerson.case_id == case.id
+                )
+            ).all()
+        )
     )
     ids.discard(None)
     if not ids:
