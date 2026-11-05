@@ -57,8 +57,15 @@ class ModuleRegistry:
         # (a blueprint that doesn't import, a name already taken) must not
         # stay half registered, or register_blueprints trips over it later
         # and the backend doesn't start.
+        from hubra.core.roles import current_role, registers
+
+        role = current_role()
         names = []
         for bp in manifest.blueprints:
+            # Only the blueprints this backend registers: another area's
+            # code isn't in its image (register_blueprints).
+            if not registers(bp, role):
+                continue
             # request.blueprint reports the Blueprint's own name, which is
             # not always the attribute name (health_bp is "health").
             name = self._blueprint(bp).name
@@ -174,11 +181,20 @@ class ModuleRegistry:
     def register_blueprints(self, app: Flask) -> None:
         from hubra.core.api_areas import canonical_path
         from hubra.core.permissions import register_perm_prefix
+        from hubra.core.roles import current_role, registers
 
+        role = current_role()
         for m in self.all():
             try:
                 for bp in m.blueprints:
+                    # Another area's routes are not even imported (add), so
+                    # its code is not part of this backend's image
+                    # (docs/platform-backend.md).
+                    if not registers(bp, role):
+                        continue
                     blueprint = self._blueprint(bp)
+                    # The registry may have loaded under another role (tests).
+                    self._bp_to_module.setdefault(blueprint.name, m.code)
                     if bp.perm_prefix:
                         register_perm_prefix(blueprint.name, bp.perm_prefix)
                     # A plugin built before the API areas (hubra.core.api_areas)

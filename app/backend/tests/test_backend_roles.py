@@ -148,26 +148,80 @@ def test_app_and_global_backends_split_the_rest(role_app):
     assert app_client.get("/api/v1/platform/settings").status_code == 404
     assert global_client.get("/api/v1/platform/settings").status_code == 404
     # With the club in the path an ingress can't tell the areas apart, so
-    # such a request reaches the app backend, which answers it (the role gate
-    # lets it through; the unknown club is the route's business).
-    from hubra.core.extensions import db
-
-    with app_client.application.app_context():
-        db.create_all()
-    resp = app_client.get("/api/some-club/v1/account/profile")
-    assert "Not served" not in (resp.get_json() or {}).get("message", "")
+    # such a request reaches the app backend, which serves only club paths
+    # (the frontends send the club as a header).
+    assert app_client.get("/api/some-club/v1/account/profile").status_code == 404
     resp = global_client.get("/api/some-club/v1/members")
     assert "Not served" in resp.get_json()["message"]
     assert global_client.get("/api/v1/version").status_code == 200
 
 
-def test_every_role_keeps_the_full_url_map(role_app):
-    """sync-permissions and the permission listing read the URL map, so a
-    split backend must still register every blueprint."""
-    full = {r.rule for r in role_app("all").url_map.iter_rules()}
-    assert {r.rule for r in role_app("platform").url_map.iter_rules()} == full
-    for role in ("club", "app", "global"):
-        assert {r.rule for r in role_app(role).url_map.iter_rules()} == full
+def _rules(app) -> set[str]:
+    return {r.rule for r in app.url_map.iter_rules()}
+
+
+def test_each_role_registers_only_its_own_routes(role_app):
+    """A backend imports and registers only its area's blueprints and the
+    shared ones, so its image needs no other area's code."""
+    full = _rules(role_app("all"))
+    by_role = {role: _rules(role_app(role)) for role in ("app", "global", "platform")}
+    assert by_role["app"] | by_role["global"] | by_role["platform"] == full
+    assert _rules(role_app("club")) == by_role["app"] | by_role["global"]
+    shared = by_role["app"] & by_role["global"] & by_role["platform"]
+    for role, rules in by_role.items():
+        others = set().union(*(r for k, r in by_role.items() if k != role))
+        assert rules & others == shared, role
+        for rule in rules - shared:
+            if rule.startswith("/api/"):
+                assert roles.area_of(rule) == role, (role, rule)
+    # The shared ones: probes, the version and the OAuth server metadata.
+    assert "/api/v1/global/health" in shared
+    assert "/api/v1/global/version" in shared
+    assert "/.well-known/openid-configuration" in shared
+    assert "/api/v1/app/members/" in by_role["app"]
+    assert "/api/v1/platform/system/tenants" in by_role["platform"]
+    assert "/api/v1/global/auth/refresh" in by_role["global"]
+
+
+def test_club_permissions_on_other_areas_are_declared(role_app):
+    """The app backend fills the club permission catalog from the routes it
+    registers; a club permission checked on another area's route must be
+    declared in a module manifest, or that sync would deactivate it."""
+    from hubra.core.permissions import extra_permissions
+
+    full = role_app("all")
+    app_rules = _rules(role_app("app"))
+    with full.app_context():
+        declared = {m["key"] for m in extra_permissions()}
+    from hubra.core.permissions import _derive_perm_key
+
+    missing = []
+    for rule in full.url_map.iter_rules():
+        if rule.rule in app_rules:
+            continue
+        fn = full.view_functions.get(rule.endpoint)
+        resource = getattr(fn, "_perm_resource", None)
+        action = getattr(fn, "_perm_action", None)
+        if resource is None or action is None:
+            continue
+        key = _derive_perm_key(rule.endpoint.rsplit(".", 1)[0], resource, action)
+        if key not in declared:
+            missing.append((rule.rule, key))
+    assert not missing
+
+
+def test_sync_permissions_only_where_club_routes_load(role_app):
+    from hubra.core.extensions import db
+    from hubra.core.models.role import Permission
+
+    app = role_app("platform")
+    with app.app_context():
+        db.create_all()
+        result = app.test_cli_runner().invoke(args=["sync-permissions"])
+        assert "left to the app backend" in result.output
+        assert db.session.query(Permission).count() == 0
+    assert roles.loads_club_routes("app") and roles.loads_club_routes("club")
+    assert not roles.loads_club_routes("global")
 
 
 def test_platform_prefixes_cover_the_platform_blueprints():

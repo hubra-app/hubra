@@ -49,6 +49,7 @@ api_tokens_bp = Blueprint("api_tokens_bp", __name__)
 platform_api_tokens_bp = Blueprint("platform_api_tokens_bp", __name__)
 # Answers a token about itself; its routes carry ``token_self``.
 api_token_self_bp = Blueprint("api_token_self_bp", __name__)
+platform_token_self_bp = Blueprint("platform_token_self_bp", __name__)
 
 
 def _error(status: int, code: str, message: str):
@@ -551,13 +552,13 @@ def _self_body():
     return jsonify(body), 200
 
 
-@api_token_self_bp.get("/app/api-tokens/self")
+@api_token_self_bp.get("/self")
 @api_tokens.token_self
 def club_token_self():
     return _self_body()
 
 
-@api_token_self_bp.get("/platform/api-tokens/self")
+@platform_token_self_bp.get("/self")
 @api_tokens.token_self
 def platform_token_self():
     return _self_body()

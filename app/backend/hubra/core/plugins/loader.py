@@ -260,9 +260,9 @@ def discover(app=None) -> PluginSet:
 # (its package's ``module``) for the catalogue, migrations, tables and the
 # public plugin list, but import none of its routes, models or task
 # modules, so a plugin's code can't stop them from starting. Connected-app
-# hooks and event handlers stay names, imported only when called. The
-# platform-backend init step runs without a role and loads everything, so
-# ``flask sync-permissions`` still sees every plugin route.
+# hooks and event handlers stay names, imported only when called. The app
+# backend's init step runs ``flask sync-permissions``, which sees every
+# plugin route there.
 MANIFEST_ONLY_ROLES = ("global", "platform")
 
 
