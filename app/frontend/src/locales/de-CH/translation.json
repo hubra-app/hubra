@@ -265,6 +265,12 @@
       "needsInstall": "Auf iPhone und iPad zuerst Hubra zum Home-Bildschirm hinzufügen (Teilen › Zum Home-Bildschirm), dann hier einschalten.",
       "denied": "Mitteilungen sind für diese Seite im Browser blockiert. Erlaube sie in den Website-Einstellungen des Browsers."
     },
+    "installApp": {
+      "title": "Hubra als App",
+      "hint": "Leg Hubra auf den Home-Bildschirm oder ins Dock. Die App öffnet deinen Verein direkt, ohne Browserleiste.",
+      "ios": "Tippe in Safari auf Teilen und dann auf «Zum Home-Bildschirm». Hubra öffnet sich dann wie eine App, mit deinem Verein und ohne Browserleiste.",
+      "button": "App installieren"
+    },
     "myAttendance": "Meine Anwesenheit",
     "myAttendanceYear": "Seit {{date}}",
     "showLess": "Weniger anzeigen",

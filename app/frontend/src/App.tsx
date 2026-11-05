@@ -5,6 +5,7 @@ import { ErrorBoundary as RouteErrorBoundary } from 'react-error-boundary'
 import { useT } from '@/locales/i18n'
 import { AppProvider, useApp } from '@/context/AppContext'
 import { URL_CLUB } from '@/clubBase'
+import { pwaStartPath, rememberClub } from '@/pwa'
 import { redirectTo } from '@hubra/api-client'
 import { InstanceProvider, useInstance } from '@/context/InstanceContext'
 import { RequireModule } from '@/modules/RequireModule'
@@ -186,12 +187,20 @@ function ClubTrialRedirect() {
 /** /app/*: the club's pages, or the SSO portal when the URL names no club. */
 function ClubRoutes() {
   // On club pages the router runs below /<club> (clubBase.ts).
-  return URL_CLUB ? <PrivateRoutes /> : <SsoRedirect path="login" />
+  if (!URL_CLUB) return <SsoRedirect path="login" />
+  rememberClub(URL_CLUB)
+  return <PrivateRoutes />
 }
 
 /** `/`: into the club, or to the sign-in. */
 function HomeRedirect() {
   if (URL_CLUB) return <Navigate to="/app/dashboard" replace />
+  // The installed app starts at /?source=pwa: open the club used last.
+  const start = pwaStartPath(window.location.search)
+  if (start) {
+    window.location.replace(start)
+    return null
+  }
   return <SsoRedirect path="login" />
 }
 
