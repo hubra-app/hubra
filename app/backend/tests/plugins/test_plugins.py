@@ -702,6 +702,36 @@ def test_a_blueprint_that_fails_to_import_skips_only_its_plugin(tmp_path):
             del sys.modules[name]
 
 
+def test_a_task_module_that_fails_to_import_skips_only_its_plugin(tmp_path):
+    """The Celery worker imports every loaded plugin's task modules on start;
+    one that fails must skip its plugin here, not stop the worker there."""
+    import sys
+
+    import yaml
+
+    src = make_plugin(tmp_path / "src")
+    pkg = src / "hubra_brokentask"
+    (src / "hubra_hello").rename(pkg)
+    (pkg / "__init__.py").write_text(
+        "from hubra.core.modules import Module\n"
+        'module = Module(code="hello", name="Hello", depends_on=("members",),\n'
+        '    tasks=("hubra_brokentask.tasks",))\n'
+    )
+    (pkg / "tasks.py").write_text("import hubra.api.no_such_area  # noqa\n")
+    manifest = yaml.safe_load((src / "plugin.yaml").read_text())
+    manifest["package"] = "hubra_brokentask"
+    (src / "plugin.yaml").write_text(yaml.safe_dump(manifest))
+    spec = scan(tmp_path / "src", bundled=False)[0]
+    try:
+        with pytest.raises(ModuleNotFoundError, match="hubra.api.no_such_area"):
+            loader._import(spec)
+    finally:
+        if str(spec.path) in sys.path:
+            sys.path.remove(str(spec.path))
+        for name in [n for n in sys.modules if n.startswith("hubra_brokentask")]:
+            del sys.modules[name]
+
+
 # ── Key purposes: one key for the index, others for the plugins ──────────────
 
 

@@ -78,6 +78,53 @@ def test_registry_rejects_cycles():
         reg.validate()
 
 
+def test_registry_adds_nothing_when_a_blueprint_fails():
+    """A module whose blueprint doesn't import (or whose name is taken)
+    stays out of the registry, so register_blueprints never sees it."""
+    from hubra.core.modules import Blueprint
+
+    reg = ModuleRegistry()
+    broken = Module(
+        code="broken",
+        name="Broken",
+        blueprints=(Blueprint("hubra.api.no_such_area", "bp", "/api/v1/broken"),),
+    )
+    with pytest.raises(ModuleNotFoundError):
+        reg.add(broken)
+    assert "broken" not in reg.codes()
+    reg.add(Module(code="broken", name="Fixed"))  # the code is still free
+
+
+def test_a_plugin_whose_routes_fail_to_register_does_not_stop_the_app():
+    from flask import Blueprint as FlaskBlueprint
+    from flask import Flask
+
+    from hubra.core.modules import Blueprint
+
+    reg = ModuleRegistry()
+    reg.add(Module(code="plug", name="Plug", plugin="plug"))
+    # Swap in a blueprint list after add(): what a clash at register time
+    # (a name Flask already has) looks like.
+    reg._modules["plug"] = Module(
+        code="plug",
+        name="Plug",
+        plugin="plug",
+        blueprints=(Blueprint("hubra.api.no_such_area", "bp", "/api/v1/plug"),),
+    )
+    app = Flask("t")
+    app.register_blueprint(FlaskBlueprint("other", "x"))
+    reg.register_blueprints(app)  # logs, does not raise
+    assert "plug" not in {bp.name for bp in app.blueprints.values()}
+
+    reg._modules["core_like"] = Module(
+        code="core_like",
+        name="Core",
+        blueprints=(Blueprint("hubra.api.no_such_area", "bp", "/api/v1/x"),),
+    )
+    with pytest.raises(ModuleNotFoundError):
+        reg.register_blueprints(Flask("t2"))
+
+
 def test_every_blueprint_belongs_to_a_module(app):
     for name in app.blueprints:
         assert modules.registry.module_for_blueprint(name) is not None, name

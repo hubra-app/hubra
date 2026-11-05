@@ -302,9 +302,13 @@ def _import(spec: Spec) -> list:
     # Its blueprints too, here where a failure only skips this plugin: in
     # register_blueprints an import error (say of a module Hubra no longer
     # has) would stop every worker from booting.
+    # The same for its Celery task modules: the worker imports them on start
+    # (tasks.include), and one that fails stops every worker.
     for m in modules:
         for bp in m.blueprints:
             getattr(importlib.import_module(bp.import_path), bp.attr)
+        for task_module in m.tasks:
+            importlib.import_module(task_module)
     return [dataclasses.replace(m, plugin=spec.id) for m in modules]
 
 
