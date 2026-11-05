@@ -3,113 +3,128 @@
 ## Overview
 
 ```
-                    ┌──────────────────────────┐
-                    │  External Traefik         │ :443/:80
-                    │  (TLS termination,        │
-                    │   routing, CrowdSec)      │
-                    └──────┬───────────┬────────┘
-                           │           │
-               Host(app.hubra.club)  Host(api.hubra.club)
-                           │           │
-                           ▼           ▼
-                    ┌──────────────┐  ┌──────────────┐
-                    │   Caddy 2    │  │   Backend    │
-                    │  (frontend   │  │  Flask API   │
-                    │   + headers) │  │  :5000       │
-                    │   :80        │  │              │
-                    └──────┬───────┘  └──────┬───────┘
-                           │                 │
-                           ▼                 │
-                    ┌──────────────┐         │
-                    │   Frontend   │         │
-                    │  React SPA   │         │
-                    │  :80         │         │
-                    └──────────────┘         │
-                                             │
-                              ┌──────────────┼──────────────┐
-                              │              │              │
-                              ▼              ▼              ▼
-                      ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-                      │  PostgreSQL  │ │    Redis     │ │   MongoDB    │
-                      │  (app data)  │ │ (queue+rate) │ │  (mail data) │
-                      └──────────────┘ └──────────────┘ └──────┬───────┘
-                                                                       │
-                      ┌─────────────────────────────────┼───────────────────┐
-                      │                                 │                   │
-                      ▼                                 ▼                   ▼
-              ┌──────────────┐                  ┌──────────────┐  ┌──────────────┐
-              │   Haraka     │◄── port 25 ──────│  WildDuck    │  │   ZoneMTA    │
-              │ (inbound SMTP)│                 │ (IMAP server) │  │(outbound SMTP)│
-              └──────────────┘                  └──────────────┘  └──────────────┘
-                                                                       │
-                                                             port 465/587
-                                                                       │
-                                                                       ▼
-                                                                 Internet
+                         Browser
+                            │
+                            ▼
+              ┌───────────────────────────┐
+              │ External Traefik or the   │  :443
+              │ k3s ingress (TLS, routing │
+              │ by host, CrowdSec)        │
+              └──┬───────────────┬────────┘
+                 │               │
+   app / manage / sso / join /   │ api.hubra.club
+   support .hubra.club           │
+                 ▼               ▼
+        ┌─────────────────┐  ┌──────────────────────────────┐
+        │ Frontend images │  │ Backend (Flask, gunicorn)    │
+        │ nginx + React,  │  │ one process for all three    │
+        │ CSP and headers │  │ API areas, or app / global / │
+        │ set at start    │  │ platform as separate images  │
+        └─────────────────┘  └───┬──────────┬──────────┬────┘
+                                 │          │          │
+                                 ▼          ▼          ▼
+                          PostgreSQL     Redis      WildDuck API
+                          (a schema     (Celery,    (mail stack,
+                          per club)     limits)     optional)
+                                 ▲          ▲
+                                 │          │
+                     Celery worker, beat, platform worker,
+                     Discord gateway (profile), MCP server (profile)
 ```
 
-> The lower half of the diagram (MongoDB, Haraka, WildDuck, ZoneMTA) only
-> applies when the optional mail stack is running. See
-> [modules/mail/README.md](../modules/mail/README.md) for how to enable it.
+The mail stack (MongoDB, WildDuck, Haraka, ZoneMTA, certbot) only runs when
+it is switched on; see [modules/mail/README.md](../modules/mail/README.md).
 
 ## Request flow
 
-1. **Browser → Traefik** — External Traefik terminates TLS and routes by Host
-   header. CrowdSec middleware (`crowdsec@file`) inspects all requests.
-2. **Traefik → Caddy** (`app.hubra.club`) — Frontend HTML/JS served by Caddy
-   → React SPA. Caddy adds CSP, Permissions-Policy, and other security headers.
-3. **Traefik → Backend** (`api.hubra.club`) — API requests go directly to
-   Flask (no Caddy proxy). One proxy hop; ProxyFix `x_for=1`.
-4. **Flask ↔ PostgreSQL** — Member data, groups, finance, settings, audit log.
-5. **Flask ↔ Redis** — Rate limiting storage, Celery broker.
-6. **Celery tasks → WildDuck API** — Async mailbox/alias provisioning, password
-   sync, retention cleanup (only when mail stack is enabled).
+1. **Browser → Traefik.** Traefik (or the k3s ingress) terminates TLS and
+   routes by host. CrowdSec middleware (`crowdsec@file`) sees every request.
+2. **Traefik → a frontend image.** Each frontend (club app, manage, SSO/join,
+   support) is an nginx image with the built files. Host names, the CSP and
+   the other security headers are written when the container starts
+   (`app/deploy/nginx/40-hubra-runtime.sh`), so one image fits every install.
+3. **Traefik → backend.** API calls go straight to Flask on
+   `api.hubra.club`. There is one proxy hop, so ProxyFix uses `x_for=1`
+   (`PROXY_FIX_X_FOR=2` only behind a CDN that Traefik trusts).
+4. **Flask ↔ PostgreSQL.** Shared data (accounts, clubs, platform settings)
+   in `public`; each club's data in its own schema.
+5. **Flask ↔ Redis.** Celery broker, rate limits, short-lived caches.
+6. **Celery.** Mail, reminders, backups, plugin jobs and, with the mail stack,
+   mailbox provisioning through the WildDuck API.
+
+The API has three areas: `/api/v1/app` (the club app), `/api/v1/global`
+(sign-in, account, public data) and `/api/v1/platform` (manage). How they run
+as one or three backends is in [platform-backend.md](platform-backend.md).
+Old paths (`/api/v1/members`, `/api/v1/manager/...`) still work and are
+rewritten to the new ones (`hubra/core/api_areas.py`).
 
 ## Cross-origin auth
 
-The API and frontend are on different subdomains. See
-[SUBDOMAIN_MIGRATION.md](SUBDOMAIN_MIGRATION.md) for the full setup.
+The frontends and the API are on different subdomains of one registrable
+domain, so the browser treats their requests as same-site.
 
-- **CORS** — Owned by Flask (single source of truth). The external Traefik must
-  NOT add CORS headers (duplicate `Access-Control-Allow-Origin` breaks
-  browsers). Allowlist via `CORS_ORIGINS`, no wildcards, `Vary: Origin` on all
-  CORS responses.
-- **Cookies** — JWT access/refresh tokens in HttpOnly cookies with
-  `Domain=.hubra.club`, `SameSite=Lax`, `Secure`. CSRF double-submit via
-  readable `csrf_*` cookies + `X-CSRF-TOKEN` header.
-- **Preflight** — `OPTIONS` returns 200/204 with CORS headers, exempt from auth,
-  RBAC, and rate limiting. CrowdSec (Traefik) must also pass OPTIONS through.
-- **ProxyFix** — `x_for=1, x_proto=1, x_host=1` so the app sees the real client
-  IP (CrowdSec/rate-limit attribution), HTTPS scheme (Secure cookies), and
-  `api.hubra.club` host.
-- **Email links** — `FRONTEND_BASE_URL` (e.g. `https://app.hubra.club`) is
-  used for password-reset and email-verification links, not `request.url_root`
-  (which resolves to the API host).
+- **CORS** is owned by Flask. The allowlist is `CORS_ORIGINS` (no
+  wildcards), and every CORS response carries `Vary: Origin`. Traefik must
+  **not** add CORS headers: a second `Access-Control-Allow-Origin` makes
+  browsers reject every response.
+- **Preflight.** `OPTIONS` answers 200/204 with the CORS headers and skips
+  auth, permissions and rate limits. CrowdSec and any error-page middleware
+  must let `OPTIONS` through unchanged.
+- **Cookies.** The JWT access and refresh tokens are HttpOnly cookies with
+  `Domain=$JWT_COOKIE_DOMAIN` (`.hubra.club`), `SameSite=Lax`, `Secure` and
+  `Path=/`. The path stays `/`: the frontends must be able to read the
+  `csrf_*` cookies.
+- **CSRF** uses the double-submit pattern: the readable `csrf_access_token`
+  and `csrf_refresh_token` cookies go back as the `X-CSRF-TOKEN` header on
+  every POST, PUT, PATCH and DELETE. `@hubra/api-client` does this for all
+  frontends.
+- **ProxyFix** is set to `x_for=1, x_proto=1, x_host=1`, so Flask sees the
+  real client IP (rate limits), the HTTPS scheme (Secure cookies) and the API
+  host.
+- **Links in mails** are built from `FRONTEND_BASE_URL` and `SSO_BASE_URL`,
+  never from `request.url_root`, which is the API host.
+
+On plain-HTTP localhost, set `JWT_COOKIE_SECURE=false` and leave
+`JWT_COOKIE_DOMAIN` empty (the `.env.example` defaults).
 
 ## Services
 
 ### App stack (`docker-compose.yml`)
 
-| Container       | Image                      | Role                                      |
-| --------------- | -------------------------- | ----------------------------------------- |
-| `caddy`         | `caddy:2.8-alpine`         | Frontend reverse proxy + security headers |
-| `frontend`      | Build from `app/frontend/` | React SPA served via nginx                |
-| `backend`       | Build from `app/backend/`  | Flask API (gunicorn + ProxyFix)           |
-| `flask-init`    | Build from `app/backend/`  | Runs migrations + seed on first start     |
-| `celery-worker` | Build from `app/backend/`  | Async task worker                         |
-| `celery-beat`   | Build from `app/backend/`  | Periodic task scheduler                   |
-| `postgres`      | `postgres:16-alpine`       | Primary app database                      |
-| `redis`         | `redis:7-alpine`           | Queue broker, rate-limit storage          |
+| Container          | Image                | Role                                          |
+| ------------------ | -------------------- | --------------------------------------------- |
+| `frontend`         | `frontend`           | Club app, port 8080                           |
+| `admin-frontend`   | `admin-frontend`     | Manage, port 8081                             |
+| `sso-frontend`     | `sso-frontend`       | Sign-in, account and join, port 8082          |
+| `support-frontend` | `support-frontend`   | support.hubra.club, port 8083                 |
+| `backend`          | `backend`            | Flask API (gunicorn + ProxyFix)               |
+| `flask-init`       | `backend`            | Migrations and seeds before the backend starts |
+| `celery-worker`    | `backend`            | Background jobs                               |
+| `celery-beat`      | `backend`            | Periodic job scheduler                        |
+| `discord-gateway`  | `backend`            | Discord bot gateway (`discord` profile)       |
+| `mcp`              | `mcp`                | Claude connector, port 8090 (`mcp` profile)   |
+| `postgres`         | `postgres:16-alpine` | Database                                      |
+| `redis`            | `redis:7-alpine`     | Celery broker, rate limits                    |
 
-### Mail stack (`docker-compose.mail.yml` — opt-in)
+Images without a tag are `ghcr.io/hubra-app/hubra/<name>`.
+`docker-compose.platform.yml` adds `platform-backend` and `platform-worker`
+and runs the init step and beat on the platform image; see
+[platform-backend.md](platform-backend.md).
+`docker-compose.traefik.yml` adds the Traefik labels for the production
+host names.
+
+### Mail stack (`modules/mail/docker-compose.mail.yml`, opt-in)
 
 | Container       | Image                           | Role                                   |
 | --------------- | ------------------------------- | -------------------------------------- |
 | `mongo`         | `mongo:7`                       | Mail data for WildDuck                 |
-| `mailserver`    | `ghcr.io/zone-eu/wildduck`      | IMAP mail server                       |
-| `haraka`        | Build from `mail/haraka/`       | Inbound SMTP                           |
-| `zonemta`       | Build from `mail/zonemta/`      | Outbound SMTP                          |
-| `certbot-init`  | `certbot/dns-cloudflare`        | One-shot TLS certificate issuance      |
-| `certbot-renew` | `certbot/dns-cloudflare`        | Cert renewal every 12h                 |
-| `cert-watcher`  | Build from `mail/cert-watcher/` | Restarts mail services on cert change  |
-| `socket-proxy`  | `tecnativa/docker-socket-proxy` | Secured Docker socket for cert-watcher |
+| `mailserver`    | `ghcr.io/zone-eu/wildduck`      | IMAP server                            |
+| `haraka`        | `haraka`                        | Inbound SMTP                           |
+| `zonemta`       | `zonemta`                       | Outbound SMTP                          |
+| `certbot-init`  | `certbot/dns-cloudflare`        | First TLS certificate                  |
+| `certbot-renew` | `certbot/dns-cloudflare`        | Certificate renewal every 12 h         |
+| `cert-watcher`  | `cert-watcher`                  | Restarts mail services on a new certificate |
+| `socket-proxy`  | `tecnativa/docker-socket-proxy` | Limited Docker socket for cert-watcher |
+
+On Kubernetes the same parts run from `deploy/app` and
+`modules/mail/k8s`; see [k3s.md](k3s.md).
