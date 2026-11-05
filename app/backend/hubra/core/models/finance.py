@@ -18,6 +18,11 @@ class TransactionCategory(db.Model):
     name: Mapped[str] = mapped_column(db.String(255), unique=True, nullable=False)
     color: Mapped[str | None] = mapped_column(db.String(7), nullable=True)
     is_default: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+    # The account of the chart its bookings count on in the annual accounts;
+    # without one they count on "other income" or "other expenses".
+    account_id: Mapped[int | None] = mapped_column(
+        ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True
+    )
 
     # Relationships
     transactions: Mapped[list["Transaction"]] = relationship(
@@ -209,3 +214,48 @@ class Invoice(db.Model):
             f"<Invoice id={self.id} member_id={self.member_id} "
             f"external_party_id={self.external_party_id} status={self.status!r}>"
         )
+
+
+class Account(db.Model):
+    """An account of the club's chart of accounts (Kontenplan).
+
+    ``kind`` is asset, liability, equity, income or expense. Money accounts
+    (``is_money``) are where transactions land: cash on the cash account,
+    everything else on the bank account. The chart is seeded from the
+    standard Swiss club chart the first time it is read.
+    """
+
+    __tablename__ = "accounts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    number: Mapped[str] = mapped_column(db.String(10), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(db.String(120), nullable=False)
+    kind: Mapped[str] = mapped_column(db.String(10), nullable=False)
+    is_money: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<Account {self.number} {self.name!r}>"
+
+
+class FiscalYear(db.Model):
+    """One business year: its opening balances and, once closed, its closing
+    balances, which open the next year. Bookings in a closed year are
+    refused."""
+
+    __tablename__ = "fiscal_years"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    start: Mapped[date] = mapped_column(Date, unique=True, nullable=False)
+    end: Mapped[date] = mapped_column(Date, nullable=False)
+    # {account number: amount} of the balance sheet accounts.
+    opening: Mapped[dict] = mapped_column(db.JSON, default=dict, nullable=False)
+    closing: Mapped[dict | None] = mapped_column(db.JSON, nullable=True)
+    closed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    closed_by: Mapped[int | None] = mapped_column(
+        ForeignKey("members.id", ondelete="SET NULL"), nullable=True
+    )
+
+    def __repr__(self) -> str:
+        return f"<FiscalYear {self.start}..{self.end} closed={self.closed_at is not None}>"

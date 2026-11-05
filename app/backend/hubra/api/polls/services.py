@@ -184,6 +184,7 @@ class PollService:
             "allow_proxy",
             "auto_close",
             "max_proxies_per_member",
+            "group_id",
         ):
             if field in data:
                 setattr(poll, field, data[field])
@@ -373,6 +374,7 @@ class PollsService:
             max_proxies_per_member=data.get("max_proxies_per_member", 1),
             required_group_ids=data.get("required_group_ids"),
             required_function_ids=data.get("required_function_ids"),
+            group_id=data.get("group_id"),
         )
         db.session.add(poll)
         db.session.flush()

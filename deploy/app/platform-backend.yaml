@@ -98,6 +98,10 @@ spec:
       labels:
         app.kubernetes.io/name: platform-worker
     spec:
+      # Club domains: Certificates and Ingresses (domains-rbac.yaml). The
+      # token is mounted only here.
+      serviceAccountName: hubra-domains
+      automountServiceAccountToken: true
       securityContext:
         seccompProfile: { type: RuntimeDefault }
         runAsNonRoot: true

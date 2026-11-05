@@ -181,6 +181,16 @@ class TransactionCategoriesService:
             name=data["name"],
             color=data.get("color"),
         )
+        # Once the club has a chart of accounts, a new category starts on
+        # the account its name suggests (the board can change it).
+        from hubra.api.finance.annual import guess_account
+        from hubra.core.models.finance import Account
+
+        number = guess_account(category.name)
+        if number:
+            category.account_id = db.session.scalar(
+                select(Account.id).where(Account.number == number)
+            )
         db.session.add(category)
         db.session.flush()
 

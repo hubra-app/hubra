@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import {
   IconBell,
   IconBrandDiscord,
+  IconCreditCard,
+  IconWorldWww,
   IconBuildingCommunity,
   IconDatabase,
   IconHeartbeat,
@@ -304,10 +306,15 @@ export function navSections(): NavSection[] {
               label: tr('Speicher', 'Storage'),
               perm: 'platform.settings',
               desc: tr(
-                'Wohin die verschlüsselten Backups gehen und mit welchem öffentlichen Schlüssel.',
-                'Where the encrypted backups go and which public key encrypts them.',
+                'Wohin die verschlüsselten Backups und die Dateien der Vereine gehen.',
+                "Where the encrypted backups and the clubs' files go.",
               ),
-              render: () => <SettingsSection section="backups" />,
+              render: () => (
+                <>
+                  <SettingsSection section="backups" />
+                  <SettingsSection section="files" />
+                </>
+              ),
             },
           ],
         },
@@ -410,6 +417,42 @@ export function navSections(): NavSection[] {
               label: tr('Kanäle', 'Channels'),
               perm: 'platform.settings',
               render: () => <SettingsSection section="discord-channels" />,
+            },
+          ],
+        },
+        {
+          id: 'domains',
+          label: tr('Vereinsdomains', 'Club domains'),
+          icon: icon(IconWorldWww),
+          desc: tr(
+            'Eigene Domains der Vereine: Zertifikat und Ingress pro bestätigter Domain, und der Notschalter.',
+            "Clubs' own domains: certificate and Ingress per verified domain, and the kill switch.",
+          ),
+          tabs: [
+            {
+              id: 'serving',
+              path: '/app/platform/domains',
+              label: '',
+              perm: 'platform.settings',
+              render: () => <SettingsSection section="domains" />,
+            },
+          ],
+        },
+        {
+          id: 'payments',
+          label: tr('Zahlungen', 'Payments'),
+          icon: icon(IconCreditCard),
+          desc: tr(
+            'Online-Zahlungen der Vereine über Stripe Connect: der Schlüssel des Plattform-Kontos und die Plattformgebühr.',
+            "Clubs' online payments through Stripe Connect: the platform account's key and the platform fee.",
+          ),
+          tabs: [
+            {
+              id: 'stripe',
+              path: '/app/platform/payments',
+              label: '',
+              perm: 'platform.settings',
+              render: () => <SettingsSection section="payments" />,
             },
           ],
         },

@@ -17,7 +17,7 @@ from hubra.api.mail.services import (
     MailboxesService,
 )
 from hubra.core.extensions import db, limiter
-from hubra.core.permissions import created_by, permission_required
+from hubra.core.permissions import created_by, permission_required, require_member
 from hubra.core.services.settings import SettingService
 from hubra.core.utils import log_audit
 from hubra.core.errors import api_error, error_message, raise_error
@@ -709,6 +709,56 @@ def _holds_function(member, function_id=None, **_):
         )
     )
     return "holder" if held is not None else None
+
+
+# ── The addresses a member answers for ───────────────────────────────────────
+
+
+@mail_bp.get("/mine")
+@require_member
+def my_mail_addresses():
+    """The club addresses of the groups the member leads and the functions
+    they hold: what they may switch on or off themselves (the toggle routes
+    below let them). Empty for everyone else."""
+    from datetime import date
+
+    from sqlalchemy import select
+
+    from hubra.core.models.function import Function, FunctionHolder
+    from hubra.core.permissions import _active_term
+
+    member = get_current_member()
+    groups = {
+        g.id: g.name
+        for g in db.session.scalars(
+            select(Group).where(Group.lead_id == member.id, Group.deleted_at.is_(None))
+        )
+    }
+    functions = dict(
+        db.session.execute(
+            select(Function.id, Function.name)
+            .join(FunctionHolder, FunctionHolder.function_id == Function.id)
+            .where(FunctionHolder.member_id == member.id, *_active_term(date.today()))
+        ).all()
+    )
+    out = []
+    for owner_type, owners in (("group", groups), ("function", functions)):
+        if not owners:
+            continue
+        addrs = db.session.scalars(
+            select(ManagedMailAddress)
+            .where(
+                ManagedMailAddress.owner_type == owner_type,
+                ManagedMailAddress.owner_id.in_(list(owners)),
+                ManagedMailAddress.fixed_forward_targets.is_(None),
+            )
+            .order_by(ManagedMailAddress.address)
+        )
+        for addr in addrs:
+            item = mma_service.serialize(addr)
+            item["ownerName"] = owners.get(addr.owner_id)
+            out.append(item)
+    return jsonify({"data": out}), 200
 
 
 # ── Group mail: toggle / prefix / aliases ─────────────────────────────────────

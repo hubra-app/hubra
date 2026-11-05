@@ -88,6 +88,13 @@ module = Module(
             label="Account statement goes to",
         ),
         SettingField(
+            "fiscal_year_start_month",
+            "int",
+            default=1,
+            label="Fiscal year starts in month",
+            description="1 for the calendar year; the year is named after the year it starts in",
+        ),
+        SettingField(
             "fee_basis_source",
             "choice",
             default="manual",
@@ -118,6 +125,7 @@ module = Module(
                 "finance.transactions.read",
                 "finance.invoices.read",
                 "finance.transaction_categories.read",
+                "finance.accounts.read",
             ),
         ),
     ),
@@ -129,5 +137,7 @@ module = Module(
         "invoice_reminder_history",
         "qrr_references",
         "recurring_transactions",
+        "accounts",
+        "fiscal_years",
     ),
 )

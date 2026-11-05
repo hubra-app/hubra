@@ -20,6 +20,10 @@ class Post(db.Model):
     title: Mapped[str] = mapped_column(db.String(255), nullable=False)
     summary: Mapped[str | None] = mapped_column(db.String(500), nullable=True)
     body: Mapped[str] = mapped_column(Text, nullable=False)
+    # The group the post is for: a role held for that group may manage it.
+    group_id: Mapped[int | None] = mapped_column(
+        db.Integer, ForeignKey("groups.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

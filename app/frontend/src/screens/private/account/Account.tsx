@@ -17,6 +17,7 @@ import { formatCHF, formatDate } from "@/format";
 import { useToggleJoinEvent } from "@/screens/private/operations/useEventActions";
 import { useModules } from "@/modules/useModules";
 import { MyGroupsCard } from "./MyGroupsCard";
+import { MyAttendanceCard } from "./MyAttendanceCard";
 import { PluginSlot } from "@/plugins";
 import { qk } from "@/data/keys";
 
@@ -149,6 +150,10 @@ export function AccountDashboardScreen() {
                   }}
                 >
                   <InvoicePill status={inv.status} />
+                  <PluginSlot
+                    name="invoice.actions"
+                    props={{ invoice: inv, onChange: () => refetchInvoices() }}
+                  />
                   <Button
                     size="sm"
                     variant="subtle"
@@ -511,6 +516,7 @@ export function AccountDashboardScreen() {
           )}
         </Paper>
 
+        {modules.has("events") && <MyAttendanceCard />}
         {modules.has("groups") && <MyGroupsCard />}
         <PluginSlot name="account.cards" />
 

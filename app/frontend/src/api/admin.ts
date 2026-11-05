@@ -61,6 +61,11 @@ export interface Domain {
   verified_at: string | null
   last_checked_at: string | null
   txt_record: TxtRecord | null
+  /** Serving visitors: null (not verified), off, pending, ready or failed. */
+  serving_status?: 'off' | 'pending' | 'ready' | 'failed' | null
+  serving_since?: string | null
+  /** Where to point the domain (CNAME), while the platform serves club domains. */
+  cname_target?: string | null
   created_at: string | null
   updated_at: string | null
 }

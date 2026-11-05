@@ -237,6 +237,14 @@ class TenantService:
             )
         )
         drop_tenant_schema(tenant_id)
+        from hubra.core import files
+
+        try:
+            files.delete_club(tenant_id)
+        except files.FileStoreError:
+            # The records go with the club either way (cascade); without the
+            # club's key the objects left in the store can't be opened.
+            _log.warning("Tenant %d: could not delete its stored files", tenant_id)
         # Without its data keys the club's secrets stay unreadable, in old
         # backups too.
         from hubra.core.models.data_key import DataKey
@@ -260,12 +268,18 @@ class TenantService:
         page: int = 1,
         per_page: int = 20,
         include_deleted: bool = False,
+        only_ids: set[int] | None = None,
     ) -> dict[str, Any]:
         """List tenants with optional search, filtering, sorting, and pagination.
+
+        ``only_ids`` narrows the list to those clubs (staff whose role holds
+        for some clubs only).
 
         Returns ``{"tenants": [...], "total": int, "page": int, "per_page": int}``.
         """
         query = select(Tenant)
+        if only_ids is not None:
+            query = query.where(Tenant.id.in_(only_ids))
 
         if not include_deleted:
             query = query.where(Tenant.deleted_at.is_(None))

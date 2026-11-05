@@ -414,6 +414,45 @@ function overviewPath(f: AttendanceFilter, csv = false) {
     : `/app/events/attendance?${qs}`;
 }
 
+export interface MyAttendance extends AttendanceSummary {
+  from: string;
+  to: string;
+  /** The dates the member was expected at (their groups' events and sign-ups). */
+  events: {
+    eventId: number;
+    title: string;
+    date: string;
+    time: string | null;
+    status: AttendanceStatus;
+  }[];
+}
+
+/** The signed-in member's own attendance (this year until today by default). */
+export async function getMyAttendance(from?: string, to?: string): Promise<MyAttendance> {
+  const qs = new URLSearchParams();
+  if (from) qs.set("from", from);
+  if (to) qs.set("to", to);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const b = await apiFetch<any>(`/app/events/attendance/me${qs.size ? `?${qs}` : ""}`);
+  return {
+    from: b.from,
+    to: b.to,
+    present: b.present,
+    excused: b.excused,
+    absent: b.absent,
+    expected: b.expected,
+    rate: b.rate,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    events: b.events.map((e: any) => ({
+      eventId: e.event_id,
+      title: e.title,
+      date: e.date,
+      time: e.time,
+      status: e.status,
+    })),
+  };
+}
+
 /** Attendance per member over the events of a period. */
 export async function getAttendanceOverview(
   f: AttendanceFilter,

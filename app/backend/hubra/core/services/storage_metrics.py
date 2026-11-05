@@ -1,7 +1,7 @@
 """Storage metrics collection for tenants.
 
-Aggregates storage usage across PostgreSQL schema size, WildDuck mail quotas,
-and backup sizes. Used by the admin dashboard and API usage stats.
+Aggregates storage usage across PostgreSQL schema size, WildDuck mail quotas
+and the club's stored files. Used by the admin dashboard and API usage stats.
 """
 
 import logging
@@ -21,7 +21,19 @@ def get_storage_bytes(tenant_id: int) -> int:
     total = 0
     total += _get_pg_schema_size(tenant_id)
     total += _get_mail_quota_total(tenant_id)
+    total += _get_file_bytes(tenant_id)
     return total
+
+
+def _get_file_bytes(tenant_id: int) -> int:
+    """Bytes of the club's files in the file store (hubra.core.files)."""
+    try:
+        from hubra.core import files
+
+        return files.usage_bytes([tenant_id]).get(tenant_id, 0)
+    except Exception:
+        _log.debug("Could not get file bytes for tenant %d", tenant_id)
+        return 0
 
 
 def _get_pg_schema_size(tenant_id: int) -> int:

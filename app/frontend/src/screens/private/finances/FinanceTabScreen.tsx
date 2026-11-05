@@ -11,6 +11,7 @@ import { ExternalPartiesTab } from '@/screens/private/finances/ExternalPartiesTa
 import { RecurringTab } from '@/screens/private/finances/RecurringTab'
 import { FeeBasisTab } from '@/screens/private/finances/FeeBasisTab'
 import { FinanceSettingsTab } from '@/screens/private/finances/FinanceSettingsTab'
+import { AnnualAccountsTab } from '@/screens/private/finances/AnnualAccountsTab'
 import { BankSettingsCard } from '@/screens/private/settings/BankSettingsCard'
 import { PluginBoundary, usePluginTabs } from '@/plugins'
 
@@ -27,8 +28,9 @@ const financePath = (id: string) => `/app/finance${id === 'overview' ? '' : '/' 
 /**
  * Finanzen in five page tabs: the overview, the invoices, the bookings,
  * planning (budgets, fee basis) and the set-up (billing rules, the lists the
- * bookings draw on, the bank account). Each part keeps its own address, so
- * old links still open the same page.
+ * bookings draw on, the bank account), plus the annual accounts for those who
+ * may read them. Each part keeps its own address, so old links still open
+ * the same page.
  */
 export function FinanceTabScreen() {
   const { t } = useT()
@@ -117,6 +119,19 @@ export function FinanceTabScreen() {
     ...pluginTabs
       .filter((pt) => !known.has(groupOf(pt) ?? ''))
       .map((pt) => ({ id: pt.id, label: t(pt.label), parts: [pluginPart(pt)] })),
+    // The year-end report for the general meeting, with its chart of accounts.
+    {
+      id: 'annual',
+      label: t('shell.nav.annualAccounts', 'Jahresrechnung'),
+      parts: [
+        {
+          id: 'annual',
+          label: t('shell.nav.annualAccounts', 'Jahresrechnung'),
+          allowed: hasPermission('finance.accounts.read'),
+          render: () => <AnnualAccountsTab />,
+        },
+      ],
+    },
     {
       id: 'setup',
       label: t('finance.settings.tab', 'Einstellungen'),

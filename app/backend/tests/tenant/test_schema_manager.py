@@ -14,6 +14,8 @@ _GLOBAL_ONLY_TABLES = frozenset(
         "users",
         "user_tenants",
         "tenant_requests",
+        # Records of club files: the platform counts and deletes them.
+        "stored_files",
         # The texts are the platform's; clubs only suggest changes.
         "translation",
         "translation_requests",
@@ -28,6 +30,7 @@ _GLOBAL_ONLY_TABLES = frozenset(
         "global_roles",
         "global_role_permissions",
         "user_global_roles",
+        "user_global_role_tenants",
         "features",
         "tenant_features",
         "installed_plugins",

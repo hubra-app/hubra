@@ -14,6 +14,17 @@ _MEMBER_COUNT = "_member_count"
 VISIBILITIES = ("open", "visible", "private")
 
 
+def valid_group_id(value: int | None) -> None:
+    """Validator for a ``group_id`` on content (events, posts, polls)."""
+    if value is None:
+        return
+    from marshmallow import ValidationError
+
+    group = db.session.get(Group, value)
+    if group is None or group.deleted_at is not None:
+        raise ValidationError("Unknown group")
+
+
 class GroupSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Group

@@ -34,12 +34,14 @@ export const qk = {
     leave: ['my-leave'] as const,
     directory: ['my-directory'] as const,
     notifications: ['my-notifications'] as const,
+    mailAddresses: ['my-mail-addresses'] as const,
   },
 
   events: ['events'] as const,
   eventPending: (id: string) => ['events', id, 'pending'] as const,
   eventRoll: (id: string) => ['events', id, 'roll'] as const,
   attendance: ['attendance'] as const,
+  myAttendance: ['attendance', 'me'] as const,
   attendanceOverview: (from: string, to: string, groupId: string) =>
     ['attendance', from, to, groupId] as const,
   polls: ['polls'] as const,
@@ -89,6 +91,10 @@ export const qk = {
   financeSummary: (year: number) => ['finance-summary', year] as const,
   recurring: ['finance-recurring'] as const,
   feeBasis: (preview: string) => ['finance-fee-basis', preview] as const,
+  chart: ['finance-chart'] as const,
+  fiscalYears: ['finance-years'] as const,
+  annualAll: ['finance-annual'] as const,
+  annual: (year: number) => ['finance-annual', year] as const,
   externalParties: ['external-parties'] as const,
 
   keys: ['keys'] as const,

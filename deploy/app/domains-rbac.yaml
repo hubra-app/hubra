@@ -1,0 +1,37 @@
+# Club domains (docs/k3s.md, "Club domains"): the platform worker creates one
+# cert-manager Certificate and one Ingress per verified club domain
+# (hubra.core.services.domain_serving). This is the only pod that talks to
+# the Kubernetes API, and only for those two kinds in this namespace. It
+# only touches objects labelled hubra.club/club-domain=true; Flux prunes
+# only what it applied itself, so the two don't fight.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hubra-domains
+automountServiceAccountToken: false
+imagePullSecrets:
+  - name: ghcr-pull
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: hubra-domains
+rules:
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "create", "patch", "delete"]
+  - apiGroups: ["cert-manager.io"]
+    resources: ["certificates"]
+    verbs: ["get", "list", "create", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hubra-domains
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: hubra-domains
+subjects:
+  - kind: ServiceAccount
+    name: hubra-domains

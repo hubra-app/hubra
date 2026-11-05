@@ -262,6 +262,17 @@
       "switch": "Browser notifications",
       "needsInstall": "On iPhone and iPad, first add Hubra to the home screen (Share › Add to Home Screen), then switch this on.",
       "denied": "Notifications are blocked for this site in the browser. Allow them in the browser's site settings."
+    },
+    "myAttendance": "My attendance",
+    "myAttendanceYear": "Since {{date}}",
+    "showLess": "Show less",
+    "showAllDates": "Show all {{count}} dates",
+    "myAddresses": {
+      "title": "Addresses you look after",
+      "hint": "As a group's leader or a function's holder you switch its club address on or off. The board changes the address's name.",
+      "function": "Function",
+      "group": "Group",
+      "toggle": "{{address}} active"
     }
   },
   "app": {
@@ -1198,6 +1209,60 @@
     "transactionNo": "Transaction {{id}}",
     "markCompleted": "Mark as completed",
     "direction": "Direction",
+    "annual": {
+      "report": "Annual accounts",
+      "chart": "Chart of accounts",
+      "closed": "Year {{year}} closed",
+      "reopened": "Year {{year}} reopened",
+      "year": "Fiscal year",
+      "statusClosed": "Closed",
+      "statusOpen": "Provisional",
+      "openingEdit": "Opening balances",
+      "notOver": "The year is not over yet",
+      "close": "Close year",
+      "reopen": "Reopen",
+      "unmapped": "{{count}} bookings have a category without an account and count as other income or expenses.",
+      "mapCategories": "Map categories",
+      "balanceSheet": "Balance sheet",
+      "assets": "Assets",
+      "totalAssets": "Total assets",
+      "liabilities": "Liabilities and equity",
+      "totalLiabilities": "Total liabilities and equity",
+      "capitalLine": "Club capital: start {{opening}} + result {{result}} = end {{closing}}",
+      "incomeStatement": "Income statement",
+      "income": "Income",
+      "totalIncome": "Total income",
+      "expense": "Expenses",
+      "totalExpense": "Total expenses",
+      "profit": "Profit",
+      "loss": "Loss",
+      "cashNote": "Counts the completed payments of the year, put on accounts through their category. Bookings paid in cash land in the cash account, all others in the bank.",
+      "openInvoices": "Open invoices at year end: {{count}} ({{amount}}), not in the balance sheet.",
+      "closeTitle": "Close year {{year}}?",
+      "reopenTitle": "Reopen year {{year}}?",
+      "closeBody": "The closing balances are stored and open the next year. Bookings in this year can then no longer be added, changed or deleted.",
+      "reopenBody": "Bookings in this year can be changed again. Close the year again afterwards.",
+      "number": "No.",
+      "amount": "Amount",
+      "previous": "Previous year",
+      "none": "No amounts",
+      "openingSaved": "Opening balances saved",
+      "openingTitle": "Opening balances {{year}}",
+      "openingHint": "The amounts on the first day of the year. Cash and bank are suggested from earlier bookings; the club capital is assets minus liabilities.",
+      "kindAsset": "Assets",
+      "kindLiability": "Liabilities",
+      "kindEquity": "Equity",
+      "kindIncome": "Income",
+      "kindExpense": "Expenses",
+      "categoriesTitle": "Categories and accounts",
+      "categoriesHint": "Every booking counts on an account through its category. Without one it counts as other income or expenses.",
+      "accountFor": "Account for {{name}}",
+      "noAccount": "No account",
+      "chartHint": "The chart of accounts for clubs after the Swiss SME chart. You can add your own accounts.",
+      "accountName": "Account",
+      "kind": "Kind",
+      "addAccount": "Add"
+    },
     "groups": {
       "bookings": "Bookings",
       "planning": "Budget & fees",
@@ -2213,6 +2278,7 @@
       "recurring": "Finance › Recurring",
       "feeBasis": "Finance › Fee basis",
       "attendance": "Club life › Attendance",
+      "annualAccounts": "Annual accounts",
       "bankAccount": "Finance › Bank & QR invoice"
     },
     "emailVerify": {
@@ -2264,7 +2330,8 @@
       "activeMembersCount": "{{count}} active members",
       "more": "More",
       "recurring": "Recurring",
-      "feeBasis": "Fee basis"
+      "feeBasis": "Fee basis",
+      "annualAccounts": "Annual accounts"
     },
     "noPermission": "You don't have permission to view this page.",
     "notif": {
@@ -2761,7 +2828,14 @@
     "recordType": "Type",
     "recordValue": "Value",
     "showRecord": "DNS record",
-    "recordTitle": "DNS record for {{domain}}"
+    "recordTitle": "DNS record for {{domain}}",
+    "serving": {
+      "ready": "Live",
+      "pending": "Certificate pending",
+      "failed": "No certificate"
+    },
+    "cnameHint": "To bring visitors on {{domain}} to your club, point the domain at Hubra with this record:",
+    "cnameAfter": "Many providers don't allow a CNAME on a bare domain (club.ch); use a subdomain like members.club.ch instead. Once the domain is verified and points at Hubra we fetch a certificate, which usually takes a few minutes."
   },
   "status": {
     "active": "Active",
@@ -3297,7 +3371,10 @@
       "tiers_tiers_update_price_chf": "Price (CHF)",
       "tiers_tiers_update_price_type": "Pricing type",
       "tiers_tiers_update_round_to": "Round to",
-      "apps_apps_manage": "Manage connected apps"
+      "apps_apps_manage": "Manage connected apps",
+      "finance_accounts_read": "View the chart of accounts and annual accounts",
+      "finance_accounts_update": "Change the chart of accounts and opening balances",
+      "finance_accounts_close": "Close and reopen a fiscal year"
     },
     "areas": {
       "applications": "Applications",
@@ -3798,6 +3875,10 @@
       "slug": "To confirm, type the club's short name: {{slug}}",
       "turnOn": "Use only our key"
     }
+  },
+  "content": {
+    "group": "Group",
+    "groupHint": "Anyone with a role for this group can manage it. Everyone can still see it."
   },
   "apiAccess": {
     "saved": "Saved",

@@ -26,6 +26,9 @@ x-backend-app: &backend-app
     # The app's own role (scripts/pg-init); falls back to the postgres
     # superuser on stacks from before it existed.
     - DATABASE_URL=postgresql://${POSTGRES_APP_USER:-${POSTGRES_USER}}:${POSTGRES_APP_PASSWORD:-${POSTGRES_PASSWORD}}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}
+  # Club files when no S3 bucket is set (FILES_DIR, docs/operator-guide.md).
+  volumes:
+    - hubra_files:/var/lib/hubra/files
   security_opt:
     - no-new-privileges:true
   networks:
@@ -354,3 +357,4 @@ volumes:
   pg_data:
   redis_data:
   celerybeat_data:
+  hubra_files:

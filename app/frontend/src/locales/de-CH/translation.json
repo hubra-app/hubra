@@ -262,6 +262,17 @@
       "switch": "Browser-Mitteilungen",
       "needsInstall": "Auf iPhone und iPad zuerst Hubra zum Home-Bildschirm hinzufügen (Teilen › Zum Home-Bildschirm), dann hier einschalten.",
       "denied": "Mitteilungen sind für diese Seite im Browser blockiert. Erlaube sie in den Website-Einstellungen des Browsers."
+    },
+    "myAttendance": "Meine Anwesenheit",
+    "myAttendanceYear": "Seit {{date}}",
+    "showLess": "Weniger anzeigen",
+    "showAllDates": "Alle {{count}} Termine anzeigen",
+    "myAddresses": {
+      "title": "Adressen, die du betreust",
+      "hint": "Als Leitung einer Gruppe oder Inhaber:in einer Funktion schaltest du ihre Vereinsadresse ein oder aus. Den Namen der Adresse ändert der Vorstand.",
+      "function": "Funktion",
+      "group": "Gruppe",
+      "toggle": "{{address}} aktiv"
     }
   },
   "app": {
@@ -1198,6 +1209,60 @@
     "transactionNo": "Buchung {{id}}",
     "markCompleted": "Als abgeschlossen markieren",
     "direction": "Richtung",
+    "annual": {
+      "report": "Jahresrechnung",
+      "chart": "Kontenplan",
+      "closed": "Jahr {{year}} abgeschlossen",
+      "reopened": "Jahr {{year}} wieder geöffnet",
+      "year": "Geschäftsjahr",
+      "statusClosed": "Abgeschlossen",
+      "statusOpen": "Provisorisch",
+      "openingEdit": "Eröffnungsbilanz",
+      "notOver": "Das Jahr ist noch nicht vorbei",
+      "close": "Jahr abschliessen",
+      "reopen": "Wieder öffnen",
+      "unmapped": "{{count}} Buchungen haben eine Kategorie ohne Konto und zählen als übriger Ertrag oder Aufwand.",
+      "mapCategories": "Kategorien zuordnen",
+      "balanceSheet": "Bilanz",
+      "assets": "Aktiven",
+      "totalAssets": "Total Aktiven",
+      "liabilities": "Passiven",
+      "totalLiabilities": "Total Passiven",
+      "capitalLine": "Vereinsvermögen: Anfang {{opening}} + Ergebnis {{result}} = Ende {{closing}}",
+      "incomeStatement": "Erfolgsrechnung",
+      "income": "Ertrag",
+      "totalIncome": "Total Ertrag",
+      "expense": "Aufwand",
+      "totalExpense": "Total Aufwand",
+      "profit": "Gewinn",
+      "loss": "Verlust",
+      "cashNote": "Gezählt werden die abgeschlossenen Zahlungen des Jahres, über ihre Kategorie den Konten zugeordnet. Bar bezahlte Buchungen landen in der Kasse, alle anderen auf der Bank.",
+      "openInvoices": "Offene Rechnungen am Jahresende: {{count}} ({{amount}}), nicht in der Bilanz.",
+      "closeTitle": "Jahr {{year}} abschliessen?",
+      "reopenTitle": "Jahr {{year}} wieder öffnen?",
+      "closeBody": "Die Schlussbilanz wird gespeichert und eröffnet das nächste Jahr. Danach lassen sich Buchungen in diesem Jahr nicht mehr erfassen, ändern oder löschen.",
+      "reopenBody": "Buchungen in diesem Jahr lassen sich danach wieder ändern. Schliesse das Jahr danach erneut ab.",
+      "number": "Nr.",
+      "amount": "Betrag",
+      "previous": "Vorjahr",
+      "none": "Keine Beträge",
+      "openingSaved": "Eröffnungsbilanz gespeichert",
+      "openingTitle": "Eröffnungsbilanz {{year}}",
+      "openingHint": "Die Beträge am ersten Tag des Jahres. Kasse und Bank sind aus den früheren Buchungen vorgeschlagen; das Vereinsvermögen ergibt sich aus Aktiven minus Passiven.",
+      "kindAsset": "Aktiven",
+      "kindLiability": "Passiven",
+      "kindEquity": "Eigenkapital",
+      "kindIncome": "Ertrag",
+      "kindExpense": "Aufwand",
+      "categoriesTitle": "Kategorien und Konten",
+      "categoriesHint": "Jede Buchung zählt über ihre Kategorie auf ein Konto. Ohne Konto zählt sie als übriger Ertrag oder Aufwand.",
+      "accountFor": "Konto für {{name}}",
+      "noAccount": "Kein Konto",
+      "chartHint": "Der Kontenplan für Vereine nach dem Schweizer KMU-Kontenrahmen. Eigene Konten lassen sich ergänzen.",
+      "accountName": "Konto",
+      "kind": "Art",
+      "addAccount": "Hinzufügen"
+    },
     "groups": {
       "bookings": "Buchungen",
       "planning": "Budget & Beiträge",
@@ -2213,6 +2278,7 @@
       "recurring": "Finanzen › Wiederkehrend",
       "feeBasis": "Finanzen › Beitragsgrundlage",
       "attendance": "Vereinsleben › Anwesenheit",
+      "annualAccounts": "Jahresrechnung",
       "bankAccount": "Finanzen › Bank & QR-Rechnung"
     },
     "emailVerify": {
@@ -2264,7 +2330,8 @@
       "activeMembersCount": "{{count}} aktive Mitglieder",
       "more": "Weitere",
       "recurring": "Wiederkehrend",
-      "feeBasis": "Beitragsgrundlage"
+      "feeBasis": "Beitragsgrundlage",
+      "annualAccounts": "Jahresrechnung"
     },
     "noPermission": "Du hast keine Berechtigung für diese Seite.",
     "notif": {
@@ -2761,7 +2828,14 @@
     "recordType": "Typ",
     "recordValue": "Wert",
     "showRecord": "DNS-Eintrag",
-    "recordTitle": "DNS-Eintrag für {{domain}}"
+    "recordTitle": "DNS-Eintrag für {{domain}}",
+    "serving": {
+      "ready": "Erreichbar",
+      "pending": "Zertifikat ausstehend",
+      "failed": "Kein Zertifikat"
+    },
+    "cnameHint": "Damit Besucher auf {{domain}} zu eurem Verein kommen, zeigt die Domain mit diesem Eintrag auf Hubra:",
+    "cnameAfter": "Für eine Domain ohne Subdomain (verein.ch) erlauben viele Anbieter keinen CNAME; nimm dann eine Subdomain wie mitglieder.verein.ch. Sobald die Domain bestätigt ist und auf Hubra zeigt, holen wir ein Zertifikat; das dauert meist wenige Minuten."
   },
   "status": {
     "active": "Aktiv",
@@ -3297,7 +3371,10 @@
       "tiers_tiers_update_price_chf": "Preis (CHF)",
       "tiers_tiers_update_price_type": "Preisart",
       "tiers_tiers_update_round_to": "Runden auf",
-      "apps_apps_manage": "Verbundene Apps verwalten"
+      "apps_apps_manage": "Verbundene Apps verwalten",
+      "finance_accounts_read": "Kontenplan und Jahresrechnung ansehen",
+      "finance_accounts_update": "Kontenplan und Eröffnungsbilanz ändern",
+      "finance_accounts_close": "Geschäftsjahr abschliessen und wieder öffnen"
     },
     "areas": {
       "applications": "Anträge",
@@ -3798,6 +3875,10 @@
       "slug": "Zur Bestätigung den Kurznamen des Vereins eingeben: {{slug}}",
       "turnOn": "Nur unseren Schlüssel verwenden"
     }
+  },
+  "content": {
+    "group": "Gruppe",
+    "groupHint": "Wer eine Rolle für diese Gruppe hat, kann den Eintrag verwalten. Sichtbar bleibt er für alle."
   },
   "apiAccess": {
     "saved": "Gespeichert",

@@ -319,3 +319,20 @@ def test_an_update_that_breaks_a_dependant_is_refused(
         installer.confirm(installer.stage(signed_zip(newer, key[0]))["token"], False)
     assert db.session.get(InstalledPlugin, "zzbase").version == "2.0.0"
     assert "Zzchild" in installer.dependents("zzbase")
+
+
+def test_a_core_blueprint_at_the_root_blocks_no_plugin():
+    """Core's OAuth metadata blueprint sits at "" (/.well-known/...); it must
+    not count as owning every club path."""
+    from types import SimpleNamespace
+
+    core = Module(
+        code="core",
+        name="Core",
+        blueprints=(
+            Blueprint("hubra.api.oauth.routes", "oauth_metadata_bp", ""),
+            Blueprint("hubra.api.members.routes", "members_bp", "/api/v1/app/members"),
+        ),
+    )
+    taken, _tables = loader._taken(SimpleNamespace(all=lambda: [core]))
+    assert "/" not in taken and "/api/v1/app/members" in taken

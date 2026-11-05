@@ -125,6 +125,40 @@ class UserGlobalRole(db.Model):
     role: Mapped["GlobalRole"] = relationship(
         "GlobalRole", back_populates="user_assignments"
     )
+    clubs: Mapped[list["UserGlobalRoleTenant"]] = relationship(
+        "UserGlobalRoleTenant",
+        back_populates="assignment",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"<UserGlobalRole user_id={self.user_id} role_id={self.role_id}>"
+
+
+class UserGlobalRoleTenant(db.Model):
+    """Limits one role assignment to some clubs.
+
+    An assignment without rows here holds on the whole platform. With rows
+    it holds only on these clubs, and only for the club rights in
+    ``hubra.core.permissions.CLUB_LIMITED_KEYS`` (a support person who may
+    look after a few clubs, nothing else).
+    """
+
+    __tablename__ = "user_global_role_tenants"
+    __table_args__ = (UniqueConstraint("assignment_id", "tenant_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    assignment_id: Mapped[int] = mapped_column(
+        db.ForeignKey("user_global_roles.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    tenant_id: Mapped[int] = mapped_column(
+        db.ForeignKey("tenants.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    assignment: Mapped["UserGlobalRole"] = relationship(
+        "UserGlobalRole", back_populates="clubs"
+    )

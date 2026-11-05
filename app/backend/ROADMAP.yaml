@@ -55,7 +55,7 @@ items:
 
   # ── Later ─────────────────────────────────────────────────────────────
   - id: group-content-roles
-    status: later
+    status: done
     area: {de: Rollen, en: Roles}
     title:
       de: Anlässe, Beiträge und Umfragen einer Gruppe zuordnen

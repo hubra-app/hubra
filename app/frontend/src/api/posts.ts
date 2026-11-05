@@ -15,6 +15,7 @@ interface BackendPost {
   like_count: number;
   like_member_ids: number[];
   comment_count: number;
+  group_id?: number | null;
 }
 
 interface BackendComment {
@@ -59,6 +60,7 @@ function adaptPost(b: BackendPost): Post {
     likes: b.like_count,
     likeMemberIds: b.like_member_ids.map(String),
     comments: b.comment_count,
+    groupId: b.group_id != null ? String(b.group_id) : null,
   };
 }
 
@@ -88,6 +90,8 @@ export interface PostCreate {
   title: string;
   summary?: string;
   body: string;
+  /** The group the post is for; empty: the whole club. */
+  groupId?: string | null;
 }
 
 export async function createPost(input: PostCreate): Promise<Post> {
@@ -97,6 +101,9 @@ export async function createPost(input: PostCreate): Promise<Post> {
       title: input.title,
       summary: input.summary ?? null,
       body: input.body,
+      ...(input.groupId !== undefined
+        ? { group_id: input.groupId ? Number(input.groupId) : null }
+        : {}),
     }),
   });
   return adaptPost(data);
@@ -106,15 +113,19 @@ export interface PostUpdate {
   title?: string;
   summary?: string;
   body?: string;
+  groupId?: string | null;
 }
 
 export async function updatePost(
   id: string,
   input: PostUpdate,
 ): Promise<Post> {
+  const { groupId, ...rest } = input;
+  const body: Record<string, unknown> = { ...rest };
+  if (groupId !== undefined) body.group_id = groupId ? Number(groupId) : null;
   const data = await apiFetch<BackendPost>(`/app/posts/${id}`, {
     method: "PATCH",
-    body: JSON.stringify(input),
+    body: JSON.stringify(body),
   });
   return adaptPost(data);
 }

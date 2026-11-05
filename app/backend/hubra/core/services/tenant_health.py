@@ -254,6 +254,12 @@ def level_of(row: dict, status: str) -> str:
     return "ok"
 
 
+def _file_bytes(ids: list[int]) -> dict[int, int]:
+    from hubra.core import files
+
+    return files.usage_bytes(ids)
+
+
 def for_tenants(tenants: list[Tenant]) -> dict[int, dict]:
     """Health of each of *tenants*, by tenant id.  Never raises: a part that
     fails is left empty and logged, so the list still shows."""
@@ -278,6 +284,7 @@ def for_tenants(tenants: list[Tenant]) -> dict[int, dict]:
         numbers = safe(_sqlite_numbers, ids)
         sizes = {}
     mail = safe(_mail_counts, ids)
+    file_bytes = safe(_file_bytes, ids)
     alerts = safe(_alert_counts, ids)
     plugins = safe(_plugin_counts, ids)
 
@@ -288,7 +295,9 @@ def for_tenants(tenants: list[Tenant]) -> dict[int, dict]:
             "members": n.get("members", 0),
             "active_members": n.get("active_members", 0),
             "last_activity": n.get("last_activity"),
-            "storage_bytes": sizes.get(t.id, 0) + n.get("mailbox_bytes", 0),
+            "storage_bytes": sizes.get(t.id, 0)
+            + n.get("mailbox_bytes", 0)
+            + file_bytes.get(t.id, 0),
             "mail": mail.get(t.id, {"sent": 0, "failed": 0}),
             "plugins": plugins.get(t.id, 0),
             "alerts": alerts.get(t.id, {"warning": 0, "error": 0}),

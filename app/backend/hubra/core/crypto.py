@@ -43,7 +43,9 @@ __all__ = [
     "PLATFORM",
     "InvalidToken",
     "context_scope",
+    "decrypt_bytes",
     "decrypt_code",
+    "encrypt_bytes",
     "encrypt_code",
     "is_current",
     "new_data_key",
@@ -251,6 +253,37 @@ def decrypt_code(ciphertext: str, purpose: str, scope: str | None = None) -> str
     except (InvalidTag, ValueError):
         raise InvalidToken from None
     return plain.decode("utf-8")
+
+
+def encrypt_bytes(data: bytes, purpose: str, scope: str | None = None) -> bytes:
+    """Encrypt a file's bytes like ``encrypt_code``: AES-256-GCM under the
+    club's data key, with club, key version and *purpose* bound in.
+
+    Layout: ``hk1.<scope>.<version>.`` (ASCII) + nonce + ciphertext.
+    """
+    scope = scope or context_scope()
+    version, key = _current_key(scope)
+    nonce = os.urandom(_NONCE)
+    sealed = AESGCM(key).encrypt(nonce, data, _aad(scope, version, purpose))
+    return f"{_PREFIX}.{scope}.{version}.".encode("ascii") + nonce + sealed
+
+
+def decrypt_bytes(blob: bytes, purpose: str, scope: str | None = None) -> bytes:
+    """Open bytes written by ``encrypt_bytes``; raises ``InvalidToken`` when
+    they belong to another club or purpose, or no key opens them."""
+    try:
+        prefix, token_scope, version, rest = blob.split(b".", 3)
+        token_scope_s, version_i = token_scope.decode("ascii"), int(version)
+    except (ValueError, UnicodeDecodeError):
+        raise InvalidToken from None
+    if prefix != _PREFIX.encode() or token_scope_s != (scope or context_scope()):
+        raise InvalidToken
+    try:
+        return AESGCM(_key(token_scope_s, version_i)).decrypt(
+            rest[:_NONCE], rest[_NONCE:], _aad(token_scope_s, version_i, purpose)
+        )
+    except (InvalidTag, ValueError):
+        raise InvalidToken from None
 
 
 def is_current(ciphertext: str, scope: str) -> bool:

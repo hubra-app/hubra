@@ -161,6 +161,20 @@ export async function toggleMemberMail(
   );
 }
 
+// ── Addresses the member answers for ─────────────────────────────────────────
+
+export interface MyMailAddress extends ManagedMailAddressInfo {
+  /** The group or function the address belongs to. */
+  ownerName: string | null;
+}
+
+/** The club addresses of the groups the member leads and the functions they
+ *  hold; they may switch these on or off. */
+export async function listMyMailAddresses(): Promise<MyMailAddress[]> {
+  const res = await apiFetch<{ data: MyMailAddress[] }>("/app/mail/mine");
+  return res.data;
+}
+
 // ── Group Mail: toggle / prefix / aliases ────────────────────────────────────
 
 export async function toggleGroupMail(

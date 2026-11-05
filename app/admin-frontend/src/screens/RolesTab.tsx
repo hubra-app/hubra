@@ -13,6 +13,7 @@ import {
   Alert,
   Checkbox,
   Select,
+  MultiSelect,
 } from '@mantine/core'
 import { IconPlus, IconUserPlus } from '@tabler/icons-react'
 import {
@@ -25,8 +26,10 @@ import {
   assignUserRole,
   removeUserRole,
   type GlobalRole,
+  type UserRole,
   type UserSearchResult,
 } from '@/api/globalRbac'
+import { listTenants } from '@/api/tenants'
 import { useAdmin } from '@/context/AdminContext'
 import { tr } from '@/lang'
 import { useConfirm } from '@/components/useConfirm'
@@ -44,8 +47,9 @@ export function RolesTab() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([])
   const [selectedUser, setSelectedUser] = useState<UserSearchResult | null>(null)
-  const [userRoles, setUserRoles] = useState<{ id: number; name: string }[]>([])
+  const [userRoles, setUserRoles] = useState<UserRole[]>([])
   const [assignRoleId, setAssignRoleId] = useState<number | null>(null)
+  const [assignClubs, setAssignClubs] = useState<string[]>([])
 
   const { data: rolesData } = useQuery({
     queryKey: ['global-roles'],
@@ -55,6 +59,13 @@ export function RolesTab() {
   const { data: permsData } = useQuery({
     queryKey: ['global-permissions'],
     queryFn: listGlobalPermissions,
+  })
+
+  // The clubs a role can be limited to, only while assigning one.
+  const { data: clubsData } = useQuery({
+    queryKey: ['tenants', 'role-clubs'],
+    queryFn: () => listTenants({ sort_by: 'name', per_page: 100 }),
+    enabled: assignOpen,
   })
 
   const createMutation = useMutation({
@@ -85,7 +96,7 @@ export function RolesTab() {
   const assignMutation = useMutation({
     mutationFn: () => {
       if (!selectedUser || !assignRoleId) throw new Error(tr('Person oder Rolle fehlt', 'Missing user or role'))
-      return assignUserRole(selectedUser.id, assignRoleId)
+      return assignUserRole(selectedUser.id, assignRoleId, assignClubs.map(Number))
     },
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['global-roles'] })
@@ -95,6 +106,7 @@ export function RolesTab() {
       }
       notify('success', tr('Rolle zugewiesen', 'Role assigned'))
       setAssignRoleId(null)
+      setAssignClubs([])
     },
     onError: (err: Error) => notify('error', tr('Zuweisen fehlgeschlagen', 'Assign failed'), err.message),
   })
@@ -412,10 +424,17 @@ export function RolesTab() {
                   </Text>
                 )}
                 {userRoles.map((r) => (
-                  <Group key={r.id} justify="space-between">
-                    <Badge variant="light" color="acc" size="sm">
-                      {r.name}
-                    </Badge>
+                  <Group key={r.id} justify="space-between" wrap="nowrap">
+                    <div>
+                      <Badge variant="light" color="acc" size="sm">
+                        {r.name}
+                      </Badge>
+                      <Text size="xs" c="dimmed" mt={2}>
+                        {r.clubs.length === 0
+                          ? tr('Alle Vereine', 'All clubs')
+                          : tr('Nur: ', 'Only: ') + r.clubs.map((c) => c.name).join(', ')}
+                      </Text>
+                    </div>
                     <Button
                       size="xs"
                       variant="subtle"
@@ -434,14 +453,27 @@ export function RolesTab() {
                 ))}
               </Stack>
 
-              <Group gap={8}>
-                <Select
-                  placeholder={tr('Rolle wählen …', 'Select a role…')}
-                  value={assignRoleId ? String(assignRoleId) : null}
-                  onChange={(v) => setAssignRoleId(v ? Number(v) : null)}
-                  data={roles.map((r) => ({ value: String(r.id), label: r.name }))}
-                  style={{ flex: 1 }}
-                />
+              <Select
+                label={tr('Rolle', 'Role')}
+                placeholder={tr('Rolle wählen …', 'Select a role…')}
+                value={assignRoleId ? String(assignRoleId) : null}
+                onChange={(v) => setAssignRoleId(v ? Number(v) : null)}
+                data={roles.map((r) => ({ value: String(r.id), label: r.name }))}
+              />
+              <MultiSelect
+                label={tr('Nur für diese Vereine', 'Only for these clubs')}
+                description={tr(
+                  'Leer lassen für alle Vereine. Für bestimmte Vereine gilt die Rolle nur zum Ansehen und zum Öffnen als Mitglied, nicht für Änderungen oder Plattform-Seiten.',
+                  'Leave empty for all clubs. Limited to clubs, the role only lets them look at those clubs and open them as a member, not change them or use platform pages.',
+                )}
+                placeholder={tr('Alle Vereine', 'All clubs')}
+                searchable
+                clearable
+                value={assignClubs}
+                onChange={setAssignClubs}
+                data={(clubsData?.tenants ?? []).map((t) => ({ value: String(t.id), label: t.name }))}
+              />
+              <Group justify="flex-end">
                 <Button
                   loading={assignMutation.isPending}
                   disabled={!assignRoleId}
