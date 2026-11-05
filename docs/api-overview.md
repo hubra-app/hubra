@@ -30,8 +30,8 @@ not `Authorization: Bearer` headers. Tokens are never exposed to JavaScript.
 | `csrf_refresh_token`    | No       | CSRF double-submit (JS-readable) |
 
 All cookies use `Domain=.hubra.club`, `SameSite=Lax`, `Secure` (HTTPS only),
-`Path=/`. See [SUBDOMAIN_MIGRATION.md](SUBDOMAIN_MIGRATION.md) for the full
-cookie/CORS rationale.
+`Path=/`. See [architecture.md](architecture.md#cross-origin-auth) for the
+cookie and CORS setup.
 
 ### Auth flow
 

@@ -130,10 +130,10 @@ or finds a club on the SSO site (`/start`, `/clubs`), which is also served as
 
 These are critical when the API and frontend are on different subdomains
 (`api.hubra.club` vs `app.hubra.club`). See
-[SUBDOMAIN_MIGRATION.md](SUBDOMAIN_MIGRATION.md) for the full rationale.
+[architecture.md](architecture.md#cross-origin-auth) for why.
 
 ```
-CORS_ORIGINS=https://hubra.club,https://app.hubra.club,http://localhost:5173
+CORS_ORIGINS=https://app.hubra.club,https://manage.hubra.club,https://sso.hubra.club,https://join.hubra.club,https://support.hubra.club
 JWT_COOKIE_DOMAIN=.hubra.club
 JWT_COOKIE_SAMESITE=Lax
 JWT_COOKIE_SECURE=true

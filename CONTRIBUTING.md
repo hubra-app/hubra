@@ -49,8 +49,7 @@ the copyright holder's written permission. In practice:
   [app/backend/API.md](app/backend/API.md).
 - Settings and feature flags: [docs/configuration.md](docs/configuration.md).
 
-The repository layout is described in the [README](README.md#project-structure)
-and in more depth in [CODEBASE.md](CODEBASE.md).
+The repository layout is described in the [README](README.md#project-structure).
 
 ## Making a change
 

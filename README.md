@@ -38,8 +38,7 @@ Discord bot ([docs/discord.md](docs/discord.md)).
 
 An external Traefik (or the k3s ingress) terminates TLS and routes by Host
 header. JWT auth cookies use `Domain=.hubra.club` so they flow
-cross-subdomain. See [docs/architecture.md](docs/architecture.md) and
-[docs/SUBDOMAIN_MIGRATION.md](docs/SUBDOMAIN_MIGRATION.md) for the
+cross-subdomain. See [docs/architecture.md](docs/architecture.md) for the
 cross-origin auth setup (CORS, CSRF, cookie attributes, ProxyFix).
 
 ## Tech Stack
@@ -161,7 +160,6 @@ Marketplace README and the hubra.club Modules page stay current.
 | Environment & settings config          | [docs/configuration.md](docs/configuration.md)           |
 | Early access per club (feature flags)  | [docs/feature-flags.md](docs/feature-flags.md)           |
 | Architecture & request flow            | [docs/architecture.md](docs/architecture.md)             |
-| Subdomain setup (CORS, cookies)        | [docs/SUBDOMAIN_MIGRATION.md](docs/SUBDOMAIN_MIGRATION.md) |
 | API endpoints, auth, permissions       | [docs/api-overview.md](docs/api-overview.md)             |
 | Full API reference                     | [app/backend/API.md](app/backend/API.md)                 |
 | API tokens                             | [docs/api-tokens.md](docs/api-tokens.md)                 |
@@ -181,12 +179,9 @@ Marketplace README and the hubra.club Modules page stay current.
 | Roadmap data (What's new)              | [app/backend/ROADMAP.yaml](app/backend/ROADMAP.yaml)     |
 | Accessibility statement                | [docs/accessibility.md](docs/accessibility.md)           |
 
-Older snapshots and proposals, kept for reference:
-[docs/frontend_issues.md](docs/frontend_issues.md),
-[docs/FRONTEND-REVIEW.md](docs/FRONTEND-REVIEW.md),
+Proposals, kept for reference:
 [docs/platform-split-frontends.md](docs/platform-split-frontends.md),
-[docs/platform-split-club-isolation-twint.md](docs/platform-split-club-isolation-twint.md),
-[docs/project-management.md](docs/project-management.md).
+[docs/platform-split-club-isolation-twint.md](docs/platform-split-club-isolation-twint.md).
 
 ## Project structure
 

@@ -18,8 +18,7 @@ Scope: Review `src/` in all three frontend apps (`app/frontend/`,
 output, and node_modules.
 
 Follow the best practices defined in AGENTS.md (sections: Frontend Best
-Practices, Security Best Practices). The full audit that produced those rules
-is in `docs/FRONTEND-REVIEW.md`.
+Practices, Security Best Practices).
 
 ## Checklist
 

@@ -156,8 +156,3 @@ E2E_APP_URL=http://localhost:8080 E2E_SSO_URL=http://localhost:8082 \
 E2E_MANAGE_URL=http://localhost:8081 E2E_CLUB=<club> E2E_EMAIL=<admin> \
 E2E_PASSWORD=<password> npm run test:e2e
 ```
-
-## Known issues
-
-See [frontend_issues.md](frontend_issues.md) for a snapshot of the React
-best-practice review (some items have been addressed since).
