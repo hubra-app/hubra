@@ -732,6 +732,114 @@ def test_a_task_module_that_fails_to_import_skips_only_its_plugin(tmp_path):
             del sys.modules[name]
 
 
+def _plugin_with_broken_routes(tmp_path, package):
+    import yaml
+
+    src = make_plugin(tmp_path / "src")
+    pkg = src / package
+    (src / "hubra_hello").rename(pkg)
+    (pkg / "__init__.py").write_text(
+        "from hubra.core.modules import Blueprint, Module\n"
+        'module = Module(code="hello", name="Hello", depends_on=("members",),\n'
+        f'    blueprints=(Blueprint("{package}.routes", "bp", "/api/v1/hello"),),\n'
+        f'    tasks=("{package}.tasks",), tables=("hello_notes",))\n'
+    )
+    (pkg / "routes.py").write_text("from hubra.api.no_such_area import x  # noqa\n")
+    (pkg / "tasks.py").write_text("import hubra.api.no_such_area  # noqa\n")
+    (pkg / "models.py").write_text("import hubra.api.no_such_area  # noqa\n")
+    manifest = yaml.safe_load((src / "plugin.yaml").read_text())
+    manifest["package"] = package
+    (src / "plugin.yaml").write_text(yaml.safe_dump(manifest))
+    return scan(tmp_path / "src", bundled=False)[0]
+
+
+@pytest.mark.parametrize(
+    ("role", "code"),
+    [("all", True), ("club", True), ("app", True), ("global", False), ("platform", False)],
+)
+def test_sign_in_and_manage_backends_load_plugin_manifests_only(monkeypatch, role, code):
+    monkeypatch.setenv("HUBRA_ROLE", role)
+    assert loader.loads_plugin_code() is code
+
+
+def test_a_manifest_only_import_runs_no_plugin_code(tmp_path):
+    """Global and platform import the package (the manifest) and nothing
+    else, so broken routes, models or tasks can't stop them."""
+    import sys
+
+    spec = _plugin_with_broken_routes(tmp_path, "hubra_manifestonly")
+    try:
+        (module,) = loader._import(spec, code=False)
+        assert module.code == "hello" and module.plugin == spec.id
+        assert module.tables == ("hello_notes",)
+        assert "hubra_manifestonly.routes" not in sys.modules
+        assert "hubra_manifestonly.models" not in sys.modules
+        assert "hubra_manifestonly.tasks" not in sys.modules
+        with pytest.raises(ModuleNotFoundError):
+            loader._import(spec)  # with code, as the club backend does
+    finally:
+        if str(spec.path) in sys.path:
+            sys.path.remove(str(spec.path))
+        for name in [n for n in sys.modules if n.startswith("hubra_manifestonly")]:
+            del sys.modules[name]
+
+
+@pytest.mark.parametrize("role", ["platform", "app"])
+def test_load_registers_a_manifest_only_plugin_without_routes(app, tmp_path, monkeypatch, role):
+    import sys
+
+    from hubra.core.modules.registry import ModuleRegistry
+
+    spec = _plugin_with_broken_routes(tmp_path, f"hubra_load{role}")
+    found = loader.PluginSet()
+    found.specs[spec.id] = spec
+    found.wanted.add(spec.id)
+    monkeypatch.setattr(loader, "discover", lambda app=None: found)
+    monkeypatch.setattr(loader, "_current", loader._current)
+    monkeypatch.setenv("HUBRA_ROLE", role)
+    reg = ModuleRegistry()
+    try:
+        reg.load()  # Hubra's modules, then loader.load for the plugins
+        if role == "platform":
+            assert spec.loaded and not spec.error
+            module = next(m for m in reg.all() if m.code == "hello")
+            assert module.blueprints == () and module.tasks == ()
+            assert "hello_notes" in reg.tenant_tables()
+        else:
+            assert not spec.loaded and "no_such_area" in spec.error
+            assert "hello" not in reg.codes()
+    finally:
+        if str(spec.path) in sys.path:
+            sys.path.remove(str(spec.path))
+        for name in [n for n in sys.modules if n.startswith(f"hubra_load{role}")]:
+            del sys.modules[name]
+
+
+def test_manage_lists_plugin_route_permissions_from_the_catalog(app, db, monkeypatch):
+    from hubra.api.system.services import SystemService
+    from hubra.core.models.role import Permission
+
+    db.session.add(
+        Permission(
+            key="hello.notes.read",
+            display_name="Read notes",
+            resource="notes",
+            action="read",
+            blueprint="hello_bp",
+            is_active=True,
+        )
+    )
+    db.session.commit()
+    with app.test_request_context():
+        assert "hello.notes.read" not in {e["key"] for e in SystemService.list_permissions()}
+        monkeypatch.setattr(loader, "loads_plugin_code", lambda: False)
+        listed = {e["key"]: e for e in SystemService.list_permissions()}
+    assert listed["hello.notes.read"]["path"] == ""
+    assert listed["hello.notes.read"]["blueprint"] == "hello_bp"
+    # Routes this backend has are still listed with their path, once.
+    assert all(e["path"] for k, e in listed.items() if k != "hello.notes.read" and e["method"])
+
+
 # ── Key purposes: one key for the index, others for the plugins ──────────────
 
 

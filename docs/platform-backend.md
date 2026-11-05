@@ -41,10 +41,20 @@ The API areas and the old paths that lead to them are in
 `app/backend/hubra/core/api_areas.py` (see [API areas](#api-areas) below); the
 task list is in `app/backend/hubra/core/roles.py` (`PLATFORM_TASK_MODULES`).
 
-Every role still registers every route; a backend answers 404 ("Not served by
-the app backend") for another area's paths before any other code runs. So
-the permission sync and the permission list see every route, whichever pod
-runs them.
+Every role registers all of Hubra's own routes; a backend answers 404 ("Not
+served by the app backend") for another area's paths before any other code
+runs. Plugin code is the exception: the global and platform backends (and the
+platform worker) read each installed plugin's manifest (its package's
+`module`, for the catalogue, migrations, tables and the public plugin list)
+but import none of its routes, models or task modules
+(`hubra.core.plugins.loader.MANIFEST_ONLY_ROLES`). A plugin's code can then
+only break the app backend and its worker, not sign-in or manage. Connected-app
+hooks and event handlers of plugins stay names and are imported when called.
+
+The platform-backend init step runs without `HUBRA_ROLE`, so it loads every
+plugin and `flask sync-permissions` still sees every route. Manage's list of
+guarded endpoints shows plugin permissions from that catalog, without path and
+method.
 
 ### Routing
 
