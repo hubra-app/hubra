@@ -69,3 +69,30 @@ def test_platform_health_has_commits(client, staff_headers, monkeypatch):
     assert data["commit"] == "0123456789abcdef"
     assert isinstance(data["processes"], list)
     assert "last_upgrade" in data
+
+
+class _SlowRedis:
+    def scan_iter(self, *a, **k):
+        import redis
+
+        raise redis.TimeoutError("Timeout reading from socket")
+
+
+def test_slow_redis_is_unknown_not_empty(app, monkeypatch):
+    """A slow scan is "unknown" (None), and it does not trip the shared
+    circuit breaker, which would blank the health cache read as well."""
+    from hubra.core import redis_client
+
+    monkeypatch.setattr("hubra.core.redis_client.get_redis_client", lambda *a, **k: _SlowRedis())
+    redis_client.reset_redis_down()
+    with app.app_context():
+        assert build_info.read_reports() is None
+        assert build_info.reported() == []
+    assert redis_client._down_until == 0.0
+
+
+def test_platform_health_says_when_reports_are_unknown(client, staff_headers, monkeypatch):
+    monkeypatch.setattr(build_info, "read_reports", lambda: None)
+    data = client.get("/api/v1/manager/platform/health", headers=staff_headers).get_json()
+    assert data["processes"] == []
+    assert data["processes_unknown"] is True

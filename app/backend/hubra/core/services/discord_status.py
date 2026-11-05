@@ -65,11 +65,17 @@ def _error_text(exc: Exception) -> str:
 
 
 def _api_base() -> str:
-    """The API's public address: API_PUBLIC_URL, else this request's host."""
-    from flask import has_request_context, request
+    """The API's public address: API_PUBLIC_URL, else this request's host.
+
+    Not the host of a request made with an API token: the Claude connector
+    calls the backend inside the cluster (``http://platform-backend:5000``),
+    and that address is no use in Discord's Developer Portal.  Unknown
+    (empty) then, like without a request.
+    """
+    from flask import g, has_request_context, request
 
     base = current_app.config.get("API_PUBLIC_URL") or ""
-    if not base and has_request_context():
+    if not base and has_request_context() and not getattr(g, "api_token", None):
         base = request.host_url
     return base.rstrip("/")
 
