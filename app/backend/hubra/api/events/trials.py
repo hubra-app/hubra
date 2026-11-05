@@ -11,7 +11,6 @@ one click (the usual club invite, with status and membership type
 
 from __future__ import annotations
 
-import re
 import secrets
 from datetime import date, datetime, timedelta, timezone
 
@@ -36,7 +35,6 @@ PENDING_HOLD = timedelta(hours=24)
 KEEP_AFTER = timedelta(days=180)
 MANAGE_KEY = "events.trials.manage"
 
-_EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 _TAKING = ("confirmed", "attended")
 _STATUSES = ("confirmed", "attended", "no_show", "cancelled")
 
@@ -153,6 +151,18 @@ def _tell_staff(signup: TrialSignup) -> None:
             notify_member(member.id, "info", title, msg, link, topic="events")
 
 
+def _plausible_email(email: str) -> bool:
+    """One @, something before it, a dot inside the domain, no spaces.
+
+    Plain string checks: a regex with nested + on someone's input can take
+    polynomial time (CodeQL py/polynomial-redos).
+    """
+    if any(c.isspace() for c in email) or email.count("@") != 1:
+        return False
+    local, domain = email.split("@")
+    return bool(local) and "." in domain.strip(".") and not domain.startswith(".")
+
+
 def _clean(text, limit: int) -> str | None:
     text = str(text or "").strip()
     return text[:limit] or None
@@ -198,7 +208,7 @@ def public_trial_signup(slug: str):
     email = (_clean(data.get("email"), 255) or "").lower()
     if not first or not last:
         raise_error(400, "VALIDATION_ERROR", "First and last name are required")
-    if not _EMAIL.match(email):
+    if not _plausible_email(email):
         raise_error(400, "VALIDATION_ERROR", "A valid email address is required")
     if data.get("consent") is not True:
         raise_error(400, "VALIDATION_ERROR", "Consent is required")
