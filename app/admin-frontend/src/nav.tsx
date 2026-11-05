@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import {
   IconBell,
   IconBrandDiscord,
+  IconCreditCard,
   IconBuildingCommunity,
   IconDatabase,
   IconHeartbeat,
@@ -414,6 +415,24 @@ export function navSections(): NavSection[] {
               label: tr('Kanäle', 'Channels'),
               perm: 'platform.settings',
               render: () => <SettingsSection section="discord-channels" />,
+            },
+          ],
+        },
+        {
+          id: 'payments',
+          label: tr('Zahlungen', 'Payments'),
+          icon: icon(IconCreditCard),
+          desc: tr(
+            'Online-Zahlungen der Vereine über Stripe Connect: der Schlüssel des Plattform-Kontos und die Plattformgebühr.',
+            "Clubs' online payments through Stripe Connect: the platform account's key and the platform fee.",
+          ),
+          tabs: [
+            {
+              id: 'stripe',
+              path: '/app/platform/payments',
+              label: '',
+              perm: 'platform.settings',
+              render: () => <SettingsSection section="payments" />,
             },
           ],
         },

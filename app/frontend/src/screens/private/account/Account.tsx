@@ -150,6 +150,10 @@ export function AccountDashboardScreen() {
                   }}
                 >
                   <InvoicePill status={inv.status} />
+                  <PluginSlot
+                    name="invoice.actions"
+                    props={{ invoice: inv, onChange: () => refetchInvoices() }}
+                  />
                   <Button
                     size="sm"
                     variant="subtle"

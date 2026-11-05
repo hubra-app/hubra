@@ -50,6 +50,7 @@ const FILES = [
   'files.max_mb',
 ]
 
+const PAYMENTS = ['payments.stripe.secret_key', 'payments.fee_percent']
 const DISCORD = [
   'discord.client_id',
   'discord.public_key',
@@ -79,6 +80,7 @@ export type SettingsSectionId =
   | 'sender'
   | 'backups'
   | 'files'
+  | 'payments'
   | 'discord-app'
   | 'discord-channels'
   | 'alerts'
@@ -92,6 +94,7 @@ const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
   sender: SENDER,
   backups: BACKUP,
   files: FILES,
+  payments: PAYMENTS,
   'discord-app': DISCORD,
   'discord-channels': [...DISCORD_LOG, ...DISCORD_ROLES],
   alerts: ALERTS,
@@ -175,6 +178,14 @@ const FIELD_DE: Record<string, [string, string]> = {
   'files.s3.access_key': ['S3-Access-Key für Dateien', 'Wird verschlüsselt gespeichert'],
   'files.s3.secret_key': ['S3-Secret-Key für Dateien', 'Wird verschlüsselt gespeichert'],
   'files.max_mb': ['Grösste Datei', 'Grösste Datei, die ein Verein hochladen kann, in MB'],
+  'payments.stripe.secret_key': [
+    'Stripe-Secret-Key',
+    'Der Schlüssel des Plattform-Kontos (Connect). sk_test_ für den Testmodus. Wird verschlüsselt gespeichert',
+  ],
+  'payments.fee_percent': [
+    'Plattformgebühr',
+    'Anteil jeder Online-Zahlung für die Plattform (%), zusätzlich zu den Stripe-Gebühren, die der Verein trägt. 0: keine',
+  ],
   'discord.client_id': [
     'Discord-Application-ID',
     'Developer Portal › deine App › General Information › Application ID',
@@ -557,6 +568,22 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                 )}
               </Text>
               <Stack gap="sm">{FILES.map(field)}</Stack>
+            </Paper>
+          )}
+
+          {section === 'payments' && (
+            <Paper withBorder p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Online-Zahlungen (Stripe)', 'Online payments (Stripe)')}</Title>
+                {resetButton(PAYMENTS)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Mit dem Plugin «Online-Zahlungen» verbindet jeder Verein sein eigenes Stripe-Konto mit diesem Plattform-Konto (Stripe Connect). Mitglieder zahlen ihre Rechnungen dann mit Karte oder TWINT, das Geld geht direkt an den Verein. Im Stripe-Dashboard muss Connect eingeschaltet sein.',
+                  "With the «Online payments» plugin each club connects its own Stripe account to this platform account (Stripe Connect). Members then pay their invoices by card or TWINT and the money goes straight to the club. Connect must be turned on in the Stripe dashboard.",
+                )}
+              </Text>
+              <Stack gap="sm">{PAYMENTS.map(field)}</Stack>
             </Paper>
           )}
 

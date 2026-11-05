@@ -273,6 +273,9 @@ class BaseConfig:
     FILES_S3_SECRET_KEY: str = os.environ.get("FILES_S3_SECRET_KEY", "")
     FILES_S3_REGION: str = os.environ.get("FILES_S3_REGION", "default")
     FILES_MAX_MB: int = int(os.environ.get("FILES_MAX_MB", "25"))
+    # Online payments (payments plugin): the platform's Stripe Connect key.
+    # Better set in manage › Payments.
+    STRIPE_SECRET_KEY: str = os.environ.get("STRIPE_SECRET_KEY", "")
     FILES_DIR: str = os.environ.get("FILES_DIR", "/var/lib/hubra/files")
 
     # ── Backups (Contabo S3) ─────────────────────────────────────────────────

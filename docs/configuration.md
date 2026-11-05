@@ -27,6 +27,7 @@ not using mail, leave the mail variables blank.
 | SMTP/IMAP   | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `IMAP_HOST`, `IMAP_PORT` | Mail feature enabled (Infomaniak SMTP/IMAP)        |
 | Backups     | `BACKUP_S3_*`, `BACKUP_PUBLIC_KEY` (`BACKUP_PRIVATE_KEY` optional, `BACKUP_ENCRYPTION_KEY` for older backups) | Backups enabled |
 | Files       | `FILES_S3_*` (endpoint, bucket, region, access/secret key), `FILES_MAX_MB` (25), `FILES_DIR` (`/var/lib/hubra/files`, used without a bucket) | Clubs' files (e.g. the documents plugin); also in manage › Backups › Storage |
+| Payments    | `STRIPE_SECRET_KEY` (Connect platform key, `sk_test_…` for test mode) | Online invoice payments with the payments plugin (card, TWINT); better set in manage › Payments, with the platform fee |
 | Plugins     | `HUBRA_PLUGIN_DIR`, `HUBRA_PLUGINS_RELOAD_POLL`, `HUBRA_OFFICIAL_INDEX`, `HUBRA_PLUGINS_ALLOW_PRIVATE` (1 = allow a repository on a private address) | Optional, see [plugins/README.md](../plugins/README.md)  |
 
 ## Platform settings and club settings

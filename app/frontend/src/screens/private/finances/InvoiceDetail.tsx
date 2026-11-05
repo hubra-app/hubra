@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { PluginSlot } from '@/plugins'
 import { Table, Paper, Group, Text, Button } from '@mantine/core'
 import { useT } from '@/locales/i18n'
 import { useParams } from 'react-router-dom'
@@ -26,6 +27,7 @@ export function InvoiceDetailScreen() {
   const { id } = useParams<{ id: string }>()
   const { go, selectedInvoice } = useNav()
   const { invoices } = useInvoices()
+  const queryClient = useQueryClient()
   const markPaidMutation = useMarkInvoicePaid()
   const sendReminderMutation = useSendInvoiceReminder()
   const { data: fetchedInvoice } = useQuery({
@@ -89,6 +91,13 @@ export function InvoiceDetailScreen() {
               <IconArrowLeft size={16} />
               {t('finance.allInvoices', 'Alle Rechnungen')}
             </Button>
+            <PluginSlot
+              name="invoice.actions"
+              props={{
+                invoice: inv,
+                onChange: () => queryClient.invalidateQueries({ queryKey: qk.invoices.all }),
+              }}
+            />
             <Button variant="subtle" onClick={() => downloadInvoicePdf(inv.id)}>
               <IconFileDownload size={16} />
               {t('finance.downloadQrBill', 'QR-Rechnung herunterladen')}

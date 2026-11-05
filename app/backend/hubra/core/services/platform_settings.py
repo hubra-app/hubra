@@ -231,6 +231,24 @@ SPECS: tuple[Spec, ...] = (
         "count",
     ),
     Spec(
+        "payments.stripe.secret_key",
+        "Stripe secret key",
+        "The platform's Stripe key (Connect). Clubs connect their own Stripe "
+        "account to it and members pay invoices online. sk_test_ for test "
+        "mode. Stored encrypted",
+        lambda cfg: cfg.get("STRIPE_SECRET_KEY") or "",
+        "stripe_secret_key",
+        secret=True,
+    ),
+    Spec(
+        "payments.fee_percent",
+        "Platform fee",
+        "Share of each online payment that goes to the platform (%), on top "
+        "of Stripe's own fees, which the club pays. 0: none",
+        lambda cfg: "0",
+        "fee_percent",
+    ),
+    Spec(
         "push.vapid_public_key",
         "Push public key",
         "VAPID public key for browser notifications. Made automatically",
@@ -626,6 +644,28 @@ def discord() -> DiscordApp:
         bot_token=get("discord.bot_token"),
         public_key=get("discord.public_key"),
     )
+
+
+@dataclass(frozen=True)
+class StripePlatform:
+    secret_key: str
+    fee_percent: float
+
+    @property
+    def test_mode(self) -> bool:
+        return "_test_" in self.secret_key
+
+
+def stripe() -> StripePlatform | None:
+    """The platform's Stripe Connect account, or None when no key is set."""
+    key = get("payments.stripe.secret_key")
+    if not key:
+        return None
+    try:
+        fee = float((get("payments.fee_percent") or "0").replace(",", "."))
+    except ValueError:
+        fee = 0.0
+    return StripePlatform(secret_key=key, fee_percent=max(0.0, min(fee, 10.0)))
 
 
 _VAPID_LOCK_KEY = 0x6875627261766170  # "hubravap"
