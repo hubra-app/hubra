@@ -815,6 +815,31 @@ def test_load_registers_a_manifest_only_plugin_without_routes(app, tmp_path, mon
             del sys.modules[name]
 
 
+def test_a_manifest_only_backend_never_switches_plugin_permissions_off(app, db, monkeypatch):
+    """flask sync-permissions in a global or platform pod (HUBRA_ROLE set on
+    the init step by mistake) doesn't see plugin routes; it must not
+    deactivate their permissions."""
+    from hubra.core.models.role import Permission
+    from hubra.core.services.permission_sync import sync_permission_catalog
+
+    perm = Permission(
+        key="hello.notes.read",
+        display_name="Read notes",
+        resource="notes",
+        action="read",
+        blueprint="hello_bp",
+        is_active=True,
+    )
+    db.session.add(perm)
+    db.session.commit()
+    monkeypatch.setattr(loader, "loads_plugin_code", lambda: False)
+    sync_permission_catalog(app)
+    assert perm.is_active
+    monkeypatch.setattr(loader, "loads_plugin_code", lambda: True)
+    sync_permission_catalog(app)
+    assert not perm.is_active  # a full sync still retires unknown keys
+
+
 def test_manage_lists_plugin_route_permissions_from_the_catalog(app, db, monkeypatch):
     from hubra.api.system.services import SystemService
     from hubra.core.models.role import Permission

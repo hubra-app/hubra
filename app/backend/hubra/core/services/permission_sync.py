@@ -83,8 +83,14 @@ def sync_permission_catalog(app: Flask, *, commit: bool = True) -> tuple[int, in
         if changed:
             updated += 1
 
+    # A backend that loads plugin manifests only (global, platform) doesn't
+    # see plugin routes: it must not switch their permissions off. The init
+    # step runs without a role and does the full sync.
+    from hubra.core.plugins.loader import loads_plugin_code
+
+    sees_every_route = loads_plugin_code()
     for key, perm in existing.items():
-        if key not in discovered and perm.is_active:
+        if sees_every_route and key not in discovered and perm.is_active:
             perm.is_active = False
             orphaned += 1
 
