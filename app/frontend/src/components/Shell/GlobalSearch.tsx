@@ -9,7 +9,6 @@ import { useNav, useApp } from '@/context/AppContext'
 import { useEvents, useInvoices, usePolls } from '@/data/lists'
 import { listMembers } from '@/api/members'
 import { listGroups } from '@/api/groups'
-import { listTransactions } from '@/api/finance'
 import { listAuditLog } from '@/api/settings'
 import type { SearchResult } from './nav'
 import { useSidebarNav } from './useSidebarNav'
@@ -59,12 +58,6 @@ export function GlobalSearch({
     queryKey: qk.search.groups,
     enabled: used && modules.groups === true,
     queryFn: () => listGroups(),
-    staleTime: 60_000,
-  })
-  const { data: txList = NONE } = useQuery({
-    queryKey: qk.search.transactions,
-    enabled: used && modules.finance === true && hasPermission('finance.transactions.read'),
-    queryFn: () => listTransactions({ pageSize: 200 }),
     staleTime: 60_000,
   })
   // Lists plugins add (Inventory, …), each loaded like the ones above.
@@ -153,21 +146,6 @@ export function GlobalSearch({
         sub: g.description || undefined,
         path: `/app/groups/${g.id}`,
       }))
-    const txResults: SearchResult[] = txList
-      .filter(
-        (tx) =>
-          tx.description.toLowerCase().includes(lower) ||
-          tx.member.toLowerCase().includes(lower) ||
-          tx.category?.toLowerCase().includes(lower),
-      )
-      .slice(0, 3)
-      .map((tx) => ({
-        kind: 'transaction',
-        id: tx.id,
-        label: tx.description,
-        sub: `${tx.type} · CHF ${tx.amount}`,
-        path: `/app/finance/transactions/${tx.id}`,
-      }))
     const pluginResults: SearchResult[] = pluginSearches.flatMap((s, i) =>
       (pluginData[i] ?? NONE)
         .filter((hit) =>
@@ -209,7 +187,6 @@ export function GlobalSearch({
       ...evResults,
       ...pollResults,
       ...invoiceResults,
-      ...txResults,
       ...pluginResults,
       ...auditResults,
     ])
@@ -221,7 +198,7 @@ export function GlobalSearch({
   // after the first letters are typed, so search again once they arrive
   // instead of keeping "no results".
   const [term, setTerm] = useState('')
-  const sources = [term, memberResp, groupList, txList, auditPage, events, polls, invoices, ...pluginData]
+  const sources = [term, memberResp, groupList, auditPage, events, polls, invoices, ...pluginData]
   const [searched, setSearched] = useState(sources)
   if (sources.some((s, i) => s !== searched[i])) {
     setSearched(sources)
@@ -264,7 +241,6 @@ export function GlobalSearch({
     group: t('shell.searchKind.group'),
     event: t('shell.searchKind.event'),
     invoice: t('shell.searchKind.invoice'),
-    transaction: t('shell.searchKind.transaction'),
     poll: t('shell.searchKind.poll'),
     audit: t('shell.searchKind.audit'),
     page: t('shell.searchKind.page'),
@@ -275,7 +251,6 @@ export function GlobalSearch({
     group: { bg: `color-mix(in srgb, ${categoryColors.royal} 12%, var(--hb-surface))`, color: colorText(categoryColors.royal) },
     event: { bg: `color-mix(in srgb, ${categoryColors.green} 12%, var(--hb-surface))`, color: colorText(categoryColors.green) },
     invoice: { bg: `color-mix(in srgb, ${categoryColors.orange} 12%, var(--hb-surface))`, color: colorText(categoryColors.orange) },
-    transaction: { bg: `color-mix(in srgb, ${categoryColors.blue} 12%, var(--hb-surface))`, color: colorText(categoryColors.blue) },
     poll: { bg: `color-mix(in srgb, ${categoryColors.red} 12%, var(--hb-surface))`, color: colorText(categoryColors.red) },
     audit: { bg: `color-mix(in srgb, ${categoryColors.slate} 12%, var(--hb-surface))`, color: colorText(categoryColors.slate) },
     page: { bg: 'var(--hb-surface-2)', color: 'var(--hb-text-2)' },

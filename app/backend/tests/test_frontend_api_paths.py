@@ -39,6 +39,12 @@ CONST = re.compile(
     r"\bconst\s+(\w+)\s*=\s*([`'\"])(/(?:app|global|platform)/[^`'\"$]*)\2"
 )
 AREA = re.compile(r"/(?:app|global|platform)/")
+# Paths an official plugin serves, which the club app or the plugin SDK
+# still calls: path -> the plugin. Hubra's tests run without plugins.
+PLUGIN_PATHS = {
+    # The invoice form's categories and the SDK's listTxCategories (budgets).
+    "/app/finance/transaction-categories": "finances",
+}
 # Values tried for ${...} path segments (ints, any(approve, decline), slugs).
 FILLS = ("1", "approve", "x")
 
@@ -103,7 +109,8 @@ def test_every_frontend_api_path_has_a_route(app):
     missing = [
         f"{file}: {literal}"
         for file, literal in _frontend_calls()
-        if not any(_routed(adapter, c) for c in _candidates(literal))
+        if literal not in PLUGIN_PATHS
+        and not any(_routed(adapter, c) for c in _candidates(literal))
     ]
     assert not missing, "No backend route for:\n" + "\n".join(missing)
 

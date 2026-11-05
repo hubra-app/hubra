@@ -117,88 +117,10 @@ def test_create_membership_invoice_without_member_returns_400(
     assert resp.status_code == 400
 
 
-def test_create_member_invoice_purpose_other_with_category(
-    client, auth_headers, seeded_db
-):
-    from hubra.core.models.finance import TransactionCategory
-    from hubra.core.extensions import db
-
-    cat = TransactionCategory(name="Events", color="#27ae60")
-    db.session.add(cat)
-    db.session.commit()
-
-    resp = client.post(
-        "/api/v1/finance/invoices",
-        json=_member_invoice_payload(
-            seeded_db["admin"].id, purpose="other", category_id=cat.id, amount=30.0
-        ),
-        headers=auth_headers,
-    )
-    assert resp.status_code == 201
-    body = resp.get_json()
-    assert body["purpose"] == "other"
-
-    from hubra.core.models.finance import Invoice
-
-    inv = db.session.get(Invoice, body["id"])
-    db.session.get(
-        TransactionCategory, inv.transaction.id if inv.transaction_id else None
-    )
-    assert inv.transaction is not None
-    assert inv.transaction.category_id == cat.id
 
 
-def test_create_member_invoice_purpose_membership_default_category(
-    client, auth_headers, seeded_db
-):
-    from hubra.core.models.finance import TransactionCategory
-    from hubra.core.extensions import db
-
-    cat = TransactionCategory(name="Membership", color="#2596be")
-    db.session.add(cat)
-    db.session.commit()
-
-    resp = client.post(
-        "/api/v1/finance/invoices",
-        json=_member_invoice_payload(seeded_db["admin"].id, purpose="membership"),
-        headers=auth_headers,
-    )
-    assert resp.status_code == 201
-    body = resp.get_json()
-    assert body["purpose"] == "membership"
-
-    from hubra.core.models.finance import Invoice
-
-    inv = db.session.get(Invoice, body["id"])
-    assert inv.transaction is not None
-    assert inv.transaction.category_id == cat.id
 
 
-def test_create_external_invoice_linked_tx_has_payee_name(
-    client, auth_headers, seeded_db
-):
-    from hubra.core.models.finance import TransactionCategory
-    from hubra.core.extensions import db
-
-    cat = TransactionCategory(name="Membership", color="#2596be")
-    db.session.add(cat)
-    db.session.commit()
-
-    ext = _ext_party(client, auth_headers, name="Linked Co")
-    resp = client.post(
-        "/api/v1/finance/invoices",
-        json=_ext_invoice_payload(ext["id"]),
-        headers=auth_headers,
-    )
-    assert resp.status_code == 201
-    inv_id = resp.get_json()["id"]
-
-    from hubra.core.models.finance import Invoice
-
-    inv = db.session.get(Invoice, inv_id)
-    assert inv.transaction is not None
-    assert inv.transaction.payee_name == "Linked Co"
-    assert inv.transaction.member_id is None
 
 
 # ── Update external invoice ───────────────────────────────────────────────────

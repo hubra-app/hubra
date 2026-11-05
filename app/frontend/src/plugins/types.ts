@@ -82,4 +82,10 @@ export interface SlotProps {
   'invoice.actions': { invoice: Invoice; onChange: () => void }
   /** More tiles in the club overview's numbers row (Dashboard › Übersicht); render a `StatTile`. */
   'dashboard.stats': Record<string, never>
+  /** Cards under Finanzen › Einstellungen › Abrechnung: the finance module's settings, and saving some of them (the rest are kept). */
+  'finance.settings': {
+    config: Record<string, unknown>
+    save: (values: Record<string, string | number | boolean | null>) => Promise<void>
+    busy: boolean
+  }
 }
