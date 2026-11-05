@@ -404,12 +404,22 @@ def load(registry, app=None) -> PluginSet:
                 _log.warning(
                     "Plugin %s lists no uses: in plugin.yaml; loaded for now", spec.id
                 )
+    # Which plugin provides a module, to name it in the message.
+    provider = {
+        code: s.name for s in found.specs.values() for code in s.module_codes
+    }
     for spec in pending:
-        missing = [c for c in spec.requires if c not in known]
-        missing += [
-            d for d in spec.depends if not (found.get(d) and found.get(d).loaded)
+        missing = [
+            f"the {provider[c]} plugin" if c in provider else c
+            for c in spec.requires
+            if c not in known
         ]
-        spec.error = spec.error or f"needs {', '.join(missing)}"
+        missing += [
+            f"the {found.get(d).name if found.get(d) else d} plugin"
+            for d in spec.depends
+            if not (found.get(d) and found.get(d).loaded)
+        ]
+        spec.error = spec.error or f"needs {', '.join(dict.fromkeys(missing))}"
     for spec in found.specs.values():
         if spec.error and spec.id in want:
             _log.error("Plugin %s not loaded: %s", spec.id, spec.error)
