@@ -34,7 +34,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN adduser --disabled-password --gecos "" appuser
 
-RUN mkdir -p /celerybeat && chown appuser:appuser /celerybeat
+RUN mkdir -p /celerybeat /var/lib/hubra/files \
+    && chown appuser:appuser /celerybeat /var/lib/hubra/files
 
 COPY app/backend/ .
 

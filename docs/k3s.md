@@ -22,6 +22,9 @@ modules/mail/k8s/             # the opt-in mail stack, see modules/mail/README.m
 - cert-manager with a ClusterIssuer named `letsencrypt` (or an overlay that
   names yours).
 - A default storage class. On k3s that's `local-path`.
+- An S3 bucket for club files (manage › Backups › Storage › File storage,
+  see operator-guide "Club files"): the backend runs as several pods, so
+  the `FILES_DIR` fallback on a pod's disk doesn't work there.
 - For `deploy/clusters/contabo`: the CloudNativePG operator, Longhorn, the
   `traefik-public` ingress class and the `letsencrypt-prod` issuer.
 

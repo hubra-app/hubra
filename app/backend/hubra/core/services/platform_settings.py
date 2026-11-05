@@ -24,6 +24,10 @@ through the fallback, e.g. Brevo's SMTP relay, from the same sender.  See
 Backups (the global one and one per club) are the platform's, so where they
 are stored (``backup.s3.*``) is the platform's to decide, not a club's.
 
+Files (``files.*``): where clubs' files (documents, attachments of plugins)
+are kept, ``hubra.core.files``.  With ``files.s3.bucket`` set they go to
+that S3 bucket, otherwise to the folder ``FILES_DIR`` on the server.
+
 Browser push (``push.*``): the VAPID key pair every push is signed with.
 Hubra makes one the first time a member turns push on; replacing it signs
 every device out of push (they have to turn it on again).
@@ -183,6 +187,48 @@ SPECS: tuple[Spec, ...] = (
         "Stored encrypted",
         lambda cfg: cfg.get("BACKUP_S3_SECRET_KEY") or "",
         secret=True,
+    ),
+    Spec(
+        "files.s3.endpoint",
+        "Files S3 endpoint",
+        "S3-compatible endpoint URL for club files, e.g. "
+        "https://eu2.contabostorage.com. Empty: files stay on the server",
+        lambda cfg: cfg.get("FILES_S3_ENDPOINT") or "",
+        "url",
+    ),
+    Spec(
+        "files.s3.bucket",
+        "Files S3 bucket",
+        "Bucket for club files (not the backup bucket). Each file is "
+        "encrypted with its club's key before it leaves the server",
+        lambda cfg: cfg.get("FILES_S3_BUCKET") or "",
+    ),
+    Spec(
+        "files.s3.region",
+        "Files S3 region",
+        "Usually 'default' for Contabo",
+        lambda cfg: cfg.get("FILES_S3_REGION") or "default",
+    ),
+    Spec(
+        "files.s3.access_key",
+        "Files S3 access key",
+        "Stored encrypted",
+        lambda cfg: cfg.get("FILES_S3_ACCESS_KEY") or "",
+        secret=True,
+    ),
+    Spec(
+        "files.s3.secret_key",
+        "Files S3 secret key",
+        "Stored encrypted",
+        lambda cfg: cfg.get("FILES_S3_SECRET_KEY") or "",
+        secret=True,
+    ),
+    Spec(
+        "files.max_mb",
+        "Largest file",
+        "Largest file a club can upload, in MB",
+        lambda cfg: str(cfg.get("FILES_MAX_MB") or 25),
+        "count",
     ),
     Spec(
         "push.vapid_public_key",

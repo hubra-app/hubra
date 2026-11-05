@@ -303,10 +303,15 @@ export function navSections(): NavSection[] {
               label: tr('Speicher', 'Storage'),
               perm: 'platform.settings',
               desc: tr(
-                'Wohin die verschlüsselten Backups gehen und mit welchem öffentlichen Schlüssel.',
-                'Where the encrypted backups go and which public key encrypts them.',
+                'Wohin die verschlüsselten Backups und die Dateien der Vereine gehen.',
+                "Where the encrypted backups and the clubs' files go.",
               ),
-              render: () => <SettingsSection section="backups" />,
+              render: () => (
+                <>
+                  <SettingsSection section="backups" />
+                  <SettingsSection section="files" />
+                </>
+              ),
             },
           ],
         },

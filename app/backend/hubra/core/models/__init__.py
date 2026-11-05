@@ -16,6 +16,7 @@ from hubra.core.models.user import User
 from hubra.core.models.user_tenant import UserTenant
 from hubra.core.models.tenant_request import TenantRequest
 from hubra.core.models.platform_setting import PlatformSetting
+from hubra.core.models.stored_file import StoredFile
 from hubra.core.models.platform_event import PlatformEvent
 from hubra.core.models.data_request import DataRequest
 from hubra.core.models.error_group import ErrorGroup
@@ -130,6 +131,7 @@ __all__ = [
     "UserTenant",
     "TenantRequest",
     "PlatformSetting",
+    "StoredFile",
     "Role",
     "Permission",
     "RolePermission",

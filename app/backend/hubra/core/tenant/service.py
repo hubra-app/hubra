@@ -237,6 +237,14 @@ class TenantService:
             )
         )
         drop_tenant_schema(tenant_id)
+        from hubra.core import files
+
+        try:
+            files.delete_club(tenant_id)
+        except files.FileStoreError:
+            # The records go with the club either way (cascade); without the
+            # club's key the objects left in the store can't be opened.
+            _log.warning("Tenant %d: could not delete its stored files", tenant_id)
         # Without its data keys the club's secrets stay unreadable, in old
         # backups too.
         from hubra.core.models.data_key import DataKey
