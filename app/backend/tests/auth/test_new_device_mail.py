@@ -89,9 +89,10 @@ def _user(db, email="solo@test.ch", verified=True, language="en-GB"):
     return user
 
 
-def _browser(app, ua):
+def _browser(app, ua, ip="127.0.0.1"):
     client = app.test_client()
     client.environ_base["HTTP_USER_AGENT"] = ua
+    client.environ_base["REMOTE_ADDR"] = ip
     return client
 
 
@@ -144,19 +145,90 @@ def test_new_browser_sends_a_mail_to_the_account(app, db, sent):
     to, subject, html, text = sent[0]
     assert to == "solo@test.ch"
     assert "New sign-in" in subject
-    assert "Firefox on Linux" in text
+    assert "Firefox 121 · Linux" in text
     assert "127.0.0.1" in text
+    assert "Signed in with: Password" in text
+    assert "Second step: None" in text
+    assert "Active sessions: 2" in text
     assert "https://sso.example.ch/account/sitzungen" in html
     assert "https://sso.example.ch/account/passwort" in html
+    assert "https://sso.example.ch/not-me#token=" in html
 
 
 def test_same_kind_of_browser_on_another_computer_is_new(app, db, sent):
-    """The browser's name is not enough: another Chrome on Windows is new."""
+    """The browser's name is not enough: another Chrome on Windows
+    elsewhere is new."""
     _user(db)
     _sign_in(_browser(app, CHROME))
+    _sign_in(_browser(app, CHROME, ip="198.51.100.7"))
+
+    assert len(sent) == 1
+
+
+def test_lost_cookie_on_the_same_network_is_probably_known(app, db, sent):
+    """Cookies cleared (or a private window): the same browser, language and
+    time zone on the same network seen lately counts as known."""
+    _user(db)
+    _sign_in(_browser(app, CHROME, ip="203.0.113.10"))
+    resp = _sign_in(_browser(app, CHROME, ip="203.0.113.99"))  # same /24
+
+    assert sent == []
+    assert _device_cookie(resp) is not None  # a new token all the same
+
+
+def test_lost_cookie_with_another_time_zone_is_new(app, db, sent):
+    _user(db)
+    first = _browser(app, CHROME)
+    first.post(
+        "/api/v1/auth/login",
+        json={"email": "solo@test.ch", "password": PASSWORD, "timeZone": "Europe/Zurich"},
+    )
+    resp = _browser(app, CHROME).post(
+        "/api/v1/auth/login",
+        json={"email": "solo@test.ch", "password": PASSWORD, "timeZone": "Asia/Manila"},
+    )
+    assert resp.status_code == 200
+    assert len(sent) == 1
+
+
+def test_soft_match_expires_after_thirty_days(app, db, sent):
+    from datetime import datetime, timedelta, timezone
+
+    from hubra.core.models.known_device import KnownDevice
+
+    _user(db)
+    _sign_in(_browser(app, CHROME))
+    for row in db.session.query(KnownDevice).all():
+        row.last_seen_at = datetime.now(timezone.utc) - timedelta(days=31)
+    db.session.commit()
     _sign_in(_browser(app, CHROME))
 
     assert len(sent) == 1
+
+
+def test_ip_network():
+    from hubra.core.auth.known_devices import ip_network
+
+    assert ip_network("203.0.113.99") == "203.0.113.0/24"
+    assert ip_network("2001:db8:1:2::5") == "2001:db8:1::/48"
+    assert ip_network("::ffff:203.0.113.5") == "203.0.113.0/24"
+    assert ip_network("nonsense") == ""
+
+
+def test_describe_device():
+    from hubra.core.auth.known_devices import describe_device
+
+    android = (
+        "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36"
+    )
+    iphone = (
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 "
+        "(KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1"
+    )
+    assert describe_device(android, "Chrome", "Android") == "Chrome 141 · Android 14"
+    assert describe_device(iphone, "Safari", "iOS") == "Safari 18.1 · iOS 18.1"
+    assert describe_device(CHROME, "Chrome", "Windows") == "Chrome 120 · Windows"
 
 
 def test_mail_is_in_the_accounts_language(app, db, sent):
@@ -166,7 +238,8 @@ def test_mail_is_in_the_accounts_language(app, db, sent):
 
     _, subject, _, text = sent[0]
     assert "Neue Anmeldung" in subject
-    assert "Firefox auf Linux" in text
+    assert "Firefox 121 · Linux" in text
+    assert "Anmeldung mit: Passwort" in text
 
 
 def test_unconfirmed_address_gets_no_mail(app, db, sent):
@@ -230,16 +303,29 @@ def test_a_mail_failure_does_not_stop_the_sign_in(app, db, monkeypatch):
     _sign_in(_browser(app, FIREFOX))
 
 
-def test_club_sign_in_alerts_the_account(app, seeded_db, sent):
-    """A sign-in that opens a club uses the account's devices too."""
+def test_club_sign_in_does_not_alert(app, seeded_db, sent):
+    """Only sign-ins to the account (SSO) alert; opening a club does not,
+    and does not teach the browser either."""
+    from hubra.core.models.known_device import KnownDevice
+    from hubra.core.models.notification import Notification
 
-    def sign_in(ua):
-        resp = _sign_in(_browser(app, ua), "admin@test.ch")
+    def sign_in(ua, ip):
+        resp = _sign_in(_browser(app, ua, ip), "admin@test.ch")
         assert resp.get_json().get("member") is not None  # the club path
+        assert _device_cookie(resp) is None
 
-    sign_in(CHROME)
-    sign_in(CHROME)  # another computer
-    assert [m[0] for m in sent] == ["admin@test.ch"]
+    sign_in(CHROME, "198.51.100.1")
+    sign_in(FIREFOX, "192.0.2.1")
+    assert sent == []
+    from hubra.core.extensions import db
+
+    assert db.session.query(KnownDevice).count() == 0
+    assert (
+        db.session.query(Notification)
+        .filter(Notification.title == "New device login")
+        .count()
+        == 0
+    )
 
 
 def test_the_mail_is_queued_not_sent_inside_the_sign_in(app, db, monkeypatch):
@@ -261,7 +347,8 @@ def test_the_mail_is_queued_not_sent_inside_the_sign_in(app, db, monkeypatch):
     _sign_in(_browser(app, FIREFOX))
 
     assert len(queued) == 1
-    to, name, ip, browser, platform, _ua, _ts, lang = queued[0]
+    to, name, ip, browser, platform, _ua, _ts, lang, details = queued[0]
+    assert details["method"] == "Password"
     assert (to, ip, browser, platform, lang) == (
         "solo@test.ch",
         "127.0.0.1",
@@ -288,3 +375,61 @@ def test_staff_new_device_ping_is_sent(app, db, sent, monkeypatch):
 
     assert len(pings) == 1
     assert "neuem Gerät" in pings[0][0]
+
+
+def test_alert_after_the_second_step_names_it(app, db, sent, monkeypatch):
+    from hubra.core.auth import mfa
+
+    _user(db)
+    _sign_in(_browser(app, CHROME))
+    monkeypatch.setattr(mfa, "enabled", lambda user: True)
+    monkeypatch.setattr(mfa, "verify", lambda user, code: "totp")
+    firefox = _browser(app, FIREFOX)
+    resp = firefox.post(
+        "/api/v1/auth/login", json={"email": "solo@test.ch", "password": PASSWORD}
+    )
+    token = resp.get_json()["mfaToken"]
+    resp = firefox.post("/api/v1/auth/login/mfa", json={"mfaToken": token, "code": "1"})
+    assert resp.status_code == 200, resp.get_json()
+
+    assert "Second step: Code from the app" in sent[0][3]
+
+
+def _not_me_link(sent) -> str:
+    import re
+
+    text = sent[0][3]
+    return re.search(r"not-me#token=(\S+)", text).group(1)
+
+
+def test_not_me_ends_every_session_once(app, db, sent):
+    from hubra.core.models.account_session import AccountSession
+    from hubra.core.models.user import User
+
+    _user(db)
+    chrome = _browser(app, CHROME)
+    _sign_in(chrome)
+    _sign_in(_browser(app, FIREFOX))
+    token = _not_me_link(sent)
+
+    resp = app.test_client().post("/api/v1/auth/not-me", json={"token": token})
+    assert resp.status_code == 200, resp.get_json()
+    assert resp.get_json()["ended"] == 2
+    user = db.session.query(User).filter_by(email="solo@test.ch").one()
+    assert user.tokens_valid_after is not None
+    assert (
+        db.session.query(AccountSession)
+        .filter(AccountSession.revoked_at.is_(None))
+        .count()
+        == 0
+    )
+    # The old sign-in no longer works.
+    assert chrome.get("/api/v1/account/discord-dms").status_code == 401
+
+    again = app.test_client().post("/api/v1/auth/not-me", json={"token": token})
+    assert again.status_code == 400
+
+
+def test_not_me_refuses_a_forged_token(app, db):
+    resp = app.test_client().post("/api/v1/auth/not-me", json={"token": "x.y.z"})
+    assert resp.status_code == 400

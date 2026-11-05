@@ -1,11 +1,12 @@
-"""The weekly digest: a summary of the club's week by mail.
+"""The weekly digest: a summary of the club's week by mail or Discord.
 
-A member who turned it on (``members.weekly_digest_mail``, Account ›
-Notifications) gets one mail on Monday morning, club time: the events of
-the coming seven days (marked where they signed up), the posts of the past
-seven days and the open polls they can still vote in. Nothing to tell, no
-mail. ``members.digest_sent_at`` keeps it to one a week, so the hourly run
-can catch up when the worker was down at seven.
+A member who turned it on (``members.weekly_digest_mail``, or the Discord
+column of the "digest" topic, Account › Notifications) gets it on Monday
+morning, club time: the events of the coming seven days (marked where they
+signed up), the posts of the past seven days and the open polls they can
+still vote in. Nothing to tell, nothing sent. ``members.digest_sent_at``
+keeps it to one a week, so the hourly run can catch up when the worker was
+down at seven.
 """
 
 from __future__ import annotations
@@ -19,9 +20,9 @@ from hubra.core.extensions import db
 from hubra.core.modules import is_enabled, per_tenant_job
 from hubra.core.services.mail_format import mail_date
 from hubra.core.tasks import celery_app
+from hubra.core.timeutil import as_utc
 from hubra.core.tasks.reminder_tasks import (
     _ATTENDING,
-    _aware,
     _club_url,
     _mail,
     club_zone,
@@ -130,6 +131,66 @@ def _when(event, lang: str) -> str:
     return f"{day}, {event.time}" if event.time and not event.all_day else day
 
 
+def _direct_message(member, events, mine, posts, votes) -> bool:
+    """The digest as a Discord direct message (the app channels the member
+    turned on for the "digest" topic): one embed with a field per part."""
+    from hubra.core.notifications.channels import send_without_bell
+    from hubra.core.models.user import User
+
+    user = db.session.get(User, member.user_id) if member.user_id else None
+    lang = (user.language if user else None) or "de-CH"
+    de = not lang.startswith("en")
+    zone = club_zone()
+
+    def line(text: str, path: str) -> str:
+        url = _club_url(path)
+        return f"[{text}]({url})" if url else text
+
+    fields = []
+    if events:
+        rows = [
+            ("✅ " if e.id in mine else "• ")
+            + line(e.title, f"/app/operations/events?event={e.id}")
+            + f" · {_when(e, lang)}"
+            for e in events
+        ]
+        fields.append({"name": "Anlässe" if de else "Events", "value": "\n".join(rows)})
+    if posts:
+        rows = [
+            "• " + line(p.title, f"/app/operations/posts/{p.id}")
+            for p in posts[:MAX_POSTS]
+        ]
+        fields.append(
+            {"name": "Neue Beiträge" if de else "New posts", "value": "\n".join(rows)}
+        )
+    if votes:
+        rows = []
+        for p in votes[:MAX_POLLS]:
+            row = "• " + line(p.question, f"/app/operations/polls?poll={p.id}")
+            if p.closes_at:
+                closes = as_utc(p.closes_at).astimezone(zone).date()
+                row += f" · {'bis' if de else 'until'} {mail_date(closes, lang)}"
+            rows.append(row)
+        fields.append(
+            {
+                "name": "Noch abstimmen" if de else "Still to vote",
+                "value": "\n".join(rows),
+            }
+        )
+    for field in fields:
+        field["value"] = field["value"][:1024]
+    send_without_bell(
+        member.id,
+        "info",
+        "Your week",
+        "",
+        link="/app/dashboard",
+        topic="digest",
+        extra={"fields": fields},
+    )
+    return True
+
+
 @per_tenant_job("members")
 def _send_weekly_digests(now: datetime | None = None) -> dict:
     from hubra.core.models.member import Member
@@ -138,14 +199,20 @@ def _send_weekly_digests(now: datetime | None = None) -> dict:
     now = now or datetime.now(timezone.utc)
     if not _due(now):
         return summary
-    members = db.session.scalars(
+    from hubra.core.notifications.channels import wants_any_app
+
+    candidates = db.session.scalars(
         select(Member)
-        .where(Member.weekly_digest_mail.is_(True))
         .where(Member.status == "active")
         .where(Member.archived_at.is_(None))
         .where((Member.digest_sent_at.is_(None)) | (Member.digest_sent_at < now - _GAP))
         .order_by(Member.id)
     ).all()
+    members = [
+        m
+        for m in candidates
+        if m.weekly_digest_mail or wants_any_app(m.notify_prefs, "digest")
+    ]
     if not members:
         return summary
 
@@ -182,7 +249,7 @@ def _send_weekly_digests(now: datetime | None = None) -> dict:
                 {
                     "question": p.question,
                     "closes": (
-                        mail_date(_aware(p.closes_at).astimezone(zone).date(), lang)
+                        mail_date(as_utc(p.closes_at).astimezone(zone).date(), lang)
                         if p.closes_at
                         else None
                     ),
@@ -191,6 +258,11 @@ def _send_weekly_digests(now: datetime | None = None) -> dict:
                 for p in votes[:MAX_POLLS]
             ]
 
+        if wants_any_app(member.notify_prefs, "digest"):
+            if _direct_message(member, events[:MAX_EVENTS], mine, posts, votes):
+                summary["messaged"] = summary.get("messaged", 0) + 1
+        if not member.weekly_digest_mail:
+            continue
         if _mail(
             member,
             "weekly_digest",

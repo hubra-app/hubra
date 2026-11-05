@@ -75,6 +75,11 @@ class User(db.Model):
     platform_alerts: Mapped[dict | None] = mapped_column(
         JSONB().with_variant(JSON, "sqlite"), nullable=True
     )
+    # Discord direct messages outside a club (core/notifications/account_dm.py):
+    # {"muted": bool, "<kind>": bool}. Everything is off until turned on.
+    dm_prefs: Mapped[dict | None] = mapped_column(
+        JSONB().with_variant(JSON, "sqlite"), nullable=True
+    )
 
     # Two-factor sign-in (hubra/core/auth/mfa.py).  Secrets are Fernet
     # encrypted; recovery codes are kept as SHA-256 hashes, used ones removed.

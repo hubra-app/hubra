@@ -66,6 +66,43 @@ def _tell_registered(event, title: str, skip_member_id: int | None = None) -> No
             )
 
 
+# The member's own sign-up, by its status: (title, topic). A booking
+# confirmation is quiet in the bell until the member turns it on; the
+# waitlist is its own topic.
+_SIGN_UP_NOTICE = {
+    "registered": ("Sign-up confirmed", "bookings"),
+    "approved": ("Sign-up confirmed", "bookings"),
+    "pending": ("Sign-up received", "bookings"),
+    "waitlisted": ("On the waitlist", "waitlist"),
+}
+
+
+def _confirm_sign_up(event, member_id: int, status: str) -> None:
+    """Tell the member where their sign-up stands (a confirmation, a
+    Discord direct message when they asked for it)."""
+    from hubra.core.notifications.services import notify_member
+
+    notice = _SIGN_UP_NOTICE.get(status)
+    if notice is None:
+        return
+    notify_member(
+        member_id,
+        "success" if notice[1] == "bookings" and status != "pending" else "info",
+        notice[0],
+        _event_line(event),
+        link=event_link(event.id),
+        topic=notice[1],
+    )
+
+
+def _event_line(event) -> str:
+    """"Training · 12.11.2026 18:30": the event and when, for notices."""
+    when = f"{event.date:%d.%m.%Y}"
+    if event.time and not event.all_day:
+        when += f" {event.time}"
+    return f"{event.title} · {when}"
+
+
 def event_link(event_id: int, pending: bool = False) -> str:
     """The events page showing one event (``pending`` opens its sign-ups
     waiting for approval)."""
@@ -320,6 +357,7 @@ class EventService:
                 skip_member_id=member.id,
                 link=event_link(event_id, pending=True),
             )
+        _confirm_sign_up(event, member.id, status)
 
         emit(EVENT_SIGNUPS_CHANGED, event_id=event_id)
         return registration
@@ -368,9 +406,10 @@ class EventService:
             member_id,
             "info",
             title,
-            event.title,
+            _event_line(event),
             link=event_link(event.id),
-            topic="my_events",
+            # The outcome of the member's own request for a place.
+            topic="requests",
         )
         log_audit(
             actor_id=actor_id,
@@ -571,11 +610,11 @@ class EventService:
 
             notify_member(
                 nxt.member_id,
-                "info",
+                "success",
                 "You got a place",
-                event.title,
+                _event_line(event),
                 link=event_link(event.id),
-                topic="my_events",
+                topic="waitlist",
             )
 
     @staticmethod

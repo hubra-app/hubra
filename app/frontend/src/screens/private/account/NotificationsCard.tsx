@@ -16,11 +16,18 @@ const TOPICS: [NotifyTopic, string][] = [
   ['posts', 'Neue Beiträge'],
   ['events', 'Neue Anlässe'],
   ['polls', 'Neue Umfragen'],
-  ['event_reminders', 'Erinnerung vor Anlässen'],
+  ['event_reminders', 'Erinnerung vor Anlässen und Trainings'],
   ['poll_reminders', 'Erinnerung vor Ende einer Umfrage'],
-  ['my_events', 'Meine Anmeldungen'],
+  ['my_events', 'Änderungen an meinen Anlässen'],
+  ['bookings', 'Bestätigung meiner Anmeldungen'],
+  ['waitlist', 'Warteliste: Platz frei geworden'],
   ['my_polls', 'Stimmen in meinen Umfragen, Vollmachten'],
   ['tasks', 'Aufgaben für mich (Gesuche, Anmeldungen zum Bestätigen)'],
+  ['requests', 'Antworten auf meine Anfragen'],
+  ['payments', 'Rechnungen: neu, bald fällig, überfällig'],
+  ['membership', 'Mitgliedschaft verlängern'],
+  ['qualifications', 'Qualifikationen, die bald ablaufen'],
+  ['digest', 'Wochenübersicht am Montag'],
 ]
 const CHANNELS: [NotifyChannel, string][] = [
   ['bell', 'Glocke'],
@@ -55,10 +62,10 @@ export function NotificationsCard() {
     }
   }
 
-  const setDigest = async (on: boolean) => {
+  const setMuted = async (on: boolean) => {
     setBusy(true)
     try {
-      queryClient.setQueryData(qk.account.notifications, await setMyNotifications({ digest: on }))
+      queryClient.setQueryData(qk.account.notifications, await setMyNotifications({ muted: on }))
     } catch (err) {
       notify('error', t('common.error'), err instanceof Error ? err.message : '')
     } finally {
@@ -125,23 +132,25 @@ export function NotificationsCard() {
             ))}
           </Table.Tbody>
         </Table>
-        <Switch
-          mt="xs"
-          checked={!!data.digest}
-          disabled={busy}
-          onChange={(e) => setDigest(e.currentTarget.checked)}
-          label={t('account.notify.digest', 'Wochenübersicht per E-Mail')}
-          description={t(
-            'account.notify.digestHint',
-            'Jeden Montagmorgen: die Anlässe der Woche, neue Beiträge und Umfragen, in denen du noch abstimmen kannst.',
-          )}
-        />
         <Text fz="xs" c="dimmed">
           {t(
             'account.notify.pushHint',
             'Push kommt nur auf Geräte, auf denen du Push unten eingeschaltet hast.',
           )}
         </Text>
+        {(data.apps ?? []).length > 0 && (
+          <Switch
+            mt="xs"
+            checked={!!data.muted}
+            disabled={busy}
+            onChange={(e) => setMuted(e.currentTarget.checked)}
+            label={t('account.notify.muteAll', 'Alle Direktnachrichten stummschalten')}
+            description={t(
+              'account.notify.muteAllHint',
+              'Keine Direktnachricht von Hubra auf Discord, in keinem Verein und auch nicht für dein Konto. Deine Auswahl oben bleibt gespeichert.',
+            )}
+          />
+        )}
         {(data.apps ?? []).some((a) => a.key === 'discord') && (
           <Text fz="xs" c="dimmed">
             {t(

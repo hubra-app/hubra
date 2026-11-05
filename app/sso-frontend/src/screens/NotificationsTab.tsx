@@ -37,6 +37,7 @@ import {
 } from '@hubra/ui'
 import { useSso } from '@/context/SsoContext'
 import { LoadFailed } from '@/components/LoadFailed'
+import { DiscordDmCard } from '@/components/DiscordDmCard'
 import { getLang, tr } from '@/lang'
 import * as authApi from '@/api/auth'
 import type { AccountNotification } from '@/api/auth'
@@ -140,6 +141,7 @@ export function NotificationsTab() {
 
   return (
     <Stack gap="sm">
+      <DiscordDmCard />
       <Group justify="space-between" wrap="nowrap">
         <Text size="sm" c="dimmed">
           {meta.unread > 0

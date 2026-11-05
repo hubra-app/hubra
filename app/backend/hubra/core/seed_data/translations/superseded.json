@@ -5028,6 +5028,15 @@
    ],
    "support.roadmap.done": [
     "Erledigt"
+   ],
+   "account.notify.topics.event_reminders": [
+    "Erinnerung vor Anlässen"
+   ],
+   "account.notify.topics.my_events": [
+    "Meine Anmeldungen"
+   ],
+   "mail.email.new_device_login.not_you": [
+    "Falls du das nicht warst, beende diese Anmeldung unter «Sitzungen» und ändere sofort dein Passwort."
    ]
   },
   "en-GB": {
@@ -6529,6 +6538,15 @@
    ],
    "shell.nav.externalParties": [
     "External"
+   ],
+   "account.notify.topics.event_reminders": [
+    "Reminder before events"
+   ],
+   "account.notify.topics.my_events": [
+    "My sign-ups"
+   ],
+   "mail.email.new_device_login.not_you": [
+    "If this wasn't you, end this sign-in under Sessions and change your password straight away."
    ]
   }
  }

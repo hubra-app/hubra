@@ -844,8 +844,16 @@ def mail_update(
     merged the case (*merged_into*)."""
     from hubra.core.services import email
 
+    from hubra.core.notifications import account_dm
+
     sent = 0
     for user in users:
+        try:
+            account_dm.support_case_update(
+                user, case, comment=comment, merged_into=merged_into
+            )
+        except Exception:  # noqa: BLE001
+            logger.warning("support_case_dm_failed id=%s", case.id, exc_info=True)
         try:
             if email.send_support_case_update(
                 user.email,

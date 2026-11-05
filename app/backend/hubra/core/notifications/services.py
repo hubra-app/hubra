@@ -59,6 +59,7 @@ def notify_all_active(
         if skip_member_id is not None and member_id == skip_member_id:
             continue
         if not wants(stored, topic, "bell"):
+            _apps_only(member_id, stored, kind, title, msg, link, topic)
             continue
         db.session.add(_new(member_id, kind, title, msg, link, topic))
 
@@ -92,9 +93,32 @@ def notify_member(
     topic: str | None = None,
 ) -> None:
     """Create a notification for a single member, unless they turned *topic*
-    off in the bell (see ``prefs``)."""
+    off in the bell (see ``prefs``); a direct message they turned on for it
+    goes out either way."""
     if _wants_bell(member_id, topic):
         db.session.add(_new(member_id, kind, title, msg, link, topic))
+    elif topic:
+        stored = db.session.scalar(
+            select(Member.notify_prefs).where(Member.id == member_id)
+        )
+        _apps_only(member_id, stored, kind, title, msg, link, topic)
+
+
+def _apps_only(member_id, stored, kind, title, msg, link, topic) -> None:
+    """No bell for this member and topic: still the app channels (Discord)
+    they turned on for it."""
+    from hubra.core.notifications import channels
+
+    if not channels.wants_any_app(stored, topic):
+        return
+    try:
+        channels.send_without_bell(
+            member_id, kind, _fit(title), _fit(msg), link=link, topic=topic
+        )
+    except Exception:  # noqa: BLE001
+        import logging
+
+        logging.getLogger(__name__).exception("app notification not queued")
 
 
 def create_notification(
@@ -203,3 +227,25 @@ class NotificationsService:
 
 # Bell notifications also go out as browser pushes (registers its listener).
 from hubra.core.notifications import push as _push  # noqa: E402,F401
+
+
+def notify_ending(
+    member_id: int,
+    what: str,
+    ends_on,
+    link: str | None = None,
+    topic: str = "qualifications",
+) -> None:
+    """Tell a member that something of theirs ends soon: a qualification or
+    certificate (a coaching licence, a first-aid course). The bell, and a
+    Discord direct message when they turned *topic* on. For modules and
+    plugins that keep such dates; they pick when (for example 30 days
+    before) and call this once."""
+    notify_member(
+        member_id,
+        "warning",
+        "Qualification ends soon",
+        f"{what} · {ends_on:%d.%m.%Y}",
+        link=link,
+        topic=topic,
+    )

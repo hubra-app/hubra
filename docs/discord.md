@@ -334,3 +334,41 @@ Discord only delivers them if the person shares a server with the bot and
 allows direct messages from that server's members.
 
 ![Mein Konto › Benachrichtigungen with the Discord column](screenshots/discord/notification-discord.png)
+
+A direct message does not need the bell: a member can turn the bell off for a
+topic and keep the Discord column. The topics that matter most as direct
+messages:
+
+| Topic | What comes |
+|---|---|
+| Bestätigung meiner Anmeldungen (`bookings`) | "Sign-up confirmed" or "Sign-up received" when the member (or an organiser) signs them up; quiet in the bell until turned on |
+| Warteliste (`waitlist`) | "On the waitlist", then "You got a place" when a place comes free |
+| Erinnerung vor Anlässen und Trainings (`event_reminders`) | the reminder before an event or training they hold a place at |
+| Antworten auf meine Anfragen (`requests`) | an organiser approved or declined their sign-up |
+| Rechnungen (`payments`) | a new invoice, three days before it is due, overdue reminders |
+| Mitgliedschaft verlängern (`membership`) | the membership fee for the new period is out |
+| Qualifikationen (`qualifications`) | a qualification or certificate ends soon (`notify_ending()` in `hubra.core.notifications.services`, for modules and plugins that keep such dates) |
+| Wochenübersicht (`digest`) | the Monday overview: the week's events, new posts, polls to vote in (mail and/or Discord, no bell) |
+
+**Mute all.** One switch, in the club's Benachrichtigungen and on the SSO
+account page, stops every Hubra direct message (`users.dm_prefs.muted`). The
+choices per topic stay saved.
+
+## Direct messages to the account (outside a club)
+
+Some news belongs to the person, not to a club. On the SSO portal, Konto ›
+Benachrichtigungen shows **Direktnachrichten auf Discord** once the account
+linked Discord: the platform's bot sends
+
+- **Sign-in from a new device** (`sign_in`): time, device with versions, IP
+  address, how they signed in (password or passkey, the second step), the
+  number of active sessions, and the buttons "Das war ich nicht" (ends every
+  session, then a new password) and "Sitzungen prüfen". The mail still comes.
+- **Answers to my requests** (`requests`): support reports (a reply, a new
+  status, merged) and requests for a new club (approved, declined).
+
+Both are off until turned on (`users.dm_prefs`). Only sign-ins to the account
+(SSO) alert; opening a club does not. A browser counts as known by its
+`hubra_device` cookie; without the cookie, the same browser, system,
+language, time zone and IP network (/24, IPv6 /48) seen in the last 30 days
+counts as known too (`known_devices.soft_hash`).

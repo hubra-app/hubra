@@ -47,6 +47,14 @@ const TITLES: Record<string, [string, string, string]> = {
     'Club limit almost reached',
   ],
   'Club limit reached': ['shell.notif.text.quotaOver', 'Vereinslimit erreicht', 'Club limit reached'],
+  'Sign-up received': ['shell.notif.text.signUpReceived', 'Anmeldung erhalten, wartet auf Bestätigung', 'Sign-up received, waiting for approval'],
+  'On the waitlist': ['shell.notif.text.onWaitlist', 'Auf der Warteliste', 'On the waitlist'],
+  'New invoice': ['shell.notif.text.newInvoice', 'Neue Rechnung', 'New invoice'],
+  'Invoice due soon': ['shell.notif.text.invoiceDueSoon', 'Rechnung bald fällig', 'Invoice due soon'],
+  'Invoice overdue': ['shell.notif.text.invoiceOverdue', 'Rechnung überfällig', 'Invoice overdue'],
+  'Membership fee for the new period': ['shell.notif.text.membershipRenewal', 'Mitgliederbeitrag für die neue Periode', 'Membership fee for the new period'],
+  'Qualification ends soon': ['shell.notif.text.qualificationEnds', 'Qualifikation läuft bald ab', 'Qualification ends soon'],
+  'Your week': ['shell.notif.text.weeklyDigest', 'Deine Woche im Verein', 'Your week at the club'],
 }
 
 const PREFIXES: [string, string, string, string][] = [

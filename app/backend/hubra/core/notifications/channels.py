@@ -10,7 +10,9 @@ external_id, payload)`` hook is a notification channel named after its code
 ("discord"). A member has the channel when the club has a live connection
 of that provider and the member linked an account there. It is off until the
 member turns it on per topic (Mein Konto › Benachrichtigungen), next to the
-bell, push and mail.
+bell, push and mail. It does not need the bell (``send_without_bell``), and
+the account's "mute all direct messages" switch (``users.dm_prefs.muted``)
+stops it.
 
 Each new notification for such a member is handed to the hook from a Celery
 task after the commit, inside the club.
@@ -94,6 +96,66 @@ def available(member) -> list[str]:
 def queue(connection, target) -> None:
     """From the Notification ``after_insert`` listener: queue the app
     deliveries the member asked for."""
+    payload = {
+        "id": target.id,
+        "kind": target.kind,
+        "title": target.title,
+        "msg": target.msg,
+        "link": getattr(target, "link", None),
+        "topic": getattr(target, "topic", None),
+    }
+    queue_payload(connection, target.member_id, payload)
+
+
+def wants_any_app(stored: dict | None, topic: str | None) -> bool:
+    """Cheap first check: whether *stored* prefs turn any app on for
+    *topic* (apps are off by default, so only a stored True counts)."""
+    from hubra.core.notifications.prefs import CHANNELS
+
+    if not topic:
+        return False
+    row = (stored or {}).get(topic) or {}
+    return any(on is True for channel, on in row.items() if channel not in CHANNELS)
+
+
+def send_without_bell(
+    member_id: int,
+    kind: str,
+    title: str,
+    msg: str,
+    link: str | None = None,
+    topic: str | None = None,
+    extra: dict | None = None,
+) -> None:
+    """A message for the member's app channels only: the member turned the
+    bell off for *topic* but kept the direct message, or the topic has no
+    bell (the weekly digest). *extra* goes into the payload as is
+    (``fields``: embed fields)."""
+    payload = {
+        "id": None,
+        "kind": kind,
+        "title": title,
+        "msg": msg,
+        "link": link,
+        "topic": topic,
+        **(extra or {}),
+    }
+    queue_payload(db.session.connection(), member_id, payload)
+
+
+def _muted(connection, user_id: int) -> bool:
+    from hubra.core.models.user import User
+
+    stored = connection.execute(
+        select(User.dm_prefs).where(User.id == user_id)
+    ).scalar()
+    return bool((stored or {}).get("muted"))
+
+
+def queue_payload(connection, member_id: int, payload: dict) -> int:
+    """Queue *payload* for each app channel the member turned on for its
+    topic (and linked), unless they muted every direct message. Returns
+    how many were queued."""
     from hubra.core.notifications.prefs import wants
     from hubra.core.models.connected_app import ExternalAccount
     from hubra.core.models.member import Member
@@ -101,21 +163,21 @@ def queue(connection, target) -> None:
 
     tenant = current_tenant()
     if tenant is None:
-        return
+        return 0
     # Inside a flush: only the raw connection, no module state lookups (the
     # task checks that the module is on).
     codes = _club_codes(tenant.id, connection, check_enabled=False)
     if not codes:
-        return
+        return 0
     row = connection.execute(
-        select(Member.user_id, Member.notify_prefs).where(Member.id == target.member_id)
+        select(Member.user_id, Member.notify_prefs).where(Member.id == member_id)
     ).first()
     if row is None or row.user_id is None:
-        return
-    topic = getattr(target, "topic", None)
+        return 0
+    topic = payload.get("topic")
     wanted = [c for c in codes if wants(row.notify_prefs, topic, c)]
-    if not wanted:
-        return
+    if not wanted or _muted(connection, row.user_id):
+        return 0
     linked = set(
         connection.execute(
             select(ExternalAccount.provider).where(
@@ -127,20 +189,13 @@ def queue(connection, target) -> None:
         .all()
     )
     if not linked:
-        return
+        return 0
     from hubra.core.tasks.after_commit import delay_after_commit
     from hubra.core.tasks.connected_app_tasks import deliver_app_notification
 
-    payload = {
-        "id": target.id,
-        "kind": target.kind,
-        "title": target.title,
-        "msg": target.msg,
-        "link": getattr(target, "link", None),
-        "topic": topic,
-    }
     for code in sorted(linked):
-        delay_after_commit(deliver_app_notification, code, target.member_id, payload)
+        delay_after_commit(deliver_app_notification, code, member_id, payload)
+    return len(linked)
 
 
 def deliver(code: str, member_id: int, payload: dict) -> int:
@@ -175,6 +230,8 @@ def deliver(code: str, member_id: int, payload: dict) -> int:
     from hubra.core.services.notification_text import translate
 
     user = db.session.get(User, member.user_id)
+    if user is not None and (user.dm_prefs or {}).get("muted"):
+        return 0  # muted since it was queued
     locale = (user.language if user else None) or "de-CH"
     title, msg = translate(payload.get("title", ""), payload.get("msg", ""), locale)
     payload = {**payload, "title": title, "msg": msg, "locale": locale}

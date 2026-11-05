@@ -2,18 +2,25 @@
 {% import "email/_ui.html" as ui with context %}
 {% block preheader %}{{ t('mail.email.new_device_login.intro', club_name=club_name) | striptags }}{% endblock %}
 {% block content %}
-{%- set device = t('mail.email.new_device_login.device_value', browser=browser_family, platform=platform) if browser_family and platform else user_agent -%}
-{% call ui.p() %}{{ t('mail.email.new_device_login.intro', club_name=club_name) }}{% endcall %}
-{{ ui.facts([
+{%- set device = device or (t('mail.email.new_device_login.device_value', browser=browser_family, platform=platform) if browser_family and platform else user_agent) -%}
+{%- set rows = [
   (t('mail.email.new_device_login.table_time'), timestamp, false),
   (t('mail.email.new_device_login.table_device'), device, false),
   (t('mail.email.new_device_login.table_ip'), ip, true),
-]) }}
+] -%}
+{%- if method %}{% set rows = rows + [(t('mail.email.new_device_login.table_method'), method, false)] %}{% endif -%}
+{%- if second_step %}{% set rows = rows + [(t('mail.email.new_device_login.table_second_step'), second_step, false)] %}{% endif -%}
+{%- if sessions is not none and sessions != '' %}{% set rows = rows + [(t('mail.email.new_device_login.table_sessions'), sessions ~ '', false)] %}{% endif -%}
+{% call ui.p() %}{{ t('mail.email.new_device_login.intro', club_name=club_name) }}{% endcall %}
+{{ ui.facts(rows) }}
 {% call ui.p() %}{{ t('mail.email.new_device_login.was_you') }}{% endcall %}
 {% call ui.p() %}{{ t('mail.email.new_device_login.not_you') }}{% endcall %}
+{% if not_me_url %}
+{{ ui.button(not_me_url, t('mail.email.new_device_login.not_me')) }}
+{% endif %}
 {% if sessions_url %}
-{{ ui.button(sessions_url, t('mail.email.new_device_login.button')) }}
-{% call ui.muted() %}<a href="{{ password_url }}" target="_blank" style="color: #7441e0; font-weight: 600;">{{ t('mail.email.new_device_login.change_password') }}</a>{% endcall %}
-{{ ui.fallback_link(sessions_url) }}
+{% if not not_me_url %}{{ ui.button(sessions_url, t('mail.email.new_device_login.button')) }}{% endif %}
+{% call ui.muted() %}{% if not_me_url %}<a href="{{ sessions_url }}" target="_blank" style="color: #7441e0; font-weight: 600;">{{ t('mail.email.new_device_login.button') }}</a> · {% endif %}<a href="{{ password_url }}" target="_blank" style="color: #7441e0; font-weight: 600;">{{ t('mail.email.new_device_login.change_password') }}</a>{% endcall %}
+{{ ui.fallback_link(not_me_url or sessions_url) }}
 {% endif %}
 {% endblock %}

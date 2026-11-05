@@ -546,13 +546,17 @@ def send_new_device_login(
     user_agent: str,
     timestamp: str,
     lang: str = DEFAULT_LANG,
+    details: dict | None = None,
 ) -> bool:
     """Tell the account it was signed into from a new device.  True when sent.
 
     The links go to the account on the SSO portal: its sessions, where the
-    sign-in can be ended, and its password.
+    sign-in can be ended, and its password. *details* (``known_devices.
+    sign_in_info``, labels in the mail's language): ``device`` with
+    versions, ``method``, ``second_step``, ``sessions`` and ``not_me_url``.
     """
     sso = _get_sso_base_url()
+    details = details or {}
 
     body_html, body_text, subject = render_mail_template(
         "new_device_login",
@@ -566,6 +570,11 @@ def send_new_device_login(
         user_agent=user_agent,
         sessions_url=f"{sso}/account/sitzungen" if sso else "",
         password_url=f"{sso}/account/passwort" if sso else "",
+        device=details.get("device") or "",
+        method=details.get("method") or "",
+        second_step=details.get("second_step") or "",
+        sessions=details.get("sessions"),
+        not_me_url=details.get("not_me_url") or "",
     )
     return _send(to_address, name, subject, body_html, body_text, system=True)
 

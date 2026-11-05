@@ -249,14 +249,23 @@
         "posts": "New posts",
         "events": "New events",
         "polls": "New polls",
-        "event_reminders": "Reminder before events",
+        "event_reminders": "Reminder before events and trainings",
         "poll_reminders": "Reminder before a poll closes",
-        "my_events": "My sign-ups",
+        "my_events": "Changes to my events",
         "my_polls": "Votes in my polls, proxies",
-        "tasks": "Tasks for me (applications, sign-ups to approve)"
+        "tasks": "Tasks for me (applications, sign-ups to approve)",
+        "bookings": "Confirmation of my sign-ups",
+        "waitlist": "Waitlist: a place came free",
+        "requests": "Answers to my requests",
+        "payments": "Invoices: new, due soon, overdue",
+        "membership": "Membership renewal",
+        "qualifications": "Qualifications that end soon",
+        "digest": "Weekly overview on Monday"
       },
       "discordHint": "Discord sends you a direct message from the club's bot. Direct messages from server members must be allowed (Discord › the server's privacy settings).",
-      "discord": "Discord"
+      "discord": "Discord",
+      "muteAll": "Mute all direct messages",
+      "muteAllHint": "No Hubra direct message on Discord, in any club or for your account. Your choices above stay saved."
     },
     "push": {
       "title": "Notifications on this device",
@@ -2430,7 +2439,15 @@
         "quotaMail": "Mails this month: {{used}} of {{limit}}.",
         "quotaStorage": "Storage: {{used}} MB of {{limit}} MB.",
         "aMember": "A member",
-        "eventReminder": "Event reminder"
+        "eventReminder": "Event reminder",
+        "signUpReceived": "Sign-up received, waiting for approval",
+        "onWaitlist": "On the waitlist",
+        "newInvoice": "New invoice",
+        "invoiceDueSoon": "Invoice due soon",
+        "invoiceOverdue": "Invoice overdue",
+        "membershipRenewal": "Membership fee for the new period",
+        "qualificationEnds": "Qualification ends soon",
+        "weeklyDigest": "Your week at the club"
       }
     },
     "notifPanel": {
