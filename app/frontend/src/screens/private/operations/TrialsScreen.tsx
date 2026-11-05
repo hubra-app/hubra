@@ -65,6 +65,8 @@ export function TrialsScreen() {
   const { hasPermission } = useAuth()
   const { ssoUrl } = useInstance()
   const canManage = hasPermission('events.trials.manage')
+  // Inviting someone to join also needs the members right.
+  const canInvite = canManage && hasPermission('members.members.create')
   const [past, setPast] = useState(false)
   const [busy, setBusy] = useState<number | null>(null)
   const [removing, setRemoving] = useState<TrialSignup | null>(null)
@@ -263,7 +265,7 @@ export function TrialsScreen() {
                     {s.message}
                   </Text>
                 )}
-                {canManage && open && (
+                {canInvite && open && (
                   <Button
                     mt={12}
                     size="xs"

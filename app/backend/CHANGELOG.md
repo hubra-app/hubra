@@ -9,6 +9,7 @@ section and position, or the apps show that version in English.
 
 ### Changed
 
+- **Inviting from the trial list needs the members right**: “Invite as trial member” under Events › Trials now also needs the right to create members, like an invite from the member list. Trainers without it still see bookings and mark who came, but the invite button is hidden.
 - **Trial booking form keeps bookings private**: booking a trial training again with an address that already booked answers like a new booking and resends the link, instead of saying the address already booked. Booking mails are limited to 5 a day per address.
 - **Releases sign only images built by the release pipeline**: before signing, a release checks that each image has build provenance from `images.yml` (a release tag or a manual run on main); an image built from another branch stops the release. See docs/releases.md.
 - **Add-ons sit under their plugin**: in the Plugin catalogue a plugin that needs another one (Guides and Keys need Inventory) shows inside its parent's card, with its own status and buttons. One whose parent isn't installed says “Requires Inventory” and can't be installed yet. An update that needs a newer version of the parent stops and says which version it needs; the new switch “Also update required plugins” (off by default) updates the parent first instead. The plugin index names each plugin's parent too. See docs/plugins.md.
