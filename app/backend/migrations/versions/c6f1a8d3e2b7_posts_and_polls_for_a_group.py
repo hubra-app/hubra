@@ -6,7 +6,7 @@ belongs to, like ``club_events.group_id``. A role held for that group only
 public and to every club schema.
 
 Revision ID: c6f1a8d3e2b7
-Revises: b4e8f2a6d9c3
+Revises: f1c7a3e9b5d2
 Create Date: 2026-11-05 00:00:00.000000
 
 """
@@ -17,7 +17,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "c6f1a8d3e2b7"
-down_revision = "b4e8f2a6d9c3"
+down_revision = "f1c7a3e9b5d2"
 branch_labels = None
 depends_on = None
 
