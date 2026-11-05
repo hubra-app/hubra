@@ -90,7 +90,13 @@ export function BuildsPanel({ health }: { health: HealthDetail }) {
     if (!list) {
       // The answering API process knows its own commit even without Redis.
       if (name === 'api') return { key: name, label: labels.api, shas: [api] }
-      return { key: name, label: labels[name] ?? name, note: tr('Meldet sich nicht', 'Not reporting') }
+      return {
+        key: name,
+        label: labels[name] ?? name,
+        note: health.processes_unknown
+          ? tr('Unbekannt (Redis antwortet nicht)', 'Unknown (Redis did not answer)')
+          : tr('Meldet sich nicht', 'Not reporting'),
+      }
     }
     return {
       key: name,

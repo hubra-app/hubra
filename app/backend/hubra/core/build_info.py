@@ -25,6 +25,7 @@ _log = logging.getLogger(__name__)
 _KEY_PREFIX = "hubra:build:"
 _TTL = 90  # seconds
 _INTERVAL = 30  # seconds between refreshes
+_READ_TIMEOUT = 1.0  # seconds, for reading all reports
 
 _started: set[str] = set()
 
@@ -96,12 +97,26 @@ def start_heartbeat(component: str, app=None) -> None:
 
 def reported() -> list[dict]:
     """What the processes reported in the last few minutes: one entry per
-    process kind and host, ``{component, host, commit, version, seen}``."""
+    process kind and host, ``{component, host, commit, version, seen}``.
+    Empty when Redis is off or could not be read (see :func:`read_reports`)."""
+    return read_reports() or []
+
+
+def read_reports() -> list[dict] | None:
+    """:func:`reported`, or None when Redis is configured but did not answer.
+
+    The scan takes a few round trips, so it gets a longer timeout than the
+    per-request caches, and a slow answer does not trip the shared circuit
+    breaker (``mark_redis_down``): that would also blank every other Redis
+    read of this process for a few seconds, such as the health cache.
+    """
+    import redis as redis_lib
+
     from hubra.core.redis_client import get_redis_client, mark_redis_down
 
-    client = get_redis_client()
+    client = get_redis_client(timeout=_READ_TIMEOUT)
     if client is None:
-        return []
+        return [] if not _redis_configured() else None
     out: list[dict] = []
     try:
         for key in client.scan_iter(match=f"{_KEY_PREFIX}*", count=100):
@@ -114,9 +129,19 @@ def reported() -> list[dict]:
                 continue
             if isinstance(entry, dict) and entry.get("component"):
                 out.append(entry)
+    except redis_lib.TimeoutError:
+        _log.warning("Build reports: Redis did not answer in %ss", _READ_TIMEOUT)
+        return None
     except Exception:
         _log.debug("Could not read build reports", exc_info=True)
         mark_redis_down()
-        return []
+        return None
     out.sort(key=lambda e: (str(e.get("component")), str(e.get("host"))))
     return out
+
+
+def _redis_configured() -> bool:
+    from flask import current_app
+
+    url = current_app.config.get("REDIS_URL", "")
+    return bool(url) and url != "memory://"

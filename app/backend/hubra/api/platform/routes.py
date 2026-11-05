@@ -195,15 +195,21 @@ def health_detailed():
     from hubra.core import build_info
     from hubra.core.services import upgrades
 
+    # The cache first: a failed Redis read below would trip the shared
+    # circuit breaker and make the cache look missing (``stale``).
+    cached = HealthCache.get()
     payload = HealthService.run_all_checks()
     payload["version"] = VersionService.get_version()
     # The commit each backend process runs: this API process, plus what the
     # worker, beat and Discord gateway reported (hubra.core.build_info).
     payload["commit"] = build_info.commit()
-    payload["processes"] = build_info.reported()
+    reports = build_info.read_reports()
+    payload["processes"] = reports or []
+    if reports is None:
+        # Redis did not answer: unknown, not "no process reports".
+        payload["processes_unknown"] = True
     payload["last_upgrade"] = upgrades.last_upgrade()
 
-    cached = HealthCache.get()
     if cached is not None and "checked_at" in cached:
         payload["stale"] = time.time() - cached["checked_at"] > _STALE_THRESHOLD
         payload["checked_at"] = cached["checked_at"]
