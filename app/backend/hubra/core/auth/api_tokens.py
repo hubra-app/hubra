@@ -103,6 +103,7 @@ _NEVER_BLUEPRINTS = frozenset(
         "oauth_metadata_bp",
         "platform_oauth_bp",
         "club_oauth_bp",
+        "webhooks_bp",  # would send the club's data where a token says
     }
 )
 

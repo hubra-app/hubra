@@ -127,6 +127,8 @@ export const qk = {
     apps: ['connected-apps'] as const,
     apiAccess: ['api-access'] as const,
     apiTokens: ['api-access', 'tokens'] as const,
+    webhooks: ['webhooks'] as const,
+    webhookDeliveries: (id: number) => ['webhooks', id, 'deliveries'] as const,
     signInApps: ['api-access', 'sign-in-apps'] as const,
     appConnection: (id: number) => ['connected-apps', id] as const,
     rolesPermissions: ['roles-permissions'] as const,
