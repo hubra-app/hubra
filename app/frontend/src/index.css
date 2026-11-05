@@ -661,3 +661,68 @@ table[style*="min-width"] td::before {
 .member-rows > div:last-child {
   border-bottom: none !important;
 }
+
+/* Own dashboards: widgets a third (s), half (m) or the full width (l). */
+.hb-dash-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+.hb-dash-grid > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+/* The widget fills its cell, so a row's cards line up. */
+.hb-dash-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.hb-dash-body > * {
+  flex: 1;
+  width: 100%;
+}
+.hb-dash-s {
+  grid-column: span 2;
+}
+.hb-dash-m {
+  grid-column: span 3;
+}
+.hb-dash-l {
+  grid-column: span 6;
+}
+@media (max-width: 62em) {
+  .hb-dash-s {
+    grid-column: span 3;
+  }
+  .hb-dash-m {
+    grid-column: span 6;
+  }
+}
+@media (max-width: 35.99em) {
+  .hb-dash-s {
+    grid-column: span 6;
+  }
+}
+
+/* Start pages: a widget with nothing to show right now (no open payment, no
+   poll to vote in) takes no room; in edit mode it says so. */
+.hb-dash-grid:not(.editing) > div:has(> .hb-dash-body:empty) {
+  display: none;
+}
+.hb-dash-grid.editing > div > .hb-dash-body:empty::after {
+  content: attr(data-empty);
+  display: block;
+  padding: var(--mantine-spacing-md);
+  border: 1px dashed var(--mantine-color-line-1, #d6d2e3);
+  border-radius: var(--mantine-radius-md);
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-sm);
+}
+.hb-dash-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: 16px;
+}

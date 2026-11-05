@@ -13,6 +13,8 @@ export const qk = {
   features: ['features'] as const,
   myTenants: ['my-tenants'] as const,
   dashboard: ['dashboard-summary'] as const,
+  dashboards: ['dashboards'] as const,
+  dashboardHome: ['dashboards', 'home'] as const,
   lookups: ['lookups'] as const,
   languages: ['languages'] as const,
   translations: (locale: string) => ['translations', locale] as const,
