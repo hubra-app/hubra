@@ -43,9 +43,13 @@ it is switched on; see [modules/mail/README.md](../modules/mail/README.md).
    support) is an nginx image with the built files. Host names, the CSP and
    the other security headers are written when the container starts
    (`app/deploy/nginx/40-hubra-runtime.sh`), so one image fits every install.
-3. **Traefik → backend.** API calls go straight to Flask on
+3. **Traefik → backend.** With the production host names
+   (`docker-compose.traefik.yml`, k3s), API calls go straight to Flask on
    `api.hubra.club`. There is one proxy hop, so ProxyFix uses `x_for=1`
-   (`PROXY_FIX_X_FOR=2` only behind a CDN that Traefik trusts).
+   (`PROXY_FIX_X_FOR=2` only behind a CDN that Traefik trusts). The plain
+   Compose stack on localhost has no API host: each frontend's nginx proxies
+   `/api/` to the backend (`API_UPSTREAM`), so the app and the API share one
+   origin.
 4. **Flask ↔ PostgreSQL.** Shared data (accounts, clubs, platform settings)
    in `public`; each club's data in its own schema.
 5. **Flask ↔ Redis.** Celery broker, rate limits, short-lived caches.

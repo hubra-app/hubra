@@ -23,7 +23,6 @@
 ```
 app/frontend/src/
 ├── api/            # API client modules (one per blueprint)
-│   ├── client.ts   # Base fetch wrapper (credentials, CSRF, refresh)
 │   ├── members.ts
 │   ├── groups.ts
 │   ├── finance.ts
@@ -43,15 +42,16 @@ app/frontend/src/
 ## API client pattern
 
 All API modules in `src/api/` export typed functions that call backend
-endpoints. They use the shared `apiFetch` from `client.ts` which automatically:
+endpoints. They use the shared `apiFetch` from `@hubra/api-client`
+(`packages/api-client/src/client.ts`), which automatically:
 
 1. Sends cookies cross-origin (`credentials: "include"`)
 2. Attaches the `X-CSRF-TOKEN` header (read from the `csrf_access_token` cookie)
-3. Retries once on 401 by calling `/auth/refresh` (using `csrf_refresh_token`)
+3. Retries once on 401 by calling `/global/auth/refresh` (using `csrf_refresh_token`)
 4. Calls the auth failure handler if refresh also fails
 
 ```typescript
-import { apiFetch } from "./client";
+import { apiFetch } from "@hubra/api-client";
 
 export function listMembers(
   params?: MemberQueryParams,
@@ -61,9 +61,11 @@ export function listMembers(
 }
 ```
 
-`apiFetch` prepends `BASE` (from `VITE_API_BASE` env var + `/v1`), so calls go
-to `https://api.hubra.club/api/v1/...` in production or
-`http://localhost:5000/api/v1/...` in local dev.
+`apiFetch` prepends `BASE` (`VITE_API_BASE` + `/v1`, default `/api/v1`), so
+calls go to `https://api.hubra.club/api/v1/...` with the production host
+names, or to `/api/v1/...` on the app's own origin, which nginx (or the Vite
+dev server) proxies to the backend. Old paths such as `/members` are
+rewritten by the backend to `/app/members`.
 
 ## Redirects between the portals
 
@@ -105,7 +107,8 @@ Server data lives in the TanStack Query cache, not in React context.
 
 ## Shared package
 
-`packages/ui` (`@hubra/ui`) is shared by the club app, manage and sign-in: the
+`packages/ui` (`@hubra/ui`) is shared by the club app, manage, sign-in and
+the support site: the
 Mantine theme and brand colours, `createLang` (the `tr(de, en)` language store
 manage and sign-in use), and the page blocks `PageHead`, `StatTile`,
 `StatGrid`, `Tabs` and `Pagination` with their styles in `ui.css`. Like
@@ -134,10 +137,11 @@ npm run lint       # ESLint check
 ```
 
 In local dev, `VITE_API_BASE=http://localhost:5000/api` (in
-`app/frontend/.env`) points directly at the Flask backend. In production,
-`VITE_API_BASE=https://api.hubra.club/api` is set via
-`docker-compose.override.yaml` and Traefik routes `api.hubra.club` directly
-to the backend container.
+`app/frontend/.env`) points directly at the Flask backend. The images are
+built with placeholders and get their `VITE_*` values when the container
+starts (`app/deploy/nginx/40-hubra-runtime.sh`): `/api` by default, or
+`https://api.hubra.club/api` with `docker-compose.traefik.yml`, where Traefik
+routes `api.hubra.club` straight to the backend.
 
 ## Tests
 
@@ -146,7 +150,8 @@ Component tests (Vitest and Testing Library) sit next to the code as
 `app/frontend/e2e/` and run against a real stack: they sign in on the SSO
 portal with the account in `e2e/env.ts` (or the `E2E_*` variables) and use the
 API as that user. CI runs both: the component tests in the `frontend-tests` job,
-the browser tests in `compose-smoke` (release-checks.yml, see docs/ci.md) against the Compose stack.
+and the browser tests in `browser-tests` against the Compose stack when a change
+reaches what the browser sees ([ci.md](ci.md)).
 
 ```bash
 cd app/frontend
