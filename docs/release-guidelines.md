@@ -118,4 +118,4 @@ in 30 of 83 merged pull requests, the mail images in 1.
 
 Actions minutes were a minor factor: the repository is public, so standard
 runners are free. A full Images run is about 12 runner minutes; a
-backend-only patch release now builds one image instead of seven.
+backend-only patch release now builds only the backend images it touches.
