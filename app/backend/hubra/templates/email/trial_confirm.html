@@ -1,0 +1,11 @@
+{% extends "email/base.html" %}
+{% import "email/_ui.html" as ui with context %}
+{% block preheader %}{{ t('mail.email.trial_confirm.intro', club_name=club_name, event_title=event_title, when=when) | striptags }}{% endblock %}
+{% block content %}
+{% call ui.p() %}{{ t('mail.email.trial_confirm.greeting', name=name) }}{% endcall %}
+{% call ui.p() %}{{ t('mail.email.trial_confirm.intro', club_name=club_name, event_title=event_title, when=when) }}{% if location %}<br>{{ location }}{% endif %}{% endcall %}
+{% call ui.p() %}{{ t('mail.email.trial_confirm.cta_text') }}{% endcall %}
+{{ ui.button(confirm_url, t('mail.email.trial_confirm.button')) }}
+{% call ui.muted() %}{{ t('mail.email.trial_confirm.ignore') }}{% endcall %}
+{{ ui.fallback_link(confirm_url) }}
+{% endblock %}

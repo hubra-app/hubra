@@ -827,6 +827,38 @@
       "hint": "Anlässe mit «Öffentlicher Anlass» kann jeder ohne Anmeldung sehen: als Kalender zum Abonnieren und als Liste für eure Website. Teilnehmende, Gruppen und Notizen bleiben im Verein. Gerade {{count}} kommende.",
       "calendar": "Öffentlicher Kalender",
       "json": "Für die Website (JSON)"
+    },
+    "trialSpots": "Plätze für Schnuppertraining",
+    "trialSpotsHint": "Wer noch nicht Mitglied ist, kann dieses Training auf der Schnupperseite des Vereins buchen. Leer: keine Schnupperplätze.",
+    "trialSpotsPlaceholder": "z. B. 2",
+    "trialSpotsInvalid": "Eine Zahl von 1 bis 100, oder leer",
+    "trials": {
+      "button": "Schnuppern",
+      "title": "Schnuppertrainings",
+      "subtitle": "Wer noch nicht Mitglied ist, bucht ein Training auf der Schnupperseite. Schnupperplätze gibst du im Anlass an.",
+      "upcoming": "Bevorstehend",
+      "past": "Vergangen",
+      "page": "Schnupperseite",
+      "pageHint": "Verlinke sie auf der Website des Vereins. Buchungen zählen, sobald die Person ihre E-Mail-Adresse bestätigt hat.",
+      "taken": "{{taken}}/{{spots}} belegt",
+      "empty": "Noch keine Schnupperbuchungen",
+      "emptyNoEvents": "Gib einem Training Schnupperplätze (Anlass bearbeiten), dann erscheint es auf der Schnupperseite.",
+      "age_one": "{{count}} Jahr",
+      "age_other": "{{count}} Jahre",
+      "invite": "Als Schnuppermitglied einladen",
+      "invited": "Einladung an {{email}} verschickt",
+      "delete": "Buchung löschen",
+      "deleted": "Buchung gelöscht",
+      "deleteTitle": "Buchung löschen",
+      "deleteBody": "Die Buchung von {{name}} und ihre Angaben werden gelöscht.",
+      "retention": "Buchungen werden ein halbes Jahr nach dem Training gelöscht, unbestätigte nach einer Woche.",
+      "status": {
+        "confirmed": "Angemeldet",
+        "attended": "War da",
+        "noShow": "Nicht erschienen",
+        "cancelled": "Abgesagt",
+        "invited": "Eingeladen"
+      }
     }
   },
   "finance": {
@@ -2299,7 +2331,8 @@
       "attendance": "Vereinsleben › Anwesenheit",
       "annualAccounts": "Jahresrechnung",
       "bankAccount": "Finanzen › Bank & QR-Rechnung",
-      "memberStats": "Mitglieder › Statistik"
+      "memberStats": "Mitglieder › Statistik",
+      "trials": "Schnuppertrainings"
     },
     "emailVerify": {
       "banner": "Deine private E-Mail-Adresse ist noch nicht bestätigt. Einige Funktionen sind erst danach verfügbar.",
@@ -3394,7 +3427,9 @@
       "apps_apps_manage": "Verbundene Apps verwalten",
       "finance_accounts_read": "Kontenplan und Jahresrechnung ansehen",
       "finance_accounts_update": "Kontenplan und Eröffnungsbilanz ändern",
-      "finance_accounts_close": "Geschäftsjahr abschliessen und wieder öffnen"
+      "finance_accounts_close": "Geschäftsjahr abschliessen und wieder öffnen",
+      "events_trials_read": "Schnuppertrainings ansehen",
+      "events_trials_manage": "Schnuppertrainings verwalten"
     },
     "areas": {
       "applications": "Anträge",

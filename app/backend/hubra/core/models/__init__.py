@@ -45,6 +45,7 @@ from hubra.core.models.event import (
     EventAttendance,
     EventRegistration,
     EventSeries,
+    TrialSignup,
     event_attendees,
 )
 from hubra.core.models.poll import Poll, PollOption, PollVote, PollProxy
@@ -158,6 +159,7 @@ __all__ = [
     "event_attendees",
     "EventAttendance",
     "EventSeries",
+    "TrialSignup",
     "EventRegistration",
     "Poll",
     "PollOption",

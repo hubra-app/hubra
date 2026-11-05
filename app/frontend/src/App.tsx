@@ -111,6 +111,11 @@ const BindingsScreen = lazy(() =>
     default: m.BindingsScreen,
   })),
 )
+const TrialsScreen = lazy(() =>
+  import('./screens/private/operations/TrialsScreen').then((m) => ({
+    default: m.TrialsScreen,
+  })),
+)
 const AttendanceScreen = lazy(() =>
   import('./screens/private/operations/AttendanceScreen').then((m) => ({
     default: m.AttendanceScreen,
@@ -171,6 +176,11 @@ function SsoRedirect({ path }: { path: string }) {
 function ClubApplyRedirect() {
   const { club = '' } = useParams()
   return <SsoRedirect path={`clubs/${encodeURIComponent(club)}`} />
+}
+
+function ClubTrialRedirect() {
+  const { club = '' } = useParams()
+  return <SsoRedirect path={`clubs/${encodeURIComponent(club)}/trial`} />
 }
 
 /** /app/*: the club's pages, or the SSO portal when the URL names no club. */
@@ -301,6 +311,14 @@ function PrivateRoutes() {
                   element={
                     <RequireModule code="groups">
                       <GroupDetailScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="operations/events/trials"
+                  element={
+                    <RequireModule code="events">
+                      <TrialsScreen />
                     </RequireModule>
                   }
                 />
@@ -629,6 +647,8 @@ function AppInner() {
           opens that club's page there, /apply the club search. */}
       <Route path="/apply" element={<SsoRedirect path="clubs" />} />
       <Route path="/:club/apply" element={<ClubApplyRedirect />} />
+      {/* The club's trial page (people who aren't members book a training) */}
+      <Route path="/:club/trial" element={<ClubTrialRedirect />} />
 
       {/* / and /app/* → into the club; club pages run below /<club> (clubBase.ts) */}
       <Route path="/" element={<HomeRedirect />} />

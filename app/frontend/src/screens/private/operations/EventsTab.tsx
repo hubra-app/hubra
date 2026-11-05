@@ -32,6 +32,7 @@ import {
   IconWorld,
   IconClipboardCheck,
   IconChartBar,
+  IconUserPlus,
 } from '@tabler/icons-react'
 import { useToast, useAuth, useData } from '@/context/AppContext'
 import { qk } from '@/data/keys'
@@ -87,6 +88,10 @@ const eventSchema = z.object({
   // Public: may be shown outside the club (a Discord server that is not
   // members-only, the club's public pages).
   isPublic: z.boolean(),
+  // Places for people who aren't members yet; empty: no trials.
+  trialSpots: z
+    .string()
+    .regex(/^([1-9]\d?|100)?$/, zmsg('events.trialSpotsInvalid', 'Eine Zahl von 1 bis 100, oder leer')),
 })
 type EventForm = z.infer<typeof eventSchema>
 
@@ -183,6 +188,7 @@ export function EventsTab() {
       groupId: '',
       description: '',
       isPublic: false,
+      trialSpots: '',
     },
   })
 
@@ -232,6 +238,7 @@ export function EventsTab() {
       groupId: createScope.defaultGroup,
       description: '',
       isPublic: false,
+      trialSpots: '',
     })
     setRepeat(defaultRepeat(new Date().toISOString().slice(0, 10)))
     setAddOpen(true)
@@ -274,6 +281,7 @@ export function EventsTab() {
       groupId: ev.groupId ?? '',
       description: ev.description ?? '',
       isPublic: ev.isPublic ?? false,
+      trialSpots: ev.trialSpots ? String(ev.trialSpots) : '',
     })
     setEditScope('this')
     // The rule as it stands from this date on.
@@ -300,6 +308,7 @@ export function EventsTab() {
         groupId: data.groupId || null,
         description: data.description,
         isPublic: data.isPublic,
+        trialSpots: limitOf(data.trialSpots),
         recurrence: repeat.on
           ? {
               until: repeat.until,
@@ -346,6 +355,7 @@ export function EventsTab() {
       groupId: data.groupId || null,
       description: data.description,
       isPublic: data.isPublic,
+      trialSpots: limitOf(data.trialSpots),
     }
     const following = editScope === 'following' && !!editTarget.seriesId
     let input = all
@@ -362,6 +372,7 @@ export function EventsTab() {
         groupId: editTarget.groupId ?? null,
         description: editTarget.description ?? '',
         isPublic: editTarget.isPublic ?? false,
+        trialSpots: editTarget.trialSpots ?? null,
       }
       input = Object.fromEntries(
         (Object.keys(was) as (keyof EventUpdate)[])
@@ -530,6 +541,19 @@ export function EventsTab() {
         )}
         {...form.getInputProps('isPublic', { type: 'checkbox' })}
       />
+      <Field
+        label={t('events.trialSpots', 'Plätze für Schnuppertraining') + ' (optional)'}
+        hint={t(
+          'events.trialSpotsHint',
+          'Wer noch nicht Mitglied ist, kann dieses Training auf der Schnupperseite des Vereins buchen. Leer: keine Schnupperplätze.',
+        )}
+      >
+        <TextInput
+          inputMode="numeric"
+          {...form.getInputProps('trialSpots')}
+          placeholder={t('events.trialSpotsPlaceholder', 'z. B. 2')}
+        />
+      </Field>
       {(!editTarget || followingScope) && (
         <>
           <Divider />
@@ -552,6 +576,12 @@ export function EventsTab() {
           <Button variant="default" onClick={() => navigate('/app/operations/events/attendance')}>
             <IconChartBar size={16} />
             {t('events.attendance.overview', 'Anwesenheit')}
+          </Button>
+        )}
+        {hasPermission('events.trials.read') && (
+          <Button variant="default" onClick={() => navigate('/app/operations/events/trials')}>
+            <IconUserPlus size={16} />
+            {t('events.trials.button', 'Schnuppern')}
           </Button>
         )}
         {canCreate && (

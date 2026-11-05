@@ -110,6 +110,9 @@ class ClubEvent(db.Model):
         db.Boolean, default=False, nullable=False
     )
     is_public: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+    # Places for people who aren't members yet (a trial training), booked on
+    # the club's public trial page; None: the event takes no trials.
+    trial_spots: Mapped[int | None] = mapped_column(Integer, nullable=True)
     cover_image_url: Mapped[str | None] = mapped_column(db.String(500), nullable=True)
     color: Mapped[str | None] = mapped_column(db.String(7), nullable=True)
     created_by: Mapped[int | None] = mapped_column(
@@ -249,3 +252,55 @@ class EventAttendance(db.Model):
 
     def __repr__(self) -> str:
         return f"<EventAttendance event_id={self.event_id} member_id={self.member_id} status={self.status!r}>"
+
+
+class TrialSignup(db.Model):
+    """Someone who isn't a member books a trial training (Schnuppertraining).
+
+    Booked on the club's public trial page; it counts once the person
+    confirmed their address with the link in the mail. The trainer marks
+    them attended and, with one click, invites them as a trial member.
+    """
+
+    __tablename__ = "trial_signups"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    event_id: Mapped[int] = mapped_column(
+        db.Integer,
+        ForeignKey("club_events.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    first_name: Mapped[str] = mapped_column(db.String(100), nullable=False)
+    last_name: Mapped[str] = mapped_column(db.String(100), nullable=False)
+    email: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    phone: Mapped[str | None] = mapped_column(db.String(50), nullable=True)
+    birth_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # The secret in the mail's links (confirm, cancel).
+    token: Mapped[str] = mapped_column(db.String(64), nullable=False, unique=True)
+    # pending (address not confirmed) | confirmed | attended | no_show |
+    # cancelled | invited (asked to join as a trial member)
+    status: Mapped[str] = mapped_column(
+        db.String(20), default="pending", nullable=False
+    )
+    confirmed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    invited_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    event: Mapped["ClubEvent"] = relationship("ClubEvent", lazy="joined")
+
+    @property
+    def name(self) -> str:
+        return f"{self.first_name} {self.last_name}".strip()
+
+    def __repr__(self) -> str:
+        return f"<TrialSignup id={self.id} event={self.event_id}>"
