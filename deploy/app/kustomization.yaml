@@ -54,8 +54,12 @@ configMapGenerator:
 # (release or manual run on main); pin newTag to a release (1.2.3), or add the
 # digest from the Images run summary, to stay on one version.
 images:
+  # The full image (every role); the k3s Deployments run the role images below.
   - name: hubra/backend
     newName: ghcr.io/hubra-app/hubra/backend
+    newTag: latest
+  - name: hubra/app-backend
+    newName: ghcr.io/hubra-app/hubra/app-backend
     newTag: latest
   # One image per role, holding only that role's code (docs/platform-backend.md):
   # pin each separately to roll it without the others.
