@@ -84,18 +84,21 @@ The images are built by GitHub Actions (`.github/workflows/images.yml`) and
 pushed to `ghcr.io/hubra-app/hubra/*`: `backend` (also published as
 `global-backend` and `platform-backend`), `frontend`, `admin-frontend`,
 `sso-frontend`, `support-frontend`, `mcp`, and for mail `haraka`, `zonemta`
-and `cert-watcher`. To save Actions minutes they are built only when a GitHub
-release is published, or by hand, and only images whose files changed are
-rebuilt; the others get the new tags on the same digest.
+and `cert-watcher`. To save Actions minutes they are built only for a release
+or by hand, and only images whose files changed are rebuilt; the others get
+the new tags on the same digest. A release starts with a `v*` tag push, like
+the plugins: tests, images, a maintainer's approval, then the signed images
+and the GitHub release ([docs/releases.md](docs/releases.md)).
 
 Pull requests run lint and tests only for the parts they touch, and the
 browser tests when a change reaches what the browser sees; the full checks
 (Postgres, audits, image builds) run on `release/*` and before every image
-build. `main` and the `v*` tags are mirrored to GitLab, which runs the checks
+build. `main` and the released `v*` tags are mirrored to GitLab, which runs the checks
 again and creates the GitLab Releases.
 
 | Topic                                     | File                                                 |
 | ----------------------------------------- | ---------------------------------------------------- |
+| Cutting, approving and verifying a release | [docs/releases.md](docs/releases.md)                |
 | Workflows and branch protection           | [docs/ci.md](docs/ci.md)                             |
 | Versions, tags and which images to build  | [docs/release-guidelines.md](docs/release-guidelines.md) |
 | GitLab mirror and releases                | [docs/gitlab.md](docs/gitlab.md)                     |

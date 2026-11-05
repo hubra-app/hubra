@@ -1,4 +1,4 @@
-# Creates the release branch for a published release: release v1.4.0 creates
+# Creates the release branch for a release: release v1.4.0 creates
 # release/1.4 at the release's commit, so a patch (v1.4.1) can always be made
 # there, even after main has moved on (docs/ci.md, docs/release-guidelines.md).
 #
@@ -6,27 +6,36 @@
 # 1.4.x release, or cut by hand) it is left as it is, never moved.
 # Pre-releases (v1.4.0-rc.1) create no branch.
 #
+# Called by release.yml once the release is published (a release created by
+# a workflow starts no `release` workflows, so this one is called instead).
 # The branch is created with the GITHUB_TOKEN, which starts no workflows, so
-# Release checks do not run again on it; Images already ran them on that
-# commit for the release.
+# Release checks do not run again on it; release.yml already ran them on that
+# commit.
 name: Release branch
 
 on:
-  release:
-    types: [published]
+  workflow_call:
+    inputs:
+      tag:
+        description: The release tag, v1.4.0
+        type: string
+        required: true
+      prerelease:
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
 jobs:
   branch:
-    if: ${{ !github.event.release.prerelease }}
+    if: ${{ !inputs.prerelease }}
     runs-on: ubuntu-latest
     steps:
       - name: Create release/X.Y
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ inputs.tag }}
         run: |
           if [[ ! "$TAG" =~ ^v([0-9]+)\.([0-9]+)\.[0-9]+$ ]]; then
             echo "::notice::$TAG is not vX.Y.Z, no release branch"

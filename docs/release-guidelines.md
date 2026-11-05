@@ -7,7 +7,9 @@ flow itself (release branches, checks) is in [ci.md](ci.md).
 ## Images and what goes into them
 
 `images.yml` handles seven images. Each has a list of paths: a change in one
-of them (or in `.dockerignore` or `images.yml`) means a new build.
+of them (or in `.dockerignore`, or in how `images.yml` builds that image: its
+matrix entry and the build step) means a new build. Other edits to
+`images.yml` (comments, tags, scans, other jobs) rebuild nothing.
 
 | Image | Paths | Deployed by |
 | --- | --- | --- |
@@ -22,8 +24,8 @@ image's `paths` in `images.yml`, or that image can go stale.
 
 ## How a run decides
 
-Images runs when a GitHub release is published, or by hand (Actions >
-Images > Run workflow). The full release checks run first, on the whole
+Images runs for a release (called by `release.yml` when a `v*` tag is pushed),
+or by hand (Actions > Images > Run workflow). The full release checks run first, on the whole
 commit, with every image built from source. Then, per image,
 `scripts/image-reuse.sh` reads the image's `last-build` tag on GHCR and the
 commit it was built from (the `org.opencontainers.image.revision` label):
@@ -49,9 +51,9 @@ than the release.
 
 | Tag | On |
 | --- | --- |
-| `1.2.3` | release `v1.2.3` (pre-releases too) |
-| `1.2` | release `v1.2.3`, not pre-releases |
-| `latest` | the newest build: releases (not pre-releases) and manual runs on `main` |
+| `1.2.3` | release `v1.2.3`, once approved (pre-releases too) |
+| `1.2` | release `v1.2.3`, once approved, not pre-releases |
+| `latest` | the newest build: approved releases (not pre-releases) and manual runs on `main` |
 | `sha-<commit>` | every run |
 | `main-<timestamp>-<commit>` | manual runs on `main`, for Flux image automation |
 | `last-build` | every run; how the next run finds this image's last build (not for deploys) |
@@ -80,15 +82,17 @@ always names a full set that passed the release checks together.
 - **Cadence:** cut a release when a batch of features is done, roughly
   weekly, rather than deploying manual `main` builds. Manual builds stay
   for trying a fix before it goes into a release.
-- **Flow:** publish GitHub release `v1.4.0` straight from `main`; Images
-  runs the full checks on that commit before building, and the Release
-  branch workflow creates `release/1.4` there (one per minor version, never
-  per patch; pre-releases create none). Patch releases (`1.4.1`, `1.4.2`)
-  come from that branch, and each fix is merged back into `main`. To
-  stabilize before `v1.4.0` while `main` moves on, create `release/1.4` by
-  hand first and publish from it; the workflow leaves an existing branch
-  alone ([ci.md](ci.md)).
-- **Changelog:** in a pull request just before publishing, move `[Unreleased]` in
+- **Flow:** push tag `v1.4.0` on `main` ([releases.md](releases.md));
+  the Release workflow runs the full checks and builds the images, waits for
+  a maintainer's approval, then tags and signs the images, publishes the
+  GitHub release and creates `release/1.4` there (one per minor version,
+  never per patch; pre-releases create none). Patch releases (`1.4.1`,
+  `1.4.2`) are tagged on that branch, and each fix is merged back into
+  `main`. To stabilize before `v1.4.0` while `main` moves on, create
+  `release/1.4` by hand first and tag there; the workflow leaves an existing
+  branch alone ([ci.md](ci.md)).
+- **Version and changelog:** in a pull request just before tagging, set
+  `version` in `app/backend/pyproject.toml` (the tag must match it) and move `[Unreleased]` in
   `CHANGELOG.md` and `CHANGELOG.de.md` to the new version, so what's new
   matches the deployed version.
 

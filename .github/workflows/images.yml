@@ -1,23 +1,26 @@
 # Builds the container images and pushes them to GitHub Container Registry,
 # after the full checks (release-checks.yml) have passed on the commit.
-# To save Actions minutes it runs only when a GitHub release is published,
-# or by hand (Actions > Images > Run workflow):
-#   ghcr.io/<owner>/<repo>/<image>:1.2.3         release v1.2.3
-#   ghcr.io/<owner>/<repo>/<image>:1.2           release v1.2.3 (not pre-releases)
-#   ghcr.io/<owner>/<repo>/<image>:latest        newest build: releases (not
-#                                                 pre-releases) and manual runs on main
+# To save Actions minutes it runs only for a release (release.yml calls it
+# when a v* tag is pushed) or by hand (Actions > Images > Run workflow):
 #   ghcr.io/<owner>/<repo>/<image>:sha-<commit>  every build, releases and manual runs
+#   ghcr.io/<owner>/<repo>/<image>:latest        manual runs on main (releases get
+#                                                 it from release.yml once approved)
 #   ghcr.io/<owner>/<repo>/<image>:main-<timestamp>-<commit>
 #                                                 manual runs on main, sortable, for Flux
 #                                                 image automation (ImagePolicy on main-*)
 #   ghcr.io/<owner>/<repo>/<image>:last-build    every run; how the next run finds
 #                                                 this image's last build
+# The version tags (1.2.3, 1.2, latest) are not set here: release.yml adds
+# them to these same digests after the release is approved, and signs them
+# (docs/releases.md).
 #
 # Only images whose files changed are built. An image whose files (its paths
-# below, .dockerignore, this workflow) are the same as at its last build gets
+# below, .dockerignore, its matrix entry and the build step here) are the same as at its last build gets
 # this run's tags on that same image (same digest), so a deploy pinned by
 # digest does not restart it (scripts/image-reuse.sh, docs/release-guidelines.md).
-# Run by hand with "Build every image" to rebuild them all.
+# Run by hand with "Build every image" to rebuild them all. A new build gets
+# a build provenance attestation (who built it, from which commit and
+# workflow), kept with the image on GHCR.
 #
 # All seven images always carry every tag of the run, so one version names
 # them all. The digest block at the end of the run summary is what an overlay
@@ -25,9 +28,6 @@
 #
 # So to deploy main between releases, run Images by hand on main: Flux picks
 # up the main-<timestamp>-<commit> build and commits it to the GitOps repo.
-#
-# Publishing a release on GitHub also creates its v* tag, which the GitLab
-# mirror turns into a GitLab Release (docs/gitlab.md).
 #
 # backend is also published as global-backend and platform-backend (same
 # digest), for the global and platform Deployments of a split install
@@ -38,8 +38,11 @@
 name: Images
 
 on:
-  release:
-    types: [published]
+  workflow_call:
+    inputs:
+      build_all:
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       build_all:
@@ -50,6 +53,9 @@ on:
 permissions:
   contents: read
   packages: write
+  # Build provenance attestations (keyless, with the run's OIDC token).
+  id-token: write
+  attestations: write
 
 concurrency:
   group: images-${{ github.ref }}
@@ -131,16 +137,16 @@ jobs:
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ${{ steps.name.outputs.image }}
-          # latest: releases that are not pre-releases, and manual runs on
-          # the default branch (not manual runs on other branches).
+          # latest: manual runs on the default branch (not manual runs on
+          # other branches). A release (a v* tag) gets only sha- and
+          # last-build here; release.yml adds its version tags and latest
+          # after the approval.
           flavor: |
             latest=false
           tags: |
             type=sha,format=short
             type=raw,value=main-{{date 'YYYYMMDDHHmmss'}}-{{sha}},enable={{is_default_branch}}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable=${{ (github.event_name == 'release' && !github.event.release.prerelease) || (github.event_name == 'workflow_dispatch' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)) }}
+            type=raw,value=latest,enable=${{ github.event_name == 'workflow_dispatch' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
             type=raw,value=last-build
 
       # Build, or reuse the last build when none of this image's files changed.
@@ -172,6 +178,18 @@ jobs:
             GIT_SHA=${{ github.sha }}
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+      # Who built it, from which commit and workflow run: a signed (keyless)
+      # SLSA provenance statement, stored next to the image on GHCR. A
+      # reused image keeps the attestation of the run that built it.
+      # Check with: gh attestation verify oci://<image>@<digest> --repo hubra-app/hubra
+      - name: Attest build provenance
+        if: steps.plan.outputs.build == 'true'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ${{ steps.name.outputs.image }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
 
       # Same image, new tags: the registry copies the tags, nothing is pulled
       # or pushed and the digest stays. Its build commit (Diagnose > Builds)
@@ -255,13 +273,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # For a release, release.yml prints the same block with the version
+      # tag once it is approved, and attaches it to the release.
       - name: Digest block
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           repo="ghcr.io/${GITHUB_REPOSITORY,,}"
-          tag="${RELEASE_TAG#v}"
-          tag="${tag:-sha-${GITHUB_SHA::7}}"
+          tag="sha-${GITHUB_SHA::7}"
           {
             echo "### Images pinned by digest"
             echo

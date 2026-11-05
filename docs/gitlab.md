@@ -6,9 +6,9 @@ copy of `main` and the tags, runs the checks again and turns version tags into
 GitLab Releases:
 
 ```
-GitHub main ───────────────── mirror-gitlab.yml ──▶ GitLab main ──▶ checks
-GitHub release v1.2.3 ┬─ images.yml ──▶ ghcr.io/hubra-app/hubra/<image>:1.2.3
- (creates tag v1.2.3) └─ mirror-gitlab.yml ──▶ GitLab tag ──▶ checks ─▶ GitLab Release
+GitHub main ──────── mirror-gitlab.yml ──▶ GitLab main ──▶ checks
+tag v1.2.3 ── release.yml: checks, images, approval ──▶ ghcr.io/hubra-app/hubra/<image>:1.2.3
+                 └─ GitHub release ─▶ mirror-gitlab.yml ──▶ GitLab tag ──▶ checks ─▶ GitLab Release
 ```
 
 | Pipeline on GitLab | Jobs |
@@ -27,9 +27,9 @@ Every image is built once, by `.github/workflows/images.yml`, and lives at
 
 | Tag | Pushed by |
 | --- | --- |
-| `1.2.3` | GitHub release `v1.2.3` (pre-releases too) |
-| `1.2` | GitHub release `v1.2.3`, not for pre-releases |
-| `latest` | the newest build: releases (not pre-releases) and manual runs on `main`; not for the cluster |
+| `1.2.3` | release `v1.2.3` once approved (pre-releases too) |
+| `1.2` | release `v1.2.3` once approved, not for pre-releases |
+| `latest` | the newest build: approved releases (not pre-releases) and manual runs on `main`; not for the cluster |
 | `sha-<commit>` | every build: releases and manual runs (Actions → Images → Run workflow) |
 
 An image whose files did not change since its last build is not rebuilt: it
@@ -86,16 +86,15 @@ reach only protected refs, which is why step 1 protects `v*`.
 
 ## Cutting a release
 
-Publish a release on GitHub (Releases → Draft a new release, new tag
-`v0.1.0` on `main`, Publish), or from the command line:
+Push the version tag on GitHub ([releases.md](releases.md)):
 
 ```sh
-gh release create v0.1.0 --target main --title "Hubra 0.1.0" --generate-notes
+git tag v0.1.0 && git push origin v0.1.0
 ```
 
-Publishing starts images.yml; the new tag starts the mirror. A tag pushed
-without a GitHub release builds no images, and the GitLab release then fails
-after `GHCR_WAIT_MINUTES`.
+`release.yml` mirrors the tag to GitLab only after the release is approved
+and published, when the images already carry the version, so the GitLab
+release does not wait on the approval (`GHCR_WAIT_MINUTES`).
 
 The release notes group the commit subjects since the previous `v*` tag by
 Conventional Commit type (`scripts/changelog.sh v0.1.0` shows them locally).
