@@ -197,6 +197,10 @@ def test_visitors_are_sent_to_the_club(app, db, client, club_domain, k8s):
     assert r.headers["Location"] == "https://app.hubra.club/fc-domain/app"
     r = client.get("/events?x=1", headers={"Host": "Mitglieder.FC-Domain.ch"})
     assert r.headers["Location"] == "https://app.hubra.club/fc-domain/app/events?x=1"
+    # The path never turns into another host.
+    for odd in ("//evil.example/x", "/\\evil.example"):
+        r = client.get(odd, headers={"Host": "mitglieder.fc-domain.ch"})
+        assert r.headers["Location"].startswith("https://app.hubra.club/fc-domain/app/")
     # Other hosts go on as before.
     assert client.get("/health", headers={"Host": "api.hubra.club"}).status_code == 200
 

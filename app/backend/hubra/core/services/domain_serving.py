@@ -320,8 +320,13 @@ def destination(host: str, path: str, query: str) -> str | None:
     from hubra.core.services.email import _get_base_url
 
     base = _get_base_url() or ""
-    path = path if path and path != "/" else "/app"
-    if not path.startswith("/app"):
+    # The target is always our own app host; the visitor's path only adds
+    # segments below the club. Leading slashes and backslashes are folded so
+    # nothing in it can read as another host (``//evil.example``).
+    path = "/" + path.replace("\\", "/").lstrip("/")
+    if path == "/":
+        path = "/app"
+    elif not (path == "/app" or path.startswith("/app/")):
         path = "/app" + path
     url = f"{base}/{slug}{path}"
     return f"{url}?{query}" if query else url
