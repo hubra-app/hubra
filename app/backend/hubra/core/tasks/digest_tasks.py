@@ -19,9 +19,9 @@ from hubra.core.extensions import db
 from hubra.core.modules import is_enabled, per_tenant_job
 from hubra.core.services.mail_format import mail_date
 from hubra.core.tasks import celery_app
+from hubra.core.timeutil import as_utc
 from hubra.core.tasks.reminder_tasks import (
     _ATTENDING,
-    _aware,
     _club_url,
     _mail,
     club_zone,
@@ -182,7 +182,7 @@ def _send_weekly_digests(now: datetime | None = None) -> dict:
                 {
                     "question": p.question,
                     "closes": (
-                        mail_date(_aware(p.closes_at).astimezone(zone).date(), lang)
+                        mail_date(as_utc(p.closes_at).astimezone(zone).date(), lang)
                         if p.closes_at
                         else None
                     ),

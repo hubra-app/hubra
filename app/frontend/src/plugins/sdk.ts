@@ -12,6 +12,7 @@ export type {
   PluginSearch,
   PluginSlotEntry,
   PluginTab,
+  PluginWidget,
   SearchHit,
   SlotProps,
 } from './types'
