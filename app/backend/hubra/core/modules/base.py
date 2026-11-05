@@ -198,6 +198,11 @@ class Module:
     caller's transaction, as Hubra's own modules' always do. A plugin's
     other handlers run after the commit, in the worker. Honoured for
     official plugins only (``hubra.core.plugins.limits``).
+    ``provides`` lists the contracts (``hubra.core.contracts.Contract``:
+    events, actions, queries) this module offers others, by name.
+    ``consumes`` maps the contracts of other modules it uses to the version
+    range it accepts (``{"inventory.items.get": ">=1,<2"}``); a plugin may
+    only call what it lists here (docs/contracts.md).
     """
 
     code: str
@@ -226,6 +231,8 @@ class Module:
     apps: tuple[AppProvider, ...] = ()
     processes: dict[str, str] = field(default_factory=dict)
     events_in_transaction: tuple[str, ...] = ()
+    provides: tuple = ()
+    consumes: dict[str, str] = field(default_factory=dict)
     plugin: str | None = None
 
     def setting(self, key: str) -> SettingField | None:

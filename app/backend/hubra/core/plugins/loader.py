@@ -356,6 +356,21 @@ def _taken(registry) -> tuple[dict[str, str], set[str]]:
     return taken, tables
 
 
+def _offered_elsewhere(registry, modules) -> None:
+    """LimitError when a contract name is already offered by a loaded module."""
+    from .limits import LimitError
+
+    taken = {
+        c.name: m.code
+        for m in (registry.all() if hasattr(registry, "all") else [])
+        for c in m.provides
+    }
+    for m in modules:
+        for c in m.provides:
+            if c.name in taken:
+                raise LimitError(f"{c.name} is already offered by {taken[c.name]}")
+
+
 def _bad_dependency(spec: Spec, found: PluginSet, matches) -> str:
     """Why *spec*'s ``depends:`` can't be met here ('' when it can, or may
     still be once the dependency loads)."""
@@ -412,6 +427,7 @@ def load(registry, app=None) -> PluginSet:
                 declared = _import(spec, code)
                 trial = dict(taken)
                 modules = [check(m, spec, trial, core_tables) for m in declared]
+                _offered_elsewhere(registry, modules)
                 if not code:
                     # Checked as declared, registered without code to load.
                     modules = [

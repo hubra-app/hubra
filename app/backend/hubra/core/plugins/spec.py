@@ -44,6 +44,7 @@ AREAS = (
     "apps",  # connected apps (outside services a club links)
     "nav",  # sidebar entries
     "frontend",  # club app pages, tabs and slots
+    "contracts",  # events, actions and queries offered to or used from others
     "mail",
     "discord",
 )

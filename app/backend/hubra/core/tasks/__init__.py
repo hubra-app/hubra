@@ -137,6 +137,7 @@ def make_celery(app: Flask) -> Celery:
             "hubra.core.tasks.mail_monitor_tasks",
             "hubra.core.tasks.connected_app_tasks",
             "hubra.core.tasks.plugin_event_tasks",
+            "hubra.core.tasks.contract_tasks",
             "hubra.core.tasks.quota_tasks",
             "hubra.core.tasks.upgrade_tasks",
             *_module_task_imports(),
@@ -256,6 +257,12 @@ def make_celery(app: Flask) -> Celery:
             # Planned maintenance, resolved alerts, releases, 08:00 digest.
             "platform-bot-every-minute": {
                 "task": "hubra.core.tasks.platform_bot_tasks.tick",
+                "schedule": 60.0,
+            },
+            # Plugin events and queued actions: retries, and rows the
+            # transport lost (hubra.core.contracts.outbox).
+            "contract-outbox-every-minute": {
+                "task": "hubra.core.tasks.contract_tasks.sweep",
                 "schedule": 60.0,
             },
             "plugin-updates": {

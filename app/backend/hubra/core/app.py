@@ -391,6 +391,10 @@ def _register_cli(app: Flask) -> None:
 
     register_crypto_cli(app)
 
+    from hubra.core.contracts.cli import register as register_contracts_cli
+
+    register_contracts_cli(app)
+
     @app.cli.group("modules")
     def modules_cli():
         """List and switch modules per club."""

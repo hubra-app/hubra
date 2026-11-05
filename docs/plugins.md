@@ -39,6 +39,7 @@ depends:
 | `apps` | `Module.apps` | connected apps |
 | `nav` | `Module.nav` | club app sidebar |
 | `frontend` | `frontend/dist/plugin.js` | club app pages, tabs and slots |
+| `contracts` | `Module.provides`, `Module.consumes` | named `<module>.<what>`; use only what `consumes` lists ([contracts.md](contracts.md)) |
 | `mail`, `discord` | (reserved) | plugin mail templates, Discord command registry |
 
 Everything a manifest points at (blueprints, handlers, task modules,
@@ -111,11 +112,12 @@ can only use their own module code.
 ## Events
 
 Hubra's own modules get events inside the caller's transaction. A plugin's
-handlers run after that transaction commits, in the worker
-(`hubra.core.tasks.plugin_event_tasks`), so a slow or failing plugin can't
-hold up or roll back the caller's work, and a rolled-back change never
-reaches a plugin. An official plugin can keep in-transaction delivery for
-named events:
+handlers get them from the contract outbox: stored in the caller's
+transaction, run in the worker after it commits, retried when the handler
+fails ([contracts.md](contracts.md)). So a slow or failing plugin can't
+hold up or roll back the caller's work, a rolled-back change never reaches
+a plugin, and an event isn't lost when Redis is down. An official plugin
+can keep in-transaction delivery for named events:
 
 ```python
 module = Module(
@@ -134,6 +136,13 @@ books the income that follows each invoice from these
 
 In a plugin test that calls `emit()` directly, commit afterwards
 (`db.session.commit()`): that is when the handler runs.
+
+## Using another plugin
+
+A plugin never imports another plugin, reads its tables or calls its REST
+routes from the backend. It uses the other plugin's contracts: events it
+publishes, actions it offers and queries it answers, by name and version,
+through core. See [contracts.md](contracts.md).
 
 ## Dependencies
 
