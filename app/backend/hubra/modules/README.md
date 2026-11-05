@@ -1,10 +1,15 @@
 # Modules
 
-Every section of the suite is a module: members, groups, finance, inventory,
-mail and so on. A club admin switches optional modules on or off under
+Every section of the club app is a module. The built-in ones each have a
+manifest in this folder: core, members, roles, events, finance, functions,
+groups, polls, posts, bindings and mail. Everything else (the books,
+inventory, codes, keys, budgets, Discord, …) is a plugin with its own
+repository; plugins declare their modules the same way, see
+[docs/plugins.md](../../../../docs/plugins.md).
+
+A club admin switches optional modules on or off under
 **Settings > Modules**; a platform manager can block a module for a club
-(manager API `PUT /api/v1/features/tenants/<id>/<code>` with
-`{"allowed": false}`).
+(`PUT /api/v1/app/features/tenants/<id>/<code>` with `{"allowed": false}`).
 
 Switching a module off hides it and makes its API answer
 `403 MODULE_DISABLED`. Its data stays in the database and comes back when the
@@ -15,52 +20,40 @@ module is switched on again.
 | What | Where |
 | --- | --- |
 | Manifest types, registry, state, gate, event bus | `hubra/core/modules/` |
-| One manifest per module | this folder |
-| Club admin API | `GET /api/v1/modules`, `PUT /api/v1/modules/<code>`, `PUT /api/v1/modules/<code>/settings` |
+| One manifest per built-in module | this folder |
+| Club admin API | `GET /api/v1/app/modules`, `PUT /api/v1/app/modules/<code>`, `PUT /api/v1/app/modules/<code>/settings` |
 | CLI | `flask modules list|enable|disable|sync [--tenant <slug>]` |
 | Frontend | sidebar built from `GET /modules`; `RequireModule` and `useModules()` in `app/frontend/src/modules/` |
 
 ## Adding a module
 
-Small modules live in one file here (`codes.py`). A module with its own
-models, routes and services gets a package (`inventory_keys/`,
-`finance_budgets/`) that holds all
-of them:
-
-```
-hubra/modules/inventory_keys/
-    __init__.py      # the manifest: `module = Module(...)`
-    models.py
-    routes.py        # a Blueprint
-    services.py
-    hooks.py         # event handlers, optional
-```
+A new feature with its own models and screens is usually a plugin: start
+from [hubra-plugins-template](https://github.com/hubra-app/hubra-plugins-template).
+A built-in module is one file here whose manifest points at code in
+`hubra/api/<area>/` and `hubra/core/`:
 
 ```python
 from hubra.core.modules import Blueprint, Module, NavItem, SettingField
 
 module = Module(
-    code="inventory.keys",
-    name="Keys",
-    description="Physical keys, who holds them, and handovers",
-    depends_on=("inventory",),
-    default_enabled=False,
+    code="polls",
+    name="Polls",
+    description="Member polls and voting",
+    default_enabled=True,
+    depends_on=("members",),
     blueprints=(
-        Blueprint(
-            "hubra_keys.routes",
-            "keys_bp",
-            "/api/v1/keys",
-        ),
+        Blueprint("hubra.api.polls.routes", "polls_bp", "/api/v1/app/polls"),
     ),
-    settings=(SettingField("handover_requires_signature", "bool", default=False),),
-    events={"invoice.overdue": "hubra_keys.hooks:on_overdue"},
-    tables=("keys", "key_handovers"),
+    settings=(SettingField("notify_members", "bool", default=True),),
+    nav=(NavItem("/app/operations/polls", "shell.nav.polls", "chart-bar"),),
+    tables=("polls", "poll_options", "poll_votes", "poll_proxies"),
+    tasks=("hubra.core.tasks.reminder_tasks",),
 )
 ```
 
 Then:
 
-1. Import the package's models from `hubra/core/models/__init__.py` so
+1. Import the module's models from `hubra/core/models/__init__.py` so
    Alembic and `db.create_all()` see them.
 2. List the module's tenant tables in `tables=`. New club schemas clone
    exactly these (`tests/tenant/test_schema_manager.py` fails if a table is
@@ -72,8 +65,8 @@ Then:
    `NAV_ICONS` in `components/Shell/nav.tsx`. The sidebar entry itself comes
    from the manifest.
 
-Permission keys follow the blueprint name as before:
-`keys_bp` + `@permission_required("keys", "read")` gives `keys.keys.read`.
+Permission keys follow the blueprint name:
+`polls_bp` + `@permission_required("polls", "read")` gives `polls.polls.read`.
 Run `flask sync-permissions` after adding routes.
 
 ## Rules the registry enforces
@@ -116,7 +109,7 @@ others. Event names live in `hubra/core/modules/events.py`.
 ## Background jobs
 
 List a module's Celery task modules in `tasks=` so the worker loads them
-(see `discord/`). Tasks queued during a request carry the club in a
+(see `polls.py`). Tasks queued during a request carry the club in a
 `tenant_id` header and run in that club's schema. Periodic jobs that work on club data use
 `@per_tenant_job("<code>")`, which runs the body once per active club that has
 the module on.
