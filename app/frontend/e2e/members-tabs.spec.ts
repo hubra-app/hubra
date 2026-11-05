@@ -1,47 +1,60 @@
 import { expect, test } from '@playwright/test'
 import { appUrl } from './env'
 
-const entry = (page: import('@playwright/test').Page, path: string) =>
-  page.locator(`a.nav-item[href$="${path}"]`).first()
-
 test.describe('members tabs', () => {
-  test('statistics is a tab of Mitglieder: the same people, another view', async ({ page }) => {
-    const errors: string[] = []
-    page.on('pageerror', (e) => errors.push(e.message))
+  test('functions, tiers and groups are tabs, not sidebar rows', async ({ page }) => {
     await page.goto(appUrl('members'))
     await expect(page.getByRole('tab', { name: /^Mitglieder/ })).toHaveAttribute(
       'aria-selected',
       'true',
     )
-    await page.getByRole('tab', { name: /^Statistik/ }).click()
-    await expect(page).toHaveURL(/\/app\/members\/stats$/)
-    await expect(entry(page, '/app/members')).toHaveAttribute('data-active', 'true')
+    for (const sub of ['/app/members/functions', '/app/members/tiers', '/app/groups']) {
+      await expect(page.locator(`a.nav-item[href$="${sub}"]`)).toHaveCount(0)
+    }
+  })
+
+  test('each tab opens its own address and keeps Members highlighted', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(e.message))
+    await page.goto(appUrl('members'))
+
+    const tabs: [RegExp, string][] = [
+      [/^Funktionen/, '/app/members/functions'],
+      [/^Stufen/, '/app/members/tiers'],
+      [/^Gruppen/, '/app/groups'],
+      [/^Statistik/, '/app/members/stats'],
+    ]
+    for (const [name, path] of tabs) {
+      await page.getByRole('tab', { name }).click()
+      await expect(page).toHaveURL(new RegExp(`${path}$`))
+      await expect(page.getByRole('tab', { name })).toHaveAttribute('aria-selected', 'true')
+      await expect(page.locator('a.nav-item[href$="/app/members"]').first()).toHaveAttribute(
+        'data-active',
+        'true',
+      )
+      await expect(page.getByText('Etwas ist schiefgelaufen')).toHaveCount(0)
+    }
+
     await page.getByRole('tab', { name: /^Mitglieder/ }).click()
     await expect(page).toHaveURL(/\/app\/members$/)
     expect(errors).toEqual([])
   })
 
-  test('functions, tiers and applications are pages with their own row', async ({ page }) => {
-    const errors: string[] = []
-    page.on('pageerror', (e) => errors.push(e.message))
+  test('applications keep their own sidebar page', async ({ page }) => {
     await page.goto(appUrl('members'))
-    for (const name of [/^Funktionen/, /^Stufen/, /^Anträge/]) {
-      await expect(page.getByRole('tab', { name })).toHaveCount(0)
-    }
+    await expect(page.getByRole('tab', { name: /^Anträge/ })).toHaveCount(0)
+    const entry = page.locator('a.nav-item[href$="/app/members/applications"]').first()
+    await entry.click()
+    await expect(page).toHaveURL(/\/app\/members\/applications$/)
+    await expect(page.getByRole('heading', { level: 1, name: 'Anträge' })).toBeVisible()
+    await expect(entry).toHaveAttribute('data-active', 'true')
+  })
 
-    const pages: [string, string][] = [
-      ['Funktionen', 'functions'],
-      ['Stufen', 'tiers'],
-      ['Anträge', 'applications'],
-    ]
-    for (const [name, path] of pages) {
-      await entry(page, `/app/members/${path}`).click()
-      await expect(page).toHaveURL(new RegExp(`/app/members/${path}$`))
-      await expect(page.getByRole('heading', { level: 1, name })).toBeVisible()
-      await expect(entry(page, `/app/members/${path}`)).toHaveAttribute('data-active', 'true')
-      await expect(entry(page, '/app/members')).not.toHaveAttribute('data-active', 'true')
-      await expect(page.getByText('Etwas ist schiefgelaufen')).toHaveCount(0)
-    }
-    expect(errors).toEqual([])
+  test('a tab address opens with that tab selected', async ({ page }) => {
+    await page.goto(appUrl('members/tiers'))
+    await expect(page.getByRole('tab', { name: /^Stufen/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
   })
 })

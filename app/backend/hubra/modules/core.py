@@ -179,6 +179,7 @@ module = Module(
             section="system",
             order=10,
             perms=("audit.audit.read",),
+            parent="/app/settings",
         ),
         NavItem(
             "/app/translations",

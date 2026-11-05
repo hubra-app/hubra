@@ -3827,8 +3827,7 @@
   "shell.more.plugin": "Plugin",
   "shell.more.notInSidebar": "Not in the sidebar",
   "shell.more.about.dashboard": "Overview and your own widgets",
-  "shell.more.about.tiers": "Membership tiers and their fees",
   "shell.more.about.settings": "Club, modules, apps and domains",
-  "shell.more.about.auditLog": "Who changed what, and when",
-  "shell.more.about.translations": "Suggest translations for the app"
+  "shell.more.about.translations": "Suggest translations for the app",
+  "shell.more.withTabs": "With {{pages}}"
 }

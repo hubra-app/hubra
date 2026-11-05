@@ -28,6 +28,7 @@ module = Module(
                 "roles.roles.set_permissions",
                 "roles.roles.delete",
             ),
+            parent="/app/settings",
         ),
     ),
     # The permission catalog itself lives once in public (flask sync-permissions).

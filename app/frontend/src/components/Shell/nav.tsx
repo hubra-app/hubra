@@ -36,6 +36,8 @@ export type NavItem = {
   permKeys?: string[]
   /** Code of the module the page belongs to, for its card on "Weitere". */
   module?: string
+  /** Pages shown as tabs of this one, with what it takes to see each. */
+  tabs?: { label: string; perms: string[] }[]
 }
 /** One area of the sidebar; the "Weitere" row sits in one without a heading. */
 export type NavSection = { section: string; label: string; items: NavItem[] }
@@ -183,7 +185,7 @@ function navEntries(
     .sort((a, b) => a.item.order - b.item.order)
   const entries: NavEntry[] = []
   const seenGroups = new Set<string>()
-  const tabPerms: { parent: string; perms: string[] }[] = []
+  const tabPerms: { parent: string; perms: string[]; label: string }[] = []
   for (const { item, plugin, module } of items) {
     // Modules shown as tabs of one screen share a single entry.
     if (item.group) {
@@ -193,7 +195,7 @@ function navEntries(
     // Sub-pages are tabs on their parent's screen, not sidebar rows; the
     // parent stays visible to anyone who may open one of its tabs.
     if (item.parent) {
-      tabPerms.push({ parent: item.parent, perms: item.perms })
+      tabPerms.push({ parent: item.parent, perms: item.perms, label: t(item.labelKey) })
       continue
     }
     entries.push({
@@ -212,9 +214,11 @@ function navEntries(
       section: areaOf(item.section, plugin),
     })
   }
-  for (const { parent, perms } of tabPerms) {
+  for (const { parent, perms, label } of tabPerms) {
     const host = entries.find((e) => e.item.path === parent)?.item
-    if (host?.permKeys && perms.length) host.permKeys = [...host.permKeys, ...perms]
+    if (!host) continue
+    if (host.permKeys && perms.length) host.permKeys = [...host.permKeys, ...perms]
+    host.tabs = [...(host.tabs ?? []), { label, perms }]
   }
   return entries
 }
@@ -415,7 +419,7 @@ export function getParentPath(pathname: string, navPaths: string[] = []): string
     ['/app/dashboard/me', '/app/dashboard'],
     ['/app/members', '/app/members'],
     ['/app/members/applications', '/app/members/applications'],
-    ['/app/groups', '/app/groups'],
+    ['/app/groups', '/app/members'],
     ['/app/operations/events', '/app/operations/events'],
     ['/app/operations/polls', '/app/operations/polls'],
     ['/app/operations/posts', '/app/operations/posts'],
@@ -426,8 +430,8 @@ export function getParentPath(pathname: string, navPaths: string[] = []): string
     ['/app/mail', '/app/mail'],
     ['/app/operations/bindings', '/app/operations/bindings'],
     ['/app/settings', '/app/settings'],
-    ['/app/audit-log', '/app/audit-log'],
-    ['/app/system', '/app/system'],
+    ['/app/audit-log', '/app/settings'],
+    ['/app/system', '/app/settings'],
     ['/app/more', '/app/more'],
     ['/app/translations', '/app/translations'],
     ['/app/account', '/app/account/settings'],

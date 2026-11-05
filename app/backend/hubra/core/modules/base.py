@@ -59,8 +59,8 @@ class NavItem:
     # screens that host several modules as tabs (events, polls, posts).
     group: str | None = None
     # Path of the entry whose screen shows this one as a tab, instead of a
-    # sidebar row of its own. Only for real sub-views of the same data; a
-    # page of its own gets its own row.
+    # sidebar row of its own, for pages that belong together (members with
+    # functions, tiers and groups; settings with roles and the audit log).
     parent: str | None = None
 
 

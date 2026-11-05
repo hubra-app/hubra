@@ -17,21 +17,21 @@ async function resetSidebar(page: Page) {
   await dialog.getByRole('button', { name: 'Fertig' }).click()
 }
 
-test.describe('module pages', () => {
-  test('roles and the audit log have their own sidebar rows', async ({ page }) => {
+test.describe('settings tabs', () => {
+  test('roles and the audit log are tabs of Einstellungen', async ({ page }) => {
     await page.goto(appUrl('settings'))
-    await expect(page.getByRole('tab', { name: 'Rollen' })).toHaveCount(0)
-    await expect(page.getByRole('tab', { name: 'Protokoll' })).toHaveCount(0)
+    await expect(entry(page, '/app/audit-log')).toHaveCount(0)
+    await expect(entry(page, '/app/system')).toHaveCount(0)
 
     for (const [name, path] of [
       ['Rollen', '/app/system'],
       ['Protokoll', '/app/audit-log'],
     ]) {
-      await entry(page, path).click()
+      await page.getByRole('tab', { name }).click()
       await expect(page).toHaveURL(new RegExp(`${path}$`))
-      await expect(page.getByRole('heading', { level: 1, name })).toBeVisible()
-      await expect(entry(page, path)).toHaveAttribute('data-active', 'true')
-      await expect(entry(page, '/app/settings')).not.toHaveAttribute('data-active', 'true')
+      await expect(page.getByRole('heading', { level: 1, name: 'Einstellungen' })).toBeVisible()
+      await expect(page.getByRole('tab', { name })).toHaveAttribute('aria-selected', 'true')
+      await expect(entry(page, '/app/settings')).toHaveAttribute('data-active', 'true')
     }
   })
 })
@@ -48,9 +48,13 @@ test.describe('Weitere', () => {
 
     const cards = page.getByTestId('module-card')
     expect(await cards.count()).toBeGreaterThan(3)
-    await cards.filter({ hasText: 'Gruppen' }).click()
-    await expect(page).toHaveURL(/\/app\/groups$/)
-    await expect(entry(page, '/app/groups')).toHaveAttribute('data-active', 'true')
+    await cards.filter({ hasText: 'Anträge' }).click()
+    await expect(page).toHaveURL(/\/app\/members\/applications$/)
+    await expect(entry(page, '/app/members/applications')).toHaveAttribute('data-active', 'true')
+
+    // Pages that belong together share one card, which names its tabs.
+    await entry(page, '/app/more').click()
+    await expect(cards.filter({ hasText: /^Mitglieder/ })).toContainText('Funktionen')
   })
 })
 
@@ -62,14 +66,14 @@ test.describe('own sidebar', () => {
   test('pinned entries move to Favoriten, hidden ones only show on Weitere', async ({ page }) => {
     await page.goto(appUrl('dashboard'))
     const dialog = await openCustomize(page)
-    await dialog.getByRole('button', { name: 'Als Favorit anheften: Gruppen' }).click()
+    await dialog.getByRole('button', { name: 'Als Favorit anheften: Anlässe' }).click()
     await dialog.getByRole('button', { name: 'Unter Weitere verschieben: Finanzen' }).click()
     await dialog.getByRole('button', { name: 'Fertig' }).click()
 
     await expect(sidebar(page).getByText('Favoriten')).toBeVisible()
     await expect(sidebar(page).locator('a.nav-item').first()).toHaveAttribute(
       'href',
-      /\/app\/groups$/,
+      /\/app\/operations\/events$/,
     )
     await expect(entry(page, '/app/finance')).toHaveCount(0)
 
@@ -139,15 +143,15 @@ test.describe('on a phone', () => {
     await page.goto(appUrl('dashboard'))
     await menu.click()
     const before = await order()
-    const at = before.indexOf('groups')
+    const at = before.indexOf('finance')
     expect(at).toBeGreaterThan(0)
     let dialog = await customize()
-    await dialog.getByRole('button', { name: 'Nach oben: Gruppen' }).click()
+    await dialog.getByRole('button', { name: 'Nach oben: Finanzen' }).click()
     await dialog.getByRole('button', { name: 'Fertig' }).click()
 
     await menu.click()
     const after = await order()
-    expect(after.indexOf('groups')).toBe(at - 1)
+    expect(after.indexOf('finance')).toBe(at - 1)
     expect(after[at]).toBe(before[at - 1])
 
     // Back to the default order.

@@ -17,9 +17,7 @@ type Status = { text: string; tone?: 'warn' }
 // Built-in pages whose module has no description of its own for them.
 const PAGE_INFO: Record<string, string> = {
   '/app/dashboard': 'dashboard',
-  '/app/members/tiers': 'tiers',
   '/app/settings': 'settings',
-  '/app/audit-log': 'auditLog',
   '/app/translations': 'translations',
 }
 
@@ -30,7 +28,7 @@ const PAGE_INFO: Record<string, string> = {
  */
 export function MoreScreen() {
   const { t } = useT()
-  const { currentUser } = useAuth()
+  const { currentUser, hasPermission } = useAuth()
   const { moduleList } = useData()
   const { cards, more } = useSidebarNav()
   const hidden = new Set(more.map((item) => item.path))
@@ -107,6 +105,9 @@ export function MoreScreen() {
                       item={item}
                       status={status(item)}
                       plugin={!!raw?.plugin}
+                      tabs={(item.tabs ?? [])
+                        .filter((tab) => !tab.perms.length || tab.perms.some(hasPermission))
+                        .map((tab) => tab.label)}
                       hidden={hidden.has(item.path)}
                     />
                   )
@@ -130,11 +131,14 @@ function ModuleCard({
   status,
   plugin,
   hidden,
+  tabs,
 }: {
   item: NavItem
   status: Status | null
   plugin: boolean
   hidden: boolean
+  /** The pages that sit on this one as tabs. */
+  tabs: string[]
 }) {
   const { t } = useT()
   const { go } = useNav()
@@ -191,6 +195,11 @@ function ModuleCard({
           >
             {status?.text ?? ' '}
           </Text>
+          {tabs.length > 0 && (
+            <Text fz="xs" c="dimmed" mt={4} truncate>
+              {t('shell.more.withTabs', { pages: tabs.join(' · ') })}
+            </Text>
+          )}
           {hidden && (
             <Text fz="xs" c="dimmed" mt={4}>
               {t('shell.more.notInSidebar')}

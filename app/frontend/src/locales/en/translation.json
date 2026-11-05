@@ -2524,11 +2524,10 @@
       "notInSidebar": "Not in the sidebar",
       "about": {
         "dashboard": "Overview and your own widgets",
-        "tiers": "Membership tiers and their fees",
         "settings": "Club, modules, apps and domains",
-        "auditLog": "Who changed what, and when",
         "translations": "Suggest translations for the app"
-      }
+      },
+      "withTabs": "With {{pages}}"
     },
     "customize": {
       "title": "Customise sidebar",

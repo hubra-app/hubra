@@ -69,6 +69,8 @@ describe('buildNav', () => {
     expect(cards.map((s) => s.section)).toEqual(['workspace', 'plugins'])
     expect(paths(cards)).toEqual(['/app/members', '/app/groups', '/app/inbox'])
     expect(cards[0].items[0].module).toBe('members')
+    // A card names the pages that sit on it as tabs.
+    expect(cards[0].items[0].tabs).toEqual([{ label: '/app/members/tiers', perms: ['tiers.tiers.read'] }])
   })
 
   it('moves hidden entries to Weitere and pinned ones to the top', () => {
@@ -183,9 +185,10 @@ describe('getParentPath', () => {
     expect(getParentPath('/app/members/tiers', [...nav, '/app/members/tiers'])).toBe(
       '/app/members/tiers',
     )
-    // Roles and the log have rows of their own.
-    expect(getParentPath('/app/audit-log/5', nav)).toBe('/app/audit-log')
-    expect(getParentPath('/app/system/roles', nav)).toBe('/app/system')
+    // Roles and the log are tabs of Einstellungen, groups of Mitglieder.
+    expect(getParentPath('/app/audit-log/5', nav)).toBe('/app/settings')
+    expect(getParentPath('/app/system/roles', nav)).toBe('/app/settings')
+    expect(getParentPath('/app/groups/4', nav)).toBe('/app/members')
     // Polls have their own sidebar entry now.
     expect(getParentPath('/app/operations/polls', nav)).toBe('/app/operations/polls')
     expect(getParentPath('/app/dashboard/me', nav)).toBe('/app/dashboard')

@@ -2524,11 +2524,10 @@
       "notInSidebar": "Nicht in der Seitenleiste",
       "about": {
         "dashboard": "Übersicht und eigene Widgets",
-        "tiers": "Mitgliederstufen und ihre Beiträge",
         "settings": "Verein, Module, Apps und Domains",
-        "auditLog": "Wer wann was geändert hat",
         "translations": "Übersetzungen der App vorschlagen"
-      }
+      },
+      "withTabs": "Mit {{pages}}"
     },
     "customize": {
       "title": "Seitenleiste anpassen",
