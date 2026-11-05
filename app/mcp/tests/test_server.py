@@ -14,6 +14,13 @@ from hubra_mcp import hubra, server
 PLAT = "hbr_plat_" + "a" * 12 + "_" + "b" * 43
 CLUB = "hbr_club_" + "c" * 12 + "_" + "d" * 43
 PAT = "hbr_pat_" + "e" * 12 + "_" + "f" * 43
+OAM = "hbr_oam_" + "g" * 12 + "_" + "h" * 43
+OAP = "hbr_oap_" + "i" * 12 + "_" + "j" * 43
+META = {
+    "resource": "https://mcp.hubra.club/mcp",
+    "authorization_servers": ["https://api.hubra.club"],
+    "scopes_supported": ["read"],
+}
 
 
 class FakeHubra:
@@ -29,6 +36,7 @@ class FakeHubra:
 @pytest.fixture
 def fake():
     fake = FakeHubra()
+    server.reset_caches()
     server.set_api(
         hubra.Hubra(
             hubra.Settings("http://app-api", "http://platform-api"),
@@ -37,6 +45,7 @@ def fake():
     )
     yield fake
     server.set_api(None)
+    server.reset_caches()
 
 
 @pytest.fixture
@@ -77,7 +86,77 @@ def test_no_token_is_401(client, fake):
     resp = _rpc(client, "tools/list", token=None)
     assert resp.status_code == 401
     assert resp.headers["www-authenticate"].startswith("Bearer")
-    assert fake.calls == []
+    # Only the sign-in metadata was asked for (not set up here: 200 ok body
+    # without "resource" counts as not set up).
+    assert [c.url.path for c in fake.calls] == ["/api/v1/global/oauth/resource"]
+    assert "resource_metadata" not in resp.headers["www-authenticate"]
+
+
+def _with_meta(fake, token_status=200):
+    def answer(req):
+        if req.url.path == "/api/v1/global/oauth/resource":
+            return httpx.Response(200, json=META)
+        if req.url.path.endswith("/api-tokens/self"):
+            return httpx.Response(token_status, json={"error": "API_TOKEN_EXPIRED"})
+        return httpx.Response(200, json={"ok": True, "path": req.url.path})
+
+    fake.answer = answer
+
+
+def test_no_token_points_to_the_sign_in(client, fake):
+    _with_meta(fake)
+    resp = _rpc(client, "tools/list", token=None)
+    assert resp.status_code == 401
+    challenge = resp.headers["www-authenticate"]
+    assert 'resource_metadata="https://mcp.hubra.club/.well-known/oauth-protected-resource/mcp"' in challenge
+
+
+@pytest.mark.parametrize("path", ["/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/mcp"])
+def test_protected_resource_metadata(client, fake, path):
+    _with_meta(fake)
+    resp = client.get(path)
+    assert resp.status_code == 200
+    assert resp.json()["authorization_servers"] == ["https://api.hubra.club"]
+
+
+def test_protected_resource_metadata_not_set_up(client, fake):
+    fake.answer = lambda req: httpx.Response(404, json={"error": "NOT_SET_UP"})
+    assert client.get("/.well-known/oauth-protected-resource").status_code == 404
+
+
+def test_expired_oauth_token_is_http_401(client, fake):
+    _with_meta(fake, token_status=401)
+    resp = _rpc(client, "tools/list", token=OAM)
+    assert resp.status_code == 401
+    assert 'error="invalid_token"' in resp.headers["www-authenticate"]
+
+
+def test_oauth_token_check_is_cached(client, fake):
+    _with_meta(fake)
+    assert _rpc(client, "tools/list", token=OAM).status_code == 200
+    assert _rpc(client, "tools/list", token=OAM).status_code == 200
+    selfs = [c for c in fake.calls if c.url.path.endswith("/self")]
+    assert len(selfs) == 1
+    assert selfs[0].headers["x-hubra-client"] == "mcp"
+
+
+def test_oauth_tokens_see_their_tools(client, fake):
+    _with_meta(fake)
+    assert "club_members" in _names(client, OAM)
+    assert "platform_health" in _names(client, OAP)
+    assert "club_members" not in _names(client, OAP)
+
+
+def test_switched_off_club_still_reaches_the_tools(client, fake):
+    """A 403 (club AI switch off) isn't a sign-in problem: the tools say why."""
+    _with_meta(fake, token_status=403)
+    assert _rpc(client, "tools/list", token=OAM).status_code == 200
+
+
+def test_pasted_tokens_are_not_checked_up_front(client, fake):
+    _with_meta(fake)
+    assert _rpc(client, "tools/list", token=CLUB).status_code == 200
+    assert not [c for c in fake.calls if c.url.path.endswith("/self")]
 
 
 @pytest.mark.parametrize("token", ["hbr_plat_short", "ghp_" + "x" * 36, PLAT + "x"])

@@ -2217,7 +2217,8 @@
       "membership": "Mitgliedschaft",
       "bank": "Bank & QR-Rechnung",
       "apps": "Verbundene Apps",
-      "encryption": "Verschlüsselung"
+      "encryption": "Verschlüsselung",
+      "api": "API & Apps"
     },
     "title": "Einstellungen",
     "yourAccount": "Dein Konto",
@@ -3867,5 +3868,30 @@
   "content": {
     "group": "Gruppe",
     "groupHint": "Wer eine Rolle für diese Gruppe hat, kann den Eintrag verwalten. Sichtbar bleibt er für alle."
+  },
+  "apiAccess": {
+    "saved": "Gespeichert",
+    "saveFailed": "Nicht gespeichert",
+    "ended": "Zugang beendet",
+    "endFailed": "Beenden fehlgeschlagen",
+    "kind": {
+      "app": "App",
+      "club": "Vereins-Token",
+      "personal": "Persönliches Token"
+    },
+    "intro": "Apps, Skripte und KI-Assistenten, die Daten des Vereins lesen dürfen. Sie haben nie mehr Rechte als die Person, für die sie handeln, und jeder Zugriff steht im Protokoll.",
+    "switches": "Wer darf?",
+    "members": "Mitglieder dürfen Apps verbinden und eigene Tokens erstellen",
+    "membersHint": "Aus: nur Admins. Ein Mitglied sieht über eine App nur, was es auch selbst sieht.",
+    "ai": "KI-Assistenten erlauben (Claude-Connector)",
+    "aiHint": "Claude darf dann für Personen, die es selbst verbinden, Daten des Vereins lesen. Es kann nichts ändern. Aus: der Connector bekommt keine Daten des Vereins.",
+    "active": "Aktive Zugänge",
+    "none": "Keine App und kein Token hat Zugang.",
+    "until": "bis",
+    "lastUsed": "zuletzt genutzt",
+    "unused": "noch nicht genutzt",
+    "end": "Beenden",
+    "endTitle": "Zugang beenden?",
+    "endBody": "Die App oder das Skript kann danach nichts mehr lesen. Wer es nutzt, muss neu verbinden."
   }
 }

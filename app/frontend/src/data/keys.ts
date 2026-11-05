@@ -122,6 +122,8 @@ export const qk = {
     domains: ['domains'] as const,
     backupKey: ['backup-key'] as const,
     apps: ['connected-apps'] as const,
+    apiAccess: ['api-access'] as const,
+    apiTokens: ['api-access', 'tokens'] as const,
     appConnection: (id: number) => ['connected-apps', id] as const,
     rolesPermissions: ['roles-permissions'] as const,
     roleScopes: (roleId: unknown) => ['roles-permissions', 'scopes', roleId] as const,

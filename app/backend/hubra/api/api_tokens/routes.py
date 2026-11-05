@@ -162,6 +162,8 @@ def _edit(row: ApiToken, grantable: set[str], user, claims: dict):
     """Change a token's name and/or scopes. Narrowing is always fine;
     adding a key needs the same checks as making a token, and only keys
     the person holds now. Returns an error response or None."""
+    if row.oauth_client_id is not None:
+        return _error(409, "OAUTH_GRANT", "An app's sign-in can only be ended")
     if not api_tokens.is_active(row):
         return _error(409, "API_TOKEN_INACTIVE", "Only an active token can be changed")
     data = _body()
@@ -230,6 +232,8 @@ def _active_count(**where) -> int:
     q = select(func.count(ApiToken.id)).where(
         ApiToken.revoked_at.is_(None),
         ApiToken.expires_at > datetime.now(timezone.utc),
+        # App sign-ins (OAuth) have their own limit.
+        ApiToken.oauth_client_id.is_(None),
     )
     for key, value in where.items():
         q = q.where(getattr(ApiToken, key) == value)
@@ -331,6 +335,7 @@ def my_club_tokens():
             ApiToken.kind == "member",
             ApiToken.tenant_id == tenant.id,
             ApiToken.member_id == member.id,
+            ApiToken.oauth_client_id.is_(None),
         )
         .order_by(ApiToken.created_at.desc())
     ).all()
@@ -357,6 +362,8 @@ def revoke_my_club_token(token_id: int):
 
 
 def _roll_club(row: ApiToken, member):
+    if row.oauth_client_id is not None:
+        return _error(409, "OAUTH_GRANT", "An app's sign-in can only be ended")
     refusal = _maker_checks(getattr(member, "user", None), get_jwt())
     if refusal is not None:
         return refusal
@@ -535,6 +542,12 @@ def _self_body():
         {"slug": tenant.slug, "name": tenant.name} if tenant is not None else None
     )
     body["aiAllowed"] = api_tokens.ai_allowed(tenant) if tenant is not None else None
+    body["app"] = None
+    if row.oauth_client_id is not None:
+        from hubra.core.models.oauth import OAuthClient
+
+        client = db.session.get(OAuthClient, row.oauth_client_id)
+        body["app"] = {"name": client.name, "verified": client.kind == "registered"} if client else None
     return jsonify(body), 200
 
 
@@ -609,7 +622,11 @@ def my_platform_tokens():
         return error
     rows = db.session.scalars(
         select(ApiToken)
-        .where(ApiToken.kind == "platform", ApiToken.user_id == user.id)
+        .where(
+            ApiToken.kind == "platform",
+            ApiToken.user_id == user.id,
+            ApiToken.oauth_client_id.is_(None),
+        )
         .order_by(ApiToken.created_at.desc())
     ).all()
     return jsonify(
@@ -711,6 +728,8 @@ def roll_my_platform_token(token_id: int):
     row = db.session.get(ApiToken, token_id)
     if row is None or row.kind != "platform" or row.user_id != user.id:
         return _error(404, "NOT_FOUND", "Token not found")
+    if row.oauth_client_id is not None:
+        return _error(409, "OAUTH_GRANT", "An app's sign-in can only be ended")
     if not api_tokens.is_active(row):
         return _error(409, "API_TOKEN_INACTIVE", "Only an active token can be rolled")
     params, error = _roll_params(

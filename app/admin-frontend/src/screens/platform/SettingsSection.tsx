@@ -64,8 +64,9 @@ const DISCORD_ROLES = ['discord.platform_roles']
 const PERF = ['perf.slow_request_ms', 'perf.slow_query_ms', 'perf.p95_warning_ms']
 const LIMITS = ['limits.warn_percent']
 const MCP = ['mcp.url']
+const OAUTH = ['oauth.dynamic_clients', 'oauth.dynamic_redirect_hosts']
 const SUPPORT = ['support.url']
-const BUILT_IN = ['alerts.cooldown_minutes', 'alerts.retention_days', ...PERF, ...LIMITS]
+const BUILT_IN = ['alerts.cooldown_minutes', 'alerts.retention_days', ...PERF, ...LIMITS, ...OAUTH]
 const ALERTS = ['alerts.cooldown_minutes', 'alerts.retention_days', 'alerts.manage_url']
 
 
@@ -87,6 +88,7 @@ export type SettingsSectionId =
   | 'performance'
   | 'limits'
   | 'mcp'
+  | 'oauth'
   | 'support'
 /** The keys each section saves. */
 const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
@@ -101,6 +103,7 @@ const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
   performance: PERF,
   limits: LIMITS,
   mcp: MCP,
+  oauth: OAUTH,
   support: SUPPORT,
 }
 
@@ -210,6 +213,10 @@ const FIELD_DE: Record<string, [string, string]> = {
   'mcp.url': [
     'Adresse des Claude-Connectors',
     'Wo der MCP-Server (app/mcp) erreichbar ist; manage zeigt damit den Befehl zum Verbinden (https://mcp.hubra.club). Leer: nicht eingerichtet',
+  ],
+  'oauth.dynamic_redirect_hosts': [
+    'Rücksprung-Adressen für selbst angemeldete Apps',
+    'Hosts, zu denen eine selbst angemeldete App zurückführen darf, durch Komma getrennt (Subdomains zählen mit). Leer: jeder https-Host',
   ],
   'support.url': [
     'Adresse der Support-Seite',
@@ -504,6 +511,34 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                 )}
               </Text>
               <Stack gap="sm">{MCP.map(field)}</Stack>
+            </Paper>
+          )}
+
+          {section === 'oauth' && (
+            <Paper withBorder p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Selbst angemeldete Apps', 'Self-registered apps')}</Title>
+                {resetButton(OAUTH)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Claude meldet sich beim ersten Verbinden selbst als App an (OAuth Dynamic Client Registration). Solche Apps dürfen nur über den Claude-Connector lesen, und die Person sieht beim Erlauben, dass Hubra sie nicht geprüft hat und wohin sie zurückführt.',
+                  'Claude registers itself as an app when it first connects (OAuth dynamic client registration). Such apps may only read through the Claude connector, and the person sees when allowing that Hubra has not checked them and where they lead back to.',
+                )}
+              </Text>
+              <Stack gap="sm">
+                {byKey['oauth.dynamic_clients'] && (
+                  <Switch
+                    label={tr('Selbst anmelden erlauben', 'Allow self-registration')}
+                    checked={(draft['oauth.dynamic_clients'] ?? byKey['oauth.dynamic_clients'].value) === 'on'}
+                    onChange={(e) => {
+                      const on = e.currentTarget.checked
+                      setDraft((d) => ({ ...d, 'oauth.dynamic_clients': on ? 'on' : 'off' }))
+                    }}
+                  />
+                )}
+                {field('oauth.dynamic_redirect_hosts')}
+              </Stack>
             </Paper>
           )}
 

@@ -20,9 +20,17 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from hubra_mcp import __version__
 
-# Same shape as the backend's tokens (hubra/core/auth/api_tokens.py).
-TOKEN_RE = re.compile(r"^hbr_(pat|club|plat)_[A-Za-z0-9]{12}_[A-Za-z0-9]{43}$")
-KIND_BY_PREFIX = {"pat": "member", "club": "club", "plat": "platform"}
+# Same shape as the backend's tokens (hubra/core/auth/api_tokens.py): API
+# tokens someone pasted, and OAuth access tokens (oam: a club, oap: the
+# platform) Claude got by signing in (docs/oauth.md).
+TOKEN_RE = re.compile(r"^hbr_(pat|club|plat|oam|oap)_[A-Za-z0-9]{12}_[A-Za-z0-9]{43}$")
+KIND_BY_PREFIX = {
+    "pat": "member",
+    "club": "club",
+    "plat": "platform",
+    "oam": "member",
+    "oap": "platform",
+}
 
 # Paths a tool may read: the token's own side of the API, plain segments.
 _PATH_RE = re.compile(r"^/api/v1/(app|platform)(/[A-Za-z0-9_\-.]+)*/?$")
@@ -56,6 +64,10 @@ def token_kind(token: str | None) -> str | None:
         return None
     match = TOKEN_RE.match(token)
     return KIND_BY_PREFIX[match.group(1)] if match else None
+
+
+def is_oauth(token: str | None) -> bool:
+    return bool(token) and token.startswith(("hbr_oam_", "hbr_oap_"))  # type: ignore[union-attr]
 
 
 def bearer(headers) -> str | None:
@@ -125,6 +137,33 @@ class Hubra:
 
     async def aclose(self) -> None:
         await self._client.aclose()
+
+    async def check(self, token: str) -> int:
+        """Ask Hubra whether *token* still works ("which token is this?"):
+        the HTTP status, or 503 when Hubra can't be reached."""
+        kind = token_kind(token)
+        path = "/api/v1/platform/api-tokens/self" if kind == "platform" else "/api/v1/app/api-tokens/self"
+        base = self.settings.platform_api_url if kind == "platform" else self.settings.api_url
+        try:
+            resp = await self._client.get(base + path, headers={"Authorization": f"Bearer {token}"})
+        except httpx.HTTPError:
+            return 503
+        return resp.status_code
+
+    async def resource_metadata(self) -> dict | None:
+        """The connector's OAuth resource metadata (RFC 9728), from Hubra's
+        platform settings; None while it isn't set up."""
+        try:
+            resp = await self._client.get(self.settings.api_url + "/api/v1/global/oauth/resource")
+        except httpx.HTTPError:
+            return None
+        if resp.status_code != 200:
+            return None
+        try:
+            body = resp.json()
+        except ValueError:
+            return None
+        return body if isinstance(body, dict) and body.get("resource") else None
 
     async def get(
         self,

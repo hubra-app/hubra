@@ -23,6 +23,8 @@ export interface ApiToken {
   revokedByName: string | null
   revokedReason: string | null
   active: boolean
+  /** Set when an outside app holds this sign-in (OAuth, docs/oauth.md). */
+  appId?: number | null
   /** Only on the all-tokens list. */
   club?: { slug: string; name: string } | null
 }
