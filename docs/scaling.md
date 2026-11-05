@@ -53,6 +53,7 @@ says what a second run used to cause; it doesn't happen any more.
 | `send-account-statements-monthly` | 1st, 07:00 | Mail the statement twice |
 | `send-overdue-reminders-daily` | 09:00 | Race; reminders tracked per invoice |
 | `event-reminders`, `poll-reminders` (modules) | 15 min | Race on `reminder_sent_at`; mail and bell twice |
+| `trial-signups-purge` (events module) | 24 h | Harmless, deletes are idempotent |
 | `backup-daily`, `-weekly`, `-monthly` | 03:00 / Sun 03:15 / 1st 03:30 | Two backup sets, and retention counting them |
 | `retention-cleanup-daily` | 02:00 | Harmless, deletes are idempotent |
 | `cleanup-token-blocklist-daily` | 03:00 | Harmless |

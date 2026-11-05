@@ -112,3 +112,9 @@ def test_stats_need_members_read(client, db, seeded_db):
     _make_role_and_member(db, seeded_db["tier"], name="Ola")
     _login(client, "ola@test.ch")
     assert client.get("/api/v1/members/stats").status_code == 403
+
+
+def test_reference_day_out_of_range(client, auth_headers):
+    for on in ("9999-12-31", "1066-10-14"):
+        resp = client.get(f"/api/v1/members/stats?on={on}", headers=auth_headers)
+        assert resp.status_code == 400, on

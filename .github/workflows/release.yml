@@ -236,14 +236,16 @@ jobs:
           # published complete: created with its files, or a draft filled first.
           files=(out/images.yaml out/images.txt out/SHA256SUMS)
           pre=(); if [ "$PRERELEASE" = true ]; then pre=(--prerelease); fi
-          # The release's state: none (404), draft, published. Any other answer
+          # The release's state: none, draft, published. Any other answer
           # (a 500, a timeout) stops here with GitHub's message instead of being
-          # taken for one of them.
+          # taken for one of them. Not GET releases/tags/<tag>: it only finds
+          # published releases, so a draft left by a failed create would read
+          # as "none" and every retry would try to create it again.
           state() {
             local out
-            if out=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq 'if .draft then "draft" else "published" end' 2>&1); then
+            if out=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq 'if .isDraft then "draft" else "published" end' 2>&1); then
               echo "$out"
-            elif grep -q "HTTP 404" <<<"$out"; then
+            elif grep -q "release not found" <<<"$out"; then
               echo none
             else
               echo "::error::could not read release $TAG: $out" >&2

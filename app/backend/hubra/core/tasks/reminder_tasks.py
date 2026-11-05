@@ -332,3 +332,50 @@ def _send_poll_reminders(now: datetime | None = None) -> dict:
                 summary["mailed"] += 1
         emit(POLL_CLOSING, poll_id=poll.id)
     return summary
+
+
+@celery_app.task(
+    name="hubra.core.tasks.reminder_tasks.purge_trial_signups_task",
+    bind=True,
+    acks_late=True,
+    reject_on_worker_lost=True,
+)
+def purge_trial_signups_task(self) -> dict:
+    """Delete trial bookings the clubs no longer need (personal data)."""
+    return _purge_trial_signups()
+
+
+# A trial booking is deleted this long after its training (unless the person
+# was invited to join); an unconfirmed one a week after it was made.
+TRIAL_KEEP_AFTER = timedelta(days=180)
+TRIAL_PENDING_KEEP = timedelta(days=7)
+
+
+def purge_trial_signups() -> int:
+    """Trial bookings are personal data the club only needs around the
+    training. Returns how many it deleted (not committed)."""
+    from hubra.core.models.event import ClubEvent, TrialSignup
+
+    now = datetime.now(timezone.utc)
+    old = select(ClubEvent.id).where(ClubEvent.date < now.date() - TRIAL_KEEP_AFTER)
+    doomed = list(
+        db.session.scalars(
+            select(TrialSignup).where(
+                (TrialSignup.event_id.in_(old) & (TrialSignup.status != "invited"))
+                | (
+                    (TrialSignup.status == "pending")
+                    & (TrialSignup.created_at < now - TRIAL_PENDING_KEEP)
+                )
+            )
+        )
+    )
+    for signup in doomed:
+        db.session.delete(signup)
+    return len(doomed)
+
+
+@per_tenant_job("events")
+def _purge_trial_signups() -> dict:
+    deleted = purge_trial_signups()
+    db.session.commit()
+    return {"deleted": deleted}

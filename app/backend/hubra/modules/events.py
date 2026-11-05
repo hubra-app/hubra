@@ -77,5 +77,11 @@ module = Module(
             "hubra.core.tasks.reminder_tasks.send_event_reminders_task",
             900,
         ),
+        # Trial bookings are personal data: gone half a year after the training.
+        Schedule(
+            "trial-signups-purge",
+            "hubra.core.tasks.reminder_tasks.purge_trial_signups_task",
+            86400,
+        ),
     ),
 )
