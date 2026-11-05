@@ -63,6 +63,8 @@ import {
   setUpdateMode,
   uninstallPlugin,
   uploadPlugin,
+  setUpdateDependencies,
+  type DependencyGap,
   type MarketplacePlugin,
   type PluginChange,
   type StagedPlugin,
@@ -255,37 +257,42 @@ function PluginsView() {
     const de = PLUGIN_DE[p.id]
     return de ? { ...p, name: tr(de[0], p.name), description: tr(de[1], p.description) } : p
   })
-  const plugins = all
-    .filter((p) => {
-      if (filter === 'installed' && !p.installed) return false
-      if (filter === 'available' && p.installed) return false
-      if (filter === 'updates' && !p.update && !p.withdrawn) return false
-      const q = search.trim().toLowerCase()
-      return !q || `${p.name} ${p.id} ${p.description} ${p.tags.join(' ')}`.toLowerCase().includes(q)
-    })
-    .sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name))
+  const matches = (p: MarketplacePlugin) => {
+    if (filter === 'installed' && !p.installed) return false
+    if (filter === 'available' && p.installed) return false
+    if (filter === 'updates' && !p.update && !p.withdrawn) return false
+    const q = search.trim().toLowerCase()
+    return !q || `${p.name} ${p.id} ${p.description} ${p.tags.join(' ')}`.toLowerCase().includes(q)
+  }
+  const byRank = (a: MarketplacePlugin, b: MarketplacePlugin) => rank(a) - rank(b) || a.name.localeCompare(b.name)
+  // Add-ons go inside their parent's card; one whose parent the catalogue
+  // doesn't offer gets a card of its own (it says what it requires).
+  const ids = new Set(all.map((p) => p.id))
+  const isAddon = (p: MarketplacePlugin) => Boolean(p.parent && ids.has(p.parent))
+  const addonsOf = (p: MarketplacePlugin) => all.filter((c) => c.parent === p.id && isAddon(c) && matches(c)).sort(byRank)
+  const plugins = all.filter((p) => !isAddon(p) && (matches(p) || addonsOf(p).length > 0)).sort(byRank)
+  const followDeps = Boolean(data?.updateDependencies)
   const installedCount = all.filter((p) => p.installed).length
   const updateCount = all.filter((p) => p.update).length
   const installed = plugins.filter((p) => p.installed)
   const available = plugins.filter((p) => !p.installed)
 
+  const actions = (p: MarketplacePlugin) => ({
+    busy: busy === p.id,
+    reloading: waitFor !== null,
+    followDeps,
+    onDetails: () => setDetails(p),
+    onInstall: () => install(p),
+    onRollback: () => run(p.id, async () => changed(await rollbackPlugin(p.id), tr('Zurückgesetzt', 'Rolled back'))),
+    onHold: (version: string | null) =>
+      run(p.id, async () => {
+        await holdPlugin(p.id, version)
+        await queryClient.invalidateQueries({ queryKey: ['marketplace'] })
+      }),
+    onRemove: () => setRemoving(p),
+  })
   const card = (p: MarketplacePlugin) => (
-    <PluginCard
-      key={p.id}
-      p={p}
-      busy={busy === p.id}
-      reloading={waitFor !== null}
-      onDetails={() => setDetails(p)}
-      onInstall={() => install(p)}
-      onRollback={() => run(p.id, async () => changed(await rollbackPlugin(p.id), tr('Zurückgesetzt', 'Rolled back')))}
-      onHold={(version) =>
-        run(p.id, async () => {
-          await holdPlugin(p.id, version)
-          await queryClient.invalidateQueries({ queryKey: ['marketplace'] })
-        })
-      }
-      onRemove={() => setRemoving(p)}
-    />
+    <PluginCard key={p.id} p={p} {...actions(p)} addons={addonsOf(p).map((c) => ({ p: c, actions: actions(c) }))} />
   )
   const grid = (list: MarketplacePlugin[]) => (
     <SimpleGrid cols={{ base: 1, sm: 2, xl: 3 }} spacing="md" verticalSpacing="md">
@@ -331,6 +338,19 @@ function PluginsView() {
                   { value: 'official', label: tr('Updates: offizielle installieren', 'Updates: install official') },
                   { value: 'off', label: tr('Updates: nicht prüfen', 'Updates: don’t check') },
                 ]}
+              />
+              <Switch
+                label={tr('Benötigte Plugins mitaktualisieren', 'Also update required plugins')}
+                description={tr('Sonst stoppt ein Update, das eine neuere Version braucht', 'Otherwise an update that needs a newer one stops')}
+                checked={followDeps}
+                disabled={busy === 'deps' || !data}
+                onChange={(e) => {
+                  const on = e.currentTarget.checked
+                  run('deps', async () => {
+                    await setUpdateDependencies(on)
+                    await queryClient.invalidateQueries({ queryKey: ['marketplace'] })
+                  })
+                }}
               />
               <Button
                 variant="default"
@@ -470,33 +490,162 @@ function SectionTitle({ title, count }: { title: string; count: number }) {
   )
 }
 
-function PluginCard({
-  p,
-  busy,
-  reloading,
-  onDetails,
-  onInstall,
-  onRollback,
-  onHold,
-  onRemove,
-}: {
-  p: MarketplacePlugin
+type CardActions = {
   busy: boolean
   reloading: boolean
+  followDeps: boolean
   onDetails: () => void
   onInstall: () => void
   onRollback: () => void
   onHold: (version: string | null) => void
   onRemove: () => void
+}
+
+/** "Inventar >=2.1 (2.0.1 installiert)" */
+function gapText(gaps: DependencyGap[]) {
+  return gaps
+    .map(
+      (g) =>
+        `${g.name}${g.range ? ` ${g.range}` : ''} (${
+          g.installed ? tr(`${g.installed} installiert`, `${g.installed} installed`) : tr('nicht installiert', 'not installed')
+        })`,
+    )
+    .join(', ')
+}
+
+/** What stands between a plugin and its install or update. */
+function blockers(p: MarketplacePlugin, followDeps: boolean) {
+  const viaDepends = Boolean(p.parent && p.depends && p.parent in p.depends)
+  // A parent named under requires: only can't come along: install it first.
+  const needsParent = Boolean(p.parent && !p.parentInstalled && !p.installed && !viaDepends)
+  // Installed plugins on the wrong version; missing ones always come along.
+  const outdated = (p.unmet ?? []).filter((g) => g.installed !== null)
+  const missing = (p.unmet ?? []).filter((g) => g.installed === null)
+  const updateBlocked = p.update && outdated.length > 0 && !followDeps
+  const installBlocked = !p.installed && (needsParent || (outdated.length > 0 && !followDeps))
+  return { needsParent, outdated, missing, updateBlocked, installBlocked }
+}
+
+function PluginNotes({ p, reloading, followDeps }: { p: MarketplacePlugin; reloading: boolean; followDeps: boolean }) {
+  const pending = p.pendingReload
+  const b = blockers(p, followDeps)
+  return (
+    <>
+      {pending && (
+        <Text size="xs" c="blue">
+          {reloading
+            ? tr('Wird auf den Servern geladen …', 'Loading on the servers…')
+            : tr('Aktiv nach dem Neuladen der Server (bis zu einer Minute)', 'Live once the servers reload (up to a minute)')}
+        </Text>
+      )}
+      {p.withdrawn && (
+        <Text size="xs" c="red">
+          {tr('Der Herausgeber hat diese Version zurückgezogen', 'The publisher withdrew this version')}: {p.withdrawn}
+        </Text>
+      )}
+      {p.error && p.installed && !pending && (
+        <Text size="xs" c="red" lineClamp={3}>
+          {tr('Nicht geladen', 'Not loaded')}: {p.error}
+        </Text>
+      )}
+      {!p.compatible && !p.installed && (
+        <Text size="xs" c="orange">
+          {p.incompatibleReason || tr('Braucht eine andere Hubra-Version', 'Needs another Hubra version')}
+        </Text>
+      )}
+      {b.needsParent && (
+        <Text size="xs" c="orange" data-requires={p.parent}>
+          {tr(`Braucht ${p.parentName}: installiere es zuerst`, `Requires ${p.parentName}: install it first`)}
+        </Text>
+      )}
+      {(b.updateBlocked || (!p.installed && b.outdated.length > 0 && !followDeps)) && (
+        <Text size="xs" c="orange">
+          {tr(
+            `Braucht ${gapText(b.outdated)}: aktualisiere es zuerst oder schalte „Benötigte Plugins mitaktualisieren“ ein`,
+            `Needs ${gapText(b.outdated)}: update it first, or turn on “Also update required plugins”`,
+          )}
+        </Text>
+      )}
+      {(p.update || !p.installed) && b.missing.length > 0 && (
+        <Text size="xs" c="dimmed">
+          {tr('Installiert zuerst', 'Installs first')}: {b.missing.map((g) => g.name).join(', ')}
+        </Text>
+      )}
+      {(p.update || !p.installed) && followDeps && b.outdated.length > 0 && (
+        <Text size="xs" c="dimmed">
+          {tr('Aktualisiert zuerst', 'Updates first')}: {b.outdated.map((g) => `${g.name} ${g.range}`.trim()).join(', ')}
+        </Text>
+      )}
+    </>
+  )
+}
+
+function PluginButtons({ p, busy, followDeps, onDetails, onInstall }: { p: MarketplacePlugin } & Pick<CardActions, 'busy' | 'followDeps' | 'onDetails' | 'onInstall'>) {
+  const b = blockers(p, followDeps)
+  return (
+    <Group gap={6} wrap="nowrap">
+      <Button size="xs" variant="subtle" color="gray" onClick={onDetails}>
+        {tr('Details', 'Details')}
+      </Button>
+      {!p.installed && (
+        <Button size="xs" loading={busy} disabled={!p.compatible || b.installBlocked} onClick={onInstall} leftSection={<IconDownload size={14} />}>
+          {tr('Installieren', 'Install')}
+        </Button>
+      )}
+      {p.update && (
+        <Button size="xs" color="gold" loading={busy} disabled={b.updateBlocked} onClick={onInstall} leftSection={<IconArrowUp size={14} />}>
+          {tr(`Auf ${p.repoVersion}`, `To ${p.repoVersion}`)}
+        </Button>
+      )}
+    </Group>
+  )
+}
+
+function PluginMenu({ p, onDetails, onRollback, onHold, onRemove }: { p: MarketplacePlugin } & Pick<CardActions, 'onDetails' | 'onRollback' | 'onHold' | 'onRemove'>) {
+  if (!p.installed) return null
+  return (
+    <Menu position="bottom-end" withinPortal>
+      <Menu.Target>
+        <ActionIcon variant="subtle" color="gray" aria-label={tr(`Mehr zu ${p.name}`, `More for ${p.name}`)}>
+          <IconDots size={18} />
+        </ActionIcon>
+      </Menu.Target>
+      <Menu.Dropdown>
+        <Menu.Item onClick={onDetails}>{tr('Details und Versionen', 'Details and versions')}</Menu.Item>
+        {p.previous && <Menu.Item onClick={onRollback}>{tr('Zurück auf', 'Roll back to')} {p.previous}</Menu.Item>}
+        {p.repositoryId !== null &&
+          (p.held ? (
+            <Menu.Item onClick={() => onHold(null)}>{tr('Updates wieder erlauben', 'Allow updates again')}</Menu.Item>
+          ) : (
+            <Menu.Item onClick={() => onHold(p.installedVersion)}>
+              {tr(`Bei ${p.installedVersion} halten`, `Hold at ${p.installedVersion}`)}
+            </Menu.Item>
+          ))}
+        <Menu.Divider />
+        <Menu.Item color="red" onClick={onRemove} disabled={p.autoinstalled}>
+          {p.autoinstalled ? tr('Von den Server-Einstellungen installiert', 'Installed by the server’s settings') : tr('Deinstallieren', 'Uninstall')}
+        </Menu.Item>
+      </Menu.Dropdown>
+    </Menu>
+  )
+}
+
+function PluginCard({
+  p,
+  addons,
+  ...a
+}: CardActions & {
+  p: MarketplacePlugin
+  /** Its add-ons that match the filter, each with its own actions. */
+  addons?: { p: MarketplacePlugin; actions: CardActions }[]
 }) {
   const offered = p.repoVersion ?? p.version
-  const pending = p.pendingReload
   return (
     <Card withBorder radius="md" padding="lg" style={{ display: 'flex', flexDirection: 'column' }} data-plugin={p.id}>
       <Group align="flex-start" wrap="nowrap" gap="md">
         <PluginIcon p={p} />
         <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
-          <Anchor component="button" ta="left" fw={700} size="lg" c="var(--mantine-color-text)" onClick={onDetails} lineClamp={1}>
+          <Anchor component="button" ta="left" fw={700} size="lg" c="var(--mantine-color-text)" onClick={a.onDetails} lineClamp={1}>
             {p.name}
           </Anchor>
           <Text size="xs" c="dimmed" lineClamp={1}>
@@ -505,6 +654,11 @@ function PluginCard({
           </Text>
           <Group gap={6} mt={4}>
             <TrustBadge status={p.trust?.status || (p.officialSigned ? 'official' : '')} />
+            {p.parent && (
+              <Badge size="xs" variant="light" color="gray">
+                {tr(`Add-on zu ${p.parentName}`, `Add-on to ${p.parentName}`)}
+              </Badge>
+            )}
             {p.tags.slice(0, 3).map((t) => (
               <Badge key={t} size="xs" variant="outline" color="gray">
                 {t}
@@ -512,31 +666,7 @@ function PluginCard({
             ))}
           </Group>
         </Stack>
-        {p.installed && (
-          <Menu position="bottom-end" withinPortal>
-            <Menu.Target>
-              <ActionIcon variant="subtle" color="gray" aria-label={tr(`Mehr zu ${p.name}`, `More for ${p.name}`)}>
-                <IconDots size={18} />
-              </ActionIcon>
-            </Menu.Target>
-            <Menu.Dropdown>
-              <Menu.Item onClick={onDetails}>{tr('Details und Versionen', 'Details and versions')}</Menu.Item>
-              {p.previous && <Menu.Item onClick={onRollback}>{tr('Zurück auf', 'Roll back to')} {p.previous}</Menu.Item>}
-              {p.repositoryId !== null &&
-                (p.held ? (
-                  <Menu.Item onClick={() => onHold(null)}>{tr('Updates wieder erlauben', 'Allow updates again')}</Menu.Item>
-                ) : (
-                  <Menu.Item onClick={() => onHold(p.installedVersion)}>
-                    {tr(`Bei ${p.installedVersion} halten`, `Hold at ${p.installedVersion}`)}
-                  </Menu.Item>
-                ))}
-              <Menu.Divider />
-              <Menu.Item color="red" onClick={onRemove} disabled={p.autoinstalled}>
-                {p.autoinstalled ? tr('Von den Server-Einstellungen installiert', 'Installed by the server’s settings') : tr('Deinstallieren', 'Uninstall')}
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-        )}
+        <PluginMenu p={p} {...a} />
       </Group>
 
       <Text size="sm" mt="md" c="dimmed" lineClamp={3} style={{ flex: 1 }}>
@@ -544,51 +674,54 @@ function PluginCard({
       </Text>
 
       <Stack gap={6} mt="sm">
-        {pending && (
-          <Text size="xs" c="blue">
-            {reloading
-              ? tr('Wird auf den Servern geladen …', 'Loading on the servers…')
-              : tr('Aktiv nach dem Neuladen der Server (bis zu einer Minute)', 'Live once the servers reload (up to a minute)')}
-          </Text>
-        )}
-        {p.withdrawn && (
-          <Text size="xs" c="red">
-            {tr('Der Herausgeber hat diese Version zurückgezogen', 'The publisher withdrew this version')}: {p.withdrawn}
-          </Text>
-        )}
-        {p.error && p.installed && !pending && (
-          <Text size="xs" c="red" lineClamp={3}>
-            {tr('Nicht geladen', 'Not loaded')}: {p.error}
-          </Text>
-        )}
-        {!p.compatible && !p.installed && (
-          <Text size="xs" c="orange">
-            {p.incompatibleReason || tr('Braucht eine andere Hubra-Version', 'Needs another Hubra version')}
-          </Text>
-        )}
+        <PluginNotes p={p} reloading={a.reloading} followDeps={a.followDeps} />
       </Stack>
+
+      {addons && addons.length > 0 && (
+        <Stack gap={0} mt="md" data-addons={p.id}>
+          <Text size="xs" fw={700} tt="uppercase" c="dimmed" mb={4} style={{ letterSpacing: 0.4 }}>
+            {tr('Add-ons', 'Add-ons')} ({addons.length})
+          </Text>
+          {addons.map(({ p: child, actions }) => (
+            <AddonRow key={child.id} p={child} {...actions} />
+          ))}
+        </Stack>
+      )}
 
       <Card.Section withBorder inheritPadding py="sm" mt="md">
         <Group justify="space-between" wrap="nowrap" gap="sm">
           <PluginState p={p} />
-          <Group gap={6} wrap="nowrap">
-            <Button size="xs" variant="subtle" color="gray" onClick={onDetails}>
-              {tr('Details', 'Details')}
-            </Button>
-            {!p.installed && (
-              <Button size="xs" loading={busy} disabled={!p.compatible} onClick={onInstall} leftSection={<IconDownload size={14} />}>
-                {tr('Installieren', 'Install')}
-              </Button>
-            )}
-            {p.update && (
-              <Button size="xs" color="gold" loading={busy} onClick={onInstall} leftSection={<IconArrowUp size={14} />}>
-                {tr(`Auf ${p.repoVersion}`, `To ${p.repoVersion}`)}
-              </Button>
-            )}
-          </Group>
+          <PluginButtons p={p} {...a} />
         </Group>
       </Card.Section>
     </Card>
+  )
+}
+
+/** One add-on inside its parent's card. */
+function AddonRow({ p, ...a }: CardActions & { p: MarketplacePlugin }) {
+  return (
+    <Paper withBorder radius="sm" p="xs" mt={6} data-plugin={p.id} data-parent={p.parent}>
+      <Stack gap={4}>
+        <Group justify="space-between" wrap="nowrap" gap="xs">
+          <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
+            <IconPuzzle size={14} stroke={1.6} color="var(--mantine-color-dimmed)" aria-hidden style={{ flexShrink: 0 }} />
+            <Anchor component="button" ta="left" fw={600} size="sm" c="var(--mantine-color-text)" onClick={a.onDetails} lineClamp={1}>
+              {p.name}
+            </Anchor>
+            <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
+              {p.installed ? p.installedVersion : (p.repoVersion ?? p.version)}
+            </Text>
+          </Group>
+          <PluginMenu p={p} {...a} />
+        </Group>
+        <PluginNotes p={p} reloading={a.reloading} followDeps={a.followDeps} />
+        <Group justify="space-between" wrap="nowrap" gap="xs">
+          <PluginState p={p} />
+          <PluginButtons p={p} {...a} />
+        </Group>
+      </Stack>
+    </Paper>
   )
 }
 

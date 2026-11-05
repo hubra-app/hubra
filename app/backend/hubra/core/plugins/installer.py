@@ -450,26 +450,56 @@ def _check_depends(manifest: dict) -> None:
     have = _installed_versions(excluding=str(manifest.get("id")))
     name = manifest.get("name", manifest.get("id"))
     for dep, rng in _depends(manifest).items():
+        label = _plugin_name(dep)
         if dep not in have:
             raise InstallError(
-                f"{name} needs the plugin {dep}{' ' + rng if rng else ''}: install it first"
+                f"{name} needs the plugin {label}{' ' + rng if rng else ''}: install it first"
             )
         if not version_matches(have[dep], rng):
-            raise InstallError(f"{name} needs {dep} {rng}; {have[dep]} is installed")
+            raise InstallError(
+                f"{name} {manifest.get('version', '')} needs {label} {rng}; "
+                f"{have[dep]} is installed. Update {label} first, or turn on "
+                "“Also update required plugins”"
+            )
+
+
+def _plugin_name(pid: str) -> str:
+    from hubra.core.models.plugin import InstalledPlugin
+
+    spec = _loaded().get(pid)
+    if spec is not None:
+        return spec.name
+    row = db.session.get(InstalledPlugin, pid)
+    return row.name if row is not None and row.name else pid
+
+
+def _installed_spec(pid: str) -> Spec | None:
+    """An installed plugin as this process loaded it, or else as its
+    unpacked folder says (installed after this process started)."""
+    from . import loader
+
+    spec = _loaded().get(pid)
+    if spec is not None:
+        return spec
+    path = loader.plugin_dir() / pid
+    try:
+        return Spec(id=pid, path=path, manifest=read_manifest(path))
+    except ValueError:
+        return None
 
 
 def _check_dependants(pid: str, version: str) -> None:
     """Refuse an update of *pid* to *version* that an installed plugin's
     ``depends:`` range excludes."""
-    plugins = _loaded()
     for row in installed_rows():
-        other = plugins.get(row.id)
-        if row.id == pid or other is None:
+        other = None if row.id == pid else _installed_spec(row.id)
+        if other is None:
             continue
         rng = other.depends.get(pid)
         if rng is not None and not version_matches(version, rng):
             raise InstallError(
-                f"{other.name} needs {pid} {rng}; update {other.name} first"
+                f"{other.name} needs {_plugin_name(pid)} {rng}, not {version}; "
+                f"update {other.name} first"
             )
 
 
@@ -478,10 +508,16 @@ def _install_dependencies(manifest: dict, repository_id: int, depth: int = 0) ->
     each before the plugin that needs it. Returns what was installed."""
     from hubra.core.models.plugin import PluginRepository
 
+    from .updates import follow_dependencies
+
+    have = _installed_versions(excluding=str(manifest.get("id")))
+    follow = follow_dependencies()
+    # Missing ones always; installed ones on the wrong version only when the
+    # platform lets an update bring its required plugins along.
     missing = {
         d: r
         for d, r in _depends(manifest).items()
-        if d not in _installed_versions(excluding=str(manifest.get("id")))
+        if d not in have or (follow and not version_matches(have[d], r))
     }
     if not missing:
         return []
@@ -500,8 +536,19 @@ def _install_dependencies(manifest: dict, repository_id: int, depth: int = 0) ->
         fits = [
             v
             for v in (versions_of(top) if top else [])
-            if version_matches(v["version"], rng) and _compatible(v)[0]
+            if version_matches(v["version"], rng)
+            and _compatible(v)[0]
+            and not v["yanked"]
         ]
+        if dep in have:
+            from hubra.core.models.plugin import InstalledPlugin
+
+            row = db.session.get(InstalledPlugin, dep)
+            if row is not None and row.held_version:
+                raise InstallError(
+                    f"{manifest.get('name', manifest.get('id'))} needs "
+                    f"{_plugin_name(dep)} {rng}, which is held at {row.held_version}"
+                )
         if not fits:
             raise InstallError(
                 f"{manifest.get('name', manifest.get('id'))} needs the plugin "
@@ -702,8 +749,8 @@ def dependents(pid: str) -> list[str]:
     codes = set(spec.module_codes) if spec else set()
     out = []
     for row in installed_rows():
-        other = plugins.get(row.id)
-        if row.id != pid and other is not None and (
+        other = None if row.id == pid else _installed_spec(row.id)
+        if other is not None and (
             codes & set(other.requires) or pid in other.depends
         ):
             out.append(other.name)
@@ -1201,6 +1248,40 @@ def _local_entry(spec: Spec, row) -> dict:
     }
 
 
+def _add_parents(out: dict[str, dict]) -> None:
+    """Give every Marketplace entry its parent plugin and what of its
+    ``depends:`` the installed plugins don't meet."""
+    from .spec import parents
+
+    have = _installed_versions()
+    for pid, parent in parents(list(out.values())).items():
+        e = out[pid]
+        up = out.get(parent)
+        e["parent"] = parent
+        e["parentName"] = (up or {}).get("name") or parent
+        e["parentInstalled"] = bool(parent and up and up.get("installed"))
+        deps = (
+            e.get("targetDepends")
+            if e.get("update") or not e.get("installed")
+            else e.get("depends")
+        ) or {}
+        unmet = []
+        for dep, rng in deps.items():
+            rng = str(rng or "")
+            got = have.get(str(dep))
+            if got is None or not version_matches(got, rng):
+                unmet.append(
+                    {
+                        "id": str(dep),
+                        "name": (out.get(str(dep)) or {}).get("name") or str(dep),
+                        "range": rng,
+                        "installed": got,
+                    }
+                )
+        e["unmet"] = unmet
+        e.pop("targetDepends", None)
+
+
 def marketplace(fetch: bool = True) -> dict:
     """Everything that can be installed, one entry per plugin: what ships
     with Hubra, what is installed, and what the enabled repositories offer."""
@@ -1338,6 +1419,12 @@ def marketplace(fetch: bool = True) -> dict:
                         for v in vers
                     ],
                     "withdrawn": (mine or {}).get("yanked", "") if installed else "",
+                    # What the version on offer needs, for the update check.
+                    "targetDepends": p.get("depends") or {},
+                    # Installed but unreadable here: the index says what it is.
+                    "modules": entry.get("modules") or p.get("modules") or [],
+                    "requires": entry.get("requires") or p.get("requires") or [],
+                    "depends": entry.get("depends") or p.get("depends") or {},
                     "update": bool(
                         installed
                         and have
@@ -1379,6 +1466,7 @@ def marketplace(fetch: bool = True) -> dict:
         e.setdefault("withdrawn", "")
         e.setdefault("officialSigned", False)
         e["autoinstalled"] = e["id"] in plugins.autoinstalled
+    _add_parents(out)
     return {
         "plugins": sorted(out.values(), key=lambda e: str(e["name"]).lower()),
         "errors": errors,

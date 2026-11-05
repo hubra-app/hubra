@@ -329,7 +329,7 @@ def test_install_refuses_a_missing_or_wrong_dependency(
 
     base = make(tmp_path / "b", "zzbase", "1.5.0")
     installer.confirm(installer.stage(signed_zip(base, key[0]))["token"], False)
-    with pytest.raises(InstallError, match="needs zzbase >=2.0; 1.5.0 is installed"):
+    with pytest.raises(InstallError, match="needs Zzbase >=2.0; 1.5.0 is installed"):
         installer.confirm(installer.stage(signed_zip(child, key[0]))["token"], False)
     assert db.session.get(InstalledPlugin, "zzchild") is None
 
@@ -374,7 +374,7 @@ def test_an_update_that_breaks_a_dependant_is_refused(
     child_spec = next(s for s in scan(tmp_path / "a", bundled=False) if s.id == "zzchild")
     monkeypatch.setitem(loader.current().specs, "zzchild", child_spec)
     newer = make(tmp_path / "c", "zzbase", "3.0.0")
-    with pytest.raises(InstallError, match="Zzchild needs zzbase <3"):
+    with pytest.raises(InstallError, match="Zzchild needs Zzbase <3, not 3.0.0"):
         installer.confirm(installer.stage(signed_zip(newer, key[0]))["token"], False)
     assert db.session.get(InstalledPlugin, "zzbase").version == "2.0.0"
     assert "Zzchild" in installer.dependents("zzbase")

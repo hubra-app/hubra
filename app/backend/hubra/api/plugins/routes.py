@@ -58,11 +58,12 @@ def _repo_dict(r) -> dict:
 @require_global_permission(_PERM)
 def marketplace():
     """Every plugin: shipped, installed and offered by the repositories."""
-    from hubra.core.plugins.updates import mode
+    from hubra.core.plugins.updates import follow_dependencies, mode
 
     fetch = request.args.get("fetch", "1") != "0"
     data = installer.marketplace(fetch=fetch)
     data["updateMode"] = mode()
+    data["updateDependencies"] = follow_dependencies()
     return jsonify(data), 200
 
 
@@ -193,14 +194,26 @@ def status():
 @require_global_permission(_PERM)
 @require_step_up
 def set_update_mode():
-    from hubra.core.plugins.updates import set_mode
+    from hubra.core.plugins.updates import (
+        follow_dependencies,
+        mode,
+        set_follow_dependencies,
+        set_mode,
+    )
 
     body = request.get_json(silent=True) or {}
-    try:
-        set_mode(str(body.get("mode", "")))
-    except ValueError as exc:
-        return api_error("VALIDATION_ERROR", f"mode: {error_message(exc)}", 400)
-    return jsonify({"mode": body["mode"]}), 200
+    if "mode" not in body and "dependencies" not in body:
+        return api_error("VALIDATION_ERROR", "mode or dependencies is required", 400)
+    if "mode" in body:
+        try:
+            set_mode(str(body.get("mode", "")))
+        except ValueError as exc:
+            return api_error("VALIDATION_ERROR", f"mode: {error_message(exc)}", 400)
+    if "dependencies" in body:
+        if not isinstance(body["dependencies"], bool):
+            return api_error("VALIDATION_ERROR", "dependencies: true or false", 400)
+        set_follow_dependencies(body["dependencies"])
+    return jsonify({"mode": mode(), "dependencies": follow_dependencies()}), 200
 
 
 @plugins_bp.post("/updates/check")

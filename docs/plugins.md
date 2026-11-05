@@ -145,3 +145,26 @@ first, from the same repository, in the newest version that fits the
 range. An upload with a missing dependency is refused with what to install.
 An update or rollback that an installed plugin's range excludes is refused,
 and so is uninstalling a plugin that another one depends on.
+
+### Add-ons
+
+A plugin that needs another plugin is an **add-on** of it, its parent:
+the first plugin under `depends:`, or else the plugin that provides the
+first module under `requires:` (a Hubra module is no parent). The Plugin
+catalogue shows add-ons inside their parent's card, and the index names
+the parent of each plugin (`parent`). An add-on whose parent isn't
+installed says so and can't be installed.
+
+Name the parent under `depends:` with a version range, so Hubra can check
+the version (the template's release check asks for it):
+
+```yaml
+requires: [inventory]          # the module the add-on uses
+depends:
+  inventory: ">=2.0,<3"        # the plugin that provides it, and which versions
+```
+
+An install or update whose range the installed parent misses stops with the
+version it needs. With **Also update required plugins** on (Plugin catalogue,
+off by default) it updates the parent first, from the same repository, to the
+newest version in the range, unless the parent is held at its version.

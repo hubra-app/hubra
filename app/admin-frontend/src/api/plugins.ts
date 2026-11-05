@@ -65,6 +65,21 @@ export interface MarketplacePlugin {
   autoinstalled: boolean
   /** Installed or changed after this server started: live after the reload. */
   pendingReload: boolean
+  /** The plugin this one is an add-on of ('' for a plugin on its own). */
+  parent?: string
+  parentName?: string
+  parentInstalled?: boolean
+  /** Plugins under depends: that the installed ones don't meet (for the
+   *  version on offer when there is an update). */
+  unmet?: DependencyGap[]
+}
+
+export interface DependencyGap {
+  id: string
+  name: string
+  range: string
+  /** null: not installed. */
+  installed: string | null
 }
 
 export type UpdateMode = 'notify' | 'official' | 'off'
@@ -74,6 +89,8 @@ export interface Marketplace {
   errors: string[]
   generation: number
   updateMode: UpdateMode
+  /** An update may update the plugins it needs too (off: it stops). */
+  updateDependencies?: boolean
 }
 
 /** What an archive would install; confirm or discard it. */
@@ -214,6 +231,9 @@ export const uninstallPlugin = (id: string, deleteData: boolean) =>
 
 export const setUpdateMode = (mode: UpdateMode) =>
   withStepUp(() => apiFetch(`${P}/updates`, json('PUT', { mode })))
+
+export const setUpdateDependencies = (on: boolean) =>
+  withStepUp(() => apiFetch(`${P}/updates`, json('PUT', { dependencies: on })))
 
 export const checkUpdates = () => apiFetch<unknown>(`${P}/updates/check`, json('POST'))
 

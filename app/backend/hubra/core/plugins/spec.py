@@ -169,6 +169,43 @@ def version_matches(version: str, rng: str) -> bool:
         return False
 
 
+def parents(entries: list[dict]) -> dict[str, str]:
+    """Plugin id -> the plugin it is an add-on of ('' for a plugin on its own).
+
+    The parent is the first plugin named under ``depends:``, otherwise the
+    plugin that provides the first module listed under ``requires:``.  A
+    module that no plugin in *entries* provides is a core one: no parent.
+    """
+    provides: dict[str, str] = {}
+    for e in entries:
+        for code in e.get("modules") or []:
+            provides.setdefault(str(code), str(e.get("id")))
+    out: dict[str, str] = {}
+    for e in entries:
+        pid = str(e.get("id"))
+        deps = e.get("depends") if isinstance(e.get("depends"), dict) else {}
+        parent = next((str(d) for d in deps if str(d) != pid), "")
+        if not parent:
+            parent = next(
+                (
+                    provides[str(c)]
+                    for c in e.get("requires") or []
+                    if provides.get(str(c)) not in (None, pid)
+                ),
+                "",
+            )
+        out[pid] = parent
+    # A loop (a needs b, b needs a) has no parent on either side.
+    for pid, parent in list(out.items()):
+        seen = {pid}
+        while parent and parent in out and parent not in seen:
+            seen.add(parent)
+            parent = out[parent]
+        if parent == pid:
+            out[pid] = ""
+    return out
+
+
 def read_manifest(path: Path) -> dict:
     try:
         data = yaml.safe_load((path / MANIFEST).read_text()) or {}

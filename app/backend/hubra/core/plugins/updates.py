@@ -6,6 +6,10 @@
                                by themselves; announce the rest
                    "off": no check (the Marketplace still shows updates)
     updates_seen   {"plugin id": "version"}: what was announced already
+    update_dependencies
+                   "1": an install or update whose ``depends:`` range the
+                   installed plugin misses updates that plugin first (same
+                   repository); "" (default): it stops and says what it needs
 
 A held plugin (``installed_plugins.held_version``) is never offered an
 update.  Announcements go to the global audit log, which the manager portal
@@ -50,6 +54,17 @@ def set_mode(m: str) -> None:
     if m not in MODES:
         raise ValueError(f"one of {', '.join(MODES)}")
     _put("update_mode", m)
+    db.session.commit()
+
+
+def follow_dependencies() -> bool:
+    """Whether an update may update the plugins it needs too (off by default:
+    the update stops and says which version it needs)."""
+    return _get("update_dependencies", "") == "1"
+
+
+def set_follow_dependencies(on: bool) -> None:
+    _put("update_dependencies", "1" if on else "")
     db.session.commit()
 
 

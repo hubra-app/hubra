@@ -256,6 +256,7 @@ def build_repository(
     ) in old.items():  # a plugin whose folder is gone stays offered as it was
         if not any(p["id"] == pid for p in plugins):
             plugins.append(prev)
+    _add_parents(plugins)
     doc = sign_index(
         {
             "name": name,
@@ -268,6 +269,16 @@ def build_repository(
     )
     (out / "index.json").write_text(json.dumps(doc, indent=2) + "\n")
     return doc
+
+
+def _add_parents(plugins: list[dict]) -> None:
+    """Name each plugin's parent (the plugin it is an add-on of), so a
+    catalogue can show add-ons under it."""
+    from .spec import parents
+
+    found = parents(plugins)
+    for p in plugins:
+        p["parent"] = found.get(str(p.get("id")), "")
 
 
 def _listing(m: dict) -> dict:
@@ -440,6 +451,7 @@ def build_index_from_sources(
             }
         )
     out.mkdir(parents=True, exist_ok=True)
+    _add_parents(plugins)
     doc = sign_index(
         {
             "name": name or sources.get("name") or "plugins",
