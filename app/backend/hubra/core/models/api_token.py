@@ -10,7 +10,8 @@ have right now:
 * ``platform`` — a platform admin's read-only token for the platform API.
 
 A row with ``oauth_client_id`` is a sign-in an outside app holds (OAuth,
-docs/oauth.md); its kind is ``member`` or ``platform``.
+docs/oauth.md); its kind is ``member``, ``platform`` or ``identity`` (only signs the person
+in to the app, OpenID Connect; reads nothing).
 
 The secret is shown once and only its peppered hash is kept. The table lives
 in the public schema (in no module manifest): a request's token is found
@@ -116,3 +117,6 @@ class ApiToken(db.Model):
     refreshed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # The OAuth scopes the person agreed to ("read openid email" …), for
+    # the token answer and OpenID Connect (ID token, userinfo).
+    oauth_scope: Mapped[str | None] = mapped_column(db.String(100), nullable=True)

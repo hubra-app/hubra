@@ -14,6 +14,7 @@ import { useToast } from '@/context/AppContext'
 import { qk } from '@/data/keys'
 import { formatDateTime } from '@/format'
 import { useT } from '@/locales/i18n'
+import { SignInAppsSection } from './SignInAppsSection'
 
 /**
  * Einstellungen › API & Apps: who may reach the club's data from outside
@@ -56,7 +57,9 @@ export function ApiAccessTab() {
 
   const active = (tokens.data?.items ?? []).filter((r) => r.active)
   const kindLabel = (row: ClubApiToken) =>
-    row.appId
+    row.kind === 'identity'
+      ? t('apiAccess.kind.signIn', 'Anmeldung')
+      : row.appId
       ? t('apiAccess.kind.app', 'App')
       : row.kind === 'club'
         ? t('apiAccess.kind.club', 'Vereins-Token')
@@ -96,6 +99,8 @@ export function ApiAccessTab() {
           />
         </Stack>
       </Paper>
+
+      <SignInAppsSection />
 
       <Stack gap="sm">
         <Title order={4}>{t('apiAccess.active', 'Aktive Zugänge')}</Title>

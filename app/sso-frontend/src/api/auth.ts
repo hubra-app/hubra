@@ -562,6 +562,8 @@ export interface OAuthApp {
   clientUri: string | null
   /** Registered by Hubra's admins; false for an app that registered itself. */
   verified: boolean
+  /** registered (Hubra), club (a club's own website or forum), dynamic. */
+  kind?: 'registered' | 'club' | 'dynamic'
   /** Where the app gets the person back to. */
   redirectHost: string | null
 }
@@ -584,9 +586,18 @@ export interface OAuthClubChoice {
 export interface OAuthConsent {
   problem?: OAuthProblem
   client: OAuthApp
+  /** access: the app reads Hubra for the person; identity: Sign in with
+   * Hubra only (OpenID Connect, docs/oidc.md). */
+  mode: 'access' | 'identity'
   /** What the app wants to use: the Hubra API or the Claude connector. */
-  resource: 'api' | 'mcp'
+  resource: 'api' | 'mcp' | null
   scopes: ('read' | 'write')[]
+  /** OpenID Connect: openid, profile, email, club. */
+  oidc: string[]
+  /** Allowed before with the same details: answered at once. */
+  remembered: boolean
+  /** A club's own sign-in app: its club, and whether the person may sign in. */
+  club: { slug: string; name: string; available: boolean; reason: string | null } | null
   user: { name: string; email: string }
   clubs: OAuthClubChoice[]
   platform: { available: boolean; reason: string | null } | null
@@ -609,7 +620,11 @@ export async function answerOAuthConsent(body: {
 
 export interface OAuthGrant {
   id: number
-  kind: 'member' | 'platform'
+  kind: 'member' | 'platform' | 'identity'
+  /** Sign in with Hubra only: the app knows who you are, reads nothing. */
+  signIn?: boolean
+  /** What a sign-in shares: profile, email, club. */
+  claims?: string[]
   app: OAuthApp | null
   club: { slug: string; name: string } | null
   resourceKind: 'api' | 'mcp' | null

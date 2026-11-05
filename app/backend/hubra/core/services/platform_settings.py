@@ -465,6 +465,23 @@ SPECS: tuple[Spec, ...] = (
         lambda cfg: "claude.ai,claude.com,localhost,127.0.0.1",
     ),
     Spec(
+        "oauth.signing_keys",
+        "Sign-in signing keys",
+        "RSA keys that sign the ID tokens of Sign in with Hubra (OpenID "
+        "Connect), newest first. Made automatically, stored encrypted",
+        lambda cfg: "",
+        secret=True,
+    ),
+    Spec(
+        "oauth.subject_salt",
+        "Sign-in subject key",
+        "Makes the per-app person id (sub) of Sign in with Hubra. Made "
+        "automatically, stored encrypted; changing it gives every person a "
+        "new id in every app",
+        lambda cfg: "",
+        secret=True,
+    ),
+    Spec(
         "support.url",
         "Support site address",
         "Address of the support site (app/support-frontend): help, roadmap, "

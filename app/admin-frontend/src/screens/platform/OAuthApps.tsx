@@ -29,6 +29,7 @@ import {
   editOAuthApp,
   listOAuthApps,
   newOAuthAppSecret,
+  rotateSigningKey,
   type NewOAuthApp,
   type OAuthApp,
 } from '@/api/oauthApps'
@@ -117,6 +118,7 @@ function AppModal({
   const [mcp, setMcp] = useState(app?.resources.includes('mcp') ?? false)
   const [api, setApi] = useState(app ? app.resources.includes('api') : true)
   const [write, setWrite] = useState(app?.scopes.includes('write') ?? false)
+  const [signIn, setSignIn] = useState(app?.scopes.includes('openid') ?? false)
   const [confidential, setConfidential] = useState(true)
   const [busy, setBusy] = useState(false)
 
@@ -133,7 +135,11 @@ function AppModal({
         .map((u) => u.trim())
         .filter(Boolean),
       resources: [...(api ? ['api' as const] : []), ...(mcp ? ['mcp' as const] : [])],
-      scopes: write ? (['read', 'write'] as ('read' | 'write')[]) : (['read'] as ('read' | 'write')[]),
+      scopes: [
+        ...(api || mcp ? (['read'] as const) : []),
+        ...((api || mcp) && write ? (['write'] as const) : []),
+        ...(signIn ? (['openid'] as const) : []),
+      ],
     }
     try {
       if (app) {
@@ -164,7 +170,11 @@ function AppModal({
           <Button variant="default" onClick={onClose}>
             {tr('Abbrechen', 'Cancel')}
           </Button>
-          <Button type="submit" loading={busy} disabled={!name.trim() || !uris.trim() || (!api && !mcp)}>
+          <Button
+            type="submit"
+            loading={busy}
+            disabled={!name.trim() || !uris.trim() || (!api && !mcp && !signIn) || (mcp && signIn)}
+          >
             {app ? tr('Speichern', 'Save') : tr('Erstellen', 'Create')}
           </Button>
         </>
@@ -223,7 +233,17 @@ function AppModal({
         <Checkbox
           label={tr('Darf auch ändern (nur Hubra-API, nur was die Person darf)', 'May also change (Hubra API only, only what the person may)')}
           checked={write}
+          disabled={!api}
           onChange={(e) => setWrite(e.currentTarget.checked)}
+        />
+        <Checkbox
+          label={tr('Anmelden mit Hubra (OpenID Connect)', 'Sign in with Hubra (OpenID Connect)')}
+          description={tr(
+            'Die App erfährt, wer sich angemeldet hat (ID-Token, userinfo). Allein liest sie nichts aus Hubra. Nicht zusammen mit dem Claude-Connector.',
+            'The app learns who signed in (ID token, userinfo). On its own it reads nothing from Hubra. Not together with the Claude connector.',
+          )}
+          checked={signIn}
+          onChange={(e) => setSignIn(e.currentTarget.checked)}
         />
         {!app && (
           <Checkbox
@@ -321,6 +341,8 @@ export function OAuthApps() {
         {data && (
           <Text size="xs" c="dimmed" mb={12}>
             {tr('Server-Metadaten', 'Server metadata')}: <Code>{data.metadataUrl}</Code>
+            {' · '}
+            OpenID: <Code>{data.discoveryUrl}</Code>
             {data.mcpResource && (
               <>
                 {' · '}
@@ -364,6 +386,11 @@ export function OAuthApps() {
                             {tr('selbst angemeldet', 'self-registered')}
                           </Badge>
                         )}
+                        {a.club && (
+                          <Badge size="xs" variant="light" color="teal" style={{ flexShrink: 0 }}>
+                            {tr(`Verein ${a.club.name}`, `Club ${a.club.name}`)}
+                          </Badge>
+                        )}
                       </Group>
                       <Text size="xs" c="dimmed" ff="monospace" style={{ wordBreak: 'break-all', maxWidth: 240 }}>
                         {a.clientId}
@@ -379,6 +406,11 @@ export function OAuthApps() {
                         {a.scopes.includes('write') && (
                           <Badge size="sm" variant="light" color="orange" style={{ flexShrink: 0 }}>
                             {tr('ändern', 'write')}
+                          </Badge>
+                        )}
+                        {a.signIn && (
+                          <Badge size="sm" variant="light" color="green" style={{ flexShrink: 0, overflow: 'visible' }}>
+                            {tr('Anmelden', 'Sign-in')}
                           </Badge>
                         )}
                       </Group>
@@ -437,6 +469,7 @@ export function OAuthApps() {
           </Table.ScrollContainer>
         )}
       </Paper>
+      <SigningKeys keys={data?.signingKeys ?? []} onRotated={refresh} />
       <SettingsSection section="oauth" />
       {editing !== null && (
         <AppModal
@@ -454,5 +487,75 @@ export function OAuthApps() {
       <SecretModal app={secret} onClose={() => setSecret(null)} />
       {confirmDialog}
     </Stack>
+  )
+}
+
+/** The keys that sign ID tokens (Sign in with Hubra, docs/oidc.md). */
+function SigningKeys({
+  keys,
+  onRotated,
+}: {
+  keys: { kid: string; created: string | null }[]
+  onRotated: () => void
+}) {
+  const { notify } = useAdmin()
+  const [confirm, confirmDialog] = useConfirm()
+  const rotate = () =>
+    confirm({
+      title: tr('Neuen Signierschlüssel erstellen?', 'Make a new signing key?'),
+      body: tr(
+        'Neue ID-Tokens werden mit dem neuen Schlüssel signiert. Der bisherige bleibt veröffentlicht, damit Apps gerade ausgestellte Tokens noch prüfen können; der Schlüssel davor fällt weg.',
+        'New ID tokens are signed with the new key. The current one stays published so apps can still check tokens issued just now; the one before it is dropped.',
+      ),
+      confirmLabel: tr('Erstellen', 'Create'),
+      run: async () => {
+        try {
+          await rotateSigningKey()
+          notify('success', tr('Neuer Schlüssel aktiv', 'New key active'))
+          onRotated()
+        } catch (err) {
+          notify('error', tr('Nicht erstellt', 'Not created'), errorText(err))
+        }
+      },
+    })
+  return (
+    <Paper withBorder p="lg">
+      <Group justify="space-between" align="flex-start" wrap="nowrap">
+        <div style={{ minWidth: 0 }}>
+          <Title order={4}>{tr('Signierschlüssel (Anmelden mit Hubra)', 'Signing keys (Sign in with Hubra)')}</Title>
+          <Text size="xs" c="dimmed" maw={720}>
+            {tr(
+              'RSA-Schlüssel, mit denen Hubra ID-Tokens signiert. Sie entstehen von selbst und liegen verschlüsselt in den Plattform-Einstellungen; Apps holen die öffentlichen Teile über die JWKS-Adresse.',
+              'RSA keys Hubra signs ID tokens with. They are made automatically and stored encrypted in the platform settings; apps fetch the public parts from the JWKS address.',
+            )}
+          </Text>
+        </div>
+        <Button size="xs" variant="default" style={{ flexShrink: 0 }} onClick={rotate}>
+          {tr('Neuer Schlüssel', 'New key')}
+        </Button>
+      </Group>
+      <Stack gap={4} mt="sm">
+        {keys.length === 0 ? (
+          <Text size="sm" c="dimmed">
+            {tr('Noch keiner: der erste entsteht beim ersten Anmelden.', 'None yet: the first is made at the first sign-in.')}
+          </Text>
+        ) : (
+          keys.map((k, i) => (
+            <Group key={k.kid} gap="xs">
+              <Code>{k.kid}</Code>
+              <Text size="xs" c="dimmed">
+                {formatAgo(k.created, tr)}
+              </Text>
+              {i === 0 && (
+                <Badge size="xs" variant="light" color="green">
+                  {tr('aktiv', 'active')}
+                </Badge>
+              )}
+            </Group>
+          ))
+        )}
+      </Stack>
+      {confirmDialog}
+    </Paper>
   )
 }
