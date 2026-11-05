@@ -1,0 +1,108 @@
+# Own dashboards
+
+Next to **Dashboard › Persönlich** and **Dashboard › Verein**, every member can
+put together their own dashboards from widgets: the board looks at members,
+finances and the next events, a trainer at the next trainings and a few
+links. **+ Neues Dashboard** creates one (at most 20 per member, 24 widgets
+each). The module is `dashboards`, on by default.
+
+![A shared board dashboard](screenshots/dashboards/view.png)
+
+## Building one
+
+**Bearbeiten** turns on edit mode:
+
+* **Widget hinzufügen** opens the widget list. A widget with settings asks
+  for them before it is added; the cog changes them later.
+* Each widget is **Schmal** (a third of the row), **Halb** or **Breit** (the
+  whole row). On a tablet a narrow widget takes half the row and a half one
+  the whole row; on a phone every widget takes the whole row.
+* The arrows move a widget, the bin removes it.
+
+**Fertig** leaves edit mode; every change is saved as it is made. The `⋯`
+menu renames, shares or deletes the dashboard.
+
+![Edit mode](screenshots/dashboards/edit.png)
+
+## Widgets
+
+| Widget | Shows | Needs |
+| --- | --- | --- |
+| Aktive Mitglieder | active members, joins in the last 30 days | module members |
+| Anzahl bevorstehender Anlässe | how many events are ahead | module events |
+| Netto diesen Monat | income less expenses this month, open invoices | module finance, `finance.invoices.read` |
+| Nächste Anlässe | the next events (title, count, only my sign-ups) | module events |
+| Neueste Beiträge | the latest posts (title, count) | module posts |
+| Offene Abstimmungen für mich | polls the viewer can still vote in (title, count) | module polls |
+| Ein- und Austritte | joins and leaves per month of this year (title) | module members, `members.members.read` |
+| Notiz | a text of the owner's | nothing |
+| Links | a list of links, one `Label \| https://…` per line (http and https only) | nothing |
+
+Widgets load their data through the usual API routes, with the viewer's own
+rights. A widget the viewer may not see (module off, or a permission missing)
+is left out of the dashboard; in edit mode the owner sees a placeholder for
+it so it can be removed.
+
+## Private and shared
+
+A new dashboard is private: only its owner sees it. The owner shares it with
+the club from the `⋯` menu, which needs the permission **Dashboards mit dem
+Verein teilen** (`dashboards.dashboards.share`, Rollen › Berechtigungen). A
+shared dashboard shows up as a tab for every member, who each see only the
+widgets their own rights allow, so sharing a board dashboard doesn't show
+finances to members without finance rights.
+
+Only the owner changes, shares or deletes a dashboard. A club admin can also
+change, stop sharing or delete any dashboard (to tidy up), but can't share
+someone else's private one, and their tab list shows only their own and the
+shared ones. Changes to a shared dashboard are written to the audit log.
+
+## API
+
+`/api/v1/app/dashboards`, signed in as a member:
+
+| Call | Does |
+| --- | --- |
+| `GET /` | `{items, canShare, max}`: the member's own and the shared dashboards |
+| `POST /` | `{name, widgets?}`, a new private dashboard (`409 LIMIT_REACHED` past the limit) |
+| `GET /<id>` | one, if it is the member's own or shared |
+| `PATCH /<id>` | `{name?, widgets?}` (owner or admin) |
+| `PUT /<id>/sharing` | `{shared: bool}` (owner with the share permission; an admin may unshare any) |
+| `DELETE /<id>` | remove it (owner or admin) |
+
+A dashboard is `{id, name, shared, widgets, owner: {id, name}, mine, canEdit,
+updatedAt}`. A widget is `{id, type, size, config}`: `id` is unique on the
+dashboard (`[A-Za-z0-9_-]`, up to 40), `type` names the widget (lowercase,
+up to 80), `size` is `s`, `m` or `l`, and `config` is an object of at most
+4000 characters as JSON. The server doesn't check that a type exists, so a
+widget of a plugin that was removed stays saved and comes back with it.
+
+## Widgets from plugins
+
+A plugin's frontend adds widgets with `widgets` in `registerPlugin` (type
+`PluginWidget` in `app/frontend/src/plugins/types.ts`):
+
+```tsx
+registerPlugin({
+  id: 'inventory',
+  widgets: [
+    {
+      id: 'lent',
+      module: 'inventory',
+      perm: 'inventory.items.read',
+      label: 'inventory.widget.lent',
+      description: 'inventory.widget.lentHint',
+      size: 'm',
+      fields: [{ key: 'count', label: 'inventory.widget.count', kind: 'number', default: 5 }],
+      component: LentWidget, // ({ config, size }) => …
+    },
+  ],
+})
+```
+
+The widget is stored as type `p:<plugin id>.<id>` (here `p:inventory.lent`).
+`module` and `perm` decide who sees it, like a plugin's routes. `fields` are
+the settings the member fills in (`text`, `number` or `switch`); the
+component gets them as `config`, and `size` so it can show more when wide.
+It renders inside an error boundary, so a failing widget doesn't break the
+dashboard. Load data from the plugin's own API, never from another plugin.

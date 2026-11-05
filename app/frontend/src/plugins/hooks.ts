@@ -1,7 +1,7 @@
 import { useAuth } from '@/context/AppContext'
 import { useModules } from '@/modules/useModules'
 import { usePlugins } from './store'
-import type { PluginRoute, PluginSearch, PluginTab } from './types'
+import type { PluginRoute, PluginSearch, PluginTab, PluginWidget } from './types'
 
 type Gated = { module: string; perm?: string; order?: number }
 
@@ -38,3 +38,9 @@ export function usePluginSearches(): FromPlugin<PluginSearch>[] {
 export function usePluginTabs(screen: string): FromPlugin<PluginTab>[] {
   return useVisible((p) => p.tabs).filter((t) => t.screen === screen)
 }
+
+/** Dashboard widgets plugins add, for this club and user. */
+export function usePluginWidgets(): FromPlugin<PluginWidget>[] {
+  return useVisible((p) => p.widgets)
+}
+

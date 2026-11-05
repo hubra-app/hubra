@@ -1,0 +1,238 @@
+"""Own dashboards (docs/dashboards.md).
+
+``/api/v1/app/dashboards``. Every member puts dashboards together from
+widgets. A dashboard is private to its owner until it is shared with the
+club, which needs ``dashboards.dashboards.share``; a shared one shows up for
+every member, who each see only the widgets their own rights allow (the
+widgets load their data through the usual routes).
+
+* ``GET  /``               the member's own dashboards and the shared ones
+* ``POST /``               a new private dashboard
+* ``GET  /<id>``           one (own or shared)
+* ``PATCH /<id>``          name and widgets (the owner, or an admin)
+* ``PUT  /<id>/sharing``   ``{"shared": bool}`` (the owner with the right to
+                           share; an admin may also stop sharing any)
+* ``DELETE /<id>``         remove it (the owner, or an admin)
+"""
+
+from __future__ import annotations
+
+import json
+import re
+
+from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required
+from sqlalchemy import func, or_, select
+
+from hubra.core.auth.helpers import get_current_member
+from hubra.core.errors import api_error
+from hubra.core.extensions import db
+from hubra.core.models.dashboard import Dashboard
+from hubra.core.permissions import (
+    member_has_permission,
+    member_is_admin,
+    permission_required,
+)
+from hubra.core.utils import log_audit
+
+dashboards_bp = Blueprint("dashboards_bp", __name__)
+
+MAX_DASHBOARDS = 20  # per member
+MAX_WIDGETS = 24
+MAX_CONFIG = 4000  # characters of a widget's config as JSON
+SIZES = ("s", "m", "l")
+SHARE_PERM = "dashboards.dashboards.share"
+_TYPE = re.compile(r"^[a-z0-9][a-z0-9_.:-]{0,79}$")
+_ID = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
+
+
+def _body() -> dict:
+    data = request.get_json(silent=True)
+    return data if isinstance(data, dict) else {}
+
+
+def _dump(d: Dashboard, member) -> dict:
+    owner = d.owner
+    return {
+        "id": d.id,
+        "name": d.name,
+        "shared": d.shared,
+        "widgets": list(d.widgets or []),
+        "owner": {
+            "id": d.owner_id,
+            "name": owner.name if owner else None,
+        },
+        "mine": d.owner_id == member.id,
+        "canEdit": _can_edit(d, member),
+        "updatedAt": d.updated_at.isoformat() if d.updated_at else None,
+    }
+
+
+def _can_edit(d: Dashboard, member) -> bool:
+    return d.owner_id == member.id or member_is_admin(member)
+
+
+def _can_see(d: Dashboard, member) -> bool:
+    return d.shared or _can_edit(d, member)
+
+
+def _name(value) -> str | None:
+    name = str(value or "").strip()[:100]
+    return name or None
+
+
+def _widgets(value):
+    """Validated widgets, or an error text."""
+    if not isinstance(value, list):
+        return None, "widgets must be a list"
+    if len(value) > MAX_WIDGETS:
+        return None, f"At most {MAX_WIDGETS} widgets"
+    out, seen = [], set()
+    for i, w in enumerate(value):
+        if not isinstance(w, dict):
+            return None, f"widgets[{i}] must be an object"
+        wid, wtype = w.get("id"), w.get("type")
+        if not isinstance(wid, str) or not _ID.match(wid) or wid in seen:
+            return None, f"widgets[{i}].id must be a unique short name"
+        if not isinstance(wtype, str) or not _TYPE.match(wtype):
+            return None, f"widgets[{i}].type is not valid"
+        size = w.get("size", "m")
+        if size not in SIZES:
+            return None, f"widgets[{i}].size is one of {', '.join(SIZES)}"
+        config = w.get("config") or {}
+        if not isinstance(config, dict):
+            return None, f"widgets[{i}].config must be an object"
+        if len(json.dumps(config, ensure_ascii=False)) > MAX_CONFIG:
+            return None, f"widgets[{i}].config is too large"
+        seen.add(wid)
+        out.append({"id": wid, "type": wtype, "size": size, "config": config})
+    return out, None
+
+
+def _get(dashboard_id: int, member):
+    d = db.session.get(Dashboard, dashboard_id)
+    if d is None or not _can_see(d, member):
+        return None
+    return d
+
+
+def _audit(action: str, d: Dashboard, member) -> None:
+    log_audit(
+        actor_id=member.id,
+        action=action,
+        target_type="Dashboard",
+        target_id=d.id,
+        target_label=d.name,
+    )
+
+
+@dashboards_bp.get("/")
+@jwt_required()
+def list_dashboards():
+    member = get_current_member()
+    rows = db.session.scalars(
+        select(Dashboard)
+        .where(or_(Dashboard.owner_id == member.id, Dashboard.shared.is_(True)))
+        .order_by(Dashboard.name, Dashboard.id)
+    ).all()
+    return jsonify(
+        {
+            "items": [_dump(d, member) for d in rows],
+            "canShare": member_has_permission(member, SHARE_PERM),
+            "max": MAX_DASHBOARDS,
+        }
+    ), 200
+
+
+@dashboards_bp.post("/")
+@jwt_required()
+def create_dashboard():
+    member = get_current_member()
+    count = db.session.scalar(
+        select(func.count(Dashboard.id)).where(Dashboard.owner_id == member.id)
+    )
+    if (count or 0) >= MAX_DASHBOARDS:
+        return api_error(
+            "LIMIT_REACHED", f"At most {MAX_DASHBOARDS} dashboards each", 409
+        )
+    data = _body()
+    name = _name(data.get("name"))
+    if name is None:
+        return api_error("VALIDATION_ERROR", "A name is required", 400)
+    widgets, error = _widgets(data.get("widgets", []))
+    if error:
+        return api_error("VALIDATION_ERROR", error, 400)
+    d = Dashboard(name=name, owner_id=member.id, shared=False, widgets=widgets)
+    db.session.add(d)
+    db.session.commit()
+    return jsonify(_dump(d, member)), 201
+
+
+@dashboards_bp.get("/<int:dashboard_id>")
+@jwt_required()
+def get_dashboard(dashboard_id: int):
+    member = get_current_member()
+    d = _get(dashboard_id, member)
+    if d is None:
+        return api_error("NOT_FOUND", "No such dashboard", 404)
+    return jsonify(_dump(d, member)), 200
+
+
+@dashboards_bp.patch("/<int:dashboard_id>")
+@jwt_required()
+def update_dashboard(dashboard_id: int):
+    member = get_current_member()
+    d = _get(dashboard_id, member)
+    if d is None:
+        return api_error("NOT_FOUND", "No such dashboard", 404)
+    if not _can_edit(d, member):
+        return api_error("FORBIDDEN", "Only its owner changes a dashboard", 403)
+    data = _body()
+    if "name" in data:
+        name = _name(data["name"])
+        if name is None:
+            return api_error("VALIDATION_ERROR", "A name is required", 400)
+        d.name = name
+    if "widgets" in data:
+        widgets, error = _widgets(data["widgets"])
+        if error:
+            return api_error("VALIDATION_ERROR", error, 400)
+        d.widgets = widgets
+    if d.shared:
+        _audit("update_dashboard", d, member)
+    db.session.commit()
+    return jsonify(_dump(d, member)), 200
+
+
+@dashboards_bp.put("/<int:dashboard_id>/sharing")
+@permission_required("dashboards", "share", "Share dashboards with the club")
+def share_dashboard(dashboard_id: int):
+    member = get_current_member()
+    d = _get(dashboard_id, member)
+    if d is None:
+        return api_error("NOT_FOUND", "No such dashboard", 404)
+    shared = _body().get("shared")
+    if not isinstance(shared, bool):
+        return api_error("VALIDATION_ERROR", "shared must be true or false", 400)
+    if d.owner_id != member.id and not (member_is_admin(member) and not shared):
+        return api_error("FORBIDDEN", "Only its owner shares a dashboard", 403)
+    d.shared = shared
+    _audit("share_dashboard" if shared else "unshare_dashboard", d, member)
+    db.session.commit()
+    return jsonify(_dump(d, member)), 200
+
+
+@dashboards_bp.delete("/<int:dashboard_id>")
+@jwt_required()
+def delete_dashboard(dashboard_id: int):
+    member = get_current_member()
+    d = _get(dashboard_id, member)
+    if d is None:
+        return api_error("NOT_FOUND", "No such dashboard", 404)
+    if not _can_edit(d, member):
+        return api_error("FORBIDDEN", "Only its owner deletes a dashboard", 403)
+    if d.shared:
+        _audit("delete_dashboard", d, member)
+    db.session.delete(d)
+    db.session.commit()
+    return "", 204

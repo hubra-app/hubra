@@ -3431,7 +3431,8 @@
       "finance_accounts_update": "Kontenplan und Eröffnungsbilanz ändern",
       "finance_accounts_close": "Geschäftsjahr abschliessen und wieder öffnen",
       "events_trials_read": "Schnuppertrainings ansehen",
-      "events_trials_manage": "Schnuppertrainings verwalten"
+      "events_trials_manage": "Schnuppertrainings verwalten",
+      "dashboards_dashboards_share": "Dashboards mit dem Verein teilen"
     },
     "areas": {
       "applications": "Anträge",
@@ -4059,5 +4060,79 @@
     "title": "Webhooks",
     "url": "Adresse",
     "urlHint": "Nur https und eine öffentliche Adresse."
+  },
+  "dashboards": {
+    "add": "Hinzufügen",
+    "addWidget": "Widget hinzufügen",
+    "by": "von {{name}}",
+    "create": "Erstellen",
+    "d": {
+      "chart": "Ein- und Austritte pro Monat in diesem Jahr",
+      "events": "Die nächsten Anlässe, auf Wunsch nur deine",
+      "eventsStat": "Wie viele Anlässe bevorstehen",
+      "financeStat": "Ergebnis des Monats und offene Rechnungen",
+      "links": "Wichtige Adressen auf einen Blick",
+      "membersStat": "Aktive Mitglieder und Eintritte der letzten 30 Tage",
+      "note": "Ein Text, z. B. Termine oder Hinweise fürs Team",
+      "polls": "Umfragen, in denen du noch abstimmen kannst",
+      "posts": "Die neuesten Beiträge"
+    },
+    "delete": "Dashboard löschen",
+    "deleteBody": "«{{name}}» und seine Widgets werden gelöscht.",
+    "deleteTitle": "Dashboard löschen",
+    "done": "Fertig",
+    "down": "Nach hinten",
+    "edit": "Bearbeiten",
+    "empty": "Noch keine Widgets",
+    "emptyHint": "Füge Widgets hinzu: Anlässe, Beiträge, Zahlen, Notizen und mehr.",
+    "f": {
+      "count": "Anzahl",
+      "links": "Links",
+      "linksHint": "Pro Zeile: Bezeichnung | https://…",
+      "onlyMine": "Nur Anlässe, für die ich angemeldet bin",
+      "text": "Text",
+      "title": "Titel (leer: Standard)"
+    },
+    "name": "Name",
+    "namePlaceholder": "z. B. Vorstand, Training, Finanzen",
+    "new": "Neues Dashboard",
+    "newHint": "Stell dir aus Widgets zusammen, was du im Blick haben willst. Es bleibt privat, bis du es mit dem Verein teilst.",
+    "notAllowed": "{{name}}: für dich nicht verfügbar (Modul aus oder fehlende Berechtigung).",
+    "notFound": "Dieses Dashboard gibt es nicht (mehr).",
+    "private": "Privat",
+    "remove": "Entfernen",
+    "rename": "Umbenennen",
+    "settings": "Einstellungen",
+    "share": "Mit dem Verein teilen",
+    "shared": "Mit dem Verein geteilt",
+    "sharedDone": "Mit dem Verein geteilt",
+    "size": {
+      "l": "Breit",
+      "m": "Halb",
+      "s": "Schmal"
+    },
+    "unknown": "Dieses Widget gibt es nicht mehr (Plugin entfernt?).",
+    "unshare": "Nicht mehr teilen",
+    "unsharedDone": "Nicht mehr geteilt",
+    "up": "Nach vorne",
+    "w": {
+      "closes": "endet am {{date}}",
+      "eventsCount": "Anzahl bevorstehender Anlässe",
+      "joinsLeaves": "Ein- und Austritte {{year}}",
+      "joinsLeavesLegend": "Grün: Eintritte, rot: Austritte",
+      "joinsLeavesShort": "Ein- und Austritte",
+      "links": "Links",
+      "linksEmpty": "Noch keine Links.",
+      "myEvents": "Meine Anlässe",
+      "noPolls": "Keine offenen Abstimmungen.",
+      "noPosts": "Noch keine Beiträge.",
+      "note": "Notiz",
+      "noteEmpty": "Noch leer. Bearbeite das Widget, um Text einzufügen.",
+      "openInvoicesCount_one": "{{count}} offene Rechnung",
+      "openInvoicesCount_other": "{{count}} offene Rechnungen",
+      "openPolls": "Offene Abstimmungen für mich",
+      "total_one": "{{count}} Mitglied",
+      "total_other": "{{count}} Mitglieder"
+    }
   }
 }
