@@ -1,0 +1,253 @@
+# Releases Hubra, the same way the plugins release: push a tag that matches
+# app/backend/pyproject.toml (v1.3.0 for version 1.3.0) and this workflow
+# tests, builds, waits for approval, then publishes:
+#
+#     git tag v1.3.0 && git push origin v1.3.0      (or: hubra release hubra)
+#
+#   check     the tag matches pyproject.toml, CHANGELOG.md has a [1.3.0]
+#             section, the commit is on main or a release/* branch, and the
+#             release is not published yet
+#   images    images.yml: the full release checks, then the images, pushed as
+#             sha-<commit> only (no version tag, no latest yet)
+#   approve   environment "release": waits until a required reviewer approves
+#             the run (Actions > the run > Review deployments). Nothing named
+#             1.3.0 exists before this. Reject it and nothing is published.
+#   promote   the same digests get 1.3.0, 1.3 and latest (pre-releases only
+#             1.3.0-rc.1), and each image is signed with cosign, keyless:
+#             the signature says "release.yml of hubra-app/hubra, run for tag
+#             v1.3.0, published this digest". No key to keep.
+#   release   the GitHub release, created with its files attached (works with
+#             immutable releases): images.yaml (the overlay block pinned by
+#             digest), images.txt (one image@digest per line) and SHA256SUMS
+#   branch    release/1.3 at the tag commit, if missing (release-branch.yml)
+#   mirror    the tag to GitLab, now that the images carry its version
+#             (mirror-gitlab.yml)
+#
+# A draft release made for the tag in advance is filled and published,
+# keeping what it says. A published release is never touched: tag a new
+# version. A release created by a workflow starts no `release` workflows,
+# which is why images, the branch and the mirror are called from here.
+#
+# Setup (once, Settings > Environments > New environment "release"):
+# required reviewers: you; deployment branches and tags: selected, tag
+# pattern v*. Without the environment the approve job runs unprotected.
+# docs/releases.md has the details and how to verify a release.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+      prerelease: ${{ steps.check.outputs.prerelease }}
+      minor: ${{ steps.check.outputs.minor }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check the tag
+        id: check
+        env:
+          TAG: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import os, re, tomllib
+          tag = os.environ["TAG"]
+          m = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)(-[0-9A-Za-z.-]+)?", tag)
+          if not m:
+              raise SystemExit(f"::error::{tag} is not vX.Y.Z or vX.Y.Z-rc.N")
+          version = tag[1:]
+          with open("app/backend/pyproject.toml", "rb") as f:
+              declared = tomllib.load(f)["project"]["version"]
+          if declared != version:
+              raise SystemExit(f"::error::tag {tag}, but app/backend/pyproject.toml says version {declared}")
+          pre = bool(m.group(4))
+          log = open("app/backend/CHANGELOG.md").read()
+          if not pre and not re.search(rf"^##\s*\[{re.escape(version)}\]", log, re.M):
+              raise SystemExit(f"::error::app/backend/CHANGELOG.md has no [{version}] section; move [Unreleased] there first")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"version={version}\nprerelease={'true' if pre else 'false'}\nminor={m.group(1)}.{m.group(2)}\n")
+          PY
+          # Only from main or a release branch, never from a feature branch.
+          if ! git branch -r --contains "$GITHUB_SHA" | grep -qE '^\s*origin/(main|release/.+)$'; then
+            echo "::error::${GITHUB_SHA::7} is not on main or a release/* branch"
+            exit 1
+          fi
+          draft=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft -q .isDraft 2>/dev/null || echo none)
+          if [ "$draft" = false ]; then
+            echo "::error::release $TAG is already published; bump the version and push a new tag"
+            exit 1
+          fi
+
+  images:
+    needs: check
+    uses: ./.github/workflows/images.yml
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+
+  # The approval. This job does nothing itself; the "release" environment
+  # holds it until a reviewer approves, and everything after it needs it.
+  approve:
+    needs: [check, images]
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - env:
+          VERSION: ${{ needs.check.outputs.version }}
+        run: echo "Hubra $VERSION approved for release (${GITHUB_SHA::7})." >> "$GITHUB_STEP_SUMMARY"
+
+  promote:
+    needs: [check, approve]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      # cosign keyless: the run's OIDC token gets a short-lived certificate.
+      id-token: write
+    steps:
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Tag and sign the images
+        env:
+          VERSION: ${{ needs.check.outputs.version }}
+          MINOR: ${{ needs.check.outputs.minor }}
+          PRERELEASE: ${{ needs.check.outputs.prerelease }}
+        run: |
+          repo="ghcr.io/${GITHUB_REPOSITORY,,}"
+          staged="sha-${GITHUB_SHA::7}"
+          tags=("$VERSION")
+          if [ "$PRERELEASE" != true ]; then tags+=("$MINOR" latest); fi
+          mkdir -p out
+          echo "images:" > out/images.yaml
+          : > out/images.txt
+          for image in backend global-backend platform-backend mcp frontend admin-frontend sso-frontend support-frontend haraka zonemta cert-watcher; do
+            # The digest the checks and the approval were for.
+            digest="$(docker buildx imagetools inspect "$repo/$image:$staged" --format '{{json .Manifest}}' | jq -r .digest)"
+            if [[ "$digest" != sha256:* ]]; then echo "::error::$repo/$image:$staged not found"; exit 1; fi
+            args=()
+            for t in "${tags[@]}"; do args+=(-t "$repo/$image:$t"); done
+            docker buildx imagetools create "${args[@]}" "$repo/$image@$digest"
+            cosign sign --yes \
+              -a "version=$VERSION" -a "commit=$GITHUB_SHA" \
+              "$repo/$image@$digest"
+            printf '  - name: %s\n    newTag: "%s"\n    digest: %s\n' "$repo/$image" "$VERSION" "$digest" >> out/images.yaml
+            echo "$repo/$image@$digest" >> out/images.txt
+          done
+          {
+            echo "### Hubra $VERSION, pinned by digest"
+            echo
+            echo '```yaml'
+            cat out/images.yaml
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-files
+          path: out/
+          retention-days: 1
+
+  release:
+    needs: [check, promote]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ github.ref_name }}
+      VERSION: ${{ needs.check.outputs.version }}
+      PRERELEASE: ${{ needs.check.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: app/backend/CHANGELOG.md
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-files
+          path: out
+      - name: Release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          (cd out && sha256sum images.yaml images.txt > SHA256SUMS)
+          # What a draft release made for this tag already says stays on top.
+          BODY=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft,body \
+                 -q 'select(.isDraft) | .body' 2>/dev/null || true)
+          export BODY
+          python3 - <<'PY'
+          import os, re
+          v = os.environ["VERSION"]
+          log = open("app/backend/CHANGELOG.md").read()
+          m = re.search(rf"^##\s*\[{re.escape(v)}\][^\n]*\n(.*?)(?=^##\s|\Z)", log, re.M | re.S)
+          section = m.group(1).strip() if m else ""
+          body = os.environ.get("BODY", "").strip()
+          parts = [body] if body else []
+          if section and section not in body:
+              parts.append(f"## Changes in {v}\n\n{section}" if body else section)
+          block = open("out/images.yaml").read().rstrip()
+          repo = os.environ["GITHUB_REPOSITORY"]
+          parts.append(
+              "## Images\n\n"
+              "Pin them by digest (`images.yaml` is attached too):\n\n"
+              f"```yaml\n{block}\n```\n\n"
+              "Every image is signed (cosign, keyless) by this repository's release workflow "
+              f"and carries a build provenance attestation; see [docs/releases.md](https://github.com/{repo}/blob/{os.environ['TAG']}/docs/releases.md) to verify."
+          )
+          open("notes.md", "w").write("\n\n".join(parts))
+          PY
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # An immutable release takes no files once published, so it is
+          # published complete: created with its files, or a draft filled first.
+          files=(out/images.yaml out/images.txt out/SHA256SUMS)
+          pre=(); if [ "$PRERELEASE" = true ]; then pre=(--prerelease); fi
+          draft=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft -q .isDraft 2>/dev/null || echo none)
+          case "$draft" in
+            none)
+              gh release create "$TAG" "${files[@]}" "${pre[@]}" --verify-tag --title "Hubra $VERSION" \
+                --notes-file notes.md --repo "$GITHUB_REPOSITORY" ;;
+            true)
+              gh release upload "$TAG" "${files[@]}" --clobber --repo "$GITHUB_REPOSITORY"
+              gh release edit "$TAG" "${pre[@]}" --notes-file notes.md --draft=false --repo "$GITHUB_REPOSITORY" ;;
+            *)
+              echo "::error::release $TAG is already published; bump the version and push a new tag"
+              exit 1 ;;
+          esac
+
+  branch:
+    needs: [check, release]
+    uses: ./.github/workflows/release-branch.yml
+    permissions:
+      contents: write
+    with:
+      tag: ${{ github.ref_name }}
+      prerelease: ${{ needs.check.outputs.prerelease == 'true' }}
+
+  mirror:
+    needs: release
+    uses: ./.github/workflows/mirror-gitlab.yml
+    secrets: inherit

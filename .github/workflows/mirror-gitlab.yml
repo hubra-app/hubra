@@ -7,10 +7,14 @@
 #                                scope write_repository
 name: Mirror to GitLab
 
+# A v* tag is mirrored only once its release is published: release.yml calls
+# this workflow at the end. Mirrored at the tag push, the GitLab release would
+# wait for images that only get their version tag after the approval, and
+# give up after GHCR_WAIT_MINUTES.
 on:
   push:
     branches: [main]
-    tags: ["v*"]
+  workflow_call:
   workflow_dispatch:
 
 permissions:

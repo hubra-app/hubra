@@ -7,9 +7,12 @@
 # Its `last-build` tag is the newest build of that image. <path>... are the
 # files that go into the image: its build context, Dockerfile and shared code.
 #
-# The image is reused when none of those paths (nor .dockerignore or
-# images.yml) changed between the commit the last build was made from (its
-# org.opencontainers.image.revision label) and HEAD. Text files (Markdown
+# The image is reused when none of those paths (nor .dockerignore) changed
+# between the commit the last build was made from (its
+# org.opencontainers.image.revision label) and HEAD, and neither did how
+# images.yml builds it: its matrix entry and the build step. Other edits to
+# images.yml (comments, tags, scans, another image's entry, other jobs)
+# rebuild nothing. Text files (Markdown
 # other than the changelogs, README, .gitignore) do not count. git diff
 # compares file contents, so the two commits may be on different branches. When in doubt
 # (no earlier build, no label, commit not in this history, BUILD_ALL=true)
@@ -25,7 +28,8 @@ set -euo pipefail
 image="${1:?usage: scripts/image-reuse.sh <image> <path>...}"
 shift
 [ "$#" -gt 0 ] || { echo "no paths given for $image" >&2; exit 2; }
-paths=("$@" .dockerignore .github/workflows/images.yml)
+paths=("$@" .dockerignore)
+workflow=.github/workflows/images.yml
 
 build() { printf 'build=true\nreason=%s\n' "$1"; exit 0; }
 
@@ -49,6 +53,27 @@ changed="$(git diff --name-only "$from" HEAD -- "${paths[@]}" |
   awk -F/ '$NF ~ /^CHANGELOG.*\.md$/ || ($NF !~ /\.md$/ && $NF != "README" && $NF != ".gitignore")')"
 if [ -n "$changed" ]; then
   build "changed since ${from:0:7}: $(echo "$changed" | head -n 5 | paste -sd ' ' -)"
+fi
+
+# How images.yml builds this image: its matrix entry and the build step
+# (id: build), compared as parsed YAML, so comments, tags, scans and the
+# other images' entries do not count.
+if ! git diff --quiet "$from" HEAD -- "$workflow"; then
+  name="${image##*/}"
+  recipe() {
+    python3 -c '
+import json, sys, yaml
+wf = yaml.safe_load(sys.stdin)
+job = wf["jobs"]["build"]
+entry = [e for e in job["strategy"]["matrix"]["include"] if e.get("image") == sys.argv[1]]
+step = [st for st in job["steps"] if st.get("id") == "build"]
+print(json.dumps({"entry": entry, "build": step}, sort_keys=True))
+' "$name"
+  }
+  old="$(git show "$from:$workflow" 2>/dev/null | recipe 2>/dev/null)" || old=""
+  new="$(recipe < "$workflow" 2>/dev/null)" || new=""
+  # Empty when it could not be read (no PyYAML, a new entry): build.
+  [ -n "$old" ] && [ "$old" = "$new" ] || build "how $workflow builds $name changed since ${from:0:7}"
 fi
 
 printf 'build=false\ndigest=%s\nfrom=%s\nreason=%s\n' "$digest" "$from" "unchanged since ${from:0:7}, reusing that image"
