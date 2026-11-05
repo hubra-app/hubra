@@ -266,7 +266,14 @@
     "myAttendance": "My attendance",
     "myAttendanceYear": "Since {{date}}",
     "showLess": "Show less",
-    "showAllDates": "Show all {{count}} dates"
+    "showAllDates": "Show all {{count}} dates",
+    "myAddresses": {
+      "title": "Addresses you look after",
+      "hint": "As a group's leader or a function's holder you switch its club address on or off. The board changes the address's name.",
+      "function": "Function",
+      "group": "Group",
+      "toggle": "{{address}} active"
+    }
   },
   "app": {
     "maintenance": {

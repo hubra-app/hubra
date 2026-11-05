@@ -3449,5 +3449,10 @@
   "account.myAttendance": "My attendance",
   "account.myAttendanceYear": "Since {{date}}",
   "account.showLess": "Show less",
-  "account.showAllDates": "Show all {{count}} dates"
+  "account.showAllDates": "Show all {{count}} dates",
+  "account.myAddresses.title": "Addresses you look after",
+  "account.myAddresses.hint": "As a group's leader or a function's holder you switch its club address on or off. The board changes the address's name.",
+  "account.myAddresses.function": "Function",
+  "account.myAddresses.group": "Group",
+  "account.myAddresses.toggle": "{{address}} active"
 }

@@ -34,6 +34,7 @@ export const qk = {
     leave: ['my-leave'] as const,
     directory: ['my-directory'] as const,
     notifications: ['my-notifications'] as const,
+    mailAddresses: ['my-mail-addresses'] as const,
   },
 
   events: ['events'] as const,

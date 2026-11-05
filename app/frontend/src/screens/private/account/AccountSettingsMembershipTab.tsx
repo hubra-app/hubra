@@ -9,6 +9,8 @@ import { formatDate } from '@/format'
 import { PaymentPlanCard } from './PaymentPlanCard'
 import { LeaveClubCard } from './LeaveClubCard'
 import { DirectoryCard } from './DirectoryCard'
+import { MyMailAddressesCard } from './MyMailAddressesCard'
+import { useModules } from '@/modules/useModules'
 import { NotificationsCard } from './NotificationsCard'
 import { PushCard } from './PushCard'
 import { roleLabels } from '@/roles'
@@ -16,6 +18,7 @@ import { qk } from '@/data/keys'
 
 export function AccountSettingsMembershipTab() {
   const { t } = useT()
+  const modules = useModules()
   const { currentUser } = useAuth()
   const myGroupsQuery = useQuery({
     queryKey: qk.groups.mine,
@@ -197,6 +200,8 @@ export function AccountSettingsMembershipTab() {
       </div>
 
       <DirectoryCard />
+
+      {modules.has('mail') && <MyMailAddressesCard />}
 
       <NotificationsCard />
 
