@@ -64,6 +64,10 @@ function StatusBadge({ t }: { t: ApiToken }) {
     unused: tr('Unbenutzt beendet', 'Ended unused'),
     failed_attempts: tr('Falsche Schlüssel', 'Wrong secrets'),
     account_reset: tr('Konto zurückgesetzt', 'Account reset'),
+    replaced: tr('Neu angemeldet', 'Signed in again'),
+    app_revoked: tr('Von der App beendet', 'Ended by the app'),
+    code_reused: tr('Code kopiert', 'Code reused'),
+    refresh_reused: tr('Token kopiert', 'Token reused'),
   }
   const ended = t.revokedAt ? (reason[t.revokedReason ?? ''] ?? tr('Beendet', 'Ended')) : tr('Abgelaufen', 'Expired')
   return (
@@ -622,8 +626,14 @@ export function PlatformTokensPage() {
   )
 }
 
-const KIND_LABEL = (k: ApiToken['kind']) =>
-  k === 'platform' ? tr('Plattform', 'Platform') : k === 'club' ? tr('Verein', 'Club') : tr('Persönlich', 'Personal')
+const KIND_LABEL = (t: ApiToken) =>
+  t.appId
+    ? tr('App', 'App')
+    : t.kind === 'platform'
+      ? tr('Plattform', 'Platform')
+      : t.kind === 'club'
+        ? tr('Verein', 'Club')
+        : tr('Persönlich', 'Personal')
 
 /** Access & security › API tokens › All: every token, for platform admins. */
 export function AllApiTokens() {
@@ -708,7 +718,7 @@ export function AllApiTokens() {
                   </Table.Td>
                   <Table.Td>
                     <Badge size="sm" variant="light" color={t.kind === 'platform' ? 'violet' : 'blue'}>
-                      {KIND_LABEL(t.kind)}
+                      {KIND_LABEL(t)}
                     </Badge>
                   </Table.Td>
                   <Table.Td>

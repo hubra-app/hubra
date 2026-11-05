@@ -9,6 +9,9 @@ have right now:
   that admin's membership, so it is capped by the admin's live rights.
 * ``platform`` — a platform admin's read-only token for the platform API.
 
+A row with ``oauth_client_id`` is a sign-in an outside app holds (OAuth,
+docs/oauth.md); its kind is ``member`` or ``platform``.
+
 The secret is shown once and only its peppered hash is kept. The table lives
 in the public schema (in no module manifest): a request's token is found
 before its club is known.
@@ -88,4 +91,28 @@ class ApiToken(db.Model):
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False
+    )
+
+    # ── OAuth (docs/oauth.md): set when an app holds this sign-in ──────────
+    # The app; empty for a token someone made by hand.
+    oauth_client_id: Mapped[int | None] = mapped_column(
+        db.Integer,
+        ForeignKey("oauth_clients.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+    # What the token is for: the Hubra API or the Claude connector's URL.
+    resource: Mapped[str | None] = mapped_column(db.String(500), nullable=True)
+    # The access token (secret_hash) lasts an hour; the refresh token renews
+    # it until expires_at. The one before is kept (as expired) until the
+    # next refresh, so a request already on its way isn't counted as a
+    # wrong secret.
+    access_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    prev_secret_hash: Mapped[str | None] = mapped_column(db.String(64), nullable=True)
+    refresh_hash: Mapped[str | None] = mapped_column(db.String(64), nullable=True)
+    prev_refresh_hash: Mapped[str | None] = mapped_column(db.String(64), nullable=True)
+    refreshed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )

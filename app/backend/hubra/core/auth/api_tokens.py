@@ -44,12 +44,16 @@ from hubra.core.models.api_token import ApiToken
 ENVIRON_KEY = "hubra.api_token_raw"
 
 PREFIXES = {"member": "hbr_pat", "club": "hbr_club", "platform": "hbr_plat"}
-_KIND_BY_PREFIX = {v[4:]: k for k, v in PREFIXES.items()}
+# OAuth access tokens (hubra/core/auth/oauth.py): a club or the platform.
+OAUTH_PREFIXES = {"member": "hbr_oam", "platform": "hbr_oap"}
+_KIND_BY_PREFIX = {
+    v[4:]: k for prefixes in (PREFIXES, OAUTH_PREFIXES) for k, v in prefixes.items()
+}
 _ALPHABET = string.ascii_letters + string.digits
 _PUBLIC_LEN = 12
 _SECRET_LEN = 43  # 43 × log2(62) ≈ 256 bits
 _TOKEN_RE = re.compile(
-    r"^hbr_(pat|club|plat)_([A-Za-z0-9]{%d})_([A-Za-z0-9]{%d})$"
+    r"^hbr_(pat|club|plat|oam|oap)_([A-Za-z0-9]{%d})_([A-Za-z0-9]{%d})$"
     % (_PUBLIC_LEN, _SECRET_LEN)
 )
 
@@ -94,6 +98,9 @@ _NEVER_BLUEPRINTS = frozenset(
         "plugins_bp",
         "plugin_assets_bp",
         "platform_backups_bp",
+        "oauth_bp",  # OAuth sign-in, consent and the person's app list
+        "oauth_metadata_bp",
+        "platform_oauth_bp",
     }
 )
 
@@ -142,8 +149,14 @@ def _secret_matches(row: ApiToken, secret: str) -> bool:
     return False
 
 
+def is_oauth(raw: str) -> bool:
+    """An OAuth access token (``hbr_oam_`` / ``hbr_oap_``)."""
+    return (raw or "").startswith(("hbr_oam_", "hbr_oap_"))
+
+
 def parse(raw: str) -> tuple[str, str, str] | None:
-    """(kind, public_id, secret) of a token string, or None."""
+    """(kind, public_id, secret) of a token string, or None. For an OAuth
+    access token the kind is ``member`` or ``platform`` (see is_oauth)."""
     m = _TOKEN_RE.match(raw or "")
     if not m:
         return None
@@ -298,6 +311,11 @@ def _route_refusal(kind: str) -> tuple[str, str] | None:
 def _refuse(status: int, code: str, message: str):
     resp = jsonify({"error": code, "message": message})
     resp.status_code = status
+    if status == 401 and is_oauth(request.environ.get(ENVIRON_KEY, "")):
+        # RFC 6750: tells an OAuth app to renew its token or sign in again.
+        resp.headers["WWW-Authenticate"] = (
+            f'Bearer error="invalid_token", error_description="{code}"'
+        )
     return resp
 
 
@@ -371,17 +389,28 @@ def authenticate():
     if parsed is None:
         return _invalid()
     kind, public_id, secret = parsed
+    oauth = is_oauth(raw)
     row = db.session.scalar(select(ApiToken).where(ApiToken.public_id == public_id))
-    if row is None or row.kind != kind:
+    if row is None or row.kind != kind or (row.oauth_client_id is not None) != oauth:
         return _invalid()
     now = datetime.now(timezone.utc)
     if not _secret_matches(row, secret):
+        if oauth and row.prev_secret_hash and any(
+            hmac.compare_digest(row.prev_secret_hash, _hash(secret, p))
+            for p in _peppers()
+        ):
+            # The access token before the last refresh: expired, not wrong.
+            return _refuse(401, "API_TOKEN_EXPIRED", "This access token has expired")
         _record_failure(row, now)
         return _invalid()
     if row.revoked_at is not None:
         return _refuse(401, "API_TOKEN_REVOKED", "This API token was revoked")
     if _aware(row.expires_at) <= now:
         return _refuse(401, "API_TOKEN_EXPIRED", "This API token has expired")
+    if oauth:
+        refusal = _oauth_refusal(row, now)
+        if refusal is not None:
+            return refusal
     last = _aware(row.last_used_at) or _aware(row.created_at)
     if last is not None and now - last > timedelta(days=UNUSED_DAYS):
         _end(row, now, "unused")
@@ -448,6 +477,26 @@ def authenticate():
         "tenant_id": row.tenant_id,
     }
     _hand_over(row, tenant)
+    return None
+
+
+def _oauth_refusal(row: ApiToken, now: datetime):
+    """The checks only an app's sign-in has: the access token's hour, the
+    app still switched on, and the resource the token was made for."""
+    from hubra.core.auth import oauth
+    from hubra.core.models.oauth import OAuthClient
+
+    access_until = _aware(row.access_expires_at)
+    if access_until is None or access_until <= now:
+        return _refuse(401, "API_TOKEN_EXPIRED", "This access token has expired")
+    client = db.session.get(OAuthClient, row.oauth_client_id)
+    if client is None or client.disabled_at is not None:
+        return _refuse(401, "API_TOKEN_REVOKED", "This app was switched off")
+    # RFC 8707: a token for the Claude connector works only through it, and
+    # the connector takes no token made for anything else.
+    target = oauth.resource_kind(row.resource)
+    if (target == "mcp") != is_ai_client():
+        return _refuse(401, "API_TOKEN_AUDIENCE", "This token is for another service")
     return None
 
 
@@ -665,11 +714,15 @@ def to_json(row: ApiToken) -> dict:
         v = _aware(v)
         return v.isoformat() if v else None
 
+    prefixes = OAUTH_PREFIXES if row.oauth_client_id is not None else PREFIXES
     return {
         "id": row.id,
         "kind": row.kind,
         "name": row.name,
-        "prefix": f"{PREFIXES[row.kind]}_{row.public_id}_…{row.last4}",
+        "prefix": f"{prefixes[row.kind]}_{row.public_id}_…{row.last4}",
+        # An outside app holds this sign-in (OAuth); its id, else None.
+        "appId": row.oauth_client_id,
+        "resource": row.resource,
         "scopes": list(row.scopes or []),
         "allowedIps": list(row.allowed_ips or []),
         "createdByName": row.created_by_name,

@@ -46,7 +46,17 @@ const URLS: AppUrls = {
  * and /status only forward to the support site. */
 const PUBLIC_PAGES = ['/roadmap', '/status']
 
-const SIGNED_IN_PAGES = ['/clubs', '/start', '/account', '/verify', '/verify-email', '/invite', '/confirm']
+const SIGNED_IN_PAGES = [
+  '/clubs',
+  '/start',
+  '/account',
+  '/verify',
+  '/verify-email',
+  '/invite',
+  '/confirm',
+  // An app's sign-in (OAuth): the page itself sends the person back.
+  '/oauth/authorize',
+]
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function isManager(perms: PermissionsResponse | null): boolean {

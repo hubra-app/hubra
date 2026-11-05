@@ -2152,7 +2152,8 @@
       "membership": "Membership",
       "bank": "Bank & QR invoice",
       "apps": "Connected apps",
-      "encryption": "Encryption"
+      "encryption": "Encryption",
+      "api": "API & apps"
     },
     "title": "Settings",
     "yourAccount": "Your Account",
@@ -3793,5 +3794,30 @@
       "slug": "To confirm, type the club's short name: {{slug}}",
       "turnOn": "Use only our key"
     }
+  },
+  "apiAccess": {
+    "saved": "Saved",
+    "saveFailed": "Not saved",
+    "ended": "Access ended",
+    "endFailed": "Ending failed",
+    "kind": {
+      "app": "App",
+      "club": "Club token",
+      "personal": "Personal token"
+    },
+    "intro": "Apps, scripts and AI assistants that may read the club's data. They never have more rights than the person they act for, and every access is in the audit log.",
+    "switches": "Who may?",
+    "members": "Members may connect apps and make their own tokens",
+    "membersHint": "Off: admins only. Through an app a member only sees what they see themselves.",
+    "ai": "Allow AI assistants (Claude connector)",
+    "aiHint": "Claude may then read the club's data for people who connect it themselves. It cannot change anything. Off: the connector gets no data of the club.",
+    "active": "Active access",
+    "none": "No app or token has access.",
+    "until": "until",
+    "lastUsed": "last used",
+    "unused": "not used yet",
+    "end": "End",
+    "endTitle": "End access?",
+    "endBody": "The app or script can't read anything afterwards. Whoever uses it has to connect again."
   }
 }

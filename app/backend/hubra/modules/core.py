@@ -129,6 +129,16 @@ module = Module(
             "api_token_self_bp",
             "/api/v1",
         ),
+        # OAuth for outside apps (docs/oauth.md). The server metadata sits at
+        # the root of the API host (RFC 8414); roles.SHARED_PATHS lets every
+        # backend answer it.
+        Blueprint("hubra.api.oauth.routes", "oauth_metadata_bp", ""),
+        Blueprint("hubra.api.oauth.routes", "oauth_bp", "/api/v1/global/oauth"),
+        Blueprint(
+            "hubra.api.oauth.routes",
+            "platform_oauth_bp",
+            "/api/v1/platform/oauth",
+        ),
         Blueprint(
             "hubra.api.backups.routes",
             "platform_backups_bp",
