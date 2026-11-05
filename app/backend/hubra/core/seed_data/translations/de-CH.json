@@ -1824,7 +1824,7 @@
   "shell.nav.categories": "Kategorien",
   "shell.nav.dashboard": "Dashboard",
   "shell.nav.events": "Anlässe",
-  "shell.nav.externalParties": "Extern",
+  "shell.nav.externalParties": "Externe Parteien",
   "shell.nav.finance": "Finanzen",
   "shell.nav.functionMail": "Funktions-Adressen",
   "shell.nav.functions": "Funktionen",
@@ -2802,8 +2802,6 @@
   "finance.settings.tab": "Einstellungen",
   "finance.settings.saved": "Einstellungen gespeichert",
   "finance.settings.invoicesTitle": "Rechnungen und Mahnungen",
-  "finance.settings.bankHint": "Das Konto und die Adresse auf den QR-Rechnungen stellst du in den Einstellungen des Vereins ein.",
-  "finance.settings.openBank": "Bankangaben öffnen",
   "settings.tabs.membership": "Mitgliedschaft",
   "settings.tabs.bank": "Bank & QR-Rechnung",
   "shell.breadcrumbs.financeSettings": "Finanzen › Einstellungen",
@@ -3559,5 +3557,9 @@
   "domains.serving.pending": "Zertifikat ausstehend",
   "domains.serving.failed": "Kein Zertifikat",
   "domains.cnameHint": "Damit Besucher auf {{domain}} zu eurem Verein kommen, zeigt die Domain mit diesem Eintrag auf Hubra:",
-  "domains.cnameAfter": "Für eine Domain ohne Subdomain (verein.ch) erlauben viele Anbieter keinen CNAME; nimm dann eine Subdomain wie mitglieder.verein.ch. Sobald die Domain bestätigt ist und auf Hubra zeigt, holen wir ein Zertifikat; das dauert meist wenige Minuten."
+  "domains.cnameAfter": "Für eine Domain ohne Subdomain (verein.ch) erlauben viele Anbieter keinen CNAME; nimm dann eine Subdomain wie mitglieder.verein.ch. Sobald die Domain bestätigt ist und auf Hubra zeigt, holen wir ein Zertifikat; das dauert meist wenige Minuten.",
+  "finance.groups.bookings": "Buchungen",
+  "finance.groups.planning": "Budget & Beiträge",
+  "finance.groups.billing": "Abrechnung",
+  "shell.breadcrumbs.bankAccount": "Finanzen › Bank & QR-Rechnung"
 }

@@ -1824,7 +1824,7 @@
   "shell.nav.categories": "Categories",
   "shell.nav.dashboard": "Dashboard",
   "shell.nav.events": "Events",
-  "shell.nav.externalParties": "External",
+  "shell.nav.externalParties": "External parties",
   "shell.nav.finance": "Finance",
   "shell.nav.functionMail": "Function addresses",
   "shell.nav.functions": "Functions",
@@ -2802,8 +2802,6 @@
   "finance.settings.tab": "Settings",
   "finance.settings.saved": "Settings saved",
   "finance.settings.invoicesTitle": "Invoices and reminders",
-  "finance.settings.bankHint": "The account and address on the QR invoices are set in the club settings.",
-  "finance.settings.openBank": "Open bank details",
   "settings.tabs.membership": "Membership",
   "settings.tabs.bank": "Bank & QR invoice",
   "shell.breadcrumbs.financeSettings": "Finance › Settings",
@@ -3559,5 +3557,9 @@
   "domains.serving.pending": "Certificate pending",
   "domains.serving.failed": "No certificate",
   "domains.cnameHint": "To bring visitors on {{domain}} to your club, point the domain at Hubra with this record:",
-  "domains.cnameAfter": "Many providers don't allow a CNAME on a bare domain (club.ch); use a subdomain like members.club.ch instead. Once the domain is verified and points at Hubra we fetch a certificate, which usually takes a few minutes."
+  "domains.cnameAfter": "Many providers don't allow a CNAME on a bare domain (club.ch); use a subdomain like members.club.ch instead. Once the domain is verified and points at Hubra we fetch a certificate, which usually takes a few minutes.",
+  "finance.groups.bookings": "Bookings",
+  "finance.groups.planning": "Budget & fees",
+  "finance.groups.billing": "Billing",
+  "shell.breadcrumbs.bankAccount": "Finance › Bank & QR invoice"
 }

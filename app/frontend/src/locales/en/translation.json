@@ -1106,9 +1106,7 @@
     "settings": {
       "tab": "Settings",
       "saved": "Settings saved",
-      "invoicesTitle": "Invoices and reminders",
-      "bankHint": "The account and address on the QR invoices are set in the club settings.",
-      "openBank": "Open bank details"
+      "invoicesTitle": "Invoices and reminders"
     },
     "summary": {
       "title": "By category",
@@ -1264,6 +1262,11 @@
       "accountName": "Account",
       "kind": "Kind",
       "addAccount": "Add"
+    },
+    "groups": {
+      "bookings": "Bookings",
+      "planning": "Budget & fees",
+      "billing": "Billing"
     }
   },
   "functions": {
@@ -2275,7 +2278,8 @@
       "recurring": "Finance › Recurring",
       "feeBasis": "Finance › Fee basis",
       "attendance": "Club life › Attendance",
-      "annualAccounts": "Annual accounts"
+      "annualAccounts": "Annual accounts",
+      "bankAccount": "Finance › Bank & QR invoice"
     },
     "emailVerify": {
       "banner": "Your private email address isn't verified yet. Some features are only available after that.",
@@ -2294,7 +2298,7 @@
       "categories": "Categories",
       "dashboard": "Dashboard",
       "events": "Events",
-      "externalParties": "External",
+      "externalParties": "External parties",
       "finance": "Finance",
       "functionMail": "Function addresses",
       "functions": "Functions",

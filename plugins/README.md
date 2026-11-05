@@ -189,6 +189,10 @@ registerPlugin({
       label: 'shell.nav.things',
       module: 'inventory.myplugin',
       component: ThingsTab,
+      // Finanzen groups its tabs: 'bookings' (Buchungen), 'planning'
+      // (Budget & Beiträge) or 'setup' (Einstellungen) make this a sub-tab
+      // there; without a group it is a page tab of its own.
+      group: 'bookings',
     },
   ],
   slots: [{ slot: 'account.cards', module: 'inventory.myplugin', component: MyThingsCard }],

@@ -444,6 +444,7 @@ export function getBreadcrumb(
     '/app/finance/categories': t('shell.breadcrumbs.txCategories'),
     '/app/finance/external-parties': t('shell.breadcrumbs.externalParties'),
     '/app/finance/settings': t('shell.breadcrumbs.financeSettings'),
+    '/app/finance/bank-account': t('shell.breadcrumbs.bankAccount'),
     '/app/mail': t('shell.breadcrumbs.mail'),
     '/app/operations/bindings': t('shell.breadcrumbs.bindings'),
     '/app/settings': t('shell.breadcrumbs.settings'),

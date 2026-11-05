@@ -8,7 +8,12 @@ window.HubraPluginHost.sdk.registerPlugin({
   id: 'e2e-broken',
   routes: [{ path: 'e2e-broken', module: 'e2e-broken', component: function () { throw new Error('boom') } }],
   tabs: [{ screen: 'finance', id: 'e2e-broken', module: 'e2e-broken', label: 'E2E kaputt',
-           component: function () { throw new Error('boom') } }],
+           component: function () { throw new Error('boom') } },
+         // The budgets plugin's id: the app puts it under "Budget & Beiträge".
+         { screen: 'finance', id: 'budgets', module: 'e2e-broken', label: 'E2E Budgets',
+           component: function () { return 'E2E-Budgetliste' } },
+         { screen: 'finance', id: 'e2e-setup', group: 'setup', module: 'e2e-broken',
+           label: 'E2E Einrichtung', component: function () { return 'E2E-Einrichtung' } }],
 })
 `
 
@@ -47,4 +52,25 @@ test('a plugin tab that throws leaves the rest of the screen working', async ({ 
     await page.getByText('Übersicht').first().click()
   })
   await expect(page.getByRole('alert')).toHaveCount(0)
+})
+
+test('plugin finance tabs join the page tab they belong to', async ({ page }) => {
+  const selected = (name: string) =>
+    expect(page.getByRole('tab', { name, exact: true })).toHaveAttribute('aria-selected', 'true')
+
+  await page.goto(appUrl('finance/budgets'))
+  await expect(page.getByText('E2E-Budgetliste')).toBeVisible()
+  await selected('Budget & Beiträge')
+  await selected('E2E Budgets')
+  await expect(page.getByRole('tab', { name: 'Beitragsgrundlage' })).toBeVisible()
+
+  await page.goto(appUrl('finance/e2e-setup'))
+  await expect(page.getByText('E2E-Einrichtung')).toBeVisible()
+  await selected('Einstellungen')
+  await selected('E2E Einrichtung')
+
+  // A tab that names no group is a page tab of its own.
+  await expect(
+    page.getByRole('tablist', { name: 'Finanzen', exact: true }).getByRole('tab', { name: 'E2E kaputt' }),
+  ).toBeVisible()
 })
