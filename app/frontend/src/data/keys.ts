@@ -15,6 +15,9 @@ export const qk = {
   dashboard: ['dashboard-summary'] as const,
   dashboards: ['dashboards'] as const,
   dashboardHome: ['dashboards', 'home'] as const,
+  contractWidgets: ['dashboards', 'widgets'] as const,
+  widgetData: (name: string, config: unknown) =>
+    ['dashboards', 'widgets', name, config] as const,
   lookups: ['lookups'] as const,
   languages: ['languages'] as const,
   translations: (locale: string) => ['translations', locale] as const,

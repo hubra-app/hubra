@@ -5,10 +5,53 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from pydantic import BaseModel
+
 EVENT = "event"
 ACTION = "action"
 QUERY = "query"
-KINDS = (EVENT, ACTION, QUERY)
+WIDGET = "widget"
+KINDS = (EVENT, ACTION, QUERY, WIDGET)
+
+# How a widget is drawn: by core from its data (stat: one number; list:
+# rows), or by the plugin's own frontend component (custom).
+WIDGET_VIEWS = ("stat", "list", "custom")
+WIDGET_SIZES = ("s", "m", "l")
+FIELD_KINDS = ("text", "number", "switch")
+
+
+@dataclass(frozen=True)
+class WidgetField:
+    """A setting the member fills in when adding a widget."""
+
+    key: str
+    label: str
+    kind: str = "text"
+    default: Any = None
+
+    def __post_init__(self):
+        if self.kind not in FIELD_KINDS:
+            raise ValueError(f"WidgetField {self.key}: kind is one of {FIELD_KINDS}")
+
+    def coerce(self, value: Any) -> Any:
+        if value is None or value == "":
+            return self.default
+        if self.kind == "number":
+            try:
+                return float(value) if "." in str(value) else int(value)
+            except (TypeError, ValueError):
+                return self.default
+        if self.kind == "switch":
+            return value is True or str(value).lower() in ("1", "true", "yes", "on")
+        return str(value)[:500]
+
+    def to_dict(self) -> dict:
+        return {
+            "key": self.key,
+            "label": self.label,
+            "kind": self.kind,
+            "default": self.default,
+        }
 
 
 @dataclass(frozen=True)
@@ -20,6 +63,9 @@ class Contract:
       ``send`` to run it after the commit, with retries).
     - ``query``: a read with a reply (``query``); its writes are always
       rolled back.
+    - ``widget``: a dashboard widget. Its handler reads the data the widget
+      shows, as the viewing member, like a query; ``label``, ``size``,
+      ``view`` and ``fields`` say how it is offered and drawn.
 
     ``version`` is the contract's major version: a change that can break a
     consumer (a field removed or renamed, a meaning changed) raises it;
@@ -39,6 +85,11 @@ class Contract:
     handler: str | None = None
     perm: str | None = None
     description: str = ""
+    # Widgets only.
+    label: str = ""
+    size: str = "m"
+    view: str = "custom"
+    fields: tuple = ()
 
     def __post_init__(self):
         if self.kind not in KINDS:
@@ -49,6 +100,18 @@ class Contract:
             raise ValueError(f"Contract {self.name}: an {self.kind} needs a handler")
         if not isinstance(self.version, int) or self.version < 1:
             raise ValueError(f"Contract {self.name}: version is a whole number from 1")
+        if self.kind == WIDGET:
+            if self.size not in WIDGET_SIZES:
+                raise ValueError(f"Widget {self.name}: size is one of {WIDGET_SIZES}")
+            if self.view not in WIDGET_VIEWS:
+                raise ValueError(f"Widget {self.name}: view is one of {WIDGET_VIEWS}")
+            if not all(isinstance(f, WidgetField) for f in self.fields):
+                raise ValueError(f"Widget {self.name}: fields are WidgetField")
+
+    def config(self, raw: Any) -> dict:
+        """A widget's settings from what was saved: known keys, coerced."""
+        raw = raw if isinstance(raw, dict) else {}
+        return {f.key: f.coerce(raw.get(f.key)) for f in self.fields}
 
 
 def event_contract(
@@ -81,6 +144,40 @@ def query_contract(
     description: str = "",
 ) -> Contract:
     return Contract(name, QUERY, version, input, output, handler, perm, description)
+
+
+def widget_contract(
+    name: str,
+    handler: str,
+    *,
+    label: str,
+    description: str = "",
+    size: str = "m",
+    view: str = "custom",
+    fields: tuple = (),
+    output: Any = None,
+    perm: str | None = None,
+    version: int = 1,
+) -> Contract:
+    """A dashboard widget. ``handler(ctx, config)`` returns what it shows:
+    for ``view="stat"`` a :class:`StatData`, for ``"list"`` a
+    :class:`ListData`, for ``"custom"`` whatever ``output`` describes (the
+    plugin's frontend draws it). ``label`` and ``description`` are
+    translation keys or plain text."""
+    return Contract(
+        name,
+        WIDGET,
+        version,
+        None,
+        output,
+        handler,
+        perm,
+        description,
+        label=label,
+        size=size,
+        view=view,
+        fields=tuple(fields),
+    )
 
 
 @dataclass
@@ -147,3 +244,27 @@ class ActionFailed(RuntimeError):
     """The handler broke. Its work was rolled back; the caller's was not."""
 
     code = "CONTRACT_FAILED"
+
+
+# ── What core-drawn widgets show ────────────────────────────────────────────
+
+
+class StatData(BaseModel):
+    """One number (or short text), with a line under it."""
+
+    value: int | float | str
+    sub: str | None = None
+    path: str | None = None  # club-app path the tile opens
+
+
+class ListRow(BaseModel):
+    label: str
+    sub: str | None = None
+    path: str | None = None
+
+
+class ListData(BaseModel):
+    """Rows, most important first; ``total`` when there are more."""
+
+    items: list[ListRow]
+    total: int | None = None

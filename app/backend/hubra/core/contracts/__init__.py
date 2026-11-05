@@ -28,12 +28,17 @@ from .base import (
     CallContext,
     Contract,
     ContractError,
+    ListData,
+    ListRow,
     Refused,
+    StatData,
+    WidgetField,
     action_contract,
     event_contract,
     query_contract,
+    widget_contract,
 )
-from .calls import CURRENT, available, call, query, send
+from .calls import CURRENT, available, call, query, send, widget_data, widgets
 
 __all__ = [
     "ACTION",
@@ -47,7 +52,11 @@ __all__ = [
     "CallContext",
     "Contract",
     "ContractError",
+    "ListData",
+    "ListRow",
     "Refused",
+    "StatData",
+    "WidgetField",
     "action_contract",
     "available",
     "call",
@@ -55,4 +64,7 @@ __all__ = [
     "query",
     "query_contract",
     "send",
+    "widget_contract",
+    "widget_data",
+    "widgets",
 ]

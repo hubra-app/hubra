@@ -4180,6 +4180,10 @@
       "resetClub": "The club's start page shows the default widgets again, for every member.",
       "resetMe": "Your start page shows the default widgets again.",
       "resetDone": "Default restored"
-    }
+    },
+    "widgetFailed": "Couldn't load",
+    "nothing": "Nothing to show",
+    "more": "{{count}} more",
+    "noView": "The plugin has no view for this widget"
   }
 }

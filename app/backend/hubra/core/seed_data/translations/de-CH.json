@@ -3833,5 +3833,9 @@
   "shell.more.about.dashboard": "Übersicht und eigene Widgets",
   "shell.more.about.settings": "Verein, Module, Apps und Domains",
   "shell.more.about.translations": "Übersetzungen der App vorschlagen",
-  "shell.more.withTabs": "Mit {{pages}}"
+  "shell.more.withTabs": "Mit {{pages}}",
+  "dashboards.widgetFailed": "Konnte nicht geladen werden",
+  "dashboards.nothing": "Nichts anzuzeigen",
+  "dashboards.more": "{{count}} weitere",
+  "dashboards.noView": "Das Plugin bringt keine Ansicht für dieses Widget mit"
 }
