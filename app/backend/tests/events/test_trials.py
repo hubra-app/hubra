@@ -259,6 +259,36 @@ def test_trainers_need_the_permission(
     )
 
 
+def test_inviting_needs_the_members_right(
+    client,
+    training,
+    mails,
+    club,
+    permissioned_member_factory,  # noqa: F811
+):
+    signup = _confirmed(client, training, mails)
+    trainer = permissioned_member_factory(
+        ["events.trials.read", "events.trials.manage"]
+    )
+    url = f"/api/v1/events/trials/{signup.id}/invite"
+    with patch("hubra.core.tenant.invites.send_invite") as send:
+        resp = client.post(url, headers=trainer)
+        assert resp.status_code == 403
+        send.assert_not_called()
+    assert db.session.get(TrialSignup, signup.id).status != "invited"
+
+    both = permissioned_member_factory(
+        ["events.trials.read", "events.trials.manage", "members.members.create"]
+    )
+    with (
+        patch("hubra.core.tenant.context.current_tenant", return_value=club),
+        patch("hubra.core.tenant.invites.send_invite") as send,
+    ):
+        send.return_value.id = 1
+        resp = client.post(url, headers=both)
+    assert resp.status_code == 200 and resp.get_json()["status"] == "invited"
+
+
 def test_staff_get_a_notification(client, auth_headers, training, mails):
     from hubra.core.models.notification import Notification
 

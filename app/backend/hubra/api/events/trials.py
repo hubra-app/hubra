@@ -18,6 +18,7 @@ from flask import jsonify, request
 from sqlalchemy import func, select
 
 from hubra.api.events.routes import _public_club, events_bp
+from hubra.core.auth import api_tokens
 from hubra.core.utils import log_audit
 from hubra.core.auth.helpers import get_current_member
 from hubra.core.errors import api_error, raise_error
@@ -33,6 +34,8 @@ PENDING_HOLD = timedelta(hours=24)
 # Bookings the club no longer needs are deleted by a daily job
 # (hubra.core.tasks.reminder_tasks.purge_trial_signups_task).
 MANAGE_KEY = "events.trials.manage"
+# Inviting someone to join is a members right, also from the trial list.
+INVITE_KEY = "members.members.create"
 
 # "invited" too: someone asked to join before the training still comes to it.
 _TAKING = ("confirmed", "attended", "invited")
@@ -404,10 +407,19 @@ def invite_trial(signup_id: int):
     """Invite the person to join as a trial member (the usual invite mail)."""
     from hubra.api.members.services import MembersService
 
+    actor = get_current_member()
+    # Running trials doesn't make someone a member admin: the invite needs
+    # the same right as an invite from the member list.
+    refusal = api_tokens.club_scope_refusal(actor, INVITE_KEY)
+    if refusal is not None:
+        return refusal
+    if not member_has_permission(actor, INVITE_KEY):
+        raise_error(
+            403, "FORBIDDEN", "Inviting members needs the right to create members"
+        )
     signup = _get(signup_id)
     if signup.status == "invited":
         raise_error(409, "ALREADY_INVITED", "This person was already invited")
-    actor = get_current_member()
     MembersService.invite(
         {
             "email": signup.email,
