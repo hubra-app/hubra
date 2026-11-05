@@ -4,9 +4,10 @@
 # platform worker and the init step in platform-backend.yaml
 # (docs/platform-backend.md). A release of either doesn't roll these pods.
 #
-# The API's initContainer doesn't migrate: it waits until the platform backend
+# The API's initContainers don't migrate: they wait until the platform backend
 # has brought the schema up to this release (python -m hubra.core.schema_wait),
-# and the old pod keeps serving meanwhile. API and worker replicas are fine.
+# then fill the club permission catalog from the club routes and plugins
+# (flask sync-permissions), and the old pod keeps serving meanwhile. API and worker replicas are fine.
 # Beat runs the platform image (below) and needs no more than one replica:
 # see docs/scaling.md.
 apiVersion: v1
@@ -58,6 +59,20 @@ spec:
             capabilities: { drop: [ALL] }
           command: ["python", "-m", "hubra.core.schema_wait"]
           envFrom: [{ secretRef: { name: hubra-env } }]
+        # The club permission catalog comes from the club routes and plugins,
+        # which only this backend loads (the platform init step leaves it).
+        # startup_lock: two pods starting together take turns.
+        - name: club-permissions
+          image: hubra/backend
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          command: ["python", "-m", "hubra.core.startup_lock", "flask", "sync-permissions"]
+          envFrom: [{ secretRef: { name: hubra-env } }]
+          env:
+            - { name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }
+            - { name: HUBRA_ROLE, value: app }
+          volumeMounts: [{ name: settings, mountPath: /etc/hubra }]
       containers:
         - name: backend
           image: hubra/backend
@@ -169,6 +184,9 @@ spec:
           envFrom: [{ secretRef: { name: hubra-env } }]
           env:
             - { name: SETTINGS_FILE, value: /etc/hubra/settings.yaml }
+            # The platform image holds only the platform's routes; beat
+            # needs none (schedules name their tasks).
+            - { name: HUBRA_ROLE, value: platform }
             - { name: HUBRA_PLATFORM_QUEUE, value: platform }
           volumeMounts:
             - { name: settings, mountPath: /etc/hubra }

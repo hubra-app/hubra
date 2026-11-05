@@ -8,20 +8,26 @@ One build, one role per process (docs/platform-backend.md):
 - ``club``: ``app`` and ``global`` together (Compose).
 
 A path with the club in it (``/api/<slug>/v1/...``) can't be told apart by
-an ingress path prefix, so it always reaches the app backend; the app role
-therefore also answers global paths that came in that way.
+an ingress path prefix, so it always reaches the app backend, which answers
+only club paths that way. The frontends send the club as a header and never
+use these paths.
 - ``platform``: only the platform API (``/api/v1/platform``: manage's
   platform and club admin views, club requests, the support desk), plus
   health and version.
 
-Every role registers all of Hubra's own blueprints, so the URL map and
-``url_for`` stay complete. Plugins' routes, models and task modules are
-imported only where they are served: ``global`` and ``platform`` read
-plugin manifests only (``hubra.core.plugins.loader.MANIFEST_ONLY_ROLES``);
-``flask sync-permissions`` runs in the platform init step, which has no
-role and loads everything. A request for a path the role doesn't serve gets
-a 404 before any other hook runs. The ingress (or the frontend nginx) sends the same prefixes to
-the platform backend, so in a split install a wrong route is never hit.
+Each role registers (and imports) only the blueprints of the areas it
+serves, plus the shared ones (probes, version, OAuth metadata): see
+:func:`registers`. So a platform backend holds no club routes, and each
+role's image carries only the code its routes and Hubra's core need
+(``app/backend/scripts/role_files.py``). Plugins' routes, models and task
+modules are imported only where they are served: ``global`` and
+``platform`` read plugin manifests only
+(``hubra.core.plugins.loader.MANIFEST_ONLY_ROLES``). The club permission
+catalog comes from the club routes, so ``flask sync-permissions`` fills it
+only in a role that loads them (``all``, ``club``, ``app``). A request for
+a path the role doesn't serve gets a 404 before any other hook runs. The
+ingress (or the frontend nginx) sends each area's prefixes to its backend,
+so in a split install a wrong route is never hit.
 
 Celery: with ``HUBRA_PLATFORM_QUEUE`` set (for example ``platform``), the
 platform task modules below go to that queue and a platform worker
@@ -117,6 +123,25 @@ def serves(path: str, role: str) -> bool:
     return area == role
 
 
+def registers(blueprint, role: str) -> bool:
+    """Whether a backend in *role* registers *blueprint* (a module manifest's
+    :class:`hubra.core.modules.base.Blueprint`): every one in ``all``, the
+    shared ones everywhere, otherwise those whose ``url_prefix`` lies in an
+    area the role serves. Plugin blueprints are club routes (``app``)."""
+    if role == "all" or getattr(blueprint, "shared", False):
+        return True
+    area = area_of(blueprint.url_prefix or "/")
+    if role == "club":
+        return area in ("app", "global")
+    return area == role
+
+
+def loads_club_routes(role: str | None = None) -> bool:
+    """Whether a backend in *role* (default: this one) registers the club
+    app's routes, and so can fill the club permission catalog."""
+    return (role or current_role()) in ("all", "club", "app")
+
+
 def install_role_gate(app: Flask) -> None:
     """Answer 404 for paths this process's role doesn't serve.
 
@@ -129,17 +154,9 @@ def install_role_gate(app: Flask) -> None:
     if role == "all":
         return
 
-    from hubra.core.tenant.middleware import _PATH_SLUG_KEY
-
     @app.before_request
     def _role_gate():
         if serves(request.path, role):
-            return None
-        if (
-            role == "app"
-            and request.environ.get(_PATH_SLUG_KEY)
-            and area_of(request.path) == "global"
-        ):
             return None
         return jsonify(
             {

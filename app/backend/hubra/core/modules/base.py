@@ -27,6 +27,11 @@ class Blueprint:
     and keep their keys (``finance.transactions.read``), so roles don't
     change. Plugins may only name a module they depend on
     (``hubra.core.plugins.limits``).
+
+    A backend registers only the blueprints of the API area its role serves
+    (``hubra.core.roles.registers``), found from ``url_prefix``. ``shared``
+    marks one every role registers: the probes, the version and the OAuth
+    server metadata.
     """
 
     import_path: str
@@ -34,6 +39,7 @@ class Blueprint:
     url_prefix: str
     v2: tuple[tuple[str, str], ...] = ()
     perm_prefix: str | None = None
+    shared: bool = False
 
 
 @dataclass(frozen=True)

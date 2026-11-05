@@ -900,7 +900,9 @@ def test_manage_lists_plugin_route_permissions_from_the_catalog(app, db, monkeyp
     db.session.commit()
     with app.test_request_context():
         assert "hello.notes.read" not in {e["key"] for e in SystemService.list_permissions()}
-        monkeypatch.setattr(loader, "loads_plugin_code", lambda: False)
+        from hubra.core import roles
+
+        monkeypatch.setattr(roles, "loads_club_routes", lambda role=None: False)
         listed = {e["key"]: e for e in SystemService.list_permissions()}
     assert listed["hello.notes.read"]["path"] == ""
     assert listed["hello.notes.read"]["blueprint"] == "hello_bp"

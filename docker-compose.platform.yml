@@ -57,6 +57,9 @@ services:
     environment:
       HUBRA_ROLE: club
       HUBRA_PLATFORM_QUEUE: platform
+    depends_on:
+      club-init:
+        condition: service_completed_successfully
 
   celery-worker:
     environment:
@@ -68,13 +71,36 @@ services:
       HUBRA_ROLE: club
       HUBRA_PLATFORM_QUEUE: platform
 
-  # The one place migrations run, from the platform release.
+  # The one place migrations run, from the platform release. The platform
+  # image holds only the platform's routes, so the club permission catalog
+  # is filled by club-init below.
   flask-init:
     image: ${HUBRA_IMAGE_PREFIX:-ghcr.io/hubra-app/hubra}/platform-backend:${HUBRA_PLATFORM_VERSION:-${HUBRA_VERSION:-latest}}
+    environment:
+      HUBRA_ROLE: platform
+
+  # The club permission catalog, from the club routes and plugins: the club
+  # backend's image and role, once flask-init has migrated.
+  club-init:
+    image: ${HUBRA_IMAGE_PREFIX:-ghcr.io/hubra-app/hubra}/backend:${HUBRA_VERSION:-latest}
+    env_file: .env
+    environment:
+      <<: *platform-env
+      HUBRA_ROLE: club
+    restart: "no"
+    command: python -m hubra.core.startup_lock flask sync-permissions
+    depends_on:
+      flask-init:
+        condition: service_completed_successfully
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - internal
 
   celery-beat:
     image: ${HUBRA_IMAGE_PREFIX:-ghcr.io/hubra-app/hubra}/platform-backend:${HUBRA_PLATFORM_VERSION:-${HUBRA_VERSION:-latest}}
     environment:
+      HUBRA_ROLE: platform
       HUBRA_PLATFORM_QUEUE: platform
 
   mcp:

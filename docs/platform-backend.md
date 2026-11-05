@@ -30,7 +30,7 @@ sign-in staying on the club backend (`HUBRA_ROLE=club` = app + global).
 | API paths | `/api/v1/app`, plugin routes | `/api/v1/global` | `/api/v1/platform` |
 | Shared paths | `/health`, `/api/v1/global/health`, `/api/v1/global/version`, `/api/v1/global/instance` | same | same |
 | Celery | `celery-worker`: the default queue (invoices, reminders, mail, push, Discord bot, plugin jobs) | none (its tasks go to the default queue) | `platform-worker`: queue `platform` (backups and restores, health and infra checks, upgrades, plugin updates, quotas, platform alerts, platform Discord log) |
-| Start-up | waits until the schema is migrated (`python -m hubra.core.schema_wait`) | waits, the same | runs the init step: `flask db upgrade`, `sync-permissions`, `seed`, `ensure-superadmins`, `plugins sync`, `modules seal-secrets` |
+| Start-up | waits until the schema is migrated (`python -m hubra.core.schema_wait`), then fills the club permission catalog (`flask sync-permissions`) | waits, the same | runs the init step: `flask db upgrade`, `sync-permissions` (platform roles), `seed`, `ensure-superadmins`, `plugins sync`, `modules seal-secrets` |
 | Celery beat | | | runs the platform image |
 
 The three images are one build published under three names (`images.yml`
@@ -41,20 +41,52 @@ The API areas and the old paths that lead to them are in
 `app/backend/hubra/core/api_areas.py` (see [API areas](#api-areas) below); the
 task list is in `app/backend/hubra/core/roles.py` (`PLATFORM_TASK_MODULES`).
 
-Every role registers all of Hubra's own routes; a backend answers 404 ("Not
-served by the app backend") for another area's paths before any other code
-runs. Plugin code is the exception: the global and platform backends (and the
-platform worker) read each installed plugin's manifest (its package's
-`module`, for the catalogue, migrations, tables and the public plugin list)
-but import none of its routes, models or task modules
-(`hubra.core.plugins.loader.MANIFEST_ONLY_ROLES`). A plugin's code can then
-only break the app backend and its worker, not sign-in or manage. Connected-app
-hooks and event handlers of plugins stay names and are imported when called.
+Each role registers, and imports, only its own area's routes and the shared
+ones (probes, version, OAuth server metadata): `hubra.core.roles.registers`
+decides from each blueprint's URL prefix in the module manifests, and
+`Blueprint(..., shared=True)` marks the shared ones. A backend answers 404
+("Not served by the app backend") for another area's paths before any other
+code runs. So the platform backend holds no club routes and the app backend
+no sign-in or manage routes, and each role's image only needs the code its
+own routes and Hubra's core import (see [Code per role](#code-per-role)).
 
-The platform-backend init step runs without `HUBRA_ROLE`, so it loads every
-plugin and `flask sync-permissions` still sees every route. Manage's list of
-guarded endpoints shows plugin permissions from that catalog, without path and
-method.
+Plugin code is club code: the global and platform backends (and the
+platform worker and beat) read each installed plugin's manifest (its
+package's `module`, for the catalogue, migrations, tables and the public
+plugin list) but import none of its routes, models or task modules
+(`hubra.core.plugins.loader.MANIFEST_ONLY_ROLES`). A plugin's code can then
+only break the app backend and its worker, not sign-in or manage.
+Connected-app hooks and event handlers of plugins stay names and are
+imported when called.
+
+The club permission catalog comes from the club routes and plugins, so only
+a backend that loads them fills it (`roles.loads_club_routes`: roles `all`,
+`club`, `app`). On k3s that is the app backend's `club-permissions` init
+container, after `schema-wait`; with `docker-compose.platform.yml` the
+`club-init` step. The platform init step runs `flask sync-permissions` with
+`HUBRA_ROLE=platform`, which then seeds only the platform roles. A club
+permission checked by a route of another area (connected apps and
+translation suggestions, on the global backend) is declared in the `core`
+module's `permissions` too, so the app backend keeps it in the catalog;
+`tests/test_backend_roles.py` checks that none is missing. Manage's list of
+guarded endpoints, on the platform backend, shows the permissions of routes
+it doesn't load from that catalog, without path and method.
+
+### Code per role
+
+`app/backend/scripts/role_files.py <role>` lists the files a role needs:
+all of `hubra.core` and the module manifests, the role's blueprint modules,
+and everything they import (followed through every `import` in the source,
+also inside functions), plus every file that isn't a `hubra` module
+(migrations, templates, seed data). Most club services are in every list,
+because core and the platform's club pages use them (a new club's starter
+groups, adding a club admin, privacy requests). What one role has alone is
+its routes: the club app's pages, sign-in and the account, or manage's
+platform pages and backups.
+
+`tests/test_role_files.py` starts each role (app, Celery with its task
+modules, the CLI) and fails if it imported a module outside its list, and
+checks that the script picks the same blueprints as `roles.registers`.
 
 ### Routing
 
@@ -75,8 +107,8 @@ route every old and new path to the backend that serves it.
 
 A path with the club in it (`/api/<slug>/v1/...`, from before the club moved
 to a header) can't be split by an Ingress prefix, so it always reaches the app
-backend, which also answers the global paths that come in that way. The
-frontends send the club as a header and never use these paths.
+backend, which answers only club paths that way (it doesn't load the global
+routes). The frontends send the club as a header and never use these paths.
 
 ### API areas
 

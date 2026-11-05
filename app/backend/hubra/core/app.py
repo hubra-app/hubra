@@ -761,12 +761,21 @@ def _register_cli(app: Flask) -> None:
     @app.cli.command("sync-permissions")
     def sync_permissions():
         """Sync the Permission table with all @permission_required-decorated routes."""
+        from hubra.core.roles import current_role, loads_club_routes
         from hubra.core.services.permission_sync import sync_permission_catalog
 
-        created, updated, orphaned = sync_permission_catalog(app)
-        click.echo(
-            f"Synced permissions: {created} created, {updated} updated, {orphaned} orphaned (deactivated)."
-        )
+        # The club catalog comes from the club routes and plugins; a global
+        # or platform backend doesn't load them, so the app backend's init
+        # step fills it (deploy/app/backend.yaml).
+        if loads_club_routes():
+            created, updated, orphaned = sync_permission_catalog(app)
+            click.echo(
+                f"Synced permissions: {created} created, {updated} updated, {orphaned} orphaned (deactivated)."
+            )
+        else:
+            click.echo(
+                f"Club permissions: left to the app backend (HUBRA_ROLE={current_role()})."
+            )
 
         # Platform permissions and default platform roles (manage › Rollen).
         from hubra.core.global_rbac_seed import seed_global_rbac

@@ -576,7 +576,12 @@ def _seed_tenant(
         # deploy). On an empty catalog (a fresh database, a dev setup) the
         # new club's roles would grant nothing and members would get "Kein
         # Zugriff" everywhere, so fill it here first.
-        if db.session.scalar(select(func.count(Permission.id))) == 0:
+        # Only a backend that loads the club routes knows the catalog; the
+        # app backend's init step fills it before a platform backend can
+        # get here (deploy/app/backend.yaml).
+        from hubra.core.roles import loads_club_routes
+
+        if loads_club_routes() and db.session.scalar(select(func.count(Permission.id))) == 0:
             from flask import current_app
 
             from hubra.core.services.permission_sync import sync_permission_catalog

@@ -42,9 +42,9 @@ class SystemService:
                         }
                     )
 
-        from hubra.core.plugins.loader import loads_plugin_code
+        from hubra.core.roles import loads_club_routes
 
-        if not loads_plugin_code():
+        if not loads_club_routes():
             entries.extend(SystemService._catalog_only(entries))
         return sorted(entries, key=lambda e: (e["path"], e["method"]))
 
@@ -52,10 +52,10 @@ class SystemService:
     def _catalog_only(entries: list[dict]) -> list[dict]:
         """Route permissions in the catalog whose routes aren't loaded here.
 
-        The global and platform backends don't import plugin routes
-        (``loader.MANIFEST_ONLY_ROLES``), so their permissions come from the
-        catalog that ``flask sync-permissions`` filled, without path and
-        method.
+        The global and platform backends load neither the club routes
+        (``roles.registers``) nor plugin routes (``loader.MANIFEST_ONLY_ROLES``),
+        so those permissions come from the catalog that the app backend's
+        ``flask sync-permissions`` filled, without path and method.
         """
         from sqlalchemy import select
 

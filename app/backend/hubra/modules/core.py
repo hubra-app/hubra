@@ -59,10 +59,13 @@ module = Module(
             "audit_bp",
             "/api/v1/app/audit",
         ),
+        # Probes and the version: every backend answers them
+        # (roles.SHARED_PATHS).
         Blueprint(
             "hubra.api.health.routes",
             "health_bp",
             "/api/v1/global",
+            shared=True,
         ),
         Blueprint(
             "hubra.api.system.routes",
@@ -78,6 +81,7 @@ module = Module(
             "hubra.api.version.routes",
             "version_bp",
             "/api/v1/global",
+            shared=True,
         ),
         Blueprint(
             "hubra.api.tenant.routes",
@@ -127,12 +131,17 @@ module = Module(
         Blueprint(
             "hubra.api.api_tokens.routes",
             "api_token_self_bp",
-            "/api/v1",
+            "/api/v1/app/api-tokens",
+        ),
+        Blueprint(
+            "hubra.api.api_tokens.routes",
+            "platform_token_self_bp",
+            "/api/v1/platform/api-tokens",
         ),
         # OAuth for outside apps (docs/oauth.md). The server metadata sits at
         # the root of the API host (RFC 8414); roles.SHARED_PATHS lets every
         # backend answer it.
-        Blueprint("hubra.api.oauth.routes", "oauth_metadata_bp", ""),
+        Blueprint("hubra.api.oauth.routes", "oauth_metadata_bp", "", shared=True),
         Blueprint("hubra.api.oauth.routes", "oauth_bp", "/api/v1/global/oauth"),
         Blueprint(
             "hubra.api.oauth.routes",
@@ -187,6 +196,14 @@ module = Module(
             section="me",
             order=0,
         ),
+    ),
+    # Club permissions checked by routes outside the club app area (sign-in
+    # backend). The club catalog is filled where the club routes load
+    # (roles.loads_club_routes), so these are declared here too;
+    # tests/test_backend_roles.py checks that none is missing.
+    permissions=(
+        ("apps.apps.manage", "Manage connected apps"),
+        ("i18n.i18n.write", "Suggest translations"),
     ),
     tables=(
         "setting",
