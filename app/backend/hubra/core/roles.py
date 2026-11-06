@@ -182,6 +182,10 @@ def task_routes() -> dict:
 def build_component(kind: str) -> str:
     """Name for the build heartbeat (manage › Diagnose › Builds): ``api`` and
     ``worker`` for the app (or a single) backend, ``global-api``,
-    ``platform-api``, ``platform-worker`` for the others."""
+    ``platform-api``, ``platform-worker`` for the others.  Beat is always
+    ``beat``: there is only ever one, it holds every schedule, and the role
+    images run it from the platform image (``HUBRA_ROLE=platform``)."""
+    if kind == "beat":
+        return kind
     role = current_role()
     return f"{role}-{kind}" if role in ("platform", "global") else kind

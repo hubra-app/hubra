@@ -92,6 +92,8 @@ def test_task_routes_route_real_task_names(monkeypatch):
 def test_build_component(monkeypatch):
     monkeypatch.setenv("HUBRA_ROLE", "platform")
     assert roles.build_component("api") == "platform-api"
+    # The one beat runs the platform image but is still "the" scheduler.
+    assert roles.build_component("beat") == "beat"
     monkeypatch.setenv("HUBRA_ROLE", "global")
     assert roles.build_component("api") == "global-api"
     for role in ("app", "club"):
