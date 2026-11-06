@@ -296,3 +296,12 @@ def test_club_routes_need_the_right(
     assert client.get("/api/v1/app/billing/invoices").get_json() == {"items": []}
     url = client.post("/api/v1/app/billing/checkout").get_json()["url"]
     assert url == "https://checkout.stripe.test/cs_1"
+
+
+def test_stripe_errors_keep_their_text_out_of_answers():
+    down = stripe_api.StripeError("ProxyError: http://10.0.0.5:3128 refused")
+    assert down.public_message() == "Stripe could not be reached"
+    refused = stripe_api.StripeError("No such customer: cus_x", 404, "resource_missing")
+    assert refused.public_message() == "Stripe refused the call (resource_missing)"
+    odd = stripe_api.StripeError("x", 400, "<script>")
+    assert odd.public_message() == "Stripe refused the call (400)"

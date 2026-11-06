@@ -66,8 +66,10 @@ def _settings_url(tenant, query: str = "") -> str:
 
 
 def _stripe_failed(exc: StripeError):
-    logger.warning("billing_stripe_error status=%s code=%s", exc.status, exc.code)
-    return api_error("STRIPE_ERROR", str(exc), 502)
+    logger.warning(
+        "billing_stripe_error status=%s code=%s error=%s", exc.status, exc.code, exc
+    )
+    return api_error("STRIPE_ERROR", exc.public_message(), 502)
 
 
 @billing_bp.get("/")

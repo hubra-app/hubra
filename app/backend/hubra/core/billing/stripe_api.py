@@ -31,6 +31,14 @@ class StripeError(Exception):
         self.status = status
         self.code = code
 
+    def public_message(self) -> str:
+        """What an API answer may say: no text from Stripe or the network
+        (logged instead), only whether Stripe answered and its error code."""
+        if not self.status:
+            return "Stripe could not be reached"
+        code = self.code if self.code and self.code.replace("_", "").isalnum() else None
+        return f"Stripe refused the call ({code or self.status})"
+
 
 def _flatten(data: dict, prefix: str = "") -> list[tuple[str, str]]:
     """Stripe's form encoding: a[b][0][c]=x."""

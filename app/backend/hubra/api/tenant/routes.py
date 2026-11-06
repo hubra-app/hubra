@@ -443,7 +443,8 @@ def sync_tenant_billing(tenant_id: int):
         service.sync(tenant, force=True)
     except StripeError as exc:
         db.session.rollback()
-        raise_error(502, "STRIPE_ERROR", str(exc))
+        _log.warning("billing_sync_failed tenant=%s error=%s", tenant.id, exc)
+        raise_error(502, "STRIPE_ERROR", exc.public_message())
     db.session.commit()
     return jsonify(_billing_view(tenant)), 200
 
@@ -498,7 +499,8 @@ def update_tenant_billing(tenant_id: int):
             db.session.commit()
     except StripeError as exc:
         db.session.rollback()
-        stripe_error = str(exc)
+        _log.warning("billing_sync_failed tenant=%s error=%s", tenant.id, exc)
+        stripe_error = exc.public_message()
     return jsonify(_billing_view(tenant, stripe_error)), 200
 
 
