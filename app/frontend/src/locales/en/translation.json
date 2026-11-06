@@ -4313,7 +4313,7 @@
       "saved": "Billing details saved",
       "failed": "Billing details not saved"
     },
-    "paymentsFee": "Fee on online payments"
+    "paymentsFee": "Hubra fee on online payments"
   },
   "federation": {
     "invited": "invited",

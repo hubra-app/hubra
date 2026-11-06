@@ -389,7 +389,7 @@ export function SubscriptionTab() {
             )}
             {data.paymentsFeePercent != null && data.paymentsFeePercent > 0 && (
               <Row
-                label={t('subscription.paymentsFee', 'Gebühr auf Online-Zahlungen')}
+                label={t('subscription.paymentsFee', 'Hubra-Gebühr auf Online-Zahlungen')}
                 value={`${data.paymentsFeePercent} %`}
               />
             )}

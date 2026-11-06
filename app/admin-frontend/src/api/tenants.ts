@@ -622,7 +622,7 @@ export interface BillingTerms {
   /** Licences per module code (for prices per licence; 1 if not set). */
   licenses: Record<string, number>
   note: string
-  /** Platform fee in % on the club's online member payments; null: the default. */
+  /** Hubra fee in % on the club's online member payments; null: the default. */
   payments_fee_percent: number | null
 }
 

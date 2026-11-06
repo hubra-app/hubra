@@ -161,21 +161,29 @@ charges it at once. Because Hubra replaces all items on each change, both
 would also show a credit and a charge for the unchanged lines, so they
 would need a smarter item update first.
 
-## Platform fee on online payments
+## Hubra fee on online payments
 
 With the **Online payments** plugin, members pay their club through the
-club's own Stripe account. Hubra can take a platform fee in percent on each
-of those payments (a Stripe application fee, paid to the Payments platform
-account, not to the billing account):
+club's own Stripe account. Hubra can take a fee in percent on each of those
+payments, the Hubra fee (a Stripe application fee, paid to the Payments
+platform account, not to the billing account). It is not Stripe's fee: Stripe
+charges the club its own fees on top.
 
 - **Default for all clubs:** manage › Payments (`payments.fee_percent`).
-- **Per club:** manage › All clubs › club › Billing › *Platform fee on
+- **Per club:** manage › All clubs › club › Billing › *Hubra fee on
   online payments* (`payments_fee_percent` in the club's terms, 0–10 %).
   Empty uses the default; `0` means no fee for that club. A club can, for
   example, get a lower subscription price and a higher fee instead.
 
 The fee applies to checkouts started after the change. The club sees it on
 Settings › Hubra subscription when it is above 0.
+
+By default the club pays both fees: the member pays the invoice amount and
+Stripe's fee and the Hubra fee come off what the club receives. In the
+plugin (Weitere › Online-Zahlungen › *Wer zahlt die Gebühren*, payments
+1.1.0) the club can pass them on: it enters its Stripe rate and members pay
+a surcharge sized so the club still receives the full invoice amount,
+`(invoice + fixed) / (1 − Stripe % − Hubra %)`, rounded up.
 
 ## Setting it up
 

@@ -67,7 +67,7 @@ DEFAULTS = {
     "addons": [],
     "licenses": {},
     "note": "",
-    # Online payments: the platform fee in percent on this club's member
+    # Online payments: the Hubra fee in percent on this club's member
     # payments; None = the platform's default (manage › Payments).
     "payments_fee_percent": None,
 }

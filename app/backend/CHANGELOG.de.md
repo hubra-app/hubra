@@ -11,7 +11,7 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ### Added
 
-- Plattformgebühr auf Online-Zahlungen pro Verein: manage › Alle Vereine › Verein › Abrechnung setzt einen eigenen Prozentsatz statt des Standards; der Verein sieht ihn im Tab Hubra-Abo.
+- Hubra-Gebühr (bisher Plattformgebühr) auf Online-Zahlungen pro Verein: manage › Alle Vereine › Verein › Abrechnung setzt einen eigenen Prozentsatz statt des Standards; der Verein sieht ihn im Tab Hubra-Abo.
 - Hubra-Abo: Vereine erfassen E-Mail und Adresse für die Rechnungen von Hubra unter Einstellungen › Hubra-Abo › Rechnungsangaben; Speichern übernimmt sie sofort bei Stripe.
 
 ### Fixed

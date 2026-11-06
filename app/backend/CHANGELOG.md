@@ -9,7 +9,7 @@ section and position, or the apps show that version in English.
 
 ### Added
 
-- Platform fee on online payments per club: manage › All clubs › club › Billing can set a club's own percentage instead of the default; the club sees it on its subscription tab.
+- Hubra fee (formerly platform fee) on online payments per club: manage › All clubs › club › Billing can set a club's own percentage instead of the default; the club sees it on its subscription tab.
 - Hubra subscription: clubs set the email and address for Hubra's invoices under Settings › Hubra subscription › Billing details; saving updates Stripe at once.
 
 ### Fixed

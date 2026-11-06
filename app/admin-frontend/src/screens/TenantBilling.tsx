@@ -192,7 +192,7 @@ export function TenantBilling({ tenantId }: { tenantId: number }) {
           <Row label={tr('Fällig pro Monat', 'Due per month')} value={chf(data.due_chf)} strong />
           {(data.payments_fee_percent ?? data.payments_fee_default) != null && (
             <Row
-              label={tr('Plattformgebühr Online-Zahlungen', 'Platform fee on online payments')}
+              label={tr('Hubra-Gebühr Online-Zahlungen', 'Hubra fee on online payments')}
               value={`${data.payments_fee_percent ?? data.payments_fee_default} %${
                 data.payments_fee_percent == null ? tr(' (Standard)', ' (default)') : ''
               }`}
@@ -560,8 +560,8 @@ function BillingModal({
           />
           <NumberInput
             label={tr(
-              'Plattformgebühr Online-Zahlungen (%)',
-              'Platform fee on online payments (%)',
+              'Hubra-Gebühr Online-Zahlungen (%)',
+              'Hubra fee on online payments (%)',
             )}
             description={tr(
               `Pro Mitgliederzahlung über Stripe. Leer: Standard ${data.payments_fee_default ?? 0} %`,

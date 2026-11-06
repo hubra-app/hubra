@@ -289,9 +289,10 @@ SPECS: tuple[Spec, ...] = (
     ),
     Spec(
         "payments.fee_percent",
-        "Platform fee",
-        "Share of each online payment that goes to the platform (%), on top "
-        "of Stripe's own fees, which the club pays. 0: none",
+        "Hubra fee",
+        "Share of each online payment that goes to Hubra (%), on top of "
+        "Stripe's own fees. The club pays both or passes them on to members "
+        "as a surcharge. 0: none",
         lambda cfg: "0",
         "fee_percent",
     ),
