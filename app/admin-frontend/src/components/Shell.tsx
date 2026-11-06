@@ -282,7 +282,7 @@ function UserCard() {
         </Menu.Item>
         <Menu.Item
           component="a"
-          href={`${SUPPORT_URL}/melden?page=${encodeURIComponent(window.location.href)}`}
+          href={`${SUPPORT_URL}/melden?where=${encodeURIComponent(window.location.href)}`}
           leftSection={<IconBug size={16} />}
           data-testid="menu-report-bug"
         >

@@ -64,7 +64,7 @@ export function GuestReportForm({ kind }: { kind: 'bug' | 'question' }) {
         title: title.trim() || defaultTitle[reason],
         description: description.trim(),
         mail: mail || undefined,
-        page: pathOf(params.get('page') ?? ''),
+        page: pathOf(params.get('where') ?? params.get('page') ?? ''),
         fingerprint: kind === 'bug' ? currentDeviceInfo() : undefined,
         website: website || undefined,
       })

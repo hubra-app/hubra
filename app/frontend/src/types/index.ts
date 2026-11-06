@@ -124,6 +124,8 @@ export interface ClubEvent {
   maxAttendees?: number | null;
   requiresApproval?: boolean;
   isPublic?: boolean;
+  /** Shown to the member clubs of this association. */
+  federationShared?: boolean;
   /** Places for people who aren't members yet (trial training). */
   trialSpots?: number | null;
   coverImageUrl?: string | null;

@@ -17,8 +17,8 @@ import { useMyTenants } from '@/data/lists'
 import { initials, contrastColor } from './nav'
 import { setWhatsNewOpen } from './whatsNewStore'
 import { openReport } from '@/screens/private/support/reportStore'
-import { SUPPORT_URL } from '@/screens/private/support/supportSite'
 import { useWhatsNewUnseen } from './whatsNewData'
+import { SUPPORT_URL } from '@/constants'
 
 
 const rowStyle = {

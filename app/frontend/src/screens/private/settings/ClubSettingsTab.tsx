@@ -32,6 +32,7 @@ import { qk } from '@/data/keys'
 import { useToast } from '@/context/AppContext'
 import { ErrorBanner } from '@/components/ui'
 import { PublicPageCard } from './PublicPageCard'
+import { AssociationsCard } from './AssociationsCard'
 
 /** Which part of the club settings a tab shows; each saves the whole set. */
 export type ClubSettingsSection = 'club' | 'membership'
@@ -292,6 +293,7 @@ function ClubSettingsForm({
               />
             </Stack>
           </Paper>
+          <AssociationsCard />
         </>
       )}
 

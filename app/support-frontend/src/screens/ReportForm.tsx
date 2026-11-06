@@ -86,8 +86,8 @@ function ReportForm({ kind }: { kind: CaseKind }) {
   const [steps, setSteps] = useState('')
   const [expected, setExpected] = useState('')
   const [useCase, setUseCase] = useState('')
-  // Error and 404 pages in the apps link here with ?page=<their address>.
-  const [where, setWhere] = useState(() => params.get('page') ?? '')
+  // 404 and error pages in the apps link here with ?where=<their address>.
+  const [where, setWhere] = useState((params.get('where') ?? params.get('page') ?? '').slice(0, 500))
   const [area, setArea] = useState<Area | null>(initialArea)
   const [severity, setSeverity] = useState<Severity>('annoying')
   const [club, setClub] = useState<string | null>(params.get('club'))

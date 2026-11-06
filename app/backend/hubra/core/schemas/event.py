@@ -49,6 +49,7 @@ class ClubEventSchema(ma.SQLAlchemyAutoSchema):
     max_attendees = fields.Int(allow_none=True, dump_default=None)
     requires_approval = fields.Bool(dump_default=False)
     is_public = fields.Bool(dump_default=False)
+    federation_shared = fields.Bool(dump_default=False)
     trial_spots = fields.Int(allow_none=True, dump_default=None)
     category = fields.Str(dump_default="general")
     color = fields.Str(allow_none=True, dump_default=None)
@@ -280,6 +281,7 @@ class ClubEventCreateSchema(ma.Schema):
     cancellation_deadline = fields.DateTime(allow_none=True, load_default=None)
     requires_approval = fields.Bool(load_default=False)
     is_public = fields.Bool(load_default=False)
+    federation_shared = fields.Bool(load_default=False)
     trial_spots = fields.Int(
         allow_none=True, load_default=None, validate=validate.Range(min=1, max=100)
     )
@@ -315,6 +317,7 @@ class ClubEventUpdateSchema(ma.Schema):
     cancellation_deadline = fields.DateTime(allow_none=True)
     requires_approval = fields.Bool()
     is_public = fields.Bool()
+    federation_shared = fields.Bool()
     trial_spots = fields.Int(allow_none=True, validate=validate.Range(min=1, max=100))
     cover_image_url = fields.Str(allow_none=True)
     color = fields.Str(allow_none=True, validate=validate.Regexp(r"^#[0-9A-Fa-f]{6}$"))

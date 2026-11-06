@@ -2,8 +2,8 @@ import { Button, Group, Stack, Text, Title } from '@mantine/core'
 import { useNavigate } from 'react-router-dom'
 import { useT } from '@/locales/i18n'
 import { IconArrowLeft, IconBug } from '@tabler/icons-react'
-import { reportProblemUrl } from '@/screens/private/support/supportSite'
 import { hasTokens } from '@hubra/api-client'
+import { reportProblemUrl } from '@/constants'
 
 export function NotFoundScreen() {
   const { t } = useT()
@@ -40,7 +40,7 @@ export function NotFoundScreen() {
           {/* A broken link is a problem worth hearing about: the address goes along. */}
           <Button
             component="a"
-            href={reportProblemUrl()}
+            href={reportProblemUrl(window.location.href)}
             variant="default"
             leftSection={<IconBug size={16} />}
             data-testid="notfound-report"

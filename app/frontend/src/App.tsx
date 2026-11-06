@@ -5,7 +5,7 @@ import { ErrorBoundary as RouteErrorBoundary } from 'react-error-boundary'
 import { useT } from '@/locales/i18n'
 import { AppProvider, useApp } from '@/context/AppContext'
 import { URL_CLUB } from '@/clubBase'
-import { pwaStartPath, rememberClub } from '@/pwa'
+import { lastClubPath, pwaStartPath, rememberClub } from '@/pwa'
 import { redirectTo } from '@hubra/api-client'
 import { InstanceProvider, useInstance } from '@/context/InstanceContext'
 import { RequireModule } from '@/modules/RequireModule'
@@ -26,6 +26,11 @@ const Shell = lazy(() => import('./components/Shell').then((m) => ({ default: m.
 const DashboardScreen = lazy(() =>
   import('./screens/private/dashboard/Dashboard').then((m) => ({
     default: m.DashboardScreen,
+  })),
+)
+const FederationScreen = lazy(() =>
+  import('./screens/private/federation/FederationScreen').then((m) => ({
+    default: m.FederationScreen,
   })),
 )
 const MemberDetailScreen = lazy(() =>
@@ -200,6 +205,19 @@ function HomeRedirect() {
   return <SsoRedirect path="login" />
 }
 
+/**
+ * /invoices: invoice mails before 2026-11 linked here, without the club.
+ * Open the personal start page (open invoices with QR bill) of the club used
+ * last, or the club list on the SSO portal.
+ */
+function LegacyInvoicesRedirect() {
+  const target = lastClubPath('/app/dashboard/me')
+  useEffect(() => {
+    if (target) window.location.replace(target)
+  }, [target])
+  return target ? <FullPageLoader /> : <SsoRedirect path="clubs" />
+}
+
 function PrivateRoutes() {
   const location = useLocation()
 
@@ -345,6 +363,14 @@ function PrivateRoutes() {
                   element={
                     <RequireModule code="events">
                       <OperationsTabScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="federation"
+                  element={
+                    <RequireModule code="federation">
+                      <FederationScreen />
                     </RequireModule>
                   }
                 />
@@ -667,6 +693,9 @@ function AppInner() {
       <Route path="/:club/apply" element={<ClubApplyRedirect />} />
       {/* The club's trial page (people who aren't members book a training) */}
       <Route path="/:club/trial" element={<ClubTrialRedirect />} />
+
+      {/* Old invoice mail links */}
+      <Route path="/invoices" element={<LegacyInvoicesRedirect />} />
 
       {/* / and /app/* → into the club; club pages run below /<club> (clubBase.ts) */}
       <Route path="/" element={<HomeRedirect />} />

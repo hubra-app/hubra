@@ -578,6 +578,7 @@
     "rangeOf": "{{start}}–{{end}} von {{total}}",
     "refresh": "Aktualisieren",
     "removed": "Entfernt",
+    "reportBrokenLink": "Problem melden",
     "required": "erforderlich",
     "retry": "Nochmals versuchen",
     "role": "Rolle",
@@ -894,7 +895,9 @@
         "cancelled": "Abgesagt",
         "invited": "Eingeladen"
       }
-    }
+    },
+    "federationShared": "Mit Mitgliedvereinen teilen",
+    "federationSharedHint": "Eure Mitgliedvereine sehen den Anlass unter Anlässe › Vom Verband."
   },
   "finance": {
     "addCategory": "Kategorie hinzufügen",
@@ -2427,7 +2430,8 @@
       "more": "Weitere",
       "recurring": "Wiederkehrend",
       "feeBasis": "Beitragsgrundlage",
-      "annualAccounts": "Jahresrechnung"
+      "annualAccounts": "Jahresrechnung",
+      "federation": "Verband"
     },
     "noPermission": "Du hast keine Berechtigung für diese Seite.",
     "notif": {
@@ -3509,7 +3513,9 @@
       "events_trials_manage": "Schnuppertrainings verwalten",
       "dashboards_dashboards_share": "Dashboards mit dem Verein teilen",
       "dashboards_home_update": "Startseite des Vereins anpassen",
-      "billing_billing_manage": "Hubra-Abo des Vereins bezahlen und verwalten"
+      "billing_billing_manage": "Hubra-Abo des Vereins bezahlen und verwalten",
+      "federation_federation_read": "Mitgliedvereine des Verbands sehen",
+      "federation_federation_manage": "Mitgliedvereine einladen und entfernen"
     },
     "areas": {
       "applications": "Anträge",
@@ -4293,5 +4299,51 @@
     "trouble": "Die letzte Zahlung hat nicht geklappt. Bitte prüft unter «Zahlung verwalten» die Karte oder das Konto, Stripe versucht es dann erneut.",
     "view": "Ansehen",
     "yearlyNote": "Verrechnet wird einmal im Jahr: {{amount}} {{per}}."
+  },
+  "federation": {
+    "invited": "eingeladen",
+    "activeMembers": "aktive Mitglieder",
+    "waiting": "Eingeladen am {{date}}. Der Verein nimmt die Einladung in seinen Einstellungen an.",
+    "contacts": "Kontakte",
+    "noContacts": "Der Verein hat noch keine Ämter besetzt.",
+    "contactsHidden": "Der Verein teilt seine Kontakte nicht.",
+    "withdraw": "Einladung zurückziehen",
+    "remove": "Aus dem Verband entfernen",
+    "invitedToast": "Einladung verschickt",
+    "inviteFailed": "Nicht eingeladen",
+    "intro": "Hier seht ihr eure Mitgliedvereine mit der Zahl ihrer aktiven Mitglieder und, wenn ein Verein sie teilt, den Kontakten seiner Ämter. Anlässe, die ihr «Mit Mitgliedvereinen teilen», erscheinen bei den Vereinen unter Anlässe.",
+    "clubCount": "Mitgliedvereine",
+    "memberTotal": "Aktive Mitglieder insgesamt",
+    "openInvites": "Offene Einladungen",
+    "inviteTitle": "Verein einladen",
+    "inviteHint": "Die Adresse des Vereins in Hubra, z. B. «rc-uri» aus hubra.club/rc-uri. Der Verein sieht die Einladung unter Einstellungen › Verein und entscheidet selbst.",
+    "slug": "Adresse des Vereins",
+    "invite": "Einladen",
+    "none": "Noch keine Mitgliedvereine.",
+    "removeBody": "{{name}} ist dann kein Mitgliedverein mehr und sieht eure geteilten Anlässe nicht mehr.",
+    "removeShort": "Entfernen",
+    "removeFailed": "Nicht entfernt"
+  },
+  "associations": {
+    "failed": "Nicht gespeichert",
+    "invitation": "Einladung",
+    "inviteText": "Lädt euch am {{date}} als Mitgliedverein ein. Der Verband sieht dann, wie viele aktive Mitglieder ihr habt, und ihr seht seine geteilten Anlässe unter Anlässe.",
+    "shareContacts": "Kontakte unserer Ämter teilen",
+    "shareContactsHint": "Name und Vereinsadresse von allen, die ein Amt halten (z. B. Präsidium, Kassier). Private E-Mail-Adressen nie.",
+    "accept": "Beitreten",
+    "decline": "Ablehnen",
+    "title": "Verbände",
+    "intro": "Dachverbände, in denen euer Verein Mitglied ist. Was ein Verband sieht, entscheidet ihr hier.",
+    "since": "Mitglied seit {{date}}",
+    "leave": "Austreten",
+    "seesCount": "Der Verband sieht die Zahl eurer aktiven Mitglieder, sonst keine Mitgliederdaten.",
+    "leaveTitle": "Aus dem Verband austreten",
+    "leaveBody": "{{name}} sieht euren Verein nicht mehr, und ihr seht seine Anlässe nicht mehr."
+  },
+  "associationEvents": {
+    "online": "Online teilnehmen",
+    "title": "Vom Verband",
+    "less": "Weniger anzeigen",
+    "more": "Alle {{count}} anzeigen"
   }
 }

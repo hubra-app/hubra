@@ -1,7 +1,7 @@
 import i18n from 'i18next'
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { Paper, Text, Button, Stack, Center, Code } from '@mantine/core'
-import { reportProblemUrl } from '@/screens/private/support/supportSite'
+import { reportProblemUrl } from '@/constants'
 
 interface Props {
   children: ReactNode
@@ -46,7 +46,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <Button onClick={() => window.location.reload()}>
                 {i18n.t('app.reload', 'Seite neu laden')}
               </Button>
-              <Button component="a" href={reportProblemUrl()} variant="default">
+              <Button component="a" href={reportProblemUrl(window.location.href)} variant="default">
                 {i18n.t('support.menu.bug', 'Problem melden')}
               </Button>
             </Stack>
