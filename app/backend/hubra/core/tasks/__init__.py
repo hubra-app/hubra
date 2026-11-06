@@ -141,6 +141,7 @@ def make_celery(app: Flask) -> Celery:
             "hubra.core.tasks.contract_tasks",
             "hubra.core.tasks.quota_tasks",
             "hubra.core.tasks.upgrade_tasks",
+            "hubra.core.tasks.billing_tasks",
             *_module_task_imports(),
         ],
     )
@@ -274,6 +275,11 @@ def make_celery(app: Flask) -> Celery:
             "check-club-limits-hourly": {
                 "task": "hubra.core.tasks.quota_tasks.check_quotas",
                 "schedule": crontab(minute=25),
+            },
+            # Club subscriptions: Stripe's state, in case a webhook got lost.
+            "reconcile-billing-hourly": {
+                "task": "hubra.core.tasks.billing_tasks.reconcile_billing",
+                "schedule": crontab(minute=35),
             },
         },
         "broker_connection_retry_on_startup": False,

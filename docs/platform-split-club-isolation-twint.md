@@ -236,7 +236,7 @@ There are two different "billings" in Hubra, and TWINT fits them
 differently:
 
 - **Platform billing:** Hubra charges clubs (base plan + add-ons). You
-  chose Stripe Billing for this; nothing is built yet.
+  chose Stripe Billing for this; see docs/billing.md.
 - **Member payments:** clubs collect fees from members. On the roadmap as
   `twint-payments` in `app/backend/ROADMAP.yaml`; today members pay by
   QR-bill and the club books it.

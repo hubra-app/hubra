@@ -1,0 +1,95 @@
+import { apiFetch } from '@hubra/api-client'
+
+/** What the club pays Hubra and its Stripe subscription (docs/billing.md). */
+export type HubraBillingStatus =
+  | 'none'
+  | 'trialing'
+  | 'active'
+  | 'past_due'
+  | 'unpaid'
+  | 'canceled'
+  | 'incomplete'
+  | 'paused'
+
+export interface HubraModuleLine {
+  code: string
+  label: string
+  source: 'plan' | 'addon'
+  unit: string
+  unit_price_chf: string
+  quantity: number
+  included: boolean
+  total_chf: string
+}
+
+export interface HubraBilling {
+  plan: string
+  status: HubraBillingStatus
+  trial_ends: string | null
+  period_end: string | null
+  plan_price_chf: string | null
+  base_chf: string
+  discount_percent: number
+  discount_chf: string
+  addons_chf: string
+  module_lines: HubraModuleLine[]
+  members: number | null
+  total_chf: string
+  due_chf: string
+  sponsored: boolean
+  sponsor_name: string
+  sponsored_until: string | null
+  sponsorship_running: boolean
+  sponsorship_days_left: number | null
+  sponsorship_ending_soon: boolean
+  trial_days_left: number | null
+  /** Billing through Stripe is on for the platform. */
+  enabled: boolean
+  testMode: boolean
+  /** Charged once a year (12 months at once) instead of monthly. */
+  yearly: boolean
+  /** Something is due and the club can start paying. */
+  canPay: boolean
+  stripe: {
+    hasCustomer: boolean
+    hasSubscription: boolean
+    status: string | null
+    currentPeriodEnd: string | null
+    cancelAtPeriodEnd: boolean
+    paymentFailedAt: string | null
+  }
+}
+
+export interface HubraInvoice {
+  id: string
+  number: string | null
+  created: string | null
+  status: string | null
+  totalChf: string
+  paid: boolean
+  url: string | null
+  pdf: string | null
+}
+
+export async function getHubraBilling(): Promise<HubraBilling> {
+  return apiFetch('/app/billing/')
+}
+
+/** A Stripe Checkout page that starts the subscription. */
+export async function startHubraCheckout(): Promise<{ url: string }> {
+  return apiFetch('/app/billing/checkout', { method: 'POST' })
+}
+
+/** Stripe's customer portal: card, address, invoices, cancel. */
+export async function openHubraPortal(): Promise<{ url: string }> {
+  return apiFetch('/app/billing/portal', { method: 'POST' })
+}
+
+/** Read Stripe again, after coming back from Checkout. */
+export async function refreshHubraBilling(): Promise<{ stripe: HubraBilling['stripe'] }> {
+  return apiFetch('/app/billing/refresh', { method: 'POST' })
+}
+
+export async function listHubraInvoices(): Promise<{ items: HubraInvoice[] }> {
+  return apiFetch('/app/billing/invoices')
+}

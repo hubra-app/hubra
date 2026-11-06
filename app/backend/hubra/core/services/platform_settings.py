@@ -38,6 +38,10 @@ Limits (``limits.warn_percent``): when clubs are warned about their
 limits (``services.quotas``).  The limits and prices of each plan are on the
 plan (``services.plans``); a club can have its own on top, set in manage.
 
+Billing (``billing.*``): whether clubs pay Hubra through Stripe Billing,
+monthly or yearly, its Stripe key and the webhook secret
+(``hubra.core.billing``).
+
 Translation (``translate.*``): the DeepL key that pre-fills the other
 languages of a post (``services.machine_translation``); empty: none.
 
@@ -290,6 +294,42 @@ SPECS: tuple[Spec, ...] = (
         "of Stripe's own fees, which the club pays. 0: none",
         lambda cfg: "0",
         "fee_percent",
+    ),
+    Spec(
+        "billing.enabled",
+        "Bill clubs with Stripe",
+        "on: club admins see Einstellungen › Hubra-Abo and pay their plan "
+        "through Stripe Checkout with the billing Stripe key; Stripe's "
+        "state is read every hour. off: terms are only stored (docs/billing.md)",
+        lambda cfg: "off",
+        "on_off",
+    ),
+    Spec(
+        "billing.yearly",
+        "Bill yearly",
+        "on: new subscriptions are charged once a year (12 × the monthly "
+        "price). off: monthly. Running subscriptions change at their next sync",
+        lambda cfg: "off",
+        "on_off",
+    ),
+    Spec(
+        "billing.stripe.secret_key",
+        "Stripe billing key",
+        "Secret or restricted key (sk_/rk_) of the Stripe account that bills "
+        "clubs for Hubra. Empty: the Online payments key above. sk_test_ for "
+        "test mode. Stored encrypted",
+        lambda cfg: cfg.get("STRIPE_BILLING_SECRET_KEY") or "",
+        "stripe_secret_key",
+        secret=True,
+    ),
+    Spec(
+        "billing.stripe.webhook_secret",
+        "Stripe billing webhook secret",
+        "Signing secret (whsec_…) of the Stripe webhook pointing at "
+        "/api/v1/global/billing/stripe/webhook. Without it the status follows "
+        "Stripe only through the hourly check. Stored encrypted",
+        lambda cfg: cfg.get("STRIPE_BILLING_WEBHOOK_SECRET") or "",
+        secret=True,
     ),
     Spec(
         "push.vapid_public_key",
