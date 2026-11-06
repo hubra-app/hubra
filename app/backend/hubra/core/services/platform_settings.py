@@ -816,7 +816,26 @@ def stripe() -> StripePlatform | None:
         fee = float((get("payments.fee_percent") or "0").replace(",", "."))
     except ValueError:
         fee = 0.0
+    own = _club_fee_percent()
+    if own is not None:
+        fee = own
     return StripePlatform(secret_key=key, fee_percent=max(0.0, min(fee, 10.0)))
+
+
+def _club_fee_percent() -> float | None:
+    """The current club's own platform fee (manage › club › Billing), or
+    None outside a club request or when the club uses the default."""
+    from flask import g, has_app_context
+
+    if not has_app_context():
+        return None
+    tenant = getattr(g, "tenant", None)
+    if tenant is None:
+        return None
+    from hubra.core.services import club_billing
+
+    own = club_billing.stored(tenant).get("payments_fee_percent")
+    return None if own is None else float(own)
 
 
 _VAPID_LOCK_KEY = 0x6875627261766170  # "hubravap"

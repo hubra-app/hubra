@@ -190,6 +190,14 @@ export function TenantBilling({ tenantId }: { tenantId: number }) {
             strong
           />
           <Row label={tr('Fällig pro Monat', 'Due per month')} value={chf(data.due_chf)} strong />
+          {(data.payments_fee_percent ?? data.payments_fee_default) != null && (
+            <Row
+              label={tr('Plattformgebühr Online-Zahlungen', 'Platform fee on online payments')}
+              value={`${data.payments_fee_percent ?? data.payments_fee_default} %${
+                data.payments_fee_percent == null ? tr(' (Standard)', ' (default)') : ''
+              }`}
+            />
+          )}
           {data.price_chf == null && data.plan_price_chf == null && (
             <Text size="xs" c="dimmed">
               {tr(
@@ -431,6 +439,7 @@ function BillingModal({
     addons: data.addons,
     licenses: data.licenses ?? {},
     note: data.note,
+    payments_fee_percent: data.payments_fee_percent ?? null,
   }))
   const [saving, setSaving] = useState(false)
   const set = <K extends keyof BillingTerms>(key: K, value: BillingTerms[K]) =>
@@ -548,6 +557,23 @@ function BillingModal({
             suffix=" %"
             value={t.discount_percent}
             onChange={(v) => set('discount_percent', typeof v === 'number' ? v : 0)}
+          />
+          <NumberInput
+            label={tr(
+              'Plattformgebühr Online-Zahlungen (%)',
+              'Platform fee on online payments (%)',
+            )}
+            description={tr(
+              `Pro Mitgliederzahlung über Stripe. Leer: Standard ${data.payments_fee_default ?? 0} %`,
+              `Per member payment through Stripe. Empty: default ${data.payments_fee_default ?? 0} %`,
+            )}
+            min={0}
+            max={10}
+            decimalScale={2}
+            allowNegative={false}
+            suffix=" %"
+            value={t.payments_fee_percent ?? ''}
+            onChange={(v) => set('payments_fee_percent', typeof v === 'number' ? v : null)}
           />
         </SimpleGrid>
 

@@ -65,6 +65,14 @@ def _settings_url(tenant, query: str = "") -> str:
     return f"{base}/{tenant.slug}/app/settings/subscription{query}"
 
 
+def _payments_fee() -> float | None:
+    """The platform fee on the club's online member payments, if any."""
+    from hubra.core.services import platform_settings
+
+    stripe = platform_settings.stripe()
+    return stripe.fee_percent if stripe else None
+
+
 def _stripe_failed(exc: StripeError):
     logger.warning(
         "billing_stripe_error status=%s code=%s error=%s", exc.status, exc.code, exc
@@ -87,6 +95,7 @@ def get_billing():
             "yearly": service.yearly(),
             "canPay": service.enabled() and bool(service.items(tenant)),
             "stripe": service.public_state(tenant),
+            "paymentsFeePercent": _payments_fee(),
         }
     ), 200
 

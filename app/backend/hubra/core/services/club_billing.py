@@ -67,7 +67,11 @@ DEFAULTS = {
     "addons": [],
     "licenses": {},
     "note": "",
+    # Online payments: the platform fee in percent on this club's member
+    # payments; None = the platform's default (manage › Payments).
+    "payments_fee_percent": None,
 }
+MAX_FEE_PERCENT = 10
 
 
 def _bad(msg: str):
@@ -146,6 +150,17 @@ def update(tenant: Tenant, body: dict) -> None:
             terms[key] = _addons(value)
         elif key == "licenses":
             terms[key] = _licenses(value)
+        elif key == "payments_fee_percent":
+            if value is None or value == "":
+                terms[key] = None
+            elif (
+                not isinstance(value, (int, float))
+                or isinstance(value, bool)
+                or not 0 <= value <= MAX_FEE_PERCENT
+            ):
+                _bad(f"payments_fee_percent is 0 to {MAX_FEE_PERCENT}, or empty")
+            else:
+                terms[key] = round(float(value), 2)
     if terms["sponsored"] and not terms["sponsor_name"]:
         _bad("A sponsored club needs the sponsor's name")
     settings = dict(tenant.settings or {})

@@ -415,3 +415,23 @@ def test_subscription_events_are_read_again_with_our_api_version(stripe, club, d
     assert service._period_end(newer) == 1798761600
     service.apply_subscription(club, newer)
     assert club_billing.stored(club)["period_end"] == "2027-01-01"
+
+
+def test_club_platform_fee_overrides_the_default(stripe, club, db, app):
+    from flask import g
+
+    platform_settings.set_many({"payments.fee_percent": "1.5"})
+    with app.test_request_context():
+        assert platform_settings.stripe().fee_percent == 1.5
+        g.tenant = club
+        assert platform_settings.stripe().fee_percent == 1.5
+        club_billing.update(club, {"payments_fee_percent": 3})
+        assert platform_settings.stripe().fee_percent == 3.0
+        club_billing.update(club, {"payments_fee_percent": 0})
+        assert platform_settings.stripe().fee_percent == 0.0
+        club_billing.update(club, {"payments_fee_percent": None})
+        assert platform_settings.stripe().fee_percent == 1.5
+    with pytest.raises(ApiError):
+        club_billing.update(club, {"payments_fee_percent": 11})
+    with pytest.raises(ApiError):
+        club_billing.update(club, {"payments_fee_percent": True})

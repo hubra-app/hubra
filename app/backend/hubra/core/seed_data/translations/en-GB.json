@@ -3975,6 +3975,7 @@
   "subscription.nextInvoice": "Next invoice",
   "subscription.open": "Open",
   "subscription.paid": "Paid",
+  "subscription.paymentsFee": "Fee on online payments",
   "subscription.pay": "Pay now",
   "subscription.perMonth": "per month",
   "subscription.perYear": "per year",

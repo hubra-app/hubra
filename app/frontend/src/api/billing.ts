@@ -50,6 +50,8 @@ export interface HubraBilling {
   yearly: boolean
   /** Something is due and the club can start paying. */
   canPay: boolean
+  /** Hubra's fee in % on online member payments (Online payments plugin), null without it. */
+  paymentsFeePercent: number | null
   stripe: {
     hasCustomer: boolean
     hasSubscription: boolean

@@ -387,6 +387,12 @@ export function SubscriptionTab() {
                 value={formatDate((data.stripe.currentPeriodEnd || data.period_end)!)}
               />
             )}
+            {data.paymentsFeePercent != null && data.paymentsFeePercent > 0 && (
+              <Row
+                label={t('subscription.paymentsFee', 'Gebühr auf Online-Zahlungen')}
+                value={`${data.paymentsFeePercent} %`}
+              />
+            )}
             {data.status === 'trialing' && data.canPay && !data.stripe.hasSubscription && (
               <Text size="xs" c="dimmed">
                 {t(
