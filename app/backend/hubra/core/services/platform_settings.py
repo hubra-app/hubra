@@ -39,8 +39,14 @@ limits (``services.quotas``).  The limits and prices of each plan are on the
 plan (``services.plans``); a club can have its own on top, set in manage.
 
 Billing (``billing.*``): whether clubs pay Hubra through Stripe Billing,
-monthly or yearly, its Stripe key and the webhook secret
+monthly or yearly, its Stripe keys and the webhook secrets
 (``hubra.core.billing``).
+
+Stripe mode (``stripe.mode``): Online payments and billing each have a live
+and a sandbox key (and billing a webhook secret per mode).  ``sandbox`` uses
+the sandbox keys for every club; ``live`` the live keys, except for sandbox
+clubs (``services.sandbox_clubs``), which always stay on the sandbox keys.
+See ``stripe_mode``.
 
 Translation (``translate.*``): the DeepL key that pre-fills the other
 languages of a post (``services.machine_translation``); empty: none.
@@ -278,13 +284,31 @@ SPECS: tuple[Spec, ...] = (
         "k8s_name",
     ),
     Spec(
+        "stripe.mode",
+        "Stripe mode",
+        "sandbox: every club uses the sandbox keys (sk_test_), no real money "
+        "moves. live: clubs use the live keys; sandbox clubs (manage › club › "
+        "Sandbox club) stay on the sandbox keys",
+        lambda cfg: "sandbox",
+        "stripe_mode",
+    ),
+    Spec(
         "payments.stripe.secret_key",
-        "Stripe secret key",
-        "The platform's Stripe key (Connect). Clubs connect their own Stripe "
-        "account to it and members pay invoices online. sk_test_ for test "
-        "mode. Stored encrypted",
+        "Stripe live key",
+        "The platform's live Stripe key (Connect, sk_live_). Clubs connect "
+        "their own Stripe account to it and members pay invoices online. "
+        "Stored encrypted",
         lambda cfg: cfg.get("STRIPE_SECRET_KEY") or "",
-        "stripe_secret_key",
+        "stripe_live_key",
+        secret=True,
+    ),
+    Spec(
+        "payments.stripe.sandbox_secret_key",
+        "Stripe sandbox key",
+        "The platform's sandbox Stripe key (Connect, sk_test_), used in "
+        "sandbox mode and always by sandbox clubs. Stored encrypted",
+        lambda cfg: "",
+        "stripe_test_key",
         secret=True,
     ),
     Spec(
@@ -314,21 +338,39 @@ SPECS: tuple[Spec, ...] = (
     ),
     Spec(
         "billing.stripe.secret_key",
-        "Stripe billing key",
-        "Secret or restricted key (sk_/rk_) of the Stripe account that bills "
-        "clubs for Hubra. Empty: the Online payments key above. sk_test_ for "
-        "test mode. Stored encrypted",
+        "Stripe billing live key",
+        "Live secret or restricted key (sk_live_/rk_live_) of the Stripe "
+        "account that bills clubs for Hubra. Empty: the Online payments live "
+        "key. Stored encrypted",
         lambda cfg: cfg.get("STRIPE_BILLING_SECRET_KEY") or "",
-        "stripe_secret_key",
+        "stripe_live_key",
         secret=True,
     ),
     Spec(
         "billing.stripe.webhook_secret",
-        "Stripe billing webhook secret",
-        "Signing secret (whsec_…) of the Stripe webhook pointing at "
+        "Stripe billing live webhook secret",
+        "Signing secret (whsec_…) of the live Stripe webhook pointing at "
         "/api/v1/global/billing/stripe/webhook. Without it the status follows "
         "Stripe only through the hourly check. Stored encrypted",
         lambda cfg: cfg.get("STRIPE_BILLING_WEBHOOK_SECRET") or "",
+        secret=True,
+    ),
+    Spec(
+        "billing.stripe.sandbox_secret_key",
+        "Stripe billing sandbox key",
+        "Sandbox key (sk_test_/rk_test_) of the billing Stripe account, used "
+        "in sandbox mode and always by sandbox clubs. Empty: the Online "
+        "payments sandbox key. Stored encrypted",
+        lambda cfg: "",
+        "stripe_test_key",
+        secret=True,
+    ),
+    Spec(
+        "billing.stripe.sandbox_webhook_secret",
+        "Stripe billing sandbox webhook secret",
+        "Signing secret (whsec_…) of the same webhook in the Stripe sandbox. "
+        "Stored encrypted",
+        lambda cfg: "",
         secret=True,
     ),
     Spec(
@@ -651,7 +693,10 @@ def get(key: str) -> str:
     s = spec(key)
     row = _row(key)
     if row is not None and row.value is not None:
-        return decrypt_code(row.value, _PURPOSE, PLATFORM) if s.secret else row.value
+        # A cleared secret is stored as "" (not encrypted).
+        if s.secret and row.value:
+            return decrypt_code(row.value, _PURPOSE, PLATFORM)
+        return row.value
     return str(s.default(current_app.config) or "")
 
 
@@ -797,26 +842,89 @@ def discord() -> DiscordApp:
     )
 
 
+SANDBOX = "sandbox"
+LIVE = "live"
+
+
+def _is_test_key(key: str) -> bool:
+    return key.startswith(("sk_test_", "rk_test_"))
+
+
+def stripe_mode(tenant=None) -> str:
+    """``sandbox`` or ``live``: the Stripe keys *tenant* (default: the club
+    of this request) uses.  A sandbox club is always in sandbox mode; any
+    other club, and the platform itself, follows ``stripe.mode``."""
+    from hubra.core.services import sandbox_clubs
+
+    if tenant is None:
+        tenant = sandbox_clubs.current()
+    if tenant is not None and sandbox_clubs.is_sandbox(tenant):
+        return SANDBOX
+    return LIVE if get("stripe.mode") == LIVE else SANDBOX
+
+
+def _pick(live: str, sandbox: str, mode: str) -> str:
+    """The key for *mode*.  A test key in the live slot (stored before
+    there were two) counts as the sandbox key and is never used live."""
+    if mode == LIVE:
+        return "" if _is_test_key(live) else live
+    return sandbox or (live if _is_test_key(live) else "")
+
+
+def stripe_key(mode: str) -> str:
+    """The Online payments (Connect) key for *mode*; empty when not set."""
+    return _pick(
+        get("payments.stripe.secret_key"),
+        get("payments.stripe.sandbox_secret_key"),
+        mode,
+    )
+
+
+def billing_stripe_key(mode: str) -> str:
+    """The billing account's key for *mode*; without one, the Online
+    payments key of the same mode."""
+    own = _pick(
+        get("billing.stripe.secret_key"),
+        get("billing.stripe.sandbox_secret_key"),
+        mode,
+    )
+    return own or stripe_key(mode)
+
+
+def billing_webhook_secrets() -> dict[str, str]:
+    """``{mode: whsec}`` for each mode that has a webhook secret."""
+    found = {
+        LIVE: get("billing.stripe.webhook_secret"),
+        SANDBOX: get("billing.stripe.sandbox_webhook_secret"),
+    }
+    return {mode: secret for mode, secret in found.items() if secret}
+
+
 @dataclass(frozen=True)
 class StripePlatform:
     secret_key: str
     fee_percent: float
+    mode: str = ""  # sandbox or live (stripe_mode); the key always matches it
 
     @property
     def test_mode(self) -> bool:
-        return "_test_" in self.secret_key
+        return _is_test_key(self.secret_key)
 
 
-def stripe() -> StripePlatform | None:
-    """The platform's Stripe Connect account, or None when no key is set."""
-    key = get("payments.stripe.secret_key")
+def stripe(tenant=None) -> StripePlatform | None:
+    """The platform's Stripe Connect account in the mode of *tenant*
+    (default: the club of this request), or None when that mode has no key."""
+    mode = stripe_mode(tenant)
+    key = stripe_key(mode)
     if not key:
         return None
     try:
         fee = float((get("payments.fee_percent") or "0").replace(",", "."))
     except ValueError:
         fee = 0.0
-    return StripePlatform(secret_key=key, fee_percent=max(0.0, min(fee, 10.0)))
+    return StripePlatform(
+        secret_key=key, fee_percent=max(0.0, min(fee, 10.0)), mode=mode
+    )
 
 
 _VAPID_LOCK_KEY = 0x6875627261766170  # "hubravap"

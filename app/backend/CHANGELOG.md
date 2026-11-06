@@ -9,6 +9,7 @@ section and position, or the apps show that version in English.
 
 ### Changed
 
+- **Sandbox and live Stripe keys, sandbox clubs**: Online payments and Hubra's billing each take a live key and a sandbox key (and billing a webhook secret for each), and manage › Payments has a Stripe mode switch, Sandbox or Live (default Sandbox). Sandbox clubs (manage › club › Sandbox club, or when creating a club) are demo and test clubs: they always use the sandbox keys, even when the platform is live, and are left out of revenue. Stripe's ids are kept per mode, and webhook events from the other mode are ignored. A test key stored in the old single key field keeps working as the sandbox key. See docs/billing.md, "Sandbox and live".
 - **Releases carry their changelog**: the GitHub release of a Hubra version shows that version's changelog section as its description and has it attached as `CHANGELOG.md` (also in `SHA256SUMS`). A release whose changelog section is empty now stops at the first check instead of going out without notes. The entries of 0.2.2 had landed under 0.2.1 and are now in their own section.
 
 ## [0.2.2] - 2026-11-06

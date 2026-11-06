@@ -1,8 +1,9 @@
 """Stripe's HTTP API with the standard library, for billing clubs.
 
-The platform's own Stripe account (``payments.stripe.secret_key``, the key
-the payments plugin uses for Connect too) bills the clubs: one customer and
-one subscription per club. Same small client as the payments plugin (core
+The platform's billing Stripe account (``billing.stripe.*``, or the Online
+payments account without one; live or sandbox, see
+``platform_settings.stripe_mode``) bills the clubs: one customer and one
+subscription per club. Same small client as the payments plugin (core
 can't import plugins), plus the webhook signature check.
 """
 

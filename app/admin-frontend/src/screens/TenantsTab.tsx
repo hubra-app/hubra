@@ -370,9 +370,16 @@ export function TenantsTab() {
                         </Group>
                       </Table.Td>
                       <Table.Td>
-                        <Badge variant="light" color="acc" size="sm" miw="max-content">
-                          {planLabel(t.plan, tr)}
-                        </Badge>
+                        <Group gap={6} wrap="nowrap">
+                          <Badge variant="light" color="acc" size="sm" miw="max-content">
+                            {planLabel(t.plan, tr)}
+                          </Badge>
+                          {t.sandbox && (
+                            <Badge variant="light" color="yellow" size="sm" miw="max-content">
+                              {tr('Sandbox', 'Sandbox')}
+                            </Badge>
+                          )}
+                        </Group>
                       </Table.Td>
                       <Table.Td>
                         <Badge

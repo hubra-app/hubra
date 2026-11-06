@@ -90,8 +90,8 @@ def stripe(monkeypatch, db):
     platform_settings.set_many(
         {
             "billing.enabled": "on",
-            "payments.stripe.secret_key": "sk_test_" + "a" * 24,
-            "billing.stripe.webhook_secret": WEBHOOK_SECRET,
+            "payments.stripe.sandbox_secret_key": "sk_test_" + "a" * 24,
+            "billing.stripe.sandbox_webhook_secret": WEBHOOK_SECRET,
         }
     )
     db.session.commit()
@@ -315,7 +315,13 @@ def test_stripe_errors_keep_their_text_out_of_answers():
 
 def test_billing_can_use_its_own_stripe_account(stripe, db):
     assert service._key() == "sk_test_" + "a" * 24
-    platform_settings.set_many({"billing.stripe.secret_key": "rk_live_" + "b" * 24})
+    platform_settings.set_many(
+        {"billing.stripe.sandbox_secret_key": "rk_test_" + "c" * 24}
+    )
+    assert service._key() == "rk_test_" + "c" * 24
+    platform_settings.set_many(
+        {"billing.stripe.secret_key": "rk_live_" + "b" * 24, "stripe.mode": "live"}
+    )
     assert service._key() == "rk_live_" + "b" * 24
     assert service.test_mode() is False
 
@@ -343,3 +349,169 @@ def test_subscription_events_are_read_again_with_our_api_version(stripe, club, d
     assert service._period_end(newer) == 1798761600
     service.apply_subscription(club, newer)
     assert club_billing.stored(club)["period_end"] == "2027-01-01"
+
+
+# ── Sandbox and live keys, sandbox clubs ────────────────────────────────────
+
+LIVE_KEY = "sk_live_" + "l" * 24
+TEST_KEY = "sk_test_" + "t" * 24
+
+
+def test_mode_picks_the_key_set(db):
+    platform_settings.set_many(
+        {
+            "payments.stripe.secret_key": LIVE_KEY,
+            "payments.stripe.sandbox_secret_key": TEST_KEY,
+        }
+    )
+    # Sandbox until a platform admin switches to live.
+    assert platform_settings.stripe_mode() == "sandbox"
+    p = platform_settings.stripe()
+    assert p.secret_key == TEST_KEY and p.test_mode and p.mode == "sandbox"
+    platform_settings.set_many({"stripe.mode": "live"})
+    p = platform_settings.stripe()
+    assert p.secret_key == LIVE_KEY and not p.test_mode and p.mode == "live"
+    # No live key: online payments are off, never the sandbox key instead.
+    platform_settings.set_many({"payments.stripe.secret_key": ""})
+    assert platform_settings.stripe() is None
+
+
+def test_a_test_key_in_the_live_slot_counts_as_sandbox_only(db):
+    """Keys stored before there were two slots keep working in sandbox."""
+    platform_settings.set_many({"stripe.mode": "live"})
+    row = platform_settings.PlatformSetting(
+        key="payments.stripe.secret_key",
+        secret=True,
+        value=platform_settings.encrypt_code(
+            TEST_KEY, platform_settings._PURPOSE, platform_settings.PLATFORM
+        ),
+    )
+    db.session.add(row)
+    db.session.commit()
+    platform_settings._forget(db.session())
+    assert platform_settings.stripe() is None
+    platform_settings.set_many({"stripe.mode": "sandbox"})
+    assert platform_settings.stripe().secret_key == TEST_KEY
+
+
+def test_slots_only_take_keys_of_their_mode(db):
+    with pytest.raises(platform_settings.PlatformSettingError):
+        platform_settings.set_many({"payments.stripe.secret_key": TEST_KEY})
+    with pytest.raises(platform_settings.PlatformSettingError):
+        platform_settings.set_many({"billing.stripe.sandbox_secret_key": LIVE_KEY})
+    with pytest.raises(platform_settings.PlatformSettingError):
+        platform_settings.set_many({"stripe.mode": "test"})
+
+
+def test_sandbox_club_stays_on_sandbox_keys_in_live_mode(stripe, club, db):
+    from flask import g
+
+    from hubra.core.services import sandbox_clubs
+
+    platform_settings.set_many(
+        {
+            "stripe.mode": "live",
+            "payments.stripe.secret_key": LIVE_KEY,
+            "billing.stripe.secret_key": "rk_live_" + "b" * 24,
+        }
+    )
+    assert service._key(club) == "rk_live_" + "b" * 24
+    sandbox_clubs.set_sandbox(club, True)
+    db.session.commit()
+    assert service._key(club) == "sk_test_" + "a" * 24
+    assert service.test_mode(club) is True
+    assert service.test_mode() is False  # the platform itself is live
+    g.tenant = club
+    try:
+        assert platform_settings.stripe().secret_key == "sk_test_" + "a" * 24
+    finally:
+        g.tenant = None
+    assert platform_settings.stripe().secret_key == LIVE_KEY
+
+
+def test_stripe_state_is_kept_per_mode(stripe, club, db):
+    from hubra.core.services import sandbox_clubs
+
+    service._save_state(club, {"customer_id": "cus_test"})
+    platform_settings.set_many(
+        {"stripe.mode": "live", "billing.stripe.secret_key": "rk_live_" + "b" * 24}
+    )
+    assert service.state(club) == {}
+    service._save_state(club, {"customer_id": "cus_live"})
+    assert service.state(club)["customer_id"] == "cus_live"
+    sandbox_clubs.set_sandbox(club, True)
+    assert service.state(club)["customer_id"] == "cus_test"
+    assert service.state(club, live=True)["customer_id"] == "cus_live"
+
+
+def test_events_from_the_other_mode_are_ignored(stripe, club, db):
+    event = {
+        "type": "invoice.payment_failed",
+        "livemode": True,
+        "data": {"object": {"metadata": {"tenant_id": str(club.id)}}},
+    }
+    assert service.handle_event(event) == "ignored"
+    event["livemode"] = False
+    assert service.handle_event(event) == "invoice.payment_failed"
+
+
+def test_live_webhook_secret_is_checked_too(client, stripe, club, db):
+    platform_settings.set_many({"billing.stripe.webhook_secret": "whsec_live"})
+    payload, header = _signed(
+        {
+            "type": "invoice.paid",
+            "livemode": False,
+            "data": {"object": {"metadata": {"tenant_id": str(club.id)}}},
+        },
+        secret="whsec_live",
+    )
+    resp = client.post(
+        WEBHOOK,
+        data=payload,
+        headers={"Stripe-Signature": header},
+        content_type="application/json",
+    )
+    assert resp.status_code == 200, resp.get_json()
+
+
+def test_overview_leaves_sandbox_clubs_out(stripe, club, db):
+    from hubra.core.services import sandbox_clubs
+
+    club_billing.update(club, {"status": "past_due"})
+    sandbox_clubs.set_sandbox(club, True)
+    db.session.commit()
+    overview = service.overview()
+    assert overview["trouble"] == [] and overview["sandboxClubs"] == 1
+    assert "past_due" not in overview["perStatus"]
+
+
+def test_manage_marks_a_club_as_sandbox(client, stripe, club, db, staff_headers):
+    url = f"/api/v1/system/tenants/{club.id}/sandbox"
+    resp = client.put(url, json={"sandbox": True}, headers=staff_headers)
+    assert resp.status_code == 200, resp.get_json()
+    assert resp.get_json()["tenant"]["sandbox"] is True
+    db.session.refresh(club)
+    assert club.settings["sandbox"] is True
+    assert (
+        client.put(url, json={"sandbox": "yes"}, headers=staff_headers).status_code
+        == 400
+    )
+    resp = client.put(url, json={"sandbox": False}, headers=staff_headers)
+    assert resp.get_json()["tenant"]["sandbox"] is False
+
+
+def test_a_club_paying_live_cannot_become_sandbox(
+    client, stripe, club, db, staff_headers
+):
+    platform_settings.set_many(
+        {"stripe.mode": "live", "billing.stripe.secret_key": "rk_live_" + "b" * 24}
+    )
+    service.apply_subscription(club, stripe.subscription)
+    db.session.commit()
+    resp = client.put(
+        f"/api/v1/system/tenants/{club.id}/sandbox",
+        json={"sandbox": True},
+        headers=staff_headers,
+    )
+    assert resp.status_code == 409
+    assert resp.get_json()["error"] == "LIVE_SUBSCRIPTION"

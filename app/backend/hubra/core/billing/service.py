@@ -13,13 +13,16 @@ Stripe subscription per club and keeps the two in step:
   from the next invoice on (``sync``, no proration).
 
 Stripe's side lives in ``tenant.settings["billing_stripe"]`` (customer,
-subscription, its status and period, the last failed payment); the club's
+subscription, its status and period, the last failed payment), or in
+``billing_stripe_sandbox`` while the club runs on the sandbox keys, so
+switching ``stripe.mode`` never mixes test and live ids; the club's
 status and period end in the terms follow it.  Products have fixed ids
 (``hubra_plan_<plan>``, ``hubra_module_<code>``); prices are sent inline
 (``price_data``), so a club's own price needs no Stripe price object.
 
-Off until a platform admin turns ``billing.enabled`` on; the Stripe key is
-the platform's (``payments.stripe.secret_key``).
+Off until a platform admin turns ``billing.enabled`` on.  The Stripe key is
+the billing key of the club's mode (``platform_settings.stripe_mode``:
+sandbox clubs and sandbox mode use the sandbox key).
 """
 
 from __future__ import annotations
@@ -42,6 +45,7 @@ from hubra.core.models.tenant import Tenant
 logger = logging.getLogger(__name__)
 
 STATE_KEY = "billing_stripe"
+SANDBOX_STATE_KEY = "billing_stripe_sandbox"
 # Stripe statuses the terms know; the rest map onto them.
 _STATUS_MAP = {"incomplete_expired": "canceled"}
 # A subscription in one of these still runs (or may run again): no second one.
@@ -55,15 +59,19 @@ _PRODUCT_ID = re.compile(r"[^a-z0-9_]+")
 # ── Settings ────────────────────────────────────────────────────────────────
 
 
-def _key() -> str | None:
-    """The billing account's key; without one, the Online payments key."""
+def mode(tenant: Tenant | None = None) -> str:
+    """``sandbox`` or ``live`` for *tenant* (default: this request's club)."""
     from hubra.core.services import platform_settings
 
-    own = platform_settings.get("billing.stripe.secret_key")
-    if own:
-        return own
-    stripe = platform_settings.stripe()
-    return stripe.secret_key if stripe else None
+    return platform_settings.stripe_mode(tenant)
+
+
+def _key(tenant: Tenant | None = None) -> str | None:
+    """The billing key of *tenant*'s mode; without one, the Online payments
+    key of that mode."""
+    from hubra.core.services import platform_settings
+
+    return platform_settings.billing_stripe_key(mode(tenant)) or None
 
 
 def _setting(key: str) -> str:
@@ -75,21 +83,23 @@ def _setting(key: str) -> str:
         return ""
 
 
-def enabled() -> bool:
-    """Billing is on and a Stripe key is set."""
-    return _setting("billing.enabled") == "on" and bool(_key())
+def enabled(tenant: Tenant | None = None) -> bool:
+    """Billing is on and *tenant*'s mode has a Stripe key."""
+    return _setting("billing.enabled") == "on" and bool(_key(tenant))
 
 
 def yearly() -> bool:
     return _setting("billing.yearly") == "on"
 
 
-def test_mode() -> bool:
-    return "_test_" in (_key() or "")
+def test_mode(tenant: Tenant | None = None) -> bool:
+    from hubra.core.services import platform_settings
+
+    return mode(tenant) == platform_settings.SANDBOX
 
 
-def _need_key() -> str:
-    key = _key()
+def _need_key(tenant: Tenant) -> str:
+    key = _key(tenant)
     if not key or _setting("billing.enabled") != "on":
         raise ApiError(503, "BILLING_OFF", "Billing is not switched on")
     return key
@@ -98,15 +108,25 @@ def _need_key() -> str:
 # ── Stripe state on the club ────────────────────────────────────────────────
 
 
-def state(tenant: Tenant) -> dict:
-    return dict((tenant.settings or {}).get(STATE_KEY) or {})
+def _state_key(tenant: Tenant) -> str:
+    from hubra.core.services import platform_settings
+
+    return SANDBOX_STATE_KEY if mode(tenant) == platform_settings.SANDBOX else STATE_KEY
+
+
+def state(tenant: Tenant, live: bool | None = None) -> dict:
+    """Stripe's side in *tenant*'s current mode (or the live one with
+    ``live=True``)."""
+    key = STATE_KEY if live else _state_key(tenant)
+    return dict((tenant.settings or {}).get(key) or {})
 
 
 def _save_state(tenant: Tenant, values: dict) -> dict:
     settings = dict(tenant.settings or {})
-    merged = {**(settings.get(STATE_KEY) or {}), **values}
+    key = _state_key(tenant)
+    merged = {**(settings.get(key) or {}), **values}
     merged["updated_at"] = datetime.now(timezone.utc).isoformat()
-    settings[STATE_KEY] = merged
+    settings[key] = merged
     tenant.settings = settings
     flag_modified(tenant, "settings")
     return merged
@@ -244,7 +264,7 @@ def checkout(
     the new customer id.  Returns the page's address."""
     from hubra.core.services import club_billing
 
-    key = _need_key()
+    key = _need_key(tenant)
     if public_state(tenant)["hasSubscription"]:
         raise ApiError(409, "ALREADY_SUBSCRIBED", "The club already pays by Stripe")
     lines = items(tenant)
@@ -286,7 +306,7 @@ def checkout(
 
 def portal(tenant: Tenant, return_url: str) -> str:
     """Stripe's customer portal: card, invoices, cancel."""
-    key = _need_key()
+    key = _need_key(tenant)
     customer = state(tenant).get("customer_id")
     if not customer:
         raise ApiError(409, "NO_CUSTOMER", "The club doesn't pay by Stripe yet")
@@ -300,7 +320,7 @@ def portal(tenant: Tenant, return_url: str) -> str:
 
 
 def invoices(tenant: Tenant, limit: int = 12) -> list[dict]:
-    key = _key()
+    key = _key(tenant)
     customer = state(tenant).get("customer_id")
     if not key or not customer:
         return []
@@ -421,13 +441,23 @@ def _tenant_for(obj: dict) -> Tenant | None:
 
 
 def handle_event(event: dict) -> str:
-    """One verified webhook event.  Commits.  Returns what was done."""
+    """One verified webhook event.  Commits.  Returns what was done.  An
+    event from the other mode than the club's (``livemode``: a sandbox event
+    naming a live club, or the other way round) is ignored."""
+    from hubra.core.services import platform_settings
+
     kind = event.get("type") or ""
     obj = (event.get("data") or {}).get("object") or {}
     tenant = _tenant_for(obj)
     if tenant is None:
         return "ignored"
-    key = _key()
+    if "livemode" in event:
+        sent_from = (
+            platform_settings.LIVE if event["livemode"] else platform_settings.SANDBOX
+        )
+        if sent_from != mode(tenant):
+            return "ignored"
+    key = _key(tenant)
     if kind == "checkout.session.completed":
         sub_id = obj.get("subscription")
         if obj.get("customer"):
@@ -464,7 +494,7 @@ def sync(tenant: Tenant, force: bool = False) -> bool:
     """Replace the subscription's items when the club's terms changed.  The
     new amounts apply from the next invoice (no proration).  Does NOT commit.
     Returns True when Stripe was changed."""
-    key = _key()
+    key = _key(tenant)
     s = state(tenant)
     if not key or not s.get("subscription_id") or s.get("status") not in RUNNING:
         return False
@@ -497,7 +527,7 @@ def sync(tenant: Tenant, force: bool = False) -> bool:
 def refresh(tenant: Tenant) -> None:
     """Read the club's subscription from Stripe again and sync the terms.
     Does NOT commit."""
-    key = _key()
+    key = _key(tenant)
     sub_id = state(tenant).get("subscription_id")
     if not key or not sub_id:
         return
@@ -510,7 +540,7 @@ def refresh(tenant: Tenant) -> None:
 def reconcile() -> dict:
     """Every club with a subscription, read again (the hourly job)."""
     done = failed = 0
-    if not enabled():
+    if _setting("billing.enabled") != "on":
         return {"done": 0, "failed": 0}
     for tenant in db.session.scalars(
         select(Tenant).where(Tenant.deleted_at.is_(None))
@@ -534,16 +564,20 @@ def reconcile() -> dict:
 
 
 def overview(today: date | None = None) -> dict:
-    """Monthly revenue, clubs per status and the clubs with a payment problem."""
-    from hubra.core.services import club_billing
+    """Monthly revenue, clubs per status and the clubs with a payment problem.
+    Sandbox clubs are only counted (``sandboxClubs``): their money isn't real."""
+    from hubra.core.services import club_billing, sandbox_clubs
 
     per_status: dict[str, int] = {}
     mrr = Decimal("0")
     trouble = []
-    paying = 0
+    paying = sandbox = 0
     for tenant in db.session.scalars(
         select(Tenant).where(Tenant.deleted_at.is_(None)).order_by(Tenant.name)
     ).all():
+        if sandbox_clubs.is_sandbox(tenant):
+            sandbox += 1
+            continue
         terms = club_billing.stored(tenant)
         status = terms["status"]
         per_status[status] = per_status.get(status, 0) + 1
@@ -573,6 +607,7 @@ def overview(today: date | None = None) -> dict:
         "mrrChf": f"{mrr.quantize(Decimal('0.01'))}",
         "arrChf": f"{(mrr * 12).quantize(Decimal('0.01'))}",
         "payingClubs": paying,
+        "sandboxClubs": sandbox,
         "perStatus": per_status,
         "trouble": trouble,
     }

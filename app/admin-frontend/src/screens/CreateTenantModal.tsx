@@ -8,6 +8,7 @@ import {
   Stack,
   Group,
   Alert,
+  Switch,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useQueryClient } from '@tanstack/react-query'
@@ -35,6 +36,7 @@ const makeSchema = () =>
     plan: z.string(),
     adminEmail: z.string().email(tr('Ungültige E-Mail-Adresse', 'Invalid email')).or(z.literal('')),
     adminPassword: z.string(),
+    sandbox: z.boolean(),
   })
 
 type FormValues = z.infer<ReturnType<typeof makeSchema>>
@@ -75,6 +77,7 @@ export function CreateTenantModal({
       plan: 'starter',
       adminEmail: '',
       adminPassword: '',
+      sandbox: false,
     },
   })
 
@@ -103,6 +106,7 @@ export function CreateTenantModal({
         plan: values.plan,
         admin_email: values.adminEmail || undefined,
         admin_password: values.adminPassword || undefined,
+        sandbox: values.sandbox || undefined,
       })
       queryClient.invalidateQueries({ queryKey: ['tenants'] })
       queryClient.invalidateQueries({ queryKey: ['backup-clubs'] })
@@ -165,6 +169,14 @@ export function CreateTenantModal({
             type="password"
             {...form.getInputProps('adminPassword')}
             description={tr('Nur zusammen mit der E-Mail-Adresse.', 'Only together with the email address.')}
+          />
+          <Switch
+            label={tr('Sandbox-Verein (Demo / Test)', 'Sandbox club (demo / test)')}
+            description={tr(
+              'Zahlungen und Hubra-Abo laufen immer über die Stripe-Sandbox-Schlüssel; es fliesst kein echtes Geld.',
+              'Payments and the Hubra subscription always use the Stripe sandbox keys; no real money moves.',
+            )}
+            {...form.getInputProps('sandbox', { type: 'checkbox' })}
           />
           <Group justify="flex-end" mt={8}>
             <Button variant="default" onClick={onClose}>

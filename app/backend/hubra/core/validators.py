@@ -138,11 +138,17 @@ VALIDATORS: dict[str, Callable[[str], str | None]] = {
         if re.fullmatch(r"[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?", v)
         else "A Kubernetes name: lower-case letters, digits and -"
     ),
-    "stripe_secret_key": lambda v: (
+    "stripe_live_key": lambda v: (
         None
-        if re.fullmatch(r"(sk|rk)_(test|live)_[A-Za-z0-9]{10,}", v)
-        else "A Stripe secret key (sk_test_..., sk_live_... or a restricted rk_...)"
+        if re.fullmatch(r"(sk|rk)_live_[A-Za-z0-9]{10,}", v)
+        else "A live Stripe key (sk_live_... or a restricted rk_live_...)"
     ),
+    "stripe_test_key": lambda v: (
+        None
+        if re.fullmatch(r"(sk|rk)_test_[A-Za-z0-9]{10,}", v)
+        else "A sandbox Stripe key (sk_test_... or a restricted rk_test_...)"
+    ),
+    "stripe_mode": lambda v: None if v in ("sandbox", "live") else "sandbox or live",
     "count": lambda v: (
         None if v.isdigit() and int(v) <= 10**9 else "A whole number, or empty"
     ),
