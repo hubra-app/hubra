@@ -242,7 +242,7 @@ SPECS: tuple[Spec, ...] = (
         "domains.serving",
         "Serve club domains",
         "on: every verified club domain gets a certificate and its own "
-        "Ingress (k3s with cert-manager), and visitors are sent on to the "
+        "Ingress (Kubernetes with cert-manager), and visitors are sent on to the "
         "club. off: their Ingresses are removed (the kill switch)",
         lambda cfg: "off",
         "on_off",

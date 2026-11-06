@@ -16,7 +16,7 @@ from hubra.core.permissions import (
     can_update,
     filter_updatable_fields,
 )
-from hubra.core.errors import api_error, raise_error
+from hubra.core.errors import raise_error, validation_error
 from hubra.core.extensions import db
 from hubra.core.models.group import Group
 from hubra.core.models.member import Member, member_groups
@@ -129,7 +129,7 @@ def create_group():
     try:
         data = _create_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     group = GroupsService.create(data, get_current_member().id)
 
@@ -156,7 +156,7 @@ def update_group(id: int):
     try:
         data = _update_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     data = filter_updatable_fields(data)
 
@@ -284,7 +284,7 @@ def update_group_member_role(group_id: int, member_id: int):
     try:
         data = GroupMembershipUpdateSchema().load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     membership = GroupService.update_member_role(
         group_id=group_id,

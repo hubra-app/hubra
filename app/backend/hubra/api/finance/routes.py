@@ -12,7 +12,7 @@ from hubra.core.auth.helpers import get_current_member
 
 from hubra.core.permissions import member_is_admin, permission_required, require_member
 from marshmallow import ValidationError
-from hubra.core.errors import api_error
+from hubra.core.errors import api_error, validation_error
 from hubra.core.extensions import db
 from hubra.core.schemas.finance import (
     InvoiceCreateSchema,
@@ -58,7 +58,7 @@ def create_external_party():
     try:
         data = _ext_party_create_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     party = ExternalPartiesService.create(data, get_current_member().id)
 
@@ -80,7 +80,7 @@ def update_external_party(id: int):
     try:
         data = _ext_party_update_schema.load(body, partial=True)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     ExternalPartyService.update(party, data, get_current_member().id)
 
@@ -131,7 +131,7 @@ def create_invoice():
     try:
         data = _invoice_create_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     invoice = InvoicesService.create(data, get_current_member().id)
 
@@ -153,7 +153,7 @@ def update_invoice(id: int):
     try:
         data = _invoice_update_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     InvoiceService.update(invoice, data, get_current_member().id)
 

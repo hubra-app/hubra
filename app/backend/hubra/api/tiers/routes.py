@@ -8,7 +8,7 @@ from hubra.core.auth.helpers import get_current_member
 from hubra.core.permissions import permission_required, require_member
 from hubra.core.utils import id_from_body, log_audit
 from marshmallow import ValidationError
-from hubra.core.errors import api_error
+from hubra.core.errors import api_error, validation_error
 from hubra.core.extensions import db
 from hubra.core.pricing import calculate_preview_cost
 from hubra.core.schemas.member import (
@@ -62,7 +62,7 @@ def create_tier():
     try:
         data = _create_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     tier = TiersService.create(data, get_current_member().id)
 

@@ -17,7 +17,7 @@ from flask import Blueprint, Response, jsonify, request
 from marshmallow import Schema, ValidationError, fields, validate
 
 from hubra.core.permissions import permission_required, require_global_permission
-from hubra.core.errors import api_error, error_message
+from hubra.core.errors import api_error, error_message, validation_error
 from hubra.core.extensions import db
 from hubra.core.services.i18n import (
     bulk_upsert,
@@ -131,7 +131,7 @@ def patch_i18n(locale: str):
         try:
             validated = _write_schema.load(item)
         except ValidationError as exc:
-            return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+            return validation_error(exc)
         entries.append(validated)
 
     try:
@@ -160,7 +160,7 @@ def post_translation(locale: str):
     try:
         data = _write_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     try:
         obj = upsert_translation(
@@ -224,7 +224,7 @@ def duplicate_i18n(locale: str):
     try:
         data = _dup_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     source = canonical_locale(data["source"])
     copy_values = data.get("copy_values", False)
@@ -298,7 +298,7 @@ def export_i18n(locale: str):
     try:
         query = _export_query_schema.load(request.args)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     fmt = query.get("format", "json")
     rows = get_translations(locale)
@@ -336,7 +336,7 @@ def import_i18n(locale: str):
     try:
         query = _export_query_schema.load(request.args)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     fmt = query.get("format", "json")
 
@@ -450,7 +450,7 @@ def report_keys(locale: str):
     try:
         data = _report_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     keys = data["keys"]
     if not keys:
@@ -549,7 +549,7 @@ def create_club_request():
     try:
         data = _suggestion_schema.load(request.get_json(silent=True) or {})
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
     user_id = get_jwt().get("user_id")
     try:
         req = suggestions.submit(

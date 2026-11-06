@@ -149,7 +149,7 @@ def _check_domains() -> dict:
 
 @celery_app.task(name="hubra.core.tasks.domain_tasks.serve_domains")
 def serve_domains() -> dict:
-    """Ingress and certificate for every verified club domain (k3s)."""
+    """Ingress and certificate for every verified club domain (Kubernetes)."""
     from hubra.core.services import domain_serving
 
     result = domain_serving.reconcile()

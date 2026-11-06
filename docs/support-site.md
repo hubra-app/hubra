@@ -14,7 +14,7 @@ so `/status?club=<slug>` keeps working).
 The support site is its own image (`ghcr.io/hubra-app/hubra/support-frontend`)
 and its own Deployment. Upgrading the backend or the other frontends doesn't
 restart it, so the status page and the help stay reachable while the rest of
-Hubra rolls. On k3s it runs two replicas with `maxUnavailable: 0` and a
+Hubra rolls. On Kubernetes, run two replicas with `maxUnavailable: 0` and a
 PodDisruptionBudget, because it is where people look when something else is
 down. When the API itself is down, the status page says so ("the status
 cannot be loaded right now"), which is the answer people need.
@@ -100,8 +100,7 @@ the club first.
    (`support.url`, starts out as `SUPPORT_BASE_URL`). Answers to reports and
    the password-changed mail then link to the support site; empty keeps the
    old links to the club app.
-4. Pin the image in the cluster overlay once a release has it
-   (`deploy/clusters/contabo/kustomization.yaml`).
+4. Pin the image in the cluster's repository once a release has it.
 
 The frontends read the address from `VITE_SUPPORT_URL` (ConfigMap
 `hubra-frontend`, Compose `SUPPORT_BASE_URL`, default

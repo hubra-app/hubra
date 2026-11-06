@@ -159,7 +159,7 @@ platform host only allows `manage.hubra.club`.
 
 ### Cost
 
-On the current k3s setup (backend limits 1 CPU / 512 MiB per pod), option A
+On the current Kubernetes setup (backend limits 1 CPU / 512 MiB per pod), option A
 adds one API pod and one worker pod, about 0.5–1 GB RAM and almost no CPU at
 rest. On the existing VPS that fits without a bigger plan; I didn't check
 the node's free memory. Compose installs keep `HUBRA_ROLE=all` and pay
@@ -217,7 +217,7 @@ use an external relay.
 - One club is so large that its load hurts others. That is better solved
   first with limits, queues and more replicas.
 - A club wants to self-host. That already works today: it is a normal
-  Compose or k3s install of the same images (see
+  Compose or Kubernetes install of the same images (see
   [run-with-docker.md](run-with-docker.md)).
 
 ### Recommendation

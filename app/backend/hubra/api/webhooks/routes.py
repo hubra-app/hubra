@@ -20,7 +20,7 @@ from sqlalchemy import func, select
 
 from hubra.core import webhooks
 from hubra.core.auth.helpers import get_current_member
-from hubra.core.errors import api_error
+from hubra.core.errors import error_message, api_error
 from hubra.core.extensions import db
 from hubra.core.models.webhook import Webhook, WebhookDelivery
 from hubra.core.permissions import require_admin
@@ -91,7 +91,7 @@ def _fields(data: dict, hook: Webhook | None):
         try:
             url = webhooks.check_url(str(url or ""))
         except webhooks.WebhookUrlError as exc:
-            return None, api_error("WEBHOOK_URL", str(exc), 400)
+            return None, api_error("WEBHOOK_URL", error_message(exc), 400)
     events = data.get("events")
     if events is not None or hook is None:
         if not isinstance(events, list) or not events:

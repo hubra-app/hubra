@@ -120,7 +120,13 @@ def create_app(config_name: str | None = None) -> Flask:
     _db_uri = str(app.config.get("SQLALCHEMY_DATABASE_URI", ""))
     if "sqlite" in _db_uri:
         _opts = dict(app.config.get("SQLALCHEMY_ENGINE_OPTIONS", {}))
-        for _pool_key in ("pool_size", "max_overflow", "pool_timeout", "pool_recycle"):
+        for _pool_key in (
+            "pool_size",
+            "max_overflow",
+            "pool_timeout",
+            "pool_recycle",
+            "connect_args",  # psycopg2 keepalives
+        ):
             _opts.pop(_pool_key, None)
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = _opts
 
@@ -205,8 +211,10 @@ def create_app(config_name: str | None = None) -> Flask:
     limiter.init_app(app)
 
     # ── Structured JSON logging ───────────────────────────────────────────────
+    from . import request_id
     from .logging_config import configure_logging
 
+    request_id.init_app(app)
     configure_logging(app)
 
     # ── Per-tenant API call counting ──────────────────────────────────────────
@@ -308,6 +316,8 @@ def create_app(config_name: str | None = None) -> Flask:
             "X-Total-Count",
             "X-Rows",
             "X-Truncated",
+            # So the apps can show the id of a failed request.
+            "X-Request-ID",
         ],
         max_age=600,
     )
@@ -770,7 +780,7 @@ def _register_cli(app: Flask) -> None:
 
         # The club catalog comes from the club routes and plugins; a global
         # or platform backend doesn't load them, so the app backend's init
-        # step fills it (deploy/app/backend.yaml).
+        # step fills it (docs/platform-backend.md).
         if loads_club_routes():
             created, updated, orphaned = sync_permission_catalog(app)
             click.echo(

@@ -1,6 +1,6 @@
 """Webhooks: the club's own tools hear about changes (docs/webhooks.md)."""
 
-from hubra.core.modules import Blueprint, Module
+from hubra.core.modules import Blueprint, Module, Schedule
 
 module = Module(
     code="webhooks",
@@ -17,4 +17,8 @@ module = Module(
     ),
     tables=("webhooks", "webhook_deliveries"),
     tasks=("hubra.core.tasks.webhook_tasks",),
+    # Retries whose countdown was lost with Redis (webhook_tasks.sweep).
+    schedule=(
+        Schedule("webhook-retry-sweep", "hubra.core.tasks.webhook_tasks.sweep", 300),
+    ),
 )

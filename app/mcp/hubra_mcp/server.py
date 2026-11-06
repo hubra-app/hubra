@@ -98,7 +98,7 @@ def _forwarded_for(ctx: Context) -> str | None:
 
     Off (default): the address that connected to the connector. With
     ``MCP_FORWARDED=pass`` (the connector sits behind the same proxies as
-    the API, as in deploy/app): the X-Forwarded-For those proxies sent, as
+    the API, as in the Traefik Compose file): the X-Forwarded-For those proxies sent, as
     is, so the backend's own proxy setting (PROXY_FIX_X_FOR) reads it
     exactly as it would read a request through the ingress. Only valid IP
     addresses go out."""

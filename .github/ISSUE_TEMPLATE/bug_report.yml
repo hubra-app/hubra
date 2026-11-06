@@ -21,7 +21,7 @@ body:
         - Support site (support.hubra.club)
         - API or Claude connector
         - Mail
-        - Install, upgrade or deployment (Compose, k3s)
+        - Install, upgrade or deployment (Compose, Kubernetes)
         - Something else
     validations:
       required: true
@@ -61,7 +61,7 @@ body:
       options:
         - hubra.club (hosted)
         - Self-hosted with Docker Compose
-        - Self-hosted on k3s / Kubernetes
+        - Self-hosted on Kubernetes
         - Local development
   - type: input
     id: browser

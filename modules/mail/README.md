@@ -149,32 +149,14 @@ Group alias ────────►│  Club mailbox │──► IMAP (memb
 - Auto-renewed every 12 hours
 - `cert-watcher` monitors `/etc/letsencrypt/live` and restarts services on renewal
 
-## Running on k3s
+## Kubernetes
 
-The module ships its own manifests in `modules/mail/k8s/`. They're off unless
-you deploy that directory next to `deploy/app` (a second Kustomization in your
-GitOps tool, or `kubectl apply -k`). Prerequisites are the same as for
-Compose, plus the general setup in [docs/k3s.md](../../docs/k3s.md).
+This repository ships no Kubernetes manifests for the mail stack. A cluster
+runs the same images (`haraka`, `zonemta`, `cert-watcher`, plus WildDuck and
+Mongo) from its own repository. cert-watcher needs the Docker socket, so on
+Kubernetes restart `mailserver`, `haraka` and `zonemta` after a certificate
+renewal another way (for example an hourly CronJob).
 
-- **Host ports.** IMAPS 993, SMTP 25 and submission 465/587 are `LoadBalancer`
-  Services. k3s ServiceLB binds them on the node with
-  `externalTrafficPolicy: Local`, so Haraka sees real sender IPs. Stop the
-  Compose mail containers first, or the ports collide.
-- **Certificates.** certbot still writes `/etc/letsencrypt/live/$MAIL_HOST/*` to a
-  shared volume, so the Haraka, ZoneMTA and WildDuck config is unchanged.
-  `create-secrets.sh` turns `certbot/cloudflare.ini` into Secret
-  `cloudflare-credentials`. Mail pods wait until the cert exists.
-- **Reload on renewal.** cert-watcher and socket-proxy are Compose-only. On k3s
-  the `mail-cert-reload` CronJob checks hourly and restarts `mailserver`,
-  `haraka` and `zonemta` when `fullchain.pem` changes. Its first run restarts
-  them once.
-- **Single node.** The `letsencrypt` volume is shared by several pods, which
-  works because they all run on the same node.
-- **Data from Compose.** Copy Mongo with `mongodump --archive` /
-  `mongorestore --archive` (via `kubectl exec -i mongo-0`). Copy the `mail_data`
-  and `letsencrypt` Docker volumes into the `mail-data` and `letsencrypt` PVCs,
-  which live under `/var/lib/rancher/k3s/storage/` on the node.
-
-Known issue, unchanged by the move: Haraka's `wildduck.yaml` and ZoneMTA's
+Known issue: Haraka's `wildduck.yaml` and ZoneMTA's
 Mongo/Redis URLs carry no credentials, while Mongo runs with root auth and Redis
 with `requirepass`.

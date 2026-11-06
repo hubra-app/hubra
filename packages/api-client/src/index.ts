@@ -16,5 +16,6 @@ export {
   getMaintenance,
 } from "./client";
 export type { InstanceInfo, MaintenanceState } from "./client";
+export type { FieldErrors } from "./errors";
 export { redirectTo, recentRedirects } from "./redirectGuard";
 export type { Hop as RedirectHop } from "./redirectLoop";

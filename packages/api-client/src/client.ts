@@ -1,7 +1,7 @@
 // In production: VITE_API_BASE points to https://api.hubra.club/api (Traefik → backend)
 // In local dev: VITE_API_BASE points to http://localhost:5000/api (direct to Flask)
 // VITE_API_BASE can fall back to relative "/api" (Vite proxy or Caddy proxy)
-import { localizeError } from "./errors";
+import { localizeError, type FieldErrors } from "./errors";
 
 export const BASE = (import.meta.env.VITE_API_BASE ?? "/api") + "/v1";
 
@@ -204,10 +204,12 @@ export async function apiFetch<T = unknown>(
     let message = `HTTP ${res.status}`;
     let code: string | undefined;
     let details: Record<string, unknown> | undefined;
+    let fields: FieldErrors | undefined;
     try {
       const body = await res.json();
       message = body.message ?? body.error ?? message;
       code = body.error;
+      if (body.fields && typeof body.fields === "object") fields = body.fields;
       if (res.status === 503 && code === "MAINTENANCE" && onMaintenance) {
         onMaintenance({ active: true, message: body.message ?? "", until: body.until ?? null });
       }
@@ -216,10 +218,12 @@ export async function apiFetch<T = unknown>(
     } catch {
       /* ignore */
     }
-    throw Object.assign(new Error(localizeError(res.status, code, message)), {
+    throw Object.assign(new Error(localizeError(res.status, code, message, fields)), {
       status: res.status,
       code,
       details,
+      fields,
+      requestId: res.headers.get("X-Request-ID") ?? undefined,
     });
   }
 
@@ -273,16 +277,20 @@ export async function apiFetchRaw(
   if (!res.ok) {
     let message = `HTTP ${res.status}`;
     let code: string | undefined;
+    let fields: FieldErrors | undefined;
     try {
       const body = await res.json();
       message = body.message ?? body.error ?? message;
       code = body.error;
+      if (body.fields && typeof body.fields === "object") fields = body.fields;
     } catch {
       /* ignore */
     }
-    throw Object.assign(new Error(localizeError(res.status, code, message)), {
+    throw Object.assign(new Error(localizeError(res.status, code, message, fields)), {
       status: res.status,
       code,
+      fields,
+      requestId: res.headers.get("X-Request-ID") ?? undefined,
     });
   }
 

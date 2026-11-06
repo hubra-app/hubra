@@ -160,7 +160,13 @@ def _get_disk_usage() -> float | None:
         return None
 
 
-@celery_app.task(name="hubra.core.tasks.infra_checks.run_all_checks_task")
+# Three quick checks; one stuck on a dead connection held its worker child
+# (and the hourly lock) for hours before there was a limit.
+@celery_app.task(
+    name="hubra.core.tasks.infra_checks.run_all_checks_task",
+    soft_time_limit=60,
+    time_limit=90,
+)
 def run_all_checks_task() -> None:
     """Celery task wrapper for run_all_checks."""
     result = run_all_checks()

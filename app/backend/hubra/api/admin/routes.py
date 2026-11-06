@@ -14,7 +14,7 @@ from marshmallow import ValidationError
 from sqlalchemy import select
 
 from hubra.core.permissions import require_admin
-from hubra.core.errors import ApiError
+from hubra.core.errors import ApiError, validation_error
 from hubra.core.extensions import db
 from hubra.core.models.domain import Domain
 from hubra.core.models.tenant import GlobalAuditEntry
@@ -308,7 +308,7 @@ def update_club_settings():
     try:
         validated = _club_settings_schema.load(body)
     except ValidationError as exc:
-        return jsonify({"error": "VALIDATION_ERROR", "message": str(exc.messages)}), 422
+        return validation_error(exc, 422)
 
     _check_mfa_rule(tenant, validated)
 

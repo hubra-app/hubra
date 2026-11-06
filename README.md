@@ -11,7 +11,7 @@ Hubra was previously called VollBuild COS (Club Operations Suite). VollBuild
 is now only the name of the first club running it, which is why a fresh
 install still seeds "VollBuild Makerspace" as the club name. The default host
 names are under `hubra.club`; the existing `vollbuild.ch` server keeps its
-hosts through `.env` (Compose) or the `deploy/vollbuild-ch` overlay (k3s).
+hosts through `.env`.
 
 ## Architecture
 
@@ -36,7 +36,7 @@ images, so a platform change does not restart sign-in or the club app; see
 background jobs, and with the `discord` profile a gateway process runs the
 Discord bot ([docs/discord.md](docs/discord.md)).
 
-An external Traefik (or the k3s ingress) terminates TLS and routes by Host
+An external Traefik (or a Kubernetes ingress) terminates TLS and routes by Host
 header. JWT auth cookies use `Domain=.hubra.club` so they flow
 cross-subdomain. See [docs/architecture.md](docs/architecture.md) for the
 cross-origin auth setup (CORS, CSRF, cookie attributes, ProxyFix).
@@ -51,7 +51,7 @@ cross-origin auth setup (CORS, CSRF, cookie attributes, ProxyFix).
 | **Background** | Celery 5 + Redis (worker, beat, platform worker when split)                |
 | **Mail**       | WildDuck (IMAP), Haraka (inbound SMTP), ZoneMTA (outbound SMTP), opt-in   |
 | **Edge**       | External Traefik (TLS, routing, CrowdSec) + Nginx in each frontend image  |
-| **Deployment** | Docker Compose, or Kubernetes/k3s with Kustomize (see docs/k3s.md)         |
+| **Deployment** | Images on GHCR; Docker Compose here, Kubernetes manifests in the cluster's own repo |
 
 ## Quick Start
 
@@ -70,9 +70,9 @@ The full walkthrough, production host names (`docker-compose.traefik.yml`),
 the split platform backend (`docker-compose.platform.yml`) and mail are in
 [docs/run-with-docker.md](docs/run-with-docker.md).
 
-To run on Kubernetes (k3s) instead, see [docs/k3s.md](docs/k3s.md): the base
-manifests are in `deploy/app`, and `deploy/clusters/contabo` is the overlay
-for the production cluster, meant for a GitOps tool such as Flux.
+This repository builds the images; it holds no Kubernetes manifests. A
+cluster runs the same images with the same environment variables from its own
+GitOps repository ([docs/operator-guide.md](docs/operator-guide.md#kubernetes)).
 
 **Development mode:** See [docs/frontend.md](docs/frontend.md) and
 [app/backend/API.md](app/backend/API.md).
@@ -84,8 +84,8 @@ pushed to `ghcr.io/hubra-app/hubra/*`: `backend` (every role, for Compose),
 `app-backend`, `global-backend` and `platform-backend` (one role each, see
 [docs/platform-backend.md](docs/platform-backend.md)), `frontend`, `admin-frontend`,
 `sso-frontend`, `support-frontend`, `mcp`, and for mail `haraka`, `zonemta`
-and `cert-watcher`. To save Actions minutes they are built only for a release
-or by hand, and only images whose files changed are rebuilt; the others get
+and `cert-watcher`. They are built only for a release (Flux follows version
+releases), and only images whose files changed are rebuilt; the others get
 the new tags on the same digest. A release starts with a `v*` tag push, like
 the plugins: tests, images, a maintainer's approval, then the signed images
 and the GitHub release ([docs/releases.md](docs/releases.md)).
@@ -166,7 +166,6 @@ Marketplace README and the hubra.club Modules page stay current.
 | Operators: install, upgrade, keys, backups | [docs/operator-guide.md](docs/operator-guide.md)     |
 | Club owners and admins                 | [docs/club-admin-guide.md](docs/club-admin-guide.md)     |
 | Run with Docker Compose                | [docs/run-with-docker.md](docs/run-with-docker.md)       |
-| Run on Kubernetes (k3s)                | [docs/k3s.md](docs/k3s.md)                               |
 | Split backends (app, global, platform) | [docs/platform-backend.md](docs/platform-backend.md)     |
 | More than one replica                  | [docs/scaling.md](docs/scaling.md)                       |
 | Disaster recovery runbook              | [docs/disaster-recovery.md](docs/disaster-recovery.md)   |

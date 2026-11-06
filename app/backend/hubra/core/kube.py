@@ -4,8 +4,8 @@ Only used for custom domains (``hubra.core.services.domain_serving``): one
 Ingress and one cert-manager Certificate per verified club domain. It talks
 to the API with the pod's service account (mounted token, CA and namespace),
 so it works only inside the cluster and only as far as that account's Role
-allows (deploy/app/domains-rbac.yaml: ingresses and certificates in Hubra's
-namespace). Outside a cluster :func:`available` is False and nothing runs.
+allows (ingresses and cert-manager certificates in Hubra's namespace; see
+docs/operator-guide.md#kubernetes). Outside a cluster :func:`available` is False and nothing runs.
 
 Objects are written with server-side apply (field manager ``hubra``), so a
 run that changes nothing changes nothing.

@@ -5,7 +5,7 @@ from __future__ import annotations
 from hubra.core.tasks import celery_app
 
 
-@celery_app.task
+@celery_app.task(ignore_result=False)  # its caller reads the result
 def add(x: int | float, y: int | float) -> int | float:
     """Return *x* + *y*.
 

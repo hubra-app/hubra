@@ -42,11 +42,51 @@ def error_message(exc: BaseException) -> str:
 # ── Response builder ─────────────────────────────────────────────────────────
 
 
-def api_error(code: str, message: str, status: int):
-    """Return a JSON error response with the standard envelope."""
-    response = jsonify({"error": code, "message": message})
+def api_error(code: str, message: str, status: int, fields: dict | None = None):
+    """Return a JSON error response with the standard envelope.
+
+    *fields* names what is wrong per input field, ``{"email": ["Not a valid
+    email address."]}``; the apps show it next to the field and translate
+    it, instead of parsing *message*.
+    """
+    body: dict = {"error": code, "message": message}
+    if fields:
+        body["fields"] = fields
+    response = jsonify(body)
     response.status_code = status
     return response
+
+
+def field_errors(messages) -> dict[str, list[str]]:
+    """Marshmallow's ``ValidationError.messages`` as ``{field: [problem]}``;
+    nested fields become dotted names (``address.zip``), a list's items
+    ``items.0.name``."""
+    out: dict[str, list[str]] = {}
+
+    def walk(prefix: str, value) -> None:
+        if isinstance(value, dict):
+            for key, inner in value.items():
+                walk(f"{prefix}.{key}" if prefix else str(key), inner)
+        elif isinstance(value, (list, tuple)) and value and all(
+            isinstance(v, str) for v in value
+        ):
+            out.setdefault(prefix or "_schema", []).extend(value)
+        elif isinstance(value, (list, tuple)):
+            for i, inner in enumerate(value):
+                walk(f"{prefix}.{i}" if prefix else str(i), inner)
+        else:
+            out.setdefault(prefix or "_schema", []).append(str(value))
+
+    walk("", messages if isinstance(messages, (dict, list)) else [str(messages)])
+    return out
+
+
+def validation_error(exc, status: int = 400):
+    """The answer for a marshmallow ``ValidationError``: ``VALIDATION_ERROR``
+    with the problems per field. ``message`` keeps the old text."""
+    return api_error(
+        "VALIDATION_ERROR", str(exc.messages), status, fields=field_errors(exc.messages)
+    )
 
 
 # ── Helper for raising from route logic ─────────────────────────────────────
@@ -55,19 +95,41 @@ def api_error(code: str, message: str, status: int):
 class ApiError(Exception):
     """Raise this inside route handlers to trigger the JSON error handler."""
 
-    def __init__(self, status: int, code: str, message: str):
+    def __init__(
+        self, status: int, code: str, message: str, fields: dict | None = None
+    ):
         super().__init__(message)
         self.status = status
         self.code = code
         self.message = message
+        self.fields = fields
 
 
-def raise_error(status: int, code: str, message: str) -> NoReturn:
-    """Shorthand: raise_error(404, 'NOT_FOUND', 'Member M-099 does not exist')."""
-    raise ApiError(status, code, message)
+def raise_error(
+    status: int, code: str, message: str, fields: dict | None = None
+) -> NoReturn:
+    """Shorthand: raise_error(404, 'NOT_FOUND', 'Member M-099 does not exist').
+
+    With *fields* (``{"email": ["..."]}``) the answer names the fields."""
+    raise ApiError(status, code, message, fields)
 
 
 # ── Registration ─────────────────────────────────────────────────────────────
+
+
+def _internal_error():
+    """A 500 with the request id, so the person can quote it to support."""
+    from hubra.core import request_id
+
+    response = jsonify(
+        {
+            "error": "INTERNAL_ERROR",
+            "message": "An unexpected error occurred.",
+            "requestId": request_id.current(),
+        }
+    )
+    response.status_code = 500
+    return response
 
 
 def register_error_handlers(app: Flask) -> None:
@@ -75,7 +137,7 @@ def register_error_handlers(app: Flask) -> None:
 
     @app.errorhandler(ApiError)
     def handle_api_error(exc: ApiError):
-        return api_error(exc.code, exc.message, exc.status)
+        return api_error(exc.code, exc.message, exc.status, getattr(exc, "fields", None))
 
     from sqlalchemy.exc import DataError
 
@@ -145,12 +207,12 @@ def register_error_handlers(app: Flask) -> None:
 
         error_tracker.capture(exc)
         app.logger.exception("Unhandled exception: %s", exc)
-        return api_error("INTERNAL_ERROR", "An unexpected error occurred.", 500)
+        return _internal_error()
 
     @app.errorhandler(500)
     def internal_error(exc):
         app.logger.exception("Unhandled exception: %s", exc)
-        return api_error("INTERNAL_ERROR", "An unexpected error occurred.", 500)
+        return _internal_error()
 
     # Catch-all for other Werkzeug HTTP exceptions not listed above
     @app.errorhandler(HTTPException)

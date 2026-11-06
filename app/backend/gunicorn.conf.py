@@ -19,3 +19,11 @@ def post_worker_init(worker):
     from hubra.core.roles import build_component
 
     start_heartbeat(build_component("api"), worker.wsgi)
+
+    # Statement and idle-transaction limits for API connections
+    # (hubra.core.db_limits); connections opened at start-up are dropped.
+    from hubra.core import db_limits
+    from hubra.core.extensions import db
+
+    with worker.wsgi.app_context():
+        db_limits.use("api", db.engine)

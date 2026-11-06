@@ -59,3 +59,29 @@ def _failure(
         tenant_id=_tenant_id(sender),
         retries=getattr(getattr(sender, "request", None), "retries", 0),
     )
+
+
+class TaskNotRegistered(Exception):
+    """A worker got a job it has no code for (its plugin didn't load there)."""
+
+
+@signals.task_unknown.connect(weak=False)
+def _unknown(sender=None, name=None, id=None, message=None, exc=None, **_kw):
+    """Celery drops a job whose task this worker doesn't know, without any
+    failure signal, so it only showed as "sent, never done". Count it as a
+    failure with a reason, so it shows under Failed jobs and in the alerts.
+    Usually the plugin's task module failed to import in this worker (see
+    its log for "Plugin task module ... failed to import"), or the worker
+    started before the plugin was installed."""
+    task = str(name or "unknown")
+    job_monitor.count(task, "failed")
+    job_monitor.failed(
+        task_id=str(id or ""),
+        task=task,
+        args=None,
+        kwargs=None,
+        exception=TaskNotRegistered(
+            f"{task} is not registered in this worker; its plugin's task "
+            "module did not load here (check the worker log)"
+        ),
+    )

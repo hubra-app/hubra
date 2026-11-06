@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import time
 import logging
-from uuid import uuid4
 
 from flask import Flask, g, request
 
@@ -25,12 +24,14 @@ def configure_logging(app: Flask) -> None:
         return
 
     try:
-        from pythonjsonlogger import jsonlogger  # type: ignore[import]
+        # python-json-logger 3+ (the old pythonjsonlogger.jsonlogger path
+        # only warns that it moved).
+        from pythonjsonlogger.json import JsonFormatter
     except ImportError:
         app.logger.warning("python-json-logger not installed; JSON logging disabled")
         return
 
-    class _RequestAwareFormatter(jsonlogger.JsonFormatter):
+    class _RequestAwareFormatter(JsonFormatter):
         """JsonFormatter that injects request_id from Flask's g when available."""
 
         def add_fields(
@@ -71,8 +72,8 @@ def configure_logging(app: Flask) -> None:
     logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
     @app.before_request
-    def _assign_request_id() -> None:
-        g.request_id = uuid4().hex[:8]
+    def _start_timer() -> None:
+        # The request id itself is set by hubra.core.request_id.
         g._request_start = time.monotonic()
 
     @app.after_request

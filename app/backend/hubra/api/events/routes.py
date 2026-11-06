@@ -16,7 +16,7 @@ from hubra.core.permissions import (
     require_member,
     row_group,
 )
-from hubra.core.errors import api_error, raise_error
+from hubra.core.errors import api_error, raise_error, validation_error
 from hubra.core.extensions import db
 from hubra.core.models.event import ClubEvent
 from hubra.core.models.member import Member
@@ -88,7 +88,7 @@ def create_event():
     try:
         data = _create_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     event = EventsService.create(data, get_current_member().id)
 
@@ -115,7 +115,7 @@ def update_event(event_id: int):
     try:
         data = _update_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
     check_group_change("events.events.update", data)
 
     # A date of a series: ``?scope=following`` changes it and all later
@@ -216,7 +216,7 @@ def register_for_event(event_id: int):
     try:
         data = RegisterSchema().load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     member_id = get_current_member().id
     registration = EventService.register(
@@ -248,7 +248,7 @@ def register_member_for_event(event_id: int, member_id: int):
     try:
         data = RegisterSchema().load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     registration = EventService.register(
         event_id=event_id,
@@ -365,7 +365,7 @@ def save_roll(event_id: int):
     try:
         data = AttendanceRollSchema().load(request.get_json(silent=True) or {})
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
     event = EventService.get(event_id)
     attendance.save_roll(event, data["entries"], get_current_member().id)
     db.session.commit()

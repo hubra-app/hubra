@@ -35,7 +35,12 @@ _log = logging.getLogger(__name__)
 RETRY_DELAYS = (30, 120, 600, 3600, 6 * 3600)
 MAX_ATTEMPTS = len(RETRY_DELAYS) + 1
 # A claimed row is left alone this long; a worker that died gives it back.
+# contract_tasks.deliver is stopped before it runs out (its time limit).
 LEASE = timedelta(minutes=5)
+# A new row is published right after the commit; the sweep leaves it alone
+# this long, so it only picks up rows the transport lost instead of sending
+# a second copy of every row still waiting in the queue.
+PUBLISH_GRACE = timedelta(minutes=2)
 SWEEP_BATCH = 500
 KEEP_DONE = timedelta(days=7)
 KEEP_DEAD = timedelta(days=30)
@@ -65,7 +70,7 @@ def add(
             target=target,
             tenant_id=tenant_id,
             envelope=env,
-            next_attempt_at=_now(),
+            next_attempt_at=_now() + PUBLISH_GRACE,
         )
     )
     session.info.setdefault(_PENDING, []).append((uid, tenant_id))
@@ -73,6 +78,35 @@ def add(
         # Nobody else's work to wait for.
         session.commit()
     return uid
+
+
+def add_job(task_name: str, args: list, kwargs: dict) -> str:
+    """Store "queue Celery task *task_name*" in the caller's transaction
+    (``tasks.after_commit.delay_after_commit``). Delivering the row queues
+    the task, in the club the caller was in."""
+    from hubra.core.tenant.context import current_tenant
+
+    try:
+        tenant = current_tenant()
+    except RuntimeError:
+        tenant = None
+    tid = getattr(tenant, "id", None)
+    env = transport_mod.envelope(
+        kind="job",
+        name=task_name,
+        version=1,
+        data={"args": args, "kwargs": kwargs},
+        tenant_id=tid,
+        source="core",
+    )
+    return add(
+        kind="job",
+        name=task_name[:120],
+        module_code="core",
+        target=task_name,
+        tenant_id=tid,
+        env=env,
+    )
 
 
 # ── After the commit ────────────────────────────────────────────────────────
@@ -131,7 +165,9 @@ def _claim(uid: str) -> bool:
         .where(
             ContractMessage.uid == uid,
             ContractMessage.status == "pending",
-            ContractMessage.next_attempt_at <= now,
+            # Due, or never tried: a new row waits out PUBLISH_GRACE only
+            # for the sweep, not for its own first delivery.
+            (ContractMessage.next_attempt_at <= now) | (ContractMessage.attempts == 0),
         )
         .values(
             attempts=ContractMessage.attempts + 1,
@@ -155,10 +191,17 @@ def deliver(uid: str) -> str:
     if row is None:
         return "skipped"
     kind, env = row.kind, dict(row.envelope)
+    if env.get("hubrarequestid"):
+        from flask import g
+
+        # Log lines of the handler carry the id of the request that stored it.
+        g.request_id = env["hubrarequestid"]
     module_code, target, name = row.module_code, row.target, row.name
     try:
         if kind == "event":
             _run_event(module_code, target, env)
+        elif kind == "job":
+            _run_job(target, env)
         else:
             _run_action(name, env)
     except _Skip as exc:
@@ -167,6 +210,8 @@ def deliver(uid: str) -> str:
     except _FINAL as exc:
         db.session.rollback()
         _log.warning("Outbox %s %s for %s: %s", kind, name, module_code, exc)
+        if isinstance(exc, ContractError):  # a bug, not an answer
+            _alert_dead(kind, name, module_code, f"{type(exc).__name__}: {exc}")
         return _finish(uid, "dead", f"{type(exc).__name__}: {exc}")
     except Exception as exc:
         db.session.rollback()
@@ -199,7 +244,35 @@ def _retry(uid: str, error: str) -> str:
             seconds=RETRY_DELAYS[min(row.attempts, len(RETRY_DELAYS)) - 1]
         )
     db.session.commit()
+    if row.status == "dead":
+        _alert_dead(row.kind, row.name, row.module_code, row.last_error)
     return row.status
+
+
+def _alert_dead(kind: str, name: str, module_code: str, error: str | None) -> None:
+    """A system alert when a delivery gave up after every retry, at most once
+    an hour per contract and module (a broken handler kills many rows)."""
+    try:
+        from hubra.core.redis_client import get_redis_client
+
+        client = get_redis_client()
+        if client is not None and not client.set(
+            f"hubra:outbox:dead-alert:{module_code}:{name}", "1", nx=True, ex=3600
+        ):
+            return
+        from hubra.core.services.alerts import alert_warning
+
+        alert_warning(
+            title="Plugin delivery gave up",
+            description=(
+                f"The {kind} {name} for {module_code} failed {MAX_ATTEMPTS} times "
+                "and is not retried any more. `flask contracts outbox --dead` "
+                "lists the rows, `flask contracts retry <uid>` runs one again."
+            ),
+            fields=[{"name": "Last error", "value": (error or "")[:300]}],
+        )
+    except Exception:  # an alert must never break the delivery bookkeeping
+        _log.debug("dead outbox row not alerted", exc_info=True)
 
 
 def _accepts_event_id(fn) -> bool:
@@ -229,6 +302,17 @@ def _run_event(module_code: str, target: str, env: dict) -> None:
     )
     fn(tenant_id=tid, **data, **extra)
     db.session.commit()
+
+
+def _run_job(task_name: str, env: dict) -> None:
+    """Queue the Celery task; the row is done once the broker has it."""
+    from hubra.core.tasks import celery_app
+
+    task = celery_app.tasks.get(task_name)
+    if task is None:
+        raise ContractError(f"no task {task_name} in this process")
+    data = env.get("data") or {}
+    task.delay(*list(data.get("args") or []), **dict(data.get("kwargs") or {}))
 
 
 def _run_action(name: str, env: dict) -> None:

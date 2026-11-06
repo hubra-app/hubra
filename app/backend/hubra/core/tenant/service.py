@@ -578,7 +578,7 @@ def _seed_tenant(
         # Zugriff" everywhere, so fill it here first.
         # Only a backend that loads the club routes knows the catalog; the
         # app backend's init step fills it before a platform backend can
-        # get here (deploy/app/backend.yaml).
+        # get here (docs/platform-backend.md).
         from hubra.core.roles import loads_club_routes
 
         if loads_club_routes() and db.session.scalar(select(func.count(Permission.id))) == 0:

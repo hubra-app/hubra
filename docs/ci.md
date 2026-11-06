@@ -5,10 +5,10 @@ full set only when a release is being prepared.
 
 | Workflow | Runs on | What it runs |
 | --- | --- | --- |
-| `ci.yml` (CI) | pull requests into `main`, pushes to `main` | `lint` (ruff, eslint and `tsc` in the three frontends, Compose files, Kustomize + kubeconform, shellcheck), backend unit tests (SQLite, in parallel with `pytest -n auto`), frontend unit tests, and when a change reaches what the browser sees the Compose stack with the browser tests |
+| `ci.yml` (CI) | pull requests into `main`, pushes to `main` | `lint` (ruff, pyright, eslint and `tsc` in the frontends, Compose files, shellcheck), backend unit tests on SQLite and on Postgres 16 (`backend-postgres`, also the tests SQLite skips), both in parallel with `pytest -n auto`, frontend unit tests, and when a change reaches what the browser sees the Compose stack with the browser tests |
 | `release-checks.yml` (Release checks) | `release/*` branches (create and push), pull requests into `release/*`, before every image build, by hand | all of `ci.yml` without the path filter, plus the backend tests on Postgres 18 (`backend-postgres`, which also runs the tests SQLite skips), dependency audits (pip-audit, npm audit), the image builds and the Compose stack with the browser tests |
 | `release.yml` (Release) | `v*` tag pushed | checks the tag, runs Images, waits for approval (environment `release`), then tags and signs the images, publishes the GitHub release, calls Release branch and the GitLab mirror ([releases.md](releases.md)) |
-| `images.yml` (Images) | called by Release, by hand | `release-checks.yml` first, then builds and pushes the images |
+| `images.yml` (Images) | called by Release (a `v*` tag); no manual runs | `release-checks.yml` first, then builds and pushes the images |
 | `release-branch.yml` (Release branch) | called by Release (not pre-releases) | creates `release/X.Y` at the release's commit if it does not exist yet |
 
 On pull requests and pushes to `main`, lint and the test jobs run only for
@@ -16,9 +16,9 @@ the parts of the code the change touches (the `changes` job decides):
 
 | Part | Paths |
 | --- | --- |
-| ruff | `app/backend/`, `plugins/` |
+| ruff, pyright | `app/backend/`, `plugins/` |
 | eslint + `tsc`, per frontend | that frontend's `app/*frontend/` folder, `packages/`, `plugins/` |
-| Compose, Kustomize + kubeconform, shellcheck | `docker-compose*.yml`, `.env.example`, `settings.yaml`, `deploy/`, `modules/`, `scripts/`, `app/deploy/` |
+| Compose, shellcheck | `docker-compose*.yml`, `.env.example`, `settings.yaml`, `modules/`, `scripts/`, `app/deploy/` |
 | backend tests | `app/backend/`, `plugins/`, `settings.yaml` |
 | frontend tests | `app/*frontend/`, `packages/`, `plugins/` |
 | browser tests (`browser-tests`, see below) | `app/*frontend/`, `packages/`, `plugins/`; the backend code that serves the API (`app/backend/` without `tests/`, `hubra/core/tasks/` and `hubra/templates/`), `migrations/`, `CHANGELOG.md`, `CHANGELOG.de.md` and `ROADMAP.yaml` (What's new shows them); `docker-compose.yml`, `app/deploy/`, `settings.yaml`; the e2e setup (`.github/e2e/`, `scripts/init-env.sh`, `smoke-test.sh`, `e2e-accounts.sh`) |
@@ -114,12 +114,12 @@ push tag `v1.2.0` on `release/1.2`. The workflow leaves the
 existing branch as it is.
 
 Images builds only the images whose files changed since their last build
-and gives the others the new tags on the same digest; run it by hand with
-"Build every image" to rebuild all. Versions and tags:
+and gives the others the new tags on the same digest; set the repository
+variable `HUBRA_BUILD_ALL=true` to rebuild all in the next release. Versions and tags:
 [release-guidelines.md](release-guidelines.md).
 
-Manual image builds (Actions > Images > Run workflow) also run the full
-checks first.
+Images are built only for releases; there are no manual image builds,
+because the cluster's Flux follows version releases.
 
 ## Branch protection
 

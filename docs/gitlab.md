@@ -13,7 +13,7 @@ tag v1.2.3 ── release.yml: checks, images, approval ──▶ ghcr.io/hubra-
 
 | Pipeline on GitLab | Jobs |
 | --- | --- |
-| `main`, merge requests | `backend` (ruff, pytest), `frontends` (lint, build, plugin frontends), `compose`, `kubernetes` (kustomize + kubeconform of every overlay), `shellcheck`, close to `.github/workflows/ci.yml` |
+| `main`, merge requests | `backend` (ruff, pytest), `frontends` (lint, build, plugin frontends), `compose`, `shellcheck`, close to `.github/workflows/ci.yml` |
 | tag `v1.2.3` or `v1.2.3-rc.1` | the checks, then `release-notes` waits for GitHub to push the images of that version, looks up their digests, and `release` creates a GitLab Release with the changelog and the digests |
 
 Only tags in semver form (`v` + `MAJOR.MINOR.PATCH`, optional `-pre.release`)
@@ -30,8 +30,8 @@ Every image is built once, by `.github/workflows/images.yml`, and lives at
 | --- | --- |
 | `1.2.3` | release `v1.2.3` once approved (pre-releases too) |
 | `1.2` | release `v1.2.3` once approved, not for pre-releases |
-| `latest` | the newest build: approved releases (not pre-releases) and manual runs on `main`; not for the cluster |
-| `sha-<commit>` | every build: releases and manual runs (Actions → Images → Run workflow) |
+| `latest` | the newest approved release (not pre-releases); not for the cluster |
+| `sha-<commit>` | every build (releases only) |
 
 An image whose files did not change since its last build is not rebuilt: it
 gets the new tags on the same digest ([release-guidelines.md](release-guidelines.md)).
@@ -39,11 +39,10 @@ gets the new tags on the same digest ([release-guidelines.md](release-guidelines
 To save Actions minutes, a push to `main` builds no images.
 
 The cluster pins a version, ideally by digest. Each GitLab Release ends with
-an `images:` block for the overlay (`deploy/clusters/contabo/kustomization.yaml`)
-with `newTag` and `digest` for every image. Paste it over the overlay's
-`images:` and commit; Flux rolls out exactly those images and nothing else.
-Between releases, run the Images workflow by hand on `main`; its run summary
-ends with the same digest block for that build.
+an `images:` block with `newTag` and `digest` for every image. Paste it over
+the `images:` of the cluster's own repository and commit; Flux rolls out exactly those images and nothing else.
+There are no images between releases: to deploy a change, release a patch
+version.
 
 ## Setup
 
@@ -102,9 +101,7 @@ Conventional Commit type (`scripts/changelog.sh v0.1.0` shows them locally).
 
 ## Cluster pull secret
 
-Unchanged: the cluster pulls from GHCR with the `ghcr-pull` secret, which
-`deploy/create-secrets.sh` creates from `GHCR_USER` and `GHCR_TOKEN`
-(a GitHub token with `read:packages`), and the namespace's default
-ServiceAccount uses it (`deploy/app/serviceaccount.yaml`). If the cluster's
-secrets live in the GitLab GitOps repo (SOPS or Sealed Secrets), create the
-same `kubernetes.io/dockerconfigjson` Secret there instead.
+The cluster pulls from GHCR with a `kubernetes.io/dockerconfigjson` Secret
+made from a GitHub token with `read:packages`. It lives with the cluster's
+other secrets in its GitOps repository (SOPS or Sealed Secrets); this
+repository holds no manifests.

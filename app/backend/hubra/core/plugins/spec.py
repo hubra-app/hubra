@@ -131,7 +131,9 @@ def validate(m: dict, path: Path | None = None) -> str:
             return "uses: a list of areas like routes, events, tables"
         unknown = sorted(set(uses) - set(AREAS))
         if unknown:
-            return f"uses: unknown area(s) {', '.join(unknown)}; one of {', '.join(AREAS)}"
+            return (
+                f"uses: unknown area(s) {', '.join(unknown)}; one of {', '.join(AREAS)}"
+            )
     deps = m.get("depends")
     if deps is not None:
         if not isinstance(deps, dict):
@@ -184,7 +186,9 @@ def parents(entries: list[dict]) -> dict[str, str]:
     out: dict[str, str] = {}
     for e in entries:
         pid = str(e.get("id"))
-        deps = e.get("depends") if isinstance(e.get("depends"), dict) else {}
+        deps = e.get("depends")
+        if not isinstance(deps, dict):
+            deps = {}
         parent = next((str(d) for d in deps if str(d) != pid), "")
         if not parent:
             parent = next(

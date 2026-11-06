@@ -171,12 +171,33 @@ def platform_queue() -> str:
     return (os.environ.get("HUBRA_PLATFORM_QUEUE") or "").strip()
 
 
+# Club work that may take long and that nobody is waiting for: digests,
+# monthly statements, mailbox counters, translation reports. With
+# HUBRA_BULK_QUEUE set they go to that queue, so a worker of their own can
+# run them and a password-reset mail never waits behind them.
+BULK_TASK_MODULES = (
+    "hubra.core.tasks.digest_tasks",
+    "hubra.core.tasks.mail_sync",
+    "hubra.core.tasks.i18n_tasks",
+)
+
+
+def bulk_queue() -> str:
+    """The Celery queue for bulk club work, or "" to keep it on the default."""
+    return (os.environ.get("HUBRA_BULK_QUEUE") or "").strip()
+
+
 def task_routes() -> dict:
-    """Celery ``task_routes`` sending platform tasks to the platform queue."""
+    """Celery ``task_routes``: platform tasks to the platform queue and bulk
+    club work to the bulk queue, each only when its queue is set."""
+    routes: dict = {}
     queue = platform_queue()
-    if not queue:
-        return {}
-    return {f"{module}.*": {"queue": queue} for module in PLATFORM_TASK_MODULES}
+    if queue:
+        routes.update({f"{m}.*": {"queue": queue} for m in PLATFORM_TASK_MODULES})
+    queue = bulk_queue()
+    if queue:
+        routes.update({f"{m}.*": {"queue": queue} for m in BULK_TASK_MODULES})
+    return routes
 
 
 def build_component(kind: str) -> str:

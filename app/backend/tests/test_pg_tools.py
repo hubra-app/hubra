@@ -117,9 +117,9 @@ def _image_client_majors() -> set[int]:
 
 
 def _deployed_server_majors() -> dict[str, int]:
-    """Postgres major per file, from Compose and the k3s manifests."""
+    """Postgres major per file, from the Compose files."""
     found: dict[str, int] = {}
-    files = [REPO / "docker-compose.yml", *sorted((REPO / "deploy").rglob("*.yaml"))]
+    files = sorted(REPO.glob("docker-compose*.yml"))
     pattern = re.compile(
         r"(?:image:\s*[\"']?(?:docker\.io/)?(?:library/)?postgres:"
         r"|imageName:\s*[\"']?ghcr\.io/cloudnative-pg/postgresql:)(\d+)"
@@ -134,7 +134,7 @@ def test_backend_image_has_a_client_for_every_deployed_postgres():
     clients = _image_client_majors()
     servers = _deployed_server_majors()
     assert clients, "app/backend/Dockerfile installs no postgresql-client-<major>"
-    assert servers, "no Postgres image found in docker-compose.yml or deploy/"
+    assert servers, "no Postgres image found in docker-compose.yml"
     newest = max(clients)
     too_new = {where: m for where, m in servers.items() if m > newest}
     assert not too_new, (

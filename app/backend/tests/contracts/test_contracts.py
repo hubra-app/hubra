@@ -225,7 +225,11 @@ def test_a_failing_handler_is_retried_then_succeeds(wired, db):
     assert [c[1] for c in CALLS] == [5]
 
 
-def test_a_handler_that_keeps_failing_ends_dead(wired, db):
+def test_a_handler_that_keeps_failing_ends_dead(wired, db, monkeypatch):
+    from hubra.core.services import alerts
+
+    sent = []
+    monkeypatch.setattr(alerts, "alert_warning", lambda **kw: sent.append(kw))
     FAIL["n"] = 100
     events_mod.emit("demo.thing.happened", tenant_id=None, thing_id=6)
     for _ in range(outbox.MAX_ATTEMPTS):
@@ -233,6 +237,7 @@ def test_a_handler_that_keeps_failing_ends_dead(wired, db):
         outbox.sweep()
     (row,) = _rows()
     assert row.status == "dead" and row.attempts == outbox.MAX_ATTEMPTS
+    assert len(sent) == 1 and "demo.thing.happened" in sent[0]["description"]
     assert outbox.replay(row.uid)
     FAIL["n"] = 0
     outbox.sweep()
@@ -267,9 +272,45 @@ def test_lost_by_the_transport_the_sweep_sends_it(wired, db):
         transport_mod.set_transport(None)
     (row,) = _rows()
     assert row.status == "pending" and row.attempts == 0 and CALLS == []
+    # Within the grace period the sweep leaves it alone: its own delivery
+    # may still be waiting in the queue.
+    outbox.sweep()
+    db.session.refresh(row)
+    assert row.status == "pending" and CALLS == []
+    _due_now(db)
     outbox.sweep()
     db.session.refresh(row)
     assert row.status == "done" and CALLS[0][1] == 8
+
+
+def test_a_new_row_is_delivered_at_once_but_swept_only_after_the_grace(wired, db):
+    class Lost:
+        name = "lost"
+        sent: list = []
+
+        def publish(self, uid, tenant_id):
+            self.sent.append(uid)
+
+    transport_mod.set_transport(Lost())
+    try:
+        events_mod.emit("demo.thing.happened", tenant_id=None, thing_id=11)
+        (row,) = _rows()
+        assert row.next_attempt_at.replace(tzinfo=None) > outbox._now().replace(
+            tzinfo=None
+        )
+        assert outbox.sweep()["sent"] == 0  # not a second copy
+        assert outbox.deliver(row.uid) == "done"  # the first one still runs
+    finally:
+        transport_mod.set_transport(None)
+    assert CALLS[-1][1] == 11
+
+
+def test_deliver_stops_inside_the_lease():
+    from hubra.core.tasks import contract_tasks
+
+    lease = outbox.LEASE.total_seconds()
+    assert contract_tasks.deliver.soft_time_limit < contract_tasks.deliver.time_limit
+    assert contract_tasks.deliver.time_limit < lease
 
 
 def test_a_consumer_wanting_another_version_isnt_called(wired, db, monkeypatch):

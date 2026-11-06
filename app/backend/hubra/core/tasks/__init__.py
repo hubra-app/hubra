@@ -49,9 +49,16 @@ def make_celery(app: Flask) -> Celery:
                 tenant = current_tenant()
             except RuntimeError:  # no app context
                 tenant = None
+            from hubra.core import request_id
+
+            headers = dict(options.get("headers") or {})
             if tenant is not None:
-                headers = dict(options.get("headers") or {})
                 headers.setdefault("tenant_id", tenant.id)
+            rid = request_id.current()
+            if rid:
+                # The task's log lines carry the id of what started it.
+                headers.setdefault("request_id", rid)
+            if headers:
                 options["headers"] = headers
             return super().apply_async(args, kwargs, **options)
 
@@ -71,6 +78,11 @@ def make_celery(app: Flask) -> Celery:
                 refresh_thresholds()
                 # Slow queries of this task say if the pod was held back.
                 mark_start()
+                from flask import g
+
+                from hubra.core import request_id
+
+                g.request_id = request_id.accept(self._header("request_id"))
                 job = self._header(scheduling.HEADER)
                 if job:
                     # Sent by beat: one run of this schedule entry at a time,
@@ -234,7 +246,7 @@ def make_celery(app: Flask) -> Celery:
                 "task": "hubra.core.tasks.domain_tasks.check_domains",
                 "schedule": 60.0,
             },
-            # Club domains: certificate, then Ingress (no-op outside k3s).
+            # Club domains: certificate, then Ingress (no-op outside Kubernetes).
             "serve-domains-2min": {
                 "task": "hubra.core.tasks.domain_tasks.serve_domains",
                 "schedule": 120.0,
@@ -284,6 +296,7 @@ def make_celery(app: Flask) -> Celery:
         },
         "broker_connection_retry_on_startup": False,
         "timezone": "UTC",
+        **worker_defaults(),
         # One send per schedule slot even with several beats; see scheduling.py.
         "beat_scheduler": "hubra.core.tasks.scheduling:HubraScheduler",
     }
@@ -308,6 +321,60 @@ def make_celery(app: Flask) -> Celery:
     app.extensions["celery"] = instance
     instance.flask_app = app
     return instance
+
+
+def _env_int(name: str, default: int) -> int:
+    import os
+
+    try:
+        return int(os.environ.get(name) or default)
+    except ValueError:
+        return default
+
+
+def worker_defaults() -> dict:
+    """Celery settings every task gets unless it says otherwise.
+
+    - **Time limits.** A task gets ``SoftTimeLimitExceeded`` after
+      ``CELERY_TASK_SOFT_TIME_LIMIT`` seconds (15 min) and is killed a minute
+      later, so a hung network call or query can't hold a worker child (and,
+      for a scheduled job, its advisory lock) for hours. Long jobs (backups,
+      restores) set their own limits; short checks set tighter ones.
+    - **Late acks.** A task's message is acknowledged when it finishes, so a
+      worker that is stopped mid-task (a deploy, a restart) hands it to the
+      next one. Tasks must therefore be safe to run twice; the few that
+      aren't (and the long ones, see the visibility timeout) set
+      ``acks_late=False``.
+    - **One message at a time per child** (prefetch 1): a long task doesn't
+      sit on short ones that another child could run.
+    - **No results** unless a task asks for them: nothing in Hubra reads
+      them, and they filled Redis for a day each.
+    - **Children are recycled** after ``CELERY_MAX_TASKS_PER_CHILD`` tasks
+      (500) or when they grow past ``CELERY_MAX_MEMORY_PER_CHILD`` KiB
+      (250 000), so a leak can't push the pod over its memory limit.
+    - **Visibility timeout** two hours: Redis hands an unacknowledged
+      message to another worker after this long, so it must be longer than
+      any late-acked task and any ``countdown`` (webhook retries wait up to
+      an hour).
+    """
+    soft = _env_int("CELERY_TASK_SOFT_TIME_LIMIT", 15 * 60)
+    return {
+        "task_soft_time_limit": soft,
+        "task_time_limit": soft + 60,
+        "task_acks_late": True,
+        "worker_prefetch_multiplier": 1,
+        "worker_cancel_long_running_tasks_on_connection_loss": True,
+        "task_ignore_result": True,
+        "result_expires": 3600,
+        "worker_max_tasks_per_child": _env_int("CELERY_MAX_TASKS_PER_CHILD", 500),
+        "worker_max_memory_per_child": _env_int("CELERY_MAX_MEMORY_PER_CHILD", 250_000),
+        "broker_transport_options": {"visibility_timeout": VISIBILITY_TIMEOUT},
+        "result_backend_transport_options": {"visibility_timeout": VISIBILITY_TIMEOUT},
+    }
+
+
+# Longer than any late-acked task and any countdown (see worker_defaults).
+VISIBILITY_TIMEOUT = 2 * 3600
 
 
 def _module_task_imports(plugins: bool = False) -> list[str]:
@@ -381,10 +448,12 @@ def _fresh_db_connections(**_kwargs) -> None:
     prefork pool forks; children sharing those sockets interleave their
     queries ("error with status PGRES_TUPLES_OK and no message").
     """
+    from hubra.core import db_limits
     from hubra.core.extensions import db
 
     with celery_app.flask_app.app_context():
-        db.engine.dispose(close=False)
+        # Its own connections, with the worker's statement and idle limits.
+        db_limits.use("worker", db.engine)
 
 
 signals.import_modules.connect(_import_plugin_task_modules, weak=False)

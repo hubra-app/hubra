@@ -142,3 +142,9 @@ Roles; the catalog of every key is `GET /api/v1/app/permissions`.
 | `DELETE`               | `204`  | Empty                                                         |
 
 Error responses follow `{ "error": "ERROR_CODE", "message": "..." }`.
+Validation errors add the problems per input field,
+`"fields": { "email": ["Not a valid email address."] }` (nested fields as
+`address.zip`); `message` keeps the older text for older apps. A 500 adds
+`"requestId"`, which is also the `X-Request-ID` header of every response.
+The apps translate by `error` when the code is specific, so prefer a
+specific code (`LAST_OWNER`) over a generic one for anything a person sees.

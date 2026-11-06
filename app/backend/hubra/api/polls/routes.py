@@ -13,7 +13,7 @@ from hubra.core.permissions import (
     row_group,
 )
 from marshmallow import ValidationError
-from hubra.core.errors import api_error
+from hubra.core.errors import api_error, validation_error
 from hubra.core.extensions import db
 from hubra.core.models.poll import Poll
 from hubra.core.schemas.poll import (
@@ -67,7 +67,7 @@ def create_poll():
     try:
         data = _create_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     poll = PollsService.create(data, get_current_member().id)
 
@@ -93,7 +93,7 @@ def cast_vote(poll_id: int):
     try:
         data = _vote_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     PollService.vote(
         poll, member_id, data["option_index"], on_behalf_of=data.get("on_behalf_of")
@@ -194,7 +194,7 @@ def update_poll(poll_id: int):
     try:
         data = _update_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
     check_group_change("polls.polls.update", data)
 
     PollService.update(poll, data, get_current_member().id)

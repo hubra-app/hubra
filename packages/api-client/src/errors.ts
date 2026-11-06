@@ -403,8 +403,15 @@ function humanField(field: string): string {
   return field === "_schema" ? "" : field.replace(/_id$/, "").replace(/_/g, " ");
 }
 
-function fieldErrorsMessage(message: string, english: boolean): string | null {
-  const fields = parseFieldErrors(message);
+/** Problems per input field, as the API sends them (`fields` in the body). */
+export type FieldErrors = Record<string, string[]>;
+
+function fieldErrorsMessage(
+  message: string,
+  english: boolean,
+  given?: FieldErrors,
+): string | null {
+  const fields = given && Object.keys(given).length ? Object.entries(given) : parseFieldErrors(message);
   if (!fields) return null;
   if (english) {
     const parts = fields.map(([f, p]) =>
@@ -425,13 +432,20 @@ function pageLanguage(): string {
 }
 
 /** The message to show for a failed request, in the page's language. */
-export function localizeError(status: number, code: string | undefined, message: string): string {
+export function localizeError(
+  status: number,
+  code: string | undefined,
+  message: string,
+  fields?: FieldErrors,
+): string {
   const english = pageLanguage().toLowerCase().startsWith("en");
-  const fieldText = fieldErrorsMessage(message, english);
+  const fieldText = fieldErrorsMessage(message, english, fields);
   if (fieldText) return fieldText;
   if (english) {
     return status === 429 ? "Too many attempts. Please wait a moment and try again." : message;
   }
+  // A specific code is stable; the English text may be reworded any time.
+  if (code && DE_CODE[code]) return DE_CODE[code];
   if (DE[message]) return DE[message];
   for (const [pattern, build] of DE_PATTERNS) {
     const m = message.match(pattern);

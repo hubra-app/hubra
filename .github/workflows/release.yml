@@ -170,7 +170,7 @@ jobs:
             digest="$(docker buildx imagetools inspect "$repo/$image:$staged" --format '{{json .Manifest}}' | jq -r .digest)"
             if [[ "$digest" != sha256:* ]]; then echo "::error::$repo/$image:$staged not found"; exit 1; fi
             if ! from=$(built_here "$repo/$image@$digest"); then
-              echo "::error::$image ($digest) has no build provenance from images.yml on main or a release tag; not signing it. Run Images on main with build_all, then push a new tag."
+              echo "::error::$image ($digest) has no build provenance from images.yml on main or a release tag; not signing it. Set the repository variable HUBRA_BUILD_ALL=true and push a new tag."
               exit 1
             fi
             echo "$image: built by images.yml on $from" >> "$GITHUB_STEP_SUMMARY"

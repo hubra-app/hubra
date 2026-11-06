@@ -120,7 +120,7 @@ Every sign-in and its end is a platform audit entry (`oauth.grant`,
 ## After deploying
 
 `flask db upgrade` (migration `c7f1a9e3b5d2`). `API_PUBLIC_URL` and
-`SSO_BASE_URL` must be set (they already are on k3s), and `mcp.url` for the
+`SSO_BASE_URL` must be set (they already are on the hosted install), and `mcp.url` for the
 connector. Nothing else: the metadata path is served by the club backend,
 which the API host's `/` already reaches.
 

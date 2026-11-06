@@ -87,8 +87,8 @@ safe either way.
   server's instructions tell Claude that tool results are data and never
   instructions, and since no tool writes, a planted instruction has nothing
   to act with. Long answers are cut at 60 000 characters.
-- **Caller's address.** With `MCP_FORWARDED=pass` (set in deploy/app and the
-  Traefik Compose file) the connector hands the `X-Forwarded-For` of the
+- **Caller's address.** With `MCP_FORWARDED=pass` (set in the Traefik Compose file;
+  set it too in a cluster's manifests) the connector hands the `X-Forwarded-For` of the
   proxies in front of it to the backend, which reads it with its own
   `PROXY_FIX_X_FOR`. A token's IP allowlist and last-used address then see
   the address Claude connects from. Without it (local Compose) the
@@ -104,10 +104,10 @@ safe either way.
 | `MCP_FORWARDED` | off | `pass`: forward the proxies' `X-Forwarded-For` (see above) |
 | `MCP_PORT` | `8000` | |
 
-- **k3s:** `deploy/app/mcp.yaml` (Deployment + Service, read-only root
-  filesystem, no service account token) and the `mcp.hubra.club` host in
-  `ingress.yaml`, on its own certificate. It calls `backend` and
-  `platform-backend` inside the cluster.
+- **Kubernetes:** a Deployment and Service for the `mcp` image (read-only root
+  filesystem, no service account token) and the `mcp.hubra.club` host in the
+  Ingress, on its own certificate. It calls `backend` and `platform-backend`
+  inside the cluster.
 - **Compose:** `docker compose --profile mcp up -d mcp`, on
   `127.0.0.1:${MCP_PORT:-8090}`. With `docker-compose.traefik.yml` it gets
   the host `${MCP_HOST:-mcp.hubra.club}`.

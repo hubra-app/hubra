@@ -20,7 +20,12 @@ _BEAT_INTERVAL = 20  # seconds — matches beat_schedule entry
 _CACHE_TTL = 90  # seconds — 4.5× the beat interval
 
 
-@celery_app.task(name="hubra.core.tasks.health_tasks.run_health_checks")
+# Runs every 20 s; a run that takes longer than a minute is stuck.
+@celery_app.task(
+    name="hubra.core.tasks.health_tasks.run_health_checks",
+    soft_time_limit=60,
+    time_limit=90,
+)
 def run_health_checks() -> dict:
     """Run all health checks concurrently and write the result to the cache.
 

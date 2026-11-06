@@ -14,10 +14,10 @@ matrix entry and the build step) means a new build. Other edits to
 
 | Image | Paths | Deployed by |
 | --- | --- | --- |
-| `backend` | `app/backend/` | Compose, k3s, Contabo |
-| `frontend` (club app) | `app/frontend/`, `packages/`, `app/deploy/nginx/` | Compose, k3s, Contabo |
-| `admin-frontend` (manage) | `app/admin-frontend/`, `packages/`, `app/deploy/nginx/` | Compose, k3s, Contabo |
-| `sso-frontend` | `app/sso-frontend/`, `packages/`, `app/deploy/nginx/` | Compose, k3s, Contabo |
+| `backend` | `app/backend/` | Compose, Contabo |
+| `frontend` (club app) | `app/frontend/`, `packages/`, `app/deploy/nginx/` | Compose, Contabo |
+| `admin-frontend` (manage) | `app/admin-frontend/`, `packages/`, `app/deploy/nginx/` | Compose, Contabo |
+| `sso-frontend` | `app/sso-frontend/`, `packages/`, `app/deploy/nginx/` | Compose, Contabo |
 | `haraka`, `zonemta`, `cert-watcher` | `modules/mail/<name>/` | mail module only (suspended by default) |
 
 When a Dockerfile starts copying something new, add that path to the
@@ -25,8 +25,9 @@ image's `paths` in `images.yml`, or that image can go stale.
 
 ## How a run decides
 
-Images runs for a release (called by `release.yml` when a `v*` tag is pushed),
-or by hand (Actions > Images > Run workflow). The full release checks run first, on the whole
+Images runs only for a release (called by `release.yml` when a `v*` tag is
+pushed); there are no manual runs, because Flux follows version releases.
+The full release checks run first, on the whole
 commit, with every image built from source. Then, per image,
 `scripts/image-reuse.sh` reads the image's `last-build` tag on GHCR and the
 commit it was built from (the `org.opencontainers.image.revision` label):
@@ -54,9 +55,8 @@ than the release.
 | --- | --- |
 | `1.2.3` | release `v1.2.3`, once approved (pre-releases too) |
 | `1.2` | release `v1.2.3`, once approved, not pre-releases |
-| `latest` | the newest build: approved releases (not pre-releases) and manual runs on `main` |
+| `latest` | the newest approved release (not pre-releases) |
 | `sha-<commit>` | every run |
-| `main-<timestamp>-<commit>` | manual runs on `main`, for Flux image automation |
 | `last-build` | every run; how the next run finds this image's last build (not for deploys) |
 
 All the images get every tag of a run, built or reused, so one version
@@ -64,9 +64,9 @@ always names a full set that passed the release checks together.
 
 ## Deploying
 
-- **k3s / Contabo:** paste the "Images pinned by digest" block from the
-  Images run summary (or the GitLab Release notes) over the overlay's
-  `images:`. Kubernetes restarts a pod when its image string changes, so
+- **Kubernetes / Contabo:** paste the "Images pinned by digest" block from the
+  Images run summary (or the GitLab Release notes) over the `images:` in the
+  cluster's repository. Kubernetes restarts a pod when its image string changes, so
   with a bare `newTag: 1.4.0` every pod restarts. With the digest, the
   unchanged images keep their digest and their pods keep running.
 - **Compose:** set `HUBRA_VERSION` and run `docker compose pull && docker

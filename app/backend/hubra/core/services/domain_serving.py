@@ -1,4 +1,4 @@
-"""Serving visitors on verified club domains (k3s with cert-manager).
+"""Serving visitors on verified club domains (Kubernetes with cert-manager).
 
 A club points its domain (``verein.ch`` or ``mitglieder.fcx.ch``) at the
 platform with a CNAME and verifies it with the TXT record

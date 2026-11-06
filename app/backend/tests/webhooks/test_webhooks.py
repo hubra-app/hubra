@@ -222,3 +222,30 @@ def test_a_missing_table_does_not_break_the_caller(client, auth_headers):
 
     assert _webhooks_listening("member.joined", None) is False  # no webhook yet
     assert _webhooks_listening("event.reminder", None) is False  # not offered
+
+
+def test_the_sweep_retries_a_delivery_whose_countdown_was_lost(
+    client, auth_headers, public_dns, sent
+):
+    from datetime import datetime, timedelta, timezone
+
+    from hubra.core.tasks import webhook_tasks
+
+    _create(client, auth_headers)
+    sent.status["code"] = 500
+    add_member(
+        client, auth_headers, email="eve@test.ch", first_name="Eve", last_name="E"
+    )
+    delivery = db.session.query(WebhookDelivery).one()
+    assert delivery.status == "pending" and delivery.attempts == 1
+    sweep = webhook_tasks.sweep.run.__wrapped__  # one club's run
+    # Not overdue yet: the countdown is still expected.
+    assert sweep() == {"retried": 0}
+    db.session.refresh(delivery)
+    assert delivery.attempts == 1
+    delivery.last_attempt_at = datetime.now(timezone.utc) - timedelta(hours=1)
+    db.session.commit()
+    sent.status["code"] = 204
+    assert sweep() == {"retried": 1}
+    db.session.refresh(delivery)
+    assert delivery.status == "delivered" and delivery.attempts == 2
