@@ -2,7 +2,7 @@
 
 Hubra runs as three processes from the backend image: the API (gunicorn),
 the Celery worker and Celery beat. One of each is the default in
-`docker-compose.yml` and `deploy/app`, and that is enough for most installs.
+`docker-compose.yml`, and that is enough for most installs.
 This page says which of them you can run more than once, and what keeps the
 work from happening twice.
 
@@ -10,7 +10,7 @@ work from happening twice.
 
 | Process        | More than one? | Notes |
 | -------------- | -------------- | ----- |
-| API (`backend`, `global-backend`, `platform-backend`) | Yes | Stateless. The init step (migrations, seeds, plugin sync) runs under a Postgres advisory lock, so pods starting together take turns. On k3s it runs in `platform-backend` only ([platform-backend.md](platform-backend.md)). |
+| API (`backend`, `global-backend`, `platform-backend`) | Yes | Stateless. The init step (migrations, seeds, plugin sync) runs under a Postgres advisory lock, so pods starting together take turns. On Kubernetes, run it in `platform-backend` only ([platform-backend.md](platform-backend.md)). |
 | Celery worker (`celery-worker`, `platform-worker`) | Yes | Each task message goes to one worker. A scheduled job never runs twice at the same time (see below). |
 | Celery beat    | Safe, not needed | Two beats send each scheduled run once. Run one; a second is only a hot standby. |
 | Postgres       | One primary | Replicas or CloudNativePG are fine for failover; the app talks to the primary. |

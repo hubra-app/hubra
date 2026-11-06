@@ -26,10 +26,10 @@ stack is in [modules/mail/](../modules/mail/README.md).
 Pick one:
 
 - **Docker Compose** on one machine: [run-with-docker.md](run-with-docker.md).
-- **Kubernetes (k3s)** with Kustomize, by hand or from a GitOps tool: [k3s.md](k3s.md).
+- **Kubernetes**, with manifests kept in the cluster's own repository (see [Kubernetes](#kubernetes) below).
 
 Both use the same images from `ghcr.io/hubra-app/hubra/*` and the same
-`.env` (on k3s it becomes the Secret `hubra-env`). Start from
+`.env` (on Kubernetes it becomes a Secret). Start from
 `scripts/init-env.sh`, which fills every secret with a random value.
 
 ### Checklist for a new installation
@@ -62,10 +62,28 @@ Both use the same images from `ghcr.io/hubra-app/hubra/*` and the same
    people request one on `join.<domain>/start` and approve it under
    All clubs › Requests. Whoever requested the club becomes its owner.
 
+### Kubernetes
+
+This repository builds the images and runs them with Docker Compose; it
+holds no Kubernetes manifests. A cluster keeps its own in its GitOps
+repository. What those manifests need from Hubra:
+
+- The same images (`ghcr.io/hubra-app/hubra/<name>`) and the same
+  environment as `.env`, from a Secret. The roles, which image runs which
+  process and the init step are in [platform-backend.md](platform-backend.md).
+- One Celery beat (`Recreate`, its own volume for the schedule file) and
+  any number of API and worker replicas ([scaling.md](scaling.md)).
+- Club domains (optional): the platform worker creates a cert-manager
+  `Certificate` and an `Ingress` per verified club domain
+  (`hubra.core.services.domain_serving`). Its service account needs a Role
+  that may get, list, create, patch and delete `ingresses`
+  (`networking.k8s.io`) and `certificates` (`cert-manager.io`) in Hubra's
+  namespace. Outside a cluster this does nothing.
+
 ## Upgrade
 
-Every start runs the same steps (Compose service `flask-init`, on k3s the
-`flask-init` initContainer of the backend):
+Every start runs the same steps (Compose service `flask-init`, on Kubernetes
+an init container of the platform backend):
 
 ```sh
 flask db upgrade        # migrations: public and every club schema
@@ -91,16 +109,14 @@ go out. `flask maintenance off` afterwards; it also ends on its own.
 3. **Switch the version.**
    - Compose: set `HUBRA_VERSION` in `.env` to the release (`1.2.3`), then
      `docker compose pull && docker compose up -d`.
-   - k3s: set `newTag` in `deploy/app/kustomization.yaml` (or your overlay),
-     or paste the digest block from the Images run summary, and push or
-     apply. With `latest`, also run
-     `kubectl -n hubra rollout restart deployment`.
+   - Kubernetes: pin the new tags or the digest block from the Images run
+     summary in the cluster's repository.
 4. **Watch the migrations.**
    - Compose: `docker compose logs flask-init` must end with exit code 0
      (`docker compose ps` shows `Exited (0)`).
-   - k3s: `kubectl -n hubra logs deploy/backend -c flask-init`.
+   - Kubernetes: the logs of the init container.
 
-   If a migration fails, the backend doesn't start and the old pods (k3s)
+   If a migration fails, the backend doesn't start and the old pods (Kubernetes)
    keep serving. Fix the cause, or go back to the previous version and
    restore the backup from step 2.
 5. **Check.** Diagnostics shows the new backend version and green
@@ -127,8 +143,7 @@ docker compose exec \
 ```
 
 Then put the same `POSTGRES_APP_USER` and `POSTGRES_APP_PASSWORD` in `.env`
-and `docker compose up -d` (on k3s, run `deploy/create-secrets.sh` again and
-restart). The script also hands the role ownership of the existing schemas
+and `docker compose up -d` (on Kubernetes, update the Secret and restart). The script also hands the role ownership of the existing schemas
 and tables, which later migrations need.
 
 ## Encryption keys
@@ -166,9 +181,8 @@ club** does it for all.
 1. Generate a new key:
    `python3 -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"`.
 2. Put the new key in `FERNET_KEY` and the old one in `FERNET_OLD_KEYS`
-   (comma-separated if there are several). On k3s that is one commit to the
-   SOPS secret `hubra-env`; then
-   `kubectl -n hubra rollout restart deployment`. Everything stays readable.
+   (comma-separated if there are several), then restart the backends and
+   workers. Everything stays readable.
 3. Press **Re-encrypt** (or `flask crypto rotate`). It rewraps the club keys
    with the new master key, one row per club, so it takes seconds.
 4. The Encryption tab (or `flask crypto check`, exit 0) must show nothing on
@@ -271,7 +285,7 @@ a throwaway database once a quarter (Step 5 there).
 
 **PostgreSQL version.** `pg_dump` refuses a server with a newer major
 version than its own. The backend image has the PostgreSQL 16, 17 and 18
-clients and backups use the one matching the server, so a Compose or k3s
+clients and backups use the one matching the server, so a Compose or Kubernetes
 install can run its own (or a managed) PostgreSQL up to 18. The Backups page
 shows an error, and `flask backups check-client` exits non-zero, when the
 server is newer than every client in the image.
@@ -353,7 +367,7 @@ There are four levels, each changed in a different place.
 
 | Level | Where | Examples |
 | ----- | ----- | -------- |
-| Installation | `.env` (k3s: Secret `hubra-env`), restart needed | Secrets, database, Redis, host names, CORS, cookie domain, `SUPERADMIN_EMAILS`, plugin directories |
+| Installation | `.env` (Kubernetes: a Secret), restart needed | Secrets, database, Redis, host names, CORS, cookie domain, `SUPERADMIN_EMAILS`, plugin directories |
 | Limits | `settings.yaml`, or env with `__` (`LIMITS__MAX_MEMBERS=50`) | Members per club, events per month |
 | Platform | manage (Mail, Backups › Storage, Discord, …), no restart | Mail relay, system sender, backup storage |
 | Club | club app › Settings (club admins) | Name, colours, language, privacy, leaving rules, banner, modules, domains |
@@ -454,7 +468,7 @@ fallback.
 ## Day to day
 
 ```sh
-# Compose (on k3s: kubectl -n hubra exec deploy/backend -- <command>)
+# Compose (on Kubernetes: kubectl exec into a backend pod)
 docker compose exec backend flask list-tenants
 docker compose exec backend flask modules list --tenant <slug>
 docker compose exec backend flask plugins list

@@ -19,7 +19,8 @@ club evening can get more app pods without more of the others.
 Compose installs keep one backend by default (`HUBRA_ROLE` unset means
 `all`); `docker-compose.platform.yml` splits off the platform there, with
 sign-in staying on the club backend (`HUBRA_ROLE=club` = app + global).
-`deploy/app` and the Contabo overlay run all three.
+A Kubernetes install usually runs all three (its manifests live in the
+cluster's own repository, not here).
 
 ## What runs where
 
@@ -62,11 +63,10 @@ migrations or a club service most roles use rebuilds them all: most of the
 backend's code is on every list. Each release still has one version for
 all of them, and its `images.yaml` pins each image by its own digest.
 
-On k3s the app backend, its worker and the Discord gateway run
-`app-backend` (`deploy/app/backend.yaml`). An overlay pinned to a build from
-before the role images can point `app-backend` at that `backend` build
-(`newName`) until it pins a release that has `app-backend`; the Contabo
-overlay does that.
+On Kubernetes the app backend, its worker and the Discord gateway run
+`app-backend`. A cluster pinned to a build from before the role images can
+point `app-backend` at that `backend` build until it pins a release that has
+`app-backend`.
 
 The API areas and the old paths that lead to them are in
 `app/backend/hubra/core/api_areas.py` (see [API areas](#api-areas) below); the
@@ -92,8 +92,8 @@ imported when called.
 
 The club permission catalog comes from the club routes and plugins, so only
 a backend that loads them fills it (`roles.loads_club_routes`: roles `all`,
-`club`, `app`). On k3s that is the app backend's `club-permissions` init
-container, after `schema-wait`; with `docker-compose.platform.yml` the
+`club`, `app`). On Kubernetes that is an init container of the app backend that runs
+`flask sync-permissions` after `python -m hubra.core.schema_wait`; with `docker-compose.platform.yml` the
 `club-init` step. The platform init step runs from the platform image, which
 sets `HUBRA_ROLE=platform` itself, so it seeds only the platform roles. A club
 permission checked by a route of another area (connected apps and
@@ -123,12 +123,13 @@ checks that the script picks the same blueprints as `roles.registers`.
 
 The browser keeps calling one API host. The split is by path:
 
-- **k3s:** the `api.` rule in the Ingress sends `/api/v1/platform` and the old
-  platform paths (`/api/v1/manager/...`, most of `/api/v1/system`) to the
-  `platform-backend` Service, `/api/v1/global` and its old paths
-  (`/api/v1/auth`, `/api/v1/account`, `/api/v1/i18n`, ...) to
-  `global-backend`, everything else to `backend`
-  (`deploy/app/ingress.yaml`, the overlays' `ingress.yaml`).
+- **Kubernetes:** the `api.` rule of the cluster's Ingress must send
+  `/api/v1/platform` and the old platform paths (`/api/v1/manager/...`, most
+  of `/api/v1/system`) to the `platform-backend` Service, `/api/v1/global`
+  and its old paths (`/api/v1/auth`, `/api/v1/account`, `/api/v1/i18n`, ...)
+  to `global-backend`, everything else to `backend`. The exact path lists are
+  `platform_paths` and `global_paths` in `app/deploy/nginx/40-hubra-runtime.sh`
+  (checked against the routes by `tests/test_api_areas.py`).
 - **Compose:** the frontend nginx sends them to `PLATFORM_API_UPSTREAM` and
   `GLOBAL_API_UPSTREAM` when set (`app/deploy/nginx/40-hubra-runtime.sh`);
   `docker-compose.platform.yml` sets the platform one.
@@ -204,9 +205,9 @@ club ones included, so it must be at least as new as the club code.
 
 ## Updating
 
-### k3s (Contabo overlay)
+### Kubernetes
 
-`deploy/clusters/contabo/kustomization.yaml` pins each image:
+Pin each image in the cluster's repository, for example:
 
 ```yaml
 images:
@@ -219,15 +220,13 @@ images:
 ```
 
 A release tags every image with its version; a role image whose files did
-not change keeps its last build's digest (see [Images](#images)). Paste the
-digest block from the release over the overlay's `images:` to pin by digest.
+not change keeps its last build's digest (see [Images](#images)). The release
+also lists every image pinned by digest, ready to paste.
 
-### Scaling
-
-Set `replicas` per Deployment in the overlay: `backend` and `global-backend`
-take any number, `platform-backend` too (the init step takes turns,
-`hubra.core.startup_lock`). `celery-worker` and `platform-worker` scale the
-same way. Beat and the Discord gateway stay at one (docs/scaling.md).
+`backend`, `global-backend` and `platform-backend` take any number of
+replicas (the init step takes turns, `hubra.core.startup_lock`), and so do
+`celery-worker` and `platform-worker`. Beat and the Discord gateway stay at
+one ([scaling.md](scaling.md)).
 
 ### Compose
 

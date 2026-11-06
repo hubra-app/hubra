@@ -46,7 +46,7 @@ jobs:
   #   SSO lint           app/sso-frontend/, packages/, plugins/
   #   support lint       app/support-frontend/, packages/
   #   deploy lint        docker-compose*.yml, .env.example, settings.yaml,
-  #                      deploy/, modules/, scripts/, app/deploy/
+  #                      modules/, scripts/, app/deploy/
   #   backend tests      app/backend/, plugins/, settings.yaml
   #   connector tests    app/mcp/ (ruff + pytest, docs/mcp.md)
   #   frontend tests     app/*frontend/, packages/, plugins/
@@ -130,7 +130,7 @@ jobs:
           out lint_admin    'app/admin-frontend/|packages/|plugins/'
           out lint_sso      'app/sso-frontend/|packages/|plugins/'
           out lint_support  'app/support-frontend/|packages/'
-          out lint_deploy   'docker-compose[^/]*\.yml$|\.env\.example$|settings\.yaml$|deploy/|modules/|scripts/|app/deploy/|\.github/e2e/'
+          out lint_deploy   'docker-compose[^/]*\.yml$|\.env\.example$|settings\.yaml$|modules/|scripts/|app/deploy/|\.github/e2e/'
           echo "lint=$lint" >> "$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
 
@@ -206,24 +206,9 @@ jobs:
           docker compose -f docker-compose.yml -f docker-compose.traefik.yml config -q
           docker compose -f docker-compose.yml -f modules/mail/docker-compose.mail.yml config -q
           docker compose -f docker-compose.yml -f .github/e2e/docker-compose.e2e.yml config -q
-      - name: Kustomize and kubeconform
-        if: ${{ !cancelled() && needs.changes.outputs.lint_deploy != 'false' }}
-        run: |
-          set -e
-          curl -sSL -o kubeconform.tar.gz https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
-          echo "95f14e87aa28c09d5941f11bd024c1d02fdc0303ccaa23f61cef67bc92619d73  kubeconform.tar.gz" | sha256sum -c -
-          tar xzf kubeconform.tar.gz kubeconform
-
-          for dir in deploy/app deploy/vollbuild-ch deploy/clusters/contabo modules/mail/k8s; do
-            kubectl kustomize --load-restrictor LoadRestrictionsNone "$dir" > "/tmp/$(basename "$dir").yaml"
-          done
-          ./kubeconform -strict -summary -kubernetes-version 1.31.0 \
-            -schema-location default \
-            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-            /tmp/app.yaml /tmp/vollbuild-ch.yaml /tmp/contabo.yaml /tmp/k8s.yaml
       - name: Shell scripts
         if: ${{ !cancelled() && needs.changes.outputs.lint_deploy != 'false' }}
-        run: shellcheck deploy/create-secrets.sh scripts/init-env.sh scripts/smoke-test.sh scripts/image-reuse.sh scripts/e2e-accounts.sh app/deploy/nginx/40-hubra-runtime.sh
+        run: shellcheck scripts/init-env.sh scripts/smoke-test.sh scripts/image-reuse.sh scripts/e2e-accounts.sh app/deploy/nginx/40-hubra-runtime.sh
 
   # Backend unit tests on in-memory SQLite (TestingConfig); no services needed.
   # pytest -n auto runs them on every CPU of the runner (pytest-xdist); each

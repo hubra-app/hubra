@@ -14,10 +14,10 @@ matrix entry and the build step) means a new build. Other edits to
 
 | Image | Paths | Deployed by |
 | --- | --- | --- |
-| `backend` | `app/backend/` | Compose, k3s, Contabo |
-| `frontend` (club app) | `app/frontend/`, `packages/`, `app/deploy/nginx/` | Compose, k3s, Contabo |
-| `admin-frontend` (manage) | `app/admin-frontend/`, `packages/`, `app/deploy/nginx/` | Compose, k3s, Contabo |
-| `sso-frontend` | `app/sso-frontend/`, `packages/`, `app/deploy/nginx/` | Compose, k3s, Contabo |
+| `backend` | `app/backend/` | Compose, Contabo |
+| `frontend` (club app) | `app/frontend/`, `packages/`, `app/deploy/nginx/` | Compose, Contabo |
+| `admin-frontend` (manage) | `app/admin-frontend/`, `packages/`, `app/deploy/nginx/` | Compose, Contabo |
+| `sso-frontend` | `app/sso-frontend/`, `packages/`, `app/deploy/nginx/` | Compose, Contabo |
 | `haraka`, `zonemta`, `cert-watcher` | `modules/mail/<name>/` | mail module only (suspended by default) |
 
 When a Dockerfile starts copying something new, add that path to the
@@ -64,9 +64,9 @@ always names a full set that passed the release checks together.
 
 ## Deploying
 
-- **k3s / Contabo:** paste the "Images pinned by digest" block from the
-  Images run summary (or the GitLab Release notes) over the overlay's
-  `images:`. Kubernetes restarts a pod when its image string changes, so
+- **Kubernetes / Contabo:** paste the "Images pinned by digest" block from the
+  Images run summary (or the GitLab Release notes) over the `images:` in the
+  cluster's repository. Kubernetes restarts a pod when its image string changes, so
   with a bare `newTag: 1.4.0` every pod restarts. With the digest, the
   unchanged images keep their digest and their pods keep running.
 - **Compose:** set `HUBRA_VERSION` and run `docker compose pull && docker

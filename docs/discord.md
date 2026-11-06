@@ -156,8 +156,8 @@ linked member the moment they join, need the gateway. It is one process for
 the whole platform, from the backend image:
 
 - Docker Compose: `docker compose --profile discord up -d discord-gateway`
-- k3s: the Deployment `discord-gateway` in `deploy/app` (1 replica; keep it
-  at one, Discord would otherwise send each join twice)
+- Kubernetes: a Deployment `discord-gateway` running the app backend image
+  (1 replica; keep it at one, Discord would otherwise send each join twice)
 
 It runs `flask modules run discord-gateway`. While the plugin isn't
 installed or the bot token isn't saved, it waits and checks again every ten

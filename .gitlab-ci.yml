@@ -79,39 +79,11 @@ compose:
     - docker compose -f docker-compose.yml -f docker-compose.traefik.yml config -q
     - docker compose -f docker-compose.yml -f modules/mail/docker-compose.mail.yml config -q
 
-kubernetes:
-  stage: check
-  image:
-    name: alpine/k8s:1.31.4
-    entrypoint: [""]
-  script:
-    - |
-      set -e
-      out=/tmp/rendered
-      mkdir -p "$out"
-      # Every overlay under deploy/ and the mail stack.
-      for kfile in deploy/*/kustomization.yaml deploy/*/*/kustomization.yaml modules/mail/k8s/kustomization.yaml; do
-        [ -f "$kfile" ] || continue
-        dir="$(dirname "$kfile")"
-        echo "kustomize $dir"
-        kubectl kustomize --load-restrictor LoadRestrictionsNone "$dir" > "$out/$(echo "$dir" | tr / _).yaml"
-      done
-      # Plain manifests, where the repo still has them.
-      extra=""
-      for dir in deploy/infrastructure deploy/flux; do
-        [ -d "$dir" ] && extra="$extra $dir"
-      done
-      # shellcheck disable=SC2086
-      kubeconform -strict -summary -kubernetes-version 1.31.0 \
-        -schema-location default \
-        -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-        "$out" $extra
-
 shellcheck:
   stage: check
   image: koalaman/shellcheck-alpine:v0.10.0
   script:
-    - shellcheck deploy/create-secrets.sh scripts/init-env.sh scripts/changelog.sh app/deploy/nginx/40-hubra-runtime.sh
+    - shellcheck scripts/init-env.sh scripts/changelog.sh app/deploy/nginx/40-hubra-runtime.sh
 
 # ── GitLab Release (tags only) ──────────────────────────────────────────────
 
@@ -146,8 +118,8 @@ release-notes:
         echo
         echo "## Images"
         echo
-        echo "Built by GitHub Actions. Pinned by digest, for the images: block of an"
-        echo "overlay such as deploy/clusters/contabo:"
+        echo "Built by GitHub Actions. Pinned by digest, for the images: block of a"
+        echo "cluster's own repository:"
         echo
         echo '```yaml'
         echo "images:"

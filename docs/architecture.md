@@ -7,9 +7,9 @@
                             │
                             ▼
               ┌───────────────────────────┐
-              │ External Traefik or the   │  :443
-              │ k3s ingress (TLS, routing │
-              │ by host, CrowdSec)        │
+              │ External Traefik or a     │  :443
+              │ Kubernetes ingress (TLS,  │
+              │ routing by host, CrowdSec)│
               └──┬───────────────┬────────┘
                  │               │
    app / manage / sso / join /   │ api.hubra.club
@@ -37,14 +37,14 @@ it is switched on; see [modules/mail/README.md](../modules/mail/README.md).
 
 ## Request flow
 
-1. **Browser → Traefik.** Traefik (or the k3s ingress) terminates TLS and
+1. **Browser → Traefik.** Traefik (or a Kubernetes ingress) terminates TLS and
    routes by host. CrowdSec middleware (`crowdsec@file`) sees every request.
 2. **Traefik → a frontend image.** Each frontend (club app, manage, SSO/join,
    support) is an nginx image with the built files. Host names, the CSP and
    the other security headers are written when the container starts
    (`app/deploy/nginx/40-hubra-runtime.sh`), so one image fits every install.
 3. **Traefik → backend.** With the production host names
-   (`docker-compose.traefik.yml`, k3s), API calls go straight to Flask on
+   (`docker-compose.traefik.yml`, or a Kubernetes ingress), API calls go straight to Flask on
    `api.hubra.club`. There is one proxy hop, so ProxyFix uses `x_for=1`
    (`PROXY_FIX_X_FOR=2` only behind a CDN that Traefik trusts). The plain
    Compose stack on localhost has no API host: each frontend's nginx proxies
@@ -130,5 +130,5 @@ host names.
 | `cert-watcher`  | `cert-watcher`                  | Restarts mail services on a new certificate |
 | `socket-proxy`  | `tecnativa/docker-socket-proxy` | Limited Docker socket for cert-watcher |
 
-On Kubernetes the same parts run from `deploy/app` and
-`modules/mail/k8s`; see [k3s.md](k3s.md).
+On Kubernetes the same images run from manifests kept in the cluster's own
+repository; see [operator-guide.md](operator-guide.md#kubernetes).

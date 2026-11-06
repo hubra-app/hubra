@@ -233,7 +233,7 @@ def make_celery(app: Flask) -> Celery:
                 "task": "hubra.core.tasks.domain_tasks.check_domains",
                 "schedule": 60.0,
             },
-            # Club domains: certificate, then Ingress (no-op outside k3s).
+            # Club domains: certificate, then Ingress (no-op outside Kubernetes).
             "serve-domains-2min": {
                 "task": "hubra.core.tasks.domain_tasks.serve_domains",
                 "schedule": 120.0,

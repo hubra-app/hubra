@@ -36,7 +36,6 @@ only a mirror that runs the checks again and creates GitLab Releases
 | Club app, manage, sign-in, support | `app/frontend/`, `app/admin-frontend/`, `app/sso-frontend/`, `app/support-frontend/` |
 | Shared frontend code | `packages/ui` (`@hubra/ui`), `packages/api-client` (`@hubra/api-client`) |
 | Claude connector | `app/mcp/` |
-| Kubernetes | `deploy/` |
 | Mail stack (WildDuck, Haraka, ZoneMTA, opt-in) | `modules/mail/` |
 | Docs | `docs/`, plus the [README](README.md) table |
 

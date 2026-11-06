@@ -23,8 +23,8 @@
 # workflow), kept with the image on GHCR.
 #
 # All the images always carry every tag of the run, so one version names
-# them all. The digest block at the end of the run summary is what an overlay
-# such as deploy/clusters/contabo pins.
+# them all. The digest block at the end of the run summary is what a cluster's
+# own repository pins.
 #
 # So to deploy main between releases, run Images by hand on main: Flux picks
 # up the main-<timestamp>-<commit> build and commits it to the GitOps repo.
@@ -274,8 +274,8 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-  # One images: block with every image of this run pinned by digest, for an
-  # overlay such as deploy/clusters/contabo. Unchanged images keep their
+  # One images: block with every image of this run pinned by digest, for a
+  # cluster's own repository. Unchanged images keep their
   # digest, so pinning this block restarts only what was rebuilt.
   digests:
     needs: build
@@ -298,7 +298,7 @@ jobs:
           {
             echo "### Images pinned by digest"
             echo
-            echo "For the \`images:\` block of an overlay such as \`deploy/clusters/contabo\`:"
+            echo "For the \`images:\` block of a cluster's repository:"
             echo
             echo '```yaml'
             echo "images:"

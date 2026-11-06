@@ -770,7 +770,7 @@ def _register_cli(app: Flask) -> None:
 
         # The club catalog comes from the club routes and plugins; a global
         # or platform backend doesn't load them, so the app backend's init
-        # step fills it (deploy/app/backend.yaml).
+        # step fills it (docs/platform-backend.md).
         if loads_club_routes():
             created, updated, orphaned = sync_permission_catalog(app)
             click.echo(
