@@ -9,6 +9,8 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-11-06
+
 ## [0.2.1] - 2026-11-06
 
 ### Changed
