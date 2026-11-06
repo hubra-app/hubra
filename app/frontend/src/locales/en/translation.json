@@ -578,6 +578,7 @@
     "rangeOf": "{{start}}–{{end}} of {{total}}",
     "refresh": "Refresh",
     "removed": "Removed",
+    "reportBrokenLink": "Report a problem",
     "required": "required",
     "retry": "Try again",
     "role": "Role",

@@ -74,14 +74,9 @@ def event_start(event, zone: ZoneInfo) -> datetime:
 
 
 def _club_url(path: str) -> str:
-    from hubra.core.services.email import _get_base_url
-    from hubra.core.tenant.context import current_tenant
+    from hubra.core.services.email import club_app_url
 
-    base = _get_base_url()
-    if not base:
-        return ""
-    tenant = current_tenant()
-    return f"{base}/{tenant.slug}{path}" if tenant else f"{base}{path}"
+    return club_app_url(path)
 
 
 def _active_members(member_ids):

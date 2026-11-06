@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { pwaStartPath, rememberClub } from './pwa'
+import { lastClubPath, pwaStartPath, rememberClub } from './pwa'
 
 describe('pwaStartPath', () => {
   afterEach(() => localStorage.clear())
@@ -30,5 +30,20 @@ describe('pwaStartPath', () => {
     expect(pwaStartPath('?source=pwa')).toBeNull()
     localStorage.setItem('hubra.lastClub', '../evil')
     expect(pwaStartPath('?source=pwa')).toBeNull()
+  })
+})
+
+describe('lastClubPath', () => {
+  afterEach(() => localStorage.clear())
+
+  it('puts the club used last in front of an in-app path', () => {
+    rememberClub('demo')
+    expect(lastClubPath('/app/dashboard/me')).toBe('/demo/app/dashboard/me')
+  })
+
+  it('is null before a club was opened, or for a bad slug', () => {
+    expect(lastClubPath('/app/dashboard/me')).toBeNull()
+    localStorage.setItem('hubra.lastClub', '../evil')
+    expect(lastClubPath('/app/dashboard/me')).toBeNull()
   })
 })
