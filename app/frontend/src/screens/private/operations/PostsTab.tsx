@@ -26,7 +26,7 @@ import {
   useSubmitOnce,
 } from '@/components/ui'
 import { MarkdownRenderer } from '@/components/MarkdownRenderer'
-import type { Post, PostComment } from '@/types'
+import type { ContentLanguage, Post, PostComment } from '@/types'
 import {
   createPost,
   updatePost,
@@ -37,8 +37,10 @@ import {
   listComments,
   addComment,
   deleteComment,
+  readerLanguage,
 } from '@/api/posts'
 import { GroupBadge, GroupField } from './ContentGroupFields'
+import { PostLanguagesField } from './PostLanguagesField'
 import { useContentGroups } from './contentGroups'
 
 // The editor is large and only needed while writing a post.
@@ -51,8 +53,20 @@ const postSchema = z.object({
   summary: z.string(),
   body: z.string().refine((v) => v.trim().length > 0, zmsg('validation.contentRequired', 'Inhalt ist erforderlich')),
   groupId: z.string(),
+  language: z.enum(['de', 'fr', 'it', 'en']),
+  translations: z.record(z.string(), z.object({ title: z.string(), summary: z.string().nullable(), body: z.string() })),
 })
 type PostForm = z.infer<typeof postSchema>
+
+/** Translations worth sending: a language with a title and a text. */
+function filledTranslations(form: PostForm): Post['translations'] {
+  const out: Post['translations'] = {}
+  for (const [lang, text] of Object.entries(form.translations)) {
+    if (lang !== form.language && (text.title.trim() || text.body.trim()))
+      out[lang as ContentLanguage] = text
+  }
+  return out
+}
 
 /* -- Posts ------------------------------------ */
 export function PostsTab() {
@@ -89,21 +103,31 @@ export function PostsTab() {
 
   const form = useForm<PostForm>({
     validate: zod4Resolver(postSchema),
-    initialValues: { title: '', summary: '', body: '', groupId: '' },
+    initialValues: { title: '', summary: '', body: '', groupId: '', language: readerLanguage(), translations: {} },
   })
   const formScope = editTarget ? updateScope : createScope
 
   const openAdd = () => {
-    form.setValues({ title: '', summary: '', body: '', groupId: createScope.defaultGroup })
+    form.setValues({
+      title: '',
+      summary: '',
+      body: '',
+      groupId: createScope.defaultGroup,
+      language: readerLanguage(),
+      translations: {},
+    })
     setAddOpen(true)
   }
   const openEdit = (post: Post) => {
     setEditTarget(post)
+    // The editor works on the post as written, not the member's language.
     form.setValues({
-      title: post.title,
-      summary: post.summary ?? '',
-      body: post.body,
+      title: post.original.title,
+      summary: post.original.summary ?? '',
+      body: post.original.body,
       groupId: post.groupId ?? '',
+      language: post.language ?? readerLanguage(),
+      translations: post.translations as PostForm['translations'],
     })
   }
 
@@ -114,6 +138,8 @@ export function PostsTab() {
         summary: data.summary || undefined,
         body: data.body,
         groupId: data.groupId || null,
+        language: data.language,
+        translations: filledTranslations(data),
       })
       postCache.prepend(post)
       setAddOpen(false)
@@ -145,6 +171,8 @@ export function PostsTab() {
         summary: data.summary || undefined,
         body: data.body,
         groupId: data.groupId || null,
+        language: data.language,
+        translations: filledTranslations(data),
       })
       postCache.replace(post)
       setEditTarget(null)
@@ -331,6 +359,20 @@ export function PostsTab() {
           />
         </Suspense>
       </Field>
+      <PostLanguagesField
+        language={form.values.language}
+        translations={form.values.translations as Post['translations']}
+        original={{ title: form.values.title, summary: form.values.summary || null, body: form.values.body }}
+        onLanguage={(v) => form.setFieldValue('language', v)}
+        onTranslations={(v) => form.setFieldValue('translations', v as PostForm['translations'])}
+        renderBody={(value, onChange) => (
+          <Field label={t('posts.content.label', 'Inhalt')}>
+            <Suspense fallback={<Loader size="sm" />}>
+              <RichTextEditor value={value} onChange={onChange} />
+            </Suspense>
+          </Field>
+        )}
+      />
     </div>
   )
 

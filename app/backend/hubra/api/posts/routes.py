@@ -17,7 +17,7 @@ from hubra.core.permissions import (
 )
 from hubra.api.posts.services import PostService, PostsService
 from hubra.core.errors import api_error
-from hubra.core.extensions import db
+from hubra.core.extensions import db, limiter
 from hubra.core.schemas.post import (
     CommentCreateSchema,
     PostCommentSchema,
@@ -86,6 +86,44 @@ def _may_move(post: Post, member_id: int, data: dict) -> bool:
 @permission_required("posts", "read", "View posts")
 def list_posts():
     return jsonify(_posts_schema.dump(PostsService.list())), 200
+
+
+# ── Machine translation for the editor ──────────────────────────────────────
+
+
+@posts_bp.get("/translate")
+@permission_required("posts", "create", "Create posts")
+def translation_available():
+    """Whether the editor offers "Translate" (the platform set up DeepL)."""
+    from hubra.core.services import machine_translation
+    from hubra.core.services.content_languages import CONTENT_LANGUAGES
+
+    return jsonify(
+        {"available": machine_translation.available(), "languages": list(CONTENT_LANGUAGES)}
+    ), 200
+
+
+@posts_bp.post("/translate")
+@permission_required("posts", "create", "Create posts")
+@limiter.limit("30 per minute")
+def translate_post_text():
+    """Title, summary and text in another language, to pre-fill the editor."""
+    from hubra.core.services import machine_translation
+    from hubra.core.services.content_languages import CONTENT_LANGUAGES
+    from hubra.core.schemas.post import POST_BODY_MAX
+
+    body = request.get_json(silent=True) or {}
+    target = body.get("target")
+    source = body.get("source")
+    if target not in CONTENT_LANGUAGES or (source and source not in CONTENT_LANGUAGES):
+        return api_error("VALIDATION_ERROR", "Unknown language", 400)
+    texts = [body.get("title") or "", body.get("summary") or "", body.get("body") or ""]
+    if not all(isinstance(t, str) for t in texts) or len(texts[0]) > 255 or (
+        len(texts[2]) > POST_BODY_MAX or len(texts[1]) > 500
+    ):
+        return api_error("VALIDATION_ERROR", "title, summary and body as text", 400)
+    title, summary, text = machine_translation.translate(texts, target, source)
+    return jsonify({"title": title[:255], "summary": summary[:500] or None, "body": text}), 200
 
 
 # ── GET /posts/<id> ───────────────────────────────────────────────────────────
