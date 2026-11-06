@@ -1,14 +1,11 @@
 # Builds the container images and pushes them to GitHub Container Registry,
 # after the full checks (release-checks.yml) have passed on the commit.
-# To save Actions minutes it runs only for a release (release.yml calls it
-# when a v* tag is pushed) or by hand (Actions > Images > Run workflow):
-#   ghcr.io/<owner>/<repo>/<image>:sha-<commit>  every build, releases and manual runs
-#   ghcr.io/<owner>/<repo>/<image>:latest        manual runs on main (releases get
-#                                                 it from release.yml once approved)
-#   ghcr.io/<owner>/<repo>/<image>:main-<timestamp>-<commit>
-#                                                 manual runs on main, sortable, for Flux
-#                                                 image automation (ImagePolicy on main-*)
-#   ghcr.io/<owner>/<repo>/<image>:last-build    every run; how the next run finds
+# It runs only for a release: release.yml calls it when a v* tag is pushed.
+# There is no manual run: the cluster's Flux follows version releases, so an
+# image built outside a release would never be deployed (and a "latest" from
+# one would mislead).
+#   ghcr.io/<owner>/<repo>/<image>:sha-<commit>  every build
+#   ghcr.io/<owner>/<repo>/<image>:last-build    every build; how the next one finds
 #                                                 this image's last build
 # The version tags (1.2.3, 1.2, latest) are not set here: release.yml adds
 # them to these same digests after the release is approved, and signs them
@@ -18,7 +15,8 @@
 # below, .dockerignore, its matrix entry and the build step here) are the same as at its last build gets
 # this run's tags on that same image (same digest), so a deploy pinned by
 # digest does not restart it (scripts/image-reuse.sh, docs/release-guidelines.md).
-# Run by hand with "Build every image" to rebuild them all. A new build gets
+# Set the repository variable HUBRA_BUILD_ALL=true to rebuild them all in the
+# next release (remove it afterwards). A new build gets
 # a build provenance attestation (who built it, from which commit and
 # workflow), kept with the image on GHCR.
 #
@@ -26,8 +24,8 @@
 # them all. The digest block at the end of the run summary is what a cluster's
 # own repository pins.
 #
-# So to deploy main between releases, run Images by hand on main: Flux picks
-# up the main-<timestamp>-<commit> build and commits it to the GitOps repo.
+# To deploy a change, release it (a patch version is enough): Flux picks up
+# the new version.
 #
 # The backend comes as four images from one Dockerfile
 # (docs/platform-backend.md, "Images"): backend holds every file (Compose),
@@ -45,12 +43,6 @@ on:
   workflow_call:
     inputs:
       build_all:
-        type: boolean
-        default: false
-  workflow_dispatch:
-    inputs:
-      build_all:
-        description: Build every image, even the ones whose files did not change
         type: boolean
         default: false
 
@@ -162,23 +154,19 @@ jobs:
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ${{ steps.name.outputs.image }}
-          # latest: manual runs on the default branch (not manual runs on
-          # other branches). A release (a v* tag) gets only sha- and
-          # last-build here; release.yml adds its version tags and latest
-          # after the approval.
+          # A release (a v* tag) gets only sha- and last-build here;
+          # release.yml adds its version tags and latest after the approval.
           flavor: |
             latest=false
           tags: |
             type=sha,format=short
-            type=raw,value=main-{{date 'YYYYMMDDHHmmss'}}-{{sha}},enable={{is_default_branch}}
-            type=raw,value=latest,enable=${{ github.event_name == 'workflow_dispatch' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
             type=raw,value=last-build
 
       # Build, or reuse the last build when none of this image's files changed.
       - name: Changed since the last build?
         id: plan
         env:
-          BUILD_ALL: ${{ inputs.build_all || false }}
+          BUILD_ALL: ${{ inputs.build_all || vars.HUBRA_BUILD_ALL == 'true' }}
           IMAGE: ${{ steps.name.outputs.image }}
           PATHS: ${{ matrix.paths }}
           ROLE: ${{ matrix.role }}

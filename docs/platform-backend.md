@@ -267,7 +267,7 @@ restore before it is stopped.
 
 ## Moving an existing cluster to the split
 
-1. Publish a release (or run Images by hand) from a commit that has this
+1. Publish a release from a commit that has this
    change, so `app-backend`, `global-backend` and `platform-backend` exist
    in GHCR. The workflow creates the new packages. Check in
    the org's Packages that all three have the same visibility as `backend`, so the

@@ -84,8 +84,8 @@ pushed to `ghcr.io/hubra-app/hubra/*`: `backend` (every role, for Compose),
 `app-backend`, `global-backend` and `platform-backend` (one role each, see
 [docs/platform-backend.md](docs/platform-backend.md)), `frontend`, `admin-frontend`,
 `sso-frontend`, `support-frontend`, `mcp`, and for mail `haraka`, `zonemta`
-and `cert-watcher`. To save Actions minutes they are built only for a release
-or by hand, and only images whose files changed are rebuilt; the others get
+and `cert-watcher`. They are built only for a release (Flux follows version
+releases), and only images whose files changed are rebuilt; the others get
 the new tags on the same digest. A release starts with a `v*` tag push, like
 the plugins: tests, images, a maintainer's approval, then the signed images
 and the GitHub release ([docs/releases.md](docs/releases.md)).

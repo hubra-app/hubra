@@ -30,8 +30,8 @@ Every image is built once, by `.github/workflows/images.yml`, and lives at
 | --- | --- |
 | `1.2.3` | release `v1.2.3` once approved (pre-releases too) |
 | `1.2` | release `v1.2.3` once approved, not for pre-releases |
-| `latest` | the newest build: approved releases (not pre-releases) and manual runs on `main`; not for the cluster |
-| `sha-<commit>` | every build: releases and manual runs (Actions → Images → Run workflow) |
+| `latest` | the newest approved release (not pre-releases); not for the cluster |
+| `sha-<commit>` | every build (releases only) |
 
 An image whose files did not change since its last build is not rebuilt: it
 gets the new tags on the same digest ([release-guidelines.md](release-guidelines.md)).
@@ -41,8 +41,8 @@ To save Actions minutes, a push to `main` builds no images.
 The cluster pins a version, ideally by digest. Each GitLab Release ends with
 an `images:` block with `newTag` and `digest` for every image. Paste it over
 the `images:` of the cluster's own repository and commit; Flux rolls out exactly those images and nothing else.
-Between releases, run the Images workflow by hand on `main`; its run summary
-ends with the same digest block for that build.
+There are no images between releases: to deploy a change, release a patch
+version.
 
 ## Setup
 
