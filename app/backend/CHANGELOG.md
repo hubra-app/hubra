@@ -7,6 +7,8 @@ section and position, or the apps show that version in English.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-06
+
 ### Changed
 
 - **Report problems without an account, from every mail**: someone who got a mail meant for another person, wants no more mails, or has another problem can report it on the support site without signing in. They leave an email address; staff see "No account" with the reason and the mail on the case in manage, and answers go to that address by mail. The form takes at most 5 reports an hour from one connection and has a hidden spam trap. Every mail (HTML and plain text) now ends with two links: "Not meant for you, or something wrong? Tell us" (naming the mail) and "Unsubscribe". They show once `support.url` is set and `flask seed` has loaded the texts.
