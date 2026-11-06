@@ -29,18 +29,7 @@ export default defineConfig({
   build: {
     modulePreload: false,
     sourcemap: false,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react-router-dom')) return 'react-vendor'
-            if (id.includes('/react/') || id.includes('/react-dom/')) return 'react-vendor'
-            if (id.includes('@mantine')) return 'mantine'
-            if (id.includes('@tabler/icons-react')) return 'icons'
-            if (id.includes('@tanstack/react-query')) return 'query'
-          }
-        },
-      },
-    },
+    // No manualChunks: forcing all of Mantine into one chunk made every page
+    // load it whole. Screens load per tab (nav.tsx), shared code splits itself.
   },
 })

@@ -22,38 +22,45 @@ import {
 } from '@tabler/icons-react'
 import { Stack } from '@mantine/core'
 import { tr } from '@/lang'
-import { MyTenantsTab } from '@/screens/MyTenantsTab'
-import { TenantsTab } from '@/screens/TenantsTab'
-import { TenantRequestsTab } from '@/screens/TenantRequestsTab'
-import { GlobalAuditTab } from '@/screens/GlobalAuditTab'
-import { SupportSessionsTab } from '@/screens/SupportSessionsTab'
-import { DataRequestsPanel } from '@/screens/DataRequests'
-import { RolesTab } from '@/screens/RolesTab'
-import { MarketplaceTab } from '@/screens/MarketplaceTab'
-import { ChangelogPanel, RoadmapPanel } from '@/screens/Releases'
-import { Backups, BackupsDesc } from '@/screens/platform/Backups'
-import {
-  EventsPanel,
-  MaintenancePanel,
-  OverviewPanel,
-  RulesPanel,
-} from '@/screens/platform/Alerts'
-import { HealthPanel, MailServerPanel, PermissionsPanel } from '@/screens/platform/Diagnostics'
-import { JobsPanel } from '@/screens/platform/Jobs'
-import { ErrorsPanel } from '@/screens/platform/Errors'
-import { PerformancePanel } from '@/screens/platform/Performance'
-import { ApiErrorsPanel } from '@/screens/platform/ApiErrors'
-import { MyAlertsCard, OutboundMailTab } from '@/screens/platform/MailMonitor'
-import { DiscordPanel } from '@/screens/platform/DiscordStatus'
-import { DiscordClubsPanel } from '@/screens/platform/DiscordClubs'
-import { SettingsSection } from '@/screens/platform/SettingsSection'
-import { PlatformPlans } from '@/screens/platform/Plans'
-import { EarlyAccess } from '@/screens/platform/EarlyAccess'
-import { PlatformTranslations } from '@/screens/platform/Translations'
-import { PlatformEncryption } from '@/screens/platform/Encryption'
-import { AllApiTokens, PlatformTokensPage } from '@/screens/platform/ApiTokens'
-import { OAuthApps } from '@/screens/platform/OAuthApps'
-import { SupportCases } from '@/screens/platform/Support'
+import { lazyNamed } from '@/lazyNamed'
+
+// Every screen loads when its tab is first opened (TabbedPage's Suspense).
+const MyTenantsTab = lazyNamed(() => import('@/screens/MyTenantsTab'), 'MyTenantsTab')
+const TenantsTab = lazyNamed(() => import('@/screens/TenantsTab'), 'TenantsTab')
+const TenantRequestsTab = lazyNamed(() => import('@/screens/TenantRequestsTab'), 'TenantRequestsTab')
+const GlobalAuditTab = lazyNamed(() => import('@/screens/GlobalAuditTab'), 'GlobalAuditTab')
+const SupportSessionsTab = lazyNamed(() => import('@/screens/SupportSessionsTab'), 'SupportSessionsTab')
+const DataRequestsPanel = lazyNamed(() => import('@/screens/DataRequests'), 'DataRequestsPanel')
+const RolesTab = lazyNamed(() => import('@/screens/RolesTab'), 'RolesTab')
+const MarketplaceTab = lazyNamed(() => import('@/screens/MarketplaceTab'), 'MarketplaceTab')
+const ChangelogPanel = lazyNamed(() => import('@/screens/Releases'), 'ChangelogPanel')
+const RoadmapPanel = lazyNamed(() => import('@/screens/Releases'), 'RoadmapPanel')
+const Backups = lazyNamed(() => import('@/screens/platform/Backups'), 'Backups')
+const BackupsDesc = lazyNamed(() => import('@/screens/platform/Backups'), 'BackupsDesc')
+const EventsPanel = lazyNamed(() => import('@/screens/platform/Alerts'), 'EventsPanel')
+const MaintenancePanel = lazyNamed(() => import('@/screens/platform/Alerts'), 'MaintenancePanel')
+const OverviewPanel = lazyNamed(() => import('@/screens/platform/Alerts'), 'OverviewPanel')
+const RulesPanel = lazyNamed(() => import('@/screens/platform/Alerts'), 'RulesPanel')
+const HealthPanel = lazyNamed(() => import('@/screens/platform/Diagnostics'), 'HealthPanel')
+const MailServerPanel = lazyNamed(() => import('@/screens/platform/Diagnostics'), 'MailServerPanel')
+const PermissionsPanel = lazyNamed(() => import('@/screens/platform/Diagnostics'), 'PermissionsPanel')
+const JobsPanel = lazyNamed(() => import('@/screens/platform/Jobs'), 'JobsPanel')
+const ErrorsPanel = lazyNamed(() => import('@/screens/platform/Errors'), 'ErrorsPanel')
+const PerformancePanel = lazyNamed(() => import('@/screens/platform/Performance'), 'PerformancePanel')
+const ApiErrorsPanel = lazyNamed(() => import('@/screens/platform/ApiErrors'), 'ApiErrorsPanel')
+const MyAlertsCard = lazyNamed(() => import('@/screens/platform/MailMonitor'), 'MyAlertsCard')
+const OutboundMailTab = lazyNamed(() => import('@/screens/platform/MailMonitor'), 'OutboundMailTab')
+const DiscordPanel = lazyNamed(() => import('@/screens/platform/DiscordStatus'), 'DiscordPanel')
+const DiscordClubsPanel = lazyNamed(() => import('@/screens/platform/DiscordClubs'), 'DiscordClubsPanel')
+const SettingsSection = lazyNamed(() => import('@/screens/platform/SettingsSection'), 'SettingsSection')
+const PlatformPlans = lazyNamed(() => import('@/screens/platform/Plans'), 'PlatformPlans')
+const EarlyAccess = lazyNamed(() => import('@/screens/platform/EarlyAccess'), 'EarlyAccess')
+const PlatformTranslations = lazyNamed(() => import('@/screens/platform/Translations'), 'PlatformTranslations')
+const PlatformEncryption = lazyNamed(() => import('@/screens/platform/Encryption'), 'PlatformEncryption')
+const AllApiTokens = lazyNamed(() => import('@/screens/platform/ApiTokens'), 'AllApiTokens')
+const PlatformTokensPage = lazyNamed(() => import('@/screens/platform/ApiTokens'), 'PlatformTokensPage')
+const OAuthApps = lazyNamed(() => import('@/screens/platform/OAuthApps'), 'OAuthApps')
+const SupportCases = lazyNamed(() => import('@/screens/platform/Support'), 'SupportCases')
 
 // The whole manage navigation in one place: sidebar sections, the pages in
 // them and each page's tabs. A tab is its own URL; App.tsx makes a route for
