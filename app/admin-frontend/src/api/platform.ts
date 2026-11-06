@@ -884,6 +884,8 @@ export interface PlanModule extends PlanModuleInput {
   name_en: string
   plugin: string | null
   included: boolean
+  /** Key of the lower plan this module comes from; null: the plan's own. */
+  inherited_from: string | null
 }
 
 export interface Plan {
@@ -895,7 +897,12 @@ export interface Plan {
   price_month_chf: string | null
   price_year_chf: string | null
   features: PlanFeature[]
+  /** With the modules of the plans it builds on (see inherited_from). */
   modules: PlanModule[]
+  /** Key of the plan whose modules this plan includes too; null: stands alone. */
+  builds_on: string | null
+  /** A custom plan: these clubs can pick it themselves although it is not public. */
+  club_ids: number[]
   limits: { members: number | null; mail_month: number | null; storage_mb: number | null }
   highlighted: boolean
   sort: number
@@ -930,7 +937,10 @@ export interface PlanInput {
   price_month_chf?: string | null
   price_year_chf?: string | null
   features?: PlanFeature[]
+  /** Only the plan's own modules; inherited ones come from builds_on. */
   modules?: PlanModuleInput[]
+  builds_on?: string | null
+  club_ids?: number[]
   limit_members?: number | null
   limit_mail_month?: number | null
   limit_storage_mb?: number | null

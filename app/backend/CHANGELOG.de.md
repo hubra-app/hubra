@@ -15,6 +15,7 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 - Hubra-Abo: Vereine sehen die volle Aufstellung (Menge pro Mitglied oder Lizenz, was der Tarif enthält), wechseln zu einem anderen öffentlichen Tarif und buchen kostenpflichtige Zusatzmodule samt Lizenzen unter Einstellungen › Hubra-Abo dazu oder ab. Einstellungen › Module zeigt den Preis kostenpflichtiger Module; Einschalten fragt zuerst nach und bucht das Modul dazu.
 - Hubra-Gebühr (bisher Plattformgebühr) auf Online-Zahlungen pro Verein: manage › Alle Vereine › Verein › Abrechnung setzt einen eigenen Prozentsatz statt des Standards; der Verein sieht ihn im Tab Hubra-Abo.
 - Hubra-Abo: Vereine erfassen E-Mail und Adresse für die Rechnungen von Hubra unter Einstellungen › Hubra-Abo › Rechnungsangaben; Speichern übernimmt sie sofort bei Stripe.
+- Tarife können aufeinander aufbauen: In manage › Einstellungen › Tarife kann ein Tarif optional auf einem tieferen Tarif aufbauen und enthält dann alle dessen Module plus die eigenen («Alles aus Starter, dazu …»). Tarife lassen sich ausserdem als eigener Tarif ausgewählten Vereinen anbieten; diese können ihn unter Einstellungen › Hubra-Abo selbst wählen.
 
 ### Changed
 

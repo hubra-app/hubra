@@ -32,16 +32,22 @@ import { addonName, addonPrice, en, useAddonSwitch, useHubraCatalog } from './su
 
 function PlanTile({
   plan,
+  base,
   current,
   onPick,
 }: {
   plan: HubraPlanChoice
+  /** The plan it builds on, when the club sees that one too. */
+  base: HubraPlanChoice | undefined
   current: boolean
   onPick: () => void
 }) {
   const { t } = useT()
   const name = en() ? plan.name_en || plan.name_de : plan.name_de
-  const included = plan.modules.filter((m) => m.included)
+  const baseName = base ? (en() ? base.name_en || base.name_de : base.name_de) : ''
+  // With a lower plan in view: "Everything in Starter, plus" its own.
+  const included = plan.modules.filter((m) => m.included && !(base && m.inherited_from))
+  const list = included.map((m) => (en() ? m.name_en : m.name_de)).join(', ')
   return (
     <Paper
       withBorder
@@ -53,11 +59,18 @@ function PlanTile({
       <Stack gap={6} h="100%">
         <Group justify="space-between" gap={6}>
           <Text fw={700}>{name}</Text>
-          {current && (
-            <Badge variant="light" leftSection={<IconCheck size={12} />}>
-              {t('subscription.currentPlan', 'Aktuell')}
-            </Badge>
-          )}
+          <Group gap={4}>
+            {plan.custom && (
+              <Badge variant="light" color="orange">
+                {t('subscription.customPlan', 'Für euren Verein')}
+              </Badge>
+            )}
+            {current && (
+              <Badge variant="light" leftSection={<IconCheck size={12} />}>
+                {t('subscription.currentPlan', 'Aktuell')}
+              </Badge>
+            )}
+          </Group>
         </Group>
         <Text size="lg" fw={700}>
           {plan.price_month_chf == null
@@ -76,12 +89,21 @@ function PlanTile({
             · {en() ? f.en || f.de : f.de}
           </Text>
         ))}
-        {included.length > 0 && (
+        {base ? (
           <Text size="xs" c="dimmed">
-            {t('subscription.planIncludes', 'Inklusive: {{list}}', {
-              list: included.map((m) => (en() ? m.name_en : m.name_de)).join(', '),
-            })}
+            {included.length > 0
+              ? t('subscription.planBuildsOn', 'Alles aus {{name}}, dazu: {{list}}', {
+                  name: baseName,
+                  list,
+                })
+              : t('subscription.planBuildsOnOnly', 'Alles aus {{name}}', { name: baseName })}
           </Text>
+        ) : (
+          included.length > 0 && (
+            <Text size="xs" c="dimmed">
+              {t('subscription.planIncludes', 'Inklusive: {{list}}', { list })}
+            </Text>
+          )
         )}
         <div style={{ flex: 1 }} />
         {!current && (
@@ -130,7 +152,13 @@ export function PlanCard() {
       </Text>
       <SimpleGrid cols={{ base: 1, sm: Math.min(3, data.plans.length) }} spacing="sm">
         {data.plans.map((p) => (
-          <PlanTile key={p.key} plan={p} current={p.key === data.plan} onPick={() => setPick(p)} />
+          <PlanTile
+            key={p.key}
+            plan={p}
+            base={p.builds_on ? data.plans.find((x) => x.key === p.builds_on) : undefined}
+            current={p.key === data.plan}
+            onPick={() => setPick(p)}
+          />
         ))}
       </SimpleGrid>
       {pick && (

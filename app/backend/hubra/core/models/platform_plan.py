@@ -3,7 +3,10 @@ add-ons, with their list prices, as the platform sets them in manage.
 
 Public schema only.  ``public`` decides what the public pricing API
 (``GET /api/v1/public/pricing``) and so the website show; a plan that is
-not public is still assignable, for individual deals.  A club's own price,
+not public is still assignable, for individual deals, and ``club_ids``
+offers it to chosen clubs in their own subscription settings.  A plan can
+**build on** another plan (``builds_on``): it then includes that plan's
+modules as well as its own.  A club's own price,
 discount, sponsor and add-on prices live on the club
 (``services.club_billing``).  Nothing here charges anyone yet.
 """
@@ -49,6 +52,14 @@ class PlatformPlan(db.Model):
     # price_chf null: included at no extra cost; otherwise the price per
     # month for each unit (flat, per member or per licence).
     modules: Mapped[list | None] = mapped_column(
+        JSONB().with_variant(db.JSON, "sqlite"), nullable=True
+    )
+    # Key of the plan whose modules this plan includes too (and, through
+    # it, the modules of the plan that one builds on).  Null: stands alone.
+    builds_on: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    # A custom plan: the clubs (tenant ids) that may pick it themselves in
+    # Settings › Hubra subscription although it is not public.
+    club_ids: Mapped[list | None] = mapped_column(
         JSONB().with_variant(db.JSON, "sqlite"), nullable=True
     )
     # Null: no limit (see services.quotas).

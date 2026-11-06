@@ -38,7 +38,7 @@ def licensed_modules(tenant: Tenant) -> dict[str, int]:
     own = {a["code"]: a for a in terms["addons"]}
     out: dict[str, int] = {}
     plan = plans.get(tenant.plan)
-    for m in (plan.modules or []) if plan else []:
+    for m in plans.effective_modules(plan) if plan else []:
         code = m.get("code")
         if code in own or m.get("price_chf") is None:
             continue

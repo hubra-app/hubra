@@ -26,13 +26,16 @@ part of this API.
       "modules": [
         {
           "code": "discord", "name_de": "Discord", "name_en": "Discord",
-          "plugin": "discord", "price_chf": null, "unit": "flat", "included": true
+          "plugin": "discord", "price_chf": null, "unit": "flat", "included": true,
+          "inherited_from": null
         },
         {
           "code": "mail", "name_de": "Mail", "name_en": "Mail",
-          "plugin": null, "price_chf": "0.20", "unit": "member", "included": false
+          "plugin": null, "price_chf": "0.20", "unit": "member", "included": false,
+          "inherited_from": null
         }
       ],
+      "builds_on": null,
       "limits": { "members": 50, "mail_month": 500, "storage_mb": 200 },
       "highlighted": false,
       "sort": 1
@@ -60,6 +63,10 @@ part of this API.
 * `plans[].modules` are the modules that come with the plan. `included:
   true` (`price_chf` `null`) means at no extra cost; otherwise `price_chf`
   is what the module costs per month in that plan, per `unit`.
+* `plans[].builds_on` is the key of the public plan this plan builds on
+  ("Everything in Starter, plus …"), or `null`. Its `modules` already
+  contain the inherited ones; `inherited_from` names the plan each one
+  comes from (`null`: the plan's own).
 * Every module price has a unit (`unit` on a plan module, `price_unit` on
   an add-on): `flat` (once per club), `member` (each member that is not
   archived) or `license` (each licence the club takes).

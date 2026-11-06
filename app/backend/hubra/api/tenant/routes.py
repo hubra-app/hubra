@@ -2798,7 +2798,8 @@ def list_plan_choices():
                     "public": p.public,
                     "hidden": p.archived_at is not None,
                     "price_month_chf": plans.month_price(p.key),
-                    "modules": p.modules or [],
+                    "modules": plans.effective_modules(p),
+                    "builds_on": p.builds_on,
                 }
                 for p in rows
             ],

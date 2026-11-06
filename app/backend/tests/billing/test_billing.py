@@ -629,3 +629,54 @@ def select_member_ids():
     from hubra.core.models.member import Member
 
     return select(Member.id).where(Member.archived_at.is_(None)).order_by(Member.id)
+
+
+def test_club_picks_a_custom_plan_offered_to_it(
+    client,
+    stripe,
+    club,
+    db,
+    auth_headers,
+    monkeypatch,
+):
+    from hubra.api.billing import routes
+    from hubra.core.services import quotas
+
+    monkeypatch.setattr(routes, "current_tenant", lambda: club)
+    monkeypatch.setattr(quotas, "member_count", lambda t: 5)
+    other = Tenant(name="Club B", slug="club-b", status="active", settings={})
+    db.session.add(other)
+    db.session.flush()
+    plans.update(plans.get("starter"), {"public": True, "modules": ["polls"]})
+    plans.create(
+        {
+            "key": "deal",
+            "name_de": "Deal",
+            "public": False,
+            "builds_on": "starter",
+            "modules": ["groups"],
+            "club_ids": [other.id],
+        }
+    )
+    club.plan = "starter"
+    db.session.commit()
+
+    _login_member(client, "admin@test.ch")
+    cat = client.get("/api/v1/app/billing/catalog").get_json()
+    assert [p["key"] for p in cat["plans"]] == ["starter"]
+    r = client.put("/api/v1/app/billing/plan", json={"plan": "deal"})
+    assert r.status_code == 400
+
+    # Manage offers it to this club: now the club sees and picks it.
+    plans.update(plans.get("deal"), {"club_ids": [other.id, club.id]})
+    db.session.commit()
+    cat = client.get("/api/v1/app/billing/catalog").get_json()
+    deal = next(p for p in cat["plans"] if p["key"] == "deal")
+    assert deal["custom"] is True and deal["builds_on"] == "starter"
+    assert {m["code"]: m["inherited_from"] for m in deal["modules"]} == {
+        "polls": "starter",
+        "groups": None,
+    }
+    assert "club_ids" not in deal
+    r = client.put("/api/v1/app/billing/plan", json={"plan": "deal"})
+    assert r.status_code == 200 and club.plan == "deal"

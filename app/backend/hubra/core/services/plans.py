@@ -10,6 +10,13 @@ Tarife), and the public pricing the website reads.
   private.  A plan clubs are on cannot be deleted, only hidden.
 * A plan can **include modules**: each one either comes at no extra cost,
   or with its own price in that plan.
+* A plan can **build on** another plan (``builds_on``, optional): it then
+  includes every module of that plan (and of the plan that one builds on),
+  plus its own.  Its own entry for a module wins over the inherited one, so
+  a higher plan can include a module the lower one sells.  A plan others
+  build on cannot be deleted.
+* A **custom plan** is offered to chosen clubs (``club_ids``): they can
+  pick it in Settings › Hubra subscription although it is not public.
 * An **add-on** (``PlatformAddon``) is a module, built in or from a plugin,
   with a default monthly price on top of the plan.  On a club, manage can
   set its own price for each add-on (``services.club_billing``).
@@ -42,6 +49,7 @@ DEFAULTS = (("starter", "Starter"), ("growth", "Growth"), ("enterprise", "Enterp
 LIMIT_KINDS = ("members", "mail_month", "storage_mb")
 UNITS = ("flat", "member", "license")
 MAX_PLAN_MODULES = 50
+MAX_PLAN_CLUBS = 500
 
 
 def _bad(msg: str, status: int = 400, code: str = "VALIDATION_ERROR"):
@@ -206,6 +214,86 @@ def _plan_modules(value, current: list | None) -> list[dict]:
     return out
 
 
+def _base_chain(plan: PlatformPlan) -> list[PlatformPlan]:
+    """The plans *plan* builds on, nearest first (stops at a loop or a
+    missing plan)."""
+    out: list[PlatformPlan] = []
+    seen = {plan.key}
+    key = plan.builds_on
+    while key and key not in seen:
+        seen.add(key)
+        base = db.session.get(PlatformPlan, key)
+        if base is None:
+            break
+        out.append(base)
+        key = base.builds_on
+    return out
+
+
+def effective_modules(plan: PlatformPlan) -> list[dict]:
+    """Every module the plan comes with: those of the plans it builds on
+    (lowest first) and then its own, each ``{code, price_chf, unit,
+    from_plan}``; ``from_plan`` is the key of the plan it is inherited from,
+    or None for the plan's own.  The nearest plan's entry for a code wins."""
+    by_code: dict[str, dict] = {}
+    for source in [*reversed(_base_chain(plan)), plan]:
+        own = source is plan
+        for m in source.modules or []:
+            code = m.get("code") if isinstance(m, dict) else None
+            if not code:
+                continue
+            by_code.pop(code, None)
+            by_code[code] = {**m, "from_plan": None if own else source.key}
+    return list(by_code.values())
+
+
+def _builds_on(plan: PlatformPlan, value) -> str | None:
+    if value is None or value == "":
+        return None
+    if not isinstance(value, str):
+        _bad("builds_on is the key of another plan")
+    if value == plan.key:
+        _bad("A plan cannot build on itself")
+    base = db.session.get(PlatformPlan, value)
+    if base is None:
+        _bad(f"No such plan: {value}")
+    if plan.key in {p.key for p in _base_chain(base)}:
+        _bad(f"{value} already builds on this plan")
+    return value
+
+
+def _club_ids(value) -> list[int]:
+    if value is None:
+        return []
+    if not isinstance(value, list) or len(value) > MAX_PLAN_CLUBS:
+        _bad(f"club_ids is a list of up to {MAX_PLAN_CLUBS} clubs")
+    ids: list[int] = []
+    for item in value:
+        if isinstance(item, str) and item.isdigit():
+            item = int(item)
+        if not isinstance(item, int) or isinstance(item, bool):
+            _bad("club_ids is a list of club ids")
+        if item not in ids:
+            ids.append(item)
+    if not ids:
+        return []
+    rows = dict(
+        db.session.execute(
+            select(Tenant.id, Tenant.deleted_at).where(Tenant.id.in_(ids))
+        ).all()
+    )
+    missing = [i for i in ids if i not in rows]
+    if missing:
+        _bad(f"No such club: {missing[0]}")
+    # A club deleted since it was picked drops out quietly.
+    return [i for i in ids if rows[i] is None]
+
+
+def offered_to(plan: PlatformPlan, tenant_id: int) -> bool:
+    """A custom plan offered to this club."""
+    return tenant_id in (plan.club_ids or [])
+
+
 _PLAN_FIELDS = {
     "name_de",
     "name_en",
@@ -215,6 +303,8 @@ _PLAN_FIELDS = {
     "price_year_chf",
     "features",
     "modules",
+    "builds_on",
+    "club_ids",
     "limit_members",
     "limit_mail_month",
     "limit_storage_mb",
@@ -240,6 +330,10 @@ def _apply(plan: PlatformPlan, body: dict) -> None:
             plan.features = _features(value)
         elif key == "modules":
             plan.modules = _plan_modules(value, plan.modules)
+        elif key == "builds_on":
+            plan.builds_on = _builds_on(plan, value)
+        elif key == "club_ids":
+            plan.club_ids = _club_ids(value)
         elif key.startswith("limit_"):
             setattr(plan, key, _count(value, key))
         elif key in ("public", "highlighted"):
@@ -290,6 +384,15 @@ def delete(plan: PlatformPlan) -> None:
             409,
             "PLAN_IN_USE",
         )
+    above = db.session.scalars(
+        select(PlatformPlan.key).where(PlatformPlan.builds_on == plan.key)
+    ).all()
+    if above:
+        _bad(
+            f"{', '.join(sorted(above))} build(s) on this plan; change that first",
+            409,
+            "PLAN_IS_BASE",
+        )
     if len(all_plans(include_hidden=False)) <= 1 and plan.archived_at is None:
         _bad("Keep at least one plan", 409, "LAST_PLAN")
     db.session.delete(plan)
@@ -311,11 +414,12 @@ def _module_names() -> dict[str, dict]:
 
 
 def plan_modules(plan: PlatformPlan, names: dict | None = None) -> list[dict]:
-    """The modules a plan includes, with names; ``included`` when they come
-    at no extra cost."""
+    """The modules a plan includes (with those of the plans it builds on),
+    with names; ``included`` when they come at no extra cost,
+    ``inherited_from`` the plan it comes from (None: the plan's own)."""
     names = _module_names() if names is None else names
     out = []
-    for m in plan.modules or []:
+    for m in effective_modules(plan):
         n = names.get(m["code"]) or {
             "name_de": m["code"],
             "name_en": m["code"],
@@ -328,6 +432,7 @@ def plan_modules(plan: PlatformPlan, names: dict | None = None) -> list[dict]:
                 "price_chf": m.get("price_chf"),
                 "unit": m.get("unit") or "flat",
                 "included": m.get("price_chf") is None,
+                "inherited_from": m.get("from_plan"),
             }
         )
     return out
@@ -346,6 +451,7 @@ def plan_json(
         "price_year_chf": _chf(plan.price_year_chf),
         "features": plan.features or [],
         "modules": plan_modules(plan, names),
+        "builds_on": plan.builds_on,
         "limits": {k: getattr(plan, f"limit_{k}") for k in LIMIT_KINDS},
         "highlighted": plan.highlighted,
         "sort": plan.sort,
@@ -355,6 +461,7 @@ def plan_json(
             public=plan.public,
             hidden=plan.archived_at is not None,
             clubs=clubs_on(plan.key),
+            club_ids=list(plan.club_ids or []),
         )
     return out
 
@@ -375,7 +482,7 @@ def _included_in(public_only: bool = False) -> dict[str, list[str]]:
     for p in all_plans(include_hidden=False):
         if public_only and not p.public:
             continue
-        for m in p.modules or []:
+        for m in effective_modules(p):
             out.setdefault(m["code"], []).append(p.key)
     return out
 
@@ -452,9 +559,15 @@ def public_pricing() -> dict:
     """What the website shows: public plans (with the modules they include)
     and public add-ons (with the public plans that include them)."""
     names = _module_names()
-    plans = [
-        plan_json(p, names=names) for p in all_plans(include_hidden=False) if p.public
-    ]
+    shown = [p for p in all_plans(include_hidden=False) if p.public]
+    public_keys = {p.key for p in shown}
+    plans = []
+    for p in shown:
+        row = plan_json(p, names=names)
+        # "Everything in <plan>, plus": only when the website shows that plan.
+        if row["builds_on"] not in public_keys:
+            row["builds_on"] = None
+        plans.append(row)
     included = _included_in(public_only=True)
     addons = [
         {
