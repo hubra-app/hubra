@@ -39,7 +39,7 @@ from flask_jwt_extended import jwt_required
 from sqlalchemy import func, or_, select
 
 from hubra.core.auth.helpers import get_current_member
-from hubra.core.errors import api_error
+from hubra.core.errors import error_message, api_error
 from hubra.core.extensions import db
 from hubra.core.models.dashboard import Dashboard
 from hubra.core.permissions import (
@@ -385,7 +385,7 @@ def widget_data(name: str):
     except contracts.ActionForbidden:
         return api_error("FORBIDDEN", "You may not see this widget", 403)
     except contracts.Refused as exc:
-        return api_error(exc.code, str(exc), 409)
+        return api_error(exc.code, error_message(exc), 409)
     except (contracts.ActionFailed, contracts.ContractError):
         return api_error("WIDGET_FAILED", "This widget couldn't load its data", 502)
     return jsonify({"data": data}), 200

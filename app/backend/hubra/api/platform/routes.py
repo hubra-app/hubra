@@ -777,7 +777,7 @@ def create_maintenance_window():
         starts_at = _parse_when(body.get("starts_at"), "starts_at")
         ends_at = _parse_when(body.get("ends_at"), "ends_at")
     except ValueError as exc:
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+        return api_error("VALIDATION_ERROR", error_message(exc), 400)
     message = body.get("message") or ""
     tenant_ids = body.get("tenant_ids")
     notice = body.get("notice_hours", 24)
@@ -802,7 +802,7 @@ def create_maintenance_window():
             actor_id=g.system_user.id,
         )
     except maintenance.WindowError as exc:
-        return api_error("VALIDATION_ERROR", str(exc), 400)
+        return api_error("VALIDATION_ERROR", error_message(exc), 400)
     _audit(
         "platform.maintenance.scheduled",
         "MaintenanceWindow",
@@ -831,7 +831,7 @@ def cancel_maintenance_window(window_id: int):
     except LookupError:
         return api_error("NOT_FOUND", "No such window", 404)
     except maintenance.WindowError as exc:
-        return api_error("CONFLICT", str(exc), 409)
+        return api_error("CONFLICT", error_message(exc), 409)
     _audit("platform.maintenance.cancelled", "MaintenanceWindow", str(window.id))
     db.session.commit()
     return jsonify(
