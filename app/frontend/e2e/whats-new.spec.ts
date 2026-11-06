@@ -1,5 +1,18 @@
+import { readFileSync } from 'node:fs'
 import { expect, test } from '@playwright/test'
 import { MANAGE_URL, appUrl } from './env'
+
+// The bold title of the first change in the newest release that has changes
+// (an empty "Unreleased" is left out, like the dialog does), from the German
+// changelog, so the test follows each release instead of naming one entry.
+function newestChangeTitle(): string {
+  const log = readFileSync(new URL('../../backend/CHANGELOG.de.md', import.meta.url), 'utf8')
+  for (const section of log.split(/^## \[/m).slice(1)) {
+    const title = section.match(/^- \*\*([^*]+)\*\*/m)
+    if (title) return title[1]
+  }
+  throw new Error('CHANGELOG.de.md has no release with changes')
+}
 
 // "Neuigkeiten": the newest release open, older versions folded, a roadmap tab.
 test('what is new shows the latest release, older versions on demand and the roadmap', async ({ page }) => {
@@ -15,7 +28,7 @@ test('what is new shows the latest release, older versions on demand and the roa
   const showAll = dialog.getByRole('button', { name: /^Alle \d+ Änderungen zeigen$/ })
   if (await showAll.count()) await showAll.click()
   // The notes follow the page language (German here, from CHANGELOG.de.md).
-  await expect(dialog.getByText('Wartungsmodus', { exact: true })).toBeVisible()
+  await expect(dialog.getByText(newestChangeTitle(), { exact: true })).toBeVisible()
   // Older versions are folded: a heading per version, its changes hidden until opened.
   const older = dialog.locator('.mantine-Accordion-item')
   expect(await older.count()).toBeGreaterThan(0)
