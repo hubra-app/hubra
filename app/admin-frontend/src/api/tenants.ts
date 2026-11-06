@@ -9,6 +9,8 @@ export interface Tenant {
   plan: string
   status: string
   settings: Record<string, unknown>
+  /** Sandbox club: always on the Stripe sandbox keys. */
+  sandbox?: boolean
   created_at: string | null
   updated_at: string | null
   deleted_at: string | null
@@ -75,6 +77,7 @@ export async function createTenant(data: {
   plan?: string
   admin_email?: string
   admin_password?: string
+  sandbox?: boolean
 }): Promise<{ tenant: Tenant; provisioning_status_url: string }> {
   return apiFetch('/platform/system/tenants', {
     method: 'POST',
@@ -847,5 +850,13 @@ export async function closeDataRequest(id: number, status: 'done' | 'rejected', 
   return apiFetch<DataRequest>(`/platform/system/data-requests/${id}/${status}`, {
     method: 'POST',
     body: JSON.stringify({ outcome }),
+  })
+}
+
+/** Make the club a sandbox club (Stripe sandbox keys only) or a normal one. */
+export async function setTenantSandbox(tenantId: number, sandbox: boolean): Promise<{ tenant: Tenant }> {
+  return apiFetch<{ tenant: Tenant }>(`/platform/system/tenants/${tenantId}/sandbox`, {
+    method: 'PUT',
+    body: JSON.stringify({ sandbox }),
   })
 }

@@ -19,6 +19,7 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ### Changed
 
+- **Sandbox- und Live-Schlüssel für Stripe, Sandbox-Vereine**: Online-Zahlungen und die Hubra-Abrechnung haben je einen Live- und einen Sandbox-Schlüssel (die Abrechnung auch je ein Webhook-Secret), und manage › Zahlungen hat einen Schalter für den Stripe-Modus, Sandbox oder Live (Standard: Sandbox). Sandbox-Vereine (manage › Verein › Sandbox-Verein, oder beim Erstellen) sind Demo- und Testvereine: Sie nutzen immer die Sandbox-Schlüssel, auch wenn die Plattform live ist, und zählen nicht zum Umsatz. Die Stripe-IDs werden pro Modus gespeichert, Webhook-Ereignisse aus dem anderen Modus werden ignoriert. Ein Testschlüssel im bisherigen einzelnen Schlüsselfeld funktioniert weiter als Sandbox-Schlüssel. Siehe docs/billing.md, «Sandbox and live».
 - Hubra-Abo: Änderungen während des Monats werden anteilig auf der nächsten Rechnung verrechnet (ein neues Mitglied, ein dazugebuchtes Modul, ein Tarifwechsel; Gutschriften im umgekehrten Fall). Bei Stripe werden nur die geänderten Positionen angepasst.
 - **Releases bringen ihr Changelog mit**: Das GitHub-Release einer Hubra-Version zeigt den Changelog-Abschnitt dieser Version als Beschreibung und hängt ihn als `CHANGELOG.md` an (auch in `SHA256SUMS`). Ein Release mit leerem Changelog-Abschnitt stoppt jetzt bei der ersten Prüfung, statt ohne Notizen zu erscheinen. Die Einträge von 0.2.2 standen unter 0.2.1 und haben jetzt ihren eigenen Abschnitt.
 

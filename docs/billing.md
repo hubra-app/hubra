@@ -234,15 +234,15 @@ a surcharge sized so the club still receives the full invoice amount,
 
 ## Setting it up
 
-1. **Stripe key.** manage › Payments › Club billing: the key of the Stripe
-   account that bills clubs (`billing.stripe.secret_key`, env
-   `STRIPE_BILLING_SECRET_KEY`; a secret `sk_` or restricted `rk_` key).
-   Left empty, billing uses the Online payments key
-   (`payments.stripe.secret_key`). An `sk_test_…` key puts billing in test
-   mode (shown in both apps). A restricted key needs write access to
-   Customers, Products, Checkout Sessions, Customer portal and
-   Subscriptions, and read access to Invoices. The billing account needs no
-   Connect.
+1. **Stripe keys.** manage › Payments › Club billing: the keys of the
+   Stripe account that bills clubs, one live (`billing.stripe.secret_key`,
+   `sk_live_`/`rk_live_`, env `STRIPE_BILLING_SECRET_KEY`) and one sandbox
+   (`billing.stripe.sandbox_secret_key`, `sk_test_`/`rk_test_`). Left empty,
+   billing uses the Online payments key of the same mode. Which one is used
+   follows the **Stripe mode** (see "Sandbox and live" below). A restricted
+   key needs write access to Customers, Products, Checkout Sessions,
+   Customer portal and Subscriptions, and read access to Invoices. The
+   billing account needs no Connect.
 2. **Webhook.** In the Stripe dashboard (Developers › Webhooks) add an
    endpoint `https://<your API host>/api/v1/global/billing/stripe/webhook`
    with the events:
@@ -257,8 +257,10 @@ a surcharge sized so the club still receives the full invoice amount,
 
    Copy its signing secret (`whsec_…`) into manage › Payments › Club billing
    (`billing.stripe.webhook_secret`, or the env var
-   `STRIPE_BILLING_WEBHOOK_SECRET`). Requests without a valid
-   `Stripe-Signature` (HMAC-SHA256, at most 5 minutes old) are refused.
+   `STRIPE_BILLING_WEBHOOK_SECRET`). Add the same webhook in the Stripe
+   sandbox too and store its secret as `billing.stripe.sandbox_webhook_secret`.
+   Requests without a valid `Stripe-Signature` (HMAC-SHA256, at most 5
+   minutes old, either secret) are refused.
 3. **Customer portal.** Settings › Billing › Customer portal in Stripe: turn
    it on, allow updating payment methods, the billing address and email,
    and cancelling, and show invoice history.
@@ -268,7 +270,38 @@ a surcharge sized so the club still receives the full invoice amount,
    `flask sync-permissions`, so admin roles get `billing.billing.manage`.
 
 No database migration is needed: Stripe's ids and state are stored in the
-club's settings (`tenants.settings["billing_stripe"]`).
+club's settings (`tenants.settings["billing_stripe"]`, and
+`billing_stripe_sandbox` for the sandbox).
+
+## Sandbox and live
+
+Online payments and billing each have a **live** and a **sandbox** key. The
+platform setting `stripe.mode` (manage › Payments, Sandbox or Live) picks
+which set the clubs use:
+
+- **Sandbox** (the default): every club uses the sandbox keys. No real money
+  moves; both apps show "test mode".
+- **Live**: clubs use the live keys. **Sandbox clubs** stay on the sandbox
+  keys.
+
+A **sandbox club** is a demo or test club: manage › club › Sandbox club (or
+"Sandbox club" when creating it; `PUT /api/v1/platform/system/tenants/<id>/sandbox`).
+It always uses the sandbox keys for Online payments and its Hubra
+subscription, and manage's revenue figures leave it out (counted as
+`sandboxClubs`). A club that pays with a running live subscription can't be
+made a sandbox club; cancel the subscription first.
+
+Stripe's ids are kept per mode (`tenants.settings["billing_stripe"]` live,
+`["billing_stripe_sandbox"]` sandbox), so switching never mixes test and
+live customers. A webhook event from the other mode than the club's
+(`livemode`) is ignored, so a sandbox event can't change a real club. The
+payments plugin likewise uses the club's connected account of the current
+mode only (from version 1.2.0); after going live a club connects its Stripe
+account once more.
+
+Each slot only takes a key of its mode (`sk_live_` in the live slot,
+`sk_test_` in the sandbox slot). A test key stored in a live slot before
+there were two keeps working as the sandbox key, and is never used live.
 
 ## Which Stripe account
 

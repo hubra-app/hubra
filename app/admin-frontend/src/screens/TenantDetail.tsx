@@ -45,6 +45,7 @@ import { TenantLimits } from '@/screens/TenantLimits'
 import { DataRequestsPanel } from '@/screens/DataRequests'
 import { TenantBilling } from '@/screens/TenantBilling'
 import { TenantEarlyAccess } from '@/screens/TenantEarlyAccess'
+import { TenantSandbox } from '@/screens/TenantSandbox'
 
 const STATUS_COLORS: Record<string, string> = {
   active: 'green',
@@ -182,6 +183,11 @@ export function TenantDetail() {
             <Badge variant="light" color="acc">
               {planLabel(tenant.plan, tr)}
             </Badge>
+            {tenant.sandbox && (
+              <Badge variant="light" color="yellow">
+                {tr('Sandbox', 'Sandbox')}
+              </Badge>
+            )}
           </Group>
         </Stack>
         <Group gap={8} wrap="wrap">
@@ -276,6 +282,8 @@ export function TenantDetail() {
           )}
         </Stack>
       </Paper>
+
+      <TenantSandbox tenant={tenant} />
 
       <TenantBilling tenantId={tenant.id} />
 

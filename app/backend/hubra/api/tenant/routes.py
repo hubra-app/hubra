@@ -229,7 +229,8 @@ def list_tenants_health():
 @tenant_admin_bp.route("/tenants", methods=["POST"])
 @require_global_permission("tenants.create")
 def provision_tenant():
-    """Provision a new tenant (creates record + schema + seeds)."""
+    """Provision a new tenant (creates record + schema + seeds).
+    ``sandbox: true`` makes it a sandbox club (Stripe sandbox keys only)."""
     data = request.get_json(silent=True) or {}
 
     name = str(data.get("name") or "").strip()
@@ -270,6 +271,11 @@ def provision_tenant():
             admin_email=admin_email,
             admin_password=admin_password,
         )
+        if data.get("sandbox") is True:
+            from hubra.core.services import sandbox_clubs
+
+            sandbox_clubs.set_sandbox(tenant, True)
+            db.session.commit()
         return (
             jsonify(
                 {
@@ -418,8 +424,8 @@ def _billing_view(tenant, stripe_error: str | None = None) -> dict:
     view = club_billing.summary(tenant)
     view["stripe"] = {
         **service.state(tenant),
-        "enabled": service.enabled(),
-        "testMode": service.test_mode(),
+        "enabled": service.enabled(tenant),
+        "testMode": service.test_mode(tenant),
     }
     # The platform's default fee on online member payments (manage › Payments);
     # the club's own one is payments_fee_percent in the terms.
@@ -430,6 +436,48 @@ def _billing_view(tenant, stripe_error: str | None = None) -> dict:
     if stripe_error:
         view["stripe"]["error"] = stripe_error
     return view
+
+
+@tenant_admin_bp.route("/tenants/<int:tenant_id>/sandbox", methods=["PUT"])
+@require_global_permission("tenants.update")
+def set_tenant_sandbox(tenant_id: int):
+    """``{"sandbox": bool}``: a sandbox club always uses the Stripe sandbox
+    keys (services/sandbox_clubs.py).  Refused while the club pays Hubra
+    with a live subscription: that would leave it running unseen."""
+    from hubra.core.billing import service
+    from hubra.core.services import sandbox_clubs
+
+    tenant = TenantService.get_by_id(tenant_id)
+    if tenant is None:
+        raise_error(404, "NOT_FOUND", "Tenant not found")
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict) or not isinstance(body.get("sandbox"), bool):
+        raise_error(400, "VALIDATION_ERROR", "Send sandbox: true or false")
+    on = body["sandbox"]
+    before = sandbox_clubs.is_sandbox(tenant)
+    if on and not before:
+        live = service.state(tenant, live=True)
+        if live.get("subscription_id") and live.get("status") in service.RUNNING:
+            raise_error(
+                409,
+                "LIVE_SUBSCRIPTION",
+                "The club pays Hubra with a live Stripe subscription; cancel it first",
+            )
+    if on != before:
+        sandbox_clubs.set_sandbox(tenant, on)
+        db.session.add(
+            GlobalAuditEntry(
+                tenant_id=tenant.id,
+                actor_id=g.system_user.id,
+                action="tenant.sandbox",
+                target_type="Tenant",
+                target_id=str(tenant.id),
+                details={"sandbox": [before, on]},
+                ip_address=request.remote_addr,
+            )
+        )
+        db.session.commit()
+    return jsonify({"tenant": _tenant_to_dict(tenant)}), 200
 
 
 @tenant_admin_bp.route("/tenants/<int:tenant_id>/billing/sync", methods=["POST"])
@@ -2759,6 +2807,7 @@ def _tenant_to_dict(tenant) -> dict:
         "plan": tenant.plan,
         "status": tenant.status,
         "settings": tenant.settings or {},
+        "sandbox": bool((tenant.settings or {}).get("sandbox")),
         "created_at": tenant.created_at.isoformat() if tenant.created_at else None,
         "updated_at": tenant.updated_at.isoformat() if tenant.updated_at else None,
         "deleted_at": tenant.deleted_at.isoformat() if tenant.deleted_at else None,

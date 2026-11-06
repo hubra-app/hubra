@@ -8,6 +8,7 @@ import {
   Group,
   Paper,
   PasswordInput,
+  SegmentedControl,
   Stack,
   Switch,
   Text,
@@ -57,12 +58,20 @@ const DOMAINS = [
   'domains.ingress_class',
   'domains.service',
 ]
-const PAYMENTS = ['payments.stripe.secret_key', 'payments.fee_percent']
+const PAYMENTS = [
+  'stripe.mode',
+  'payments.stripe.secret_key',
+  'payments.stripe.sandbox_secret_key',
+  'payments.fee_percent',
+]
+// stripe.mode sits under Online payments, on the same page; it applies to both.
 const BILLING = [
   'billing.enabled',
   'billing.yearly',
   'billing.stripe.secret_key',
   'billing.stripe.webhook_secret',
+  'billing.stripe.sandbox_secret_key',
+  'billing.stripe.sandbox_webhook_secret',
 ]
 const DISCORD = [
   'discord.client_id',
@@ -222,9 +231,17 @@ const FIELD_DE: Record<string, [string, string]> = {
     'Service für Vereinsdomains',
     "Der Service (Port 'http'), an den Vereinsdomains gehen; er leitet Besucher zum Verein weiter",
   ],
+  'stripe.mode': [
+    'Stripe-Modus',
+    'Sandbox: alle Vereine nutzen die Sandbox-Schlüssel (sk_test_), es fliesst kein echtes Geld. Live: die Vereine nutzen die Live-Schlüssel; Sandbox-Vereine (Verein › Sandbox-Verein) bleiben immer auf den Sandbox-Schlüsseln. Gilt für Online-Zahlungen und die Abrechnung',
+  ],
   'payments.stripe.secret_key': [
-    'Stripe-Secret-Key',
-    'Der Schlüssel des Plattform-Kontos (Connect). sk_test_ für den Testmodus. Wird verschlüsselt gespeichert',
+    'Stripe-Live-Key',
+    'Der Live-Schlüssel des Plattform-Kontos (Connect, sk_live_). Wird verschlüsselt gespeichert',
+  ],
+  'payments.stripe.sandbox_secret_key': [
+    'Stripe-Sandbox-Key',
+    'Der Sandbox-Schlüssel des Plattform-Kontos (Connect, sk_test_), im Sandbox-Modus und immer für Sandbox-Vereine. Wird verschlüsselt gespeichert',
   ],
   'billing.enabled': [
     'Vereine über Stripe abrechnen',
@@ -235,12 +252,20 @@ const FIELD_DE: Record<string, [string, string]> = {
     'on: neue Abos werden einmal im Jahr belastet (12 × der Monatspreis). off: monatlich. Laufende Abos wechseln beim nächsten Abgleich',
   ],
   'billing.stripe.secret_key': [
-    'Stripe-Schlüssel der Abrechnung',
-    'Secret- oder Restricted-Key (sk_/rk_) des Stripe-Kontos, das den Vereinen Hubra verrechnet. Leer: der Schlüssel der Online-Zahlungen oben. sk_test_ für den Testmodus. Wird verschlüsselt gespeichert',
+    'Live-Key der Abrechnung',
+    'Live-Secret- oder Restricted-Key (sk_live_/rk_live_) des Stripe-Kontos, das den Vereinen Hubra verrechnet. Leer: der Live-Key der Online-Zahlungen. Wird verschlüsselt gespeichert',
   ],
   'billing.stripe.webhook_secret': [
-    'Webhook-Secret der Abrechnung',
-    'Signing Secret (whsec_…) des Stripe-Webhooks auf /api/v1/global/billing/stripe/webhook. Ohne es folgt der Status Stripe nur über die stündliche Prüfung. Wird verschlüsselt gespeichert',
+    'Live-Webhook-Secret der Abrechnung',
+    'Signing Secret (whsec_…) des Live-Webhooks auf /api/v1/global/billing/stripe/webhook. Ohne es folgt der Status Stripe nur über die stündliche Prüfung. Wird verschlüsselt gespeichert',
+  ],
+  'billing.stripe.sandbox_secret_key': [
+    'Sandbox-Key der Abrechnung',
+    'Sandbox-Key (sk_test_/rk_test_) des Abrechnungskontos, im Sandbox-Modus und immer für Sandbox-Vereine. Leer: der Sandbox-Key der Online-Zahlungen. Wird verschlüsselt gespeichert',
+  ],
+  'billing.stripe.sandbox_webhook_secret': [
+    'Sandbox-Webhook-Secret der Abrechnung',
+    'Signing Secret (whsec_…) desselben Webhooks in der Stripe-Sandbox. Wird verschlüsselt gespeichert',
   ],
   'payments.fee_percent': [
     'Hubra-Gebühr',
@@ -452,6 +477,28 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
         const value = e.currentTarget.value
         setDraft((d) => ({ ...d, [key]: value }))
       },
+    }
+    if (key === 'stripe.mode') {
+      return (
+        <Stack key={key} gap={4}>
+          <Text size="sm" fw={500} component="div">
+            {label}
+          </Text>
+          <SegmentedControl
+            w="fit-content"
+            value={(draft[key] ?? s.value) === 'live' ? 'live' : 'sandbox'}
+            onChange={(value) => setDraft((d) => ({ ...d, [key]: value }))}
+            color={(draft[key] ?? s.value) === 'live' ? 'red' : 'yellow'}
+            data={[
+              { value: 'sandbox', label: tr('Sandbox (Test)', 'Sandbox (test)') },
+              { value: 'live', label: tr('Live (echtes Geld)', 'Live (real money)') },
+            ]}
+          />
+          <Text size="xs" c="dimmed">
+            {common.description}
+          </Text>
+        </Stack>
+      )
     }
     return s.secret ? (
       <PasswordInput

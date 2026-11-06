@@ -95,10 +95,10 @@ def get_billing():
     return jsonify(
         {
             **{k: summary.get(k) for k in _CLUB_FIELDS},
-            "enabled": service.enabled(),
-            "testMode": service.test_mode(),
+            "enabled": service.enabled(tenant),
+            "testMode": service.test_mode(tenant),
             "yearly": service.yearly(),
-            "canPay": service.enabled() and bool(service.items(tenant)),
+            "canPay": service.enabled(tenant) and bool(service.items(tenant)),
             "stripe": service.public_state(tenant),
             "paymentsFeePercent": _payments_fee(),
         }
@@ -306,12 +306,16 @@ def list_invoices():
 def stripe_webhook():
     from hubra.core.services import platform_settings
 
-    secret = platform_settings.get("billing.stripe.webhook_secret")
-    if not secret:
+    secrets = platform_settings.billing_webhook_secrets()
+    if not secrets:
         return api_error("BILLING_OFF", "No webhook secret is set", 503)
     payload = request.get_data(cache=False)
-    if not stripe_api.verify_signature(
-        payload, request.headers.get("Stripe-Signature", ""), secret
+    header = request.headers.get("Stripe-Signature", "")
+    # The live and the sandbox webhook both point here; the event's own
+    # livemode tells which one it comes from (service.handle_event).
+    if not any(
+        stripe_api.verify_signature(payload, header, secret)
+        for secret in secrets.values()
     ):
         return api_error("BAD_SIGNATURE", "Signature does not match", 400)
     try:
