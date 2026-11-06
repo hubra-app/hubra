@@ -6,6 +6,10 @@ export interface ClubSettings {
   leave_requires_approval?: boolean
   /** Off: the club takes new members by invite only. */
   join_requests_open?: boolean
+  /** The club's public page on the join portal (off by default). */
+  public_page?: boolean
+  /** The club's own website, shown on the public page. */
+  website?: string | null
   /** How many days an invite link works (1–60). */
   invite_valid_days?: number
   /** Delete former members this many years after they left (1–30); null: off. */

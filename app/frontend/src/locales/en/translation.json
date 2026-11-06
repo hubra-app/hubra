@@ -860,7 +860,8 @@
       "title": "Public events",
       "hint": "Events marked “Public event” can be seen by anyone without signing in: as a calendar to subscribe to and as a list for your website. Attendees, groups and notes stay in the club. {{count}} upcoming right now.",
       "calendar": "Public calendar",
-      "json": "For your website (JSON)"
+      "json": "For your website (JSON)",
+      "widget": "Embed on your website"
     },
     "trialSpots": "Trial training places",
     "trialSpotsHint": "People who aren't members yet can book this training on the club's trial page. Empty: no trial places.",
@@ -2915,7 +2916,15 @@
     "mfaMissingNone": "Everyone it applies to has two-factor set up.",
     "retention": "Delete former members after a period",
     "retentionHint": "Every night Hubra deletes members who left more than this many years ago (data protection, revDSG). Invoices and bookings stay without the name. Off: former members stay until you delete them.",
-    "retentionYears": "Delete after (years)"
+    "retentionYears": "Delete after (years)",
+    "publicPage": {
+      "title": "Public club page",
+      "switch": "Club page visible to everyone",
+      "hint": "Name, logo, description, your public events and a “Become a member” button, without signing in. Groups only when “List groups publicly” is on. Members and their data never appear.",
+      "website": "Club website",
+      "link": "Your page:",
+      "widgetHint": "Your public events on your own website: you find the code under Events › Subscribe to calendar."
+    }
   },
   "domains": {
     "added": "Domain added",

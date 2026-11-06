@@ -860,7 +860,8 @@
       "title": "Öffentliche Anlässe",
       "hint": "Anlässe mit «Öffentlicher Anlass» kann jeder ohne Anmeldung sehen: als Kalender zum Abonnieren und als Liste für eure Website. Teilnehmende, Gruppen und Notizen bleiben im Verein. Gerade {{count}} kommende.",
       "calendar": "Öffentlicher Kalender",
-      "json": "Für die Website (JSON)"
+      "json": "Für die Website (JSON)",
+      "widget": "Auf eurer Website einbetten"
     },
     "trialSpots": "Plätze für Schnuppertraining",
     "trialSpotsHint": "Wer noch nicht Mitglied ist, kann dieses Training auf der Schnupperseite des Vereins buchen. Leer: keine Schnupperplätze.",
@@ -2915,7 +2916,15 @@
     "mfaMissingNone": "Alle, die es betrifft, haben Zwei-Faktor eingerichtet.",
     "retention": "Ehemalige Mitglieder nach einer Frist löschen",
     "retentionHint": "Jede Nacht löscht Hubra Mitglieder, die vor mehr als so vielen Jahren ausgetreten sind (Datenschutz, revDSG). Rechnungen und Buchungen bleiben ohne Namen. Aus: Ehemalige bleiben, bis ihr sie löscht.",
-    "retentionYears": "Löschen nach (Jahren)"
+    "retentionYears": "Löschen nach (Jahren)",
+    "publicPage": {
+      "title": "Öffentliche Vereinsseite",
+      "switch": "Vereinsseite für alle sichtbar",
+      "hint": "Name, Logo, Beschreibung, eure öffentlichen Anlässe und ein Knopf «Mitglied werden», ohne Anmeldung. Gruppen nur, wenn «Gruppen öffentlich auflisten» an ist. Mitglieder und ihre Daten erscheinen nie.",
+      "website": "Website des Vereins",
+      "link": "Eure Seite:",
+      "widgetHint": "Eure öffentlichen Anlässe auf der eigenen Website: den Code dafür findet ihr unter Anlässe › Kalender abonnieren."
+    }
   },
   "domains": {
     "added": "Domain hinzugefügt",
