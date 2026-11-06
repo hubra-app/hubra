@@ -214,6 +214,22 @@ export interface Post {
   comments: number;
   /** The group the post is for; null: the whole club. */
   groupId: string | null;
+  /** The language shown in title/summary/body: the member's, if the post has it. */
+  shownLanguage: ContentLanguage | null;
+  /** The language the post was written in; null: not said. */
+  language: ContentLanguage | null;
+  /** The post as written (the editor works on this). */
+  original: PostText;
+  /** The other languages. */
+  translations: Partial<Record<ContentLanguage, PostText>>;
+}
+
+export type ContentLanguage = "de" | "fr" | "it" | "en";
+
+export interface PostText {
+  title: string;
+  summary: string | null;
+  body: string;
 }
 
 export interface TransactionCategory {
