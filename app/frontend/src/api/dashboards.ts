@@ -77,3 +77,49 @@ export function saveHomePage(kind: HomeKind, widgets: DashboardWidget[]): Promis
 export function resetHomePage(kind: HomeKind): Promise<Omit<HomePage, 'canEdit'>> {
   return apiFetch(`${BASE}/home/${kind}`, { method: 'DELETE' })
 }
+
+/** A widget a module or plugin offers as a contract (docs/contracts.md). */
+export interface ContractWidget {
+  name: string
+  /** Stored on dashboards as this type. */
+  type: string
+  module: string
+  plugin: string | null
+  /** Translation keys, or plain text. */
+  label: string
+  description: string
+  perm: string | null
+  size: WidgetSize
+  /** stat and list are drawn by the app; custom by the plugin's own component. */
+  view: 'stat' | 'list' | 'custom'
+  fields: { key: string; label: string; kind: 'text' | 'number' | 'switch'; default?: unknown }[]
+}
+
+/** What a stat widget shows. */
+export interface StatWidgetData {
+  value: number | string
+  sub?: string | null
+  path?: string | null
+}
+
+/** What a list widget shows. */
+export interface ListWidgetData {
+  items: { label: string; sub?: string | null; path?: string | null }[]
+  total?: number | null
+}
+
+/** The contract widgets this member may add here (module on, right held). */
+export function listContractWidgets(): Promise<{ items: ContractWidget[] }> {
+  return apiFetch(`${BASE}/widgets`)
+}
+
+/** What contract widget `name` shows with these settings, read as the member. */
+export function getWidgetData<T = unknown>(
+  name: string,
+  config: Record<string, unknown>,
+): Promise<{ data: T }> {
+  return apiFetch(`${BASE}/widgets/${encodeURIComponent(name)}/data`, {
+    method: 'POST',
+    body: JSON.stringify({ config }),
+  })
+}

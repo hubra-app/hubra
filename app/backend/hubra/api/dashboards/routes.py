@@ -22,6 +22,11 @@ Until someone changes one, the app shows its built-in layout (``null``):
 * ``DELETE /home/club``    back to the built-in layout (same right)
 * ``PUT  /home/me``        the member's own start page
 * ``DELETE /home/me``      back to the built-in layout
+
+Widgets that modules and plugins offer as contracts (docs/contracts.md):
+
+* ``GET  /widgets``              the ones this member may add here
+* ``POST /widgets/<name>/data``  ``{"config": {...}}``: what one shows
 """
 
 from __future__ import annotations
@@ -339,3 +344,48 @@ def delete_dashboard(dashboard_id: int):
     db.session.delete(d)
     db.session.commit()
     return "", 204
+
+
+# ── Widgets offered as contracts ────────────────────────────────────────────
+
+
+def _widget(offer) -> dict:
+    c = offer.contract
+    return {
+        "name": c.name,
+        "type": f"w:{c.name}",
+        "module": offer.module_code,
+        "plugin": offer.plugin,
+        "description": c.description,
+        "perm": c.perm,
+        **offer.widget_dict(),
+    }
+
+
+@dashboards_bp.get("/widgets")
+@jwt_required()
+def list_widgets():
+    from hubra.core import contracts
+
+    member = get_current_member()
+    return jsonify({"items": [_widget(o) for o in contracts.widgets(actor=member)]}), 200
+
+
+@dashboards_bp.post("/widgets/<name>/data")
+@jwt_required()
+def widget_data(name: str):
+    from hubra.core import contracts
+
+    member = get_current_member()
+    config = _body().get("config")
+    try:
+        data = contracts.widget_data(name, config, actor=member)
+    except contracts.ActionUnavailable:
+        return api_error("NOT_FOUND", "This widget isn't available here", 404)
+    except contracts.ActionForbidden:
+        return api_error("FORBIDDEN", "You may not see this widget", 403)
+    except contracts.Refused as exc:
+        return api_error(exc.code, str(exc), 409)
+    except (contracts.ActionFailed, contracts.ContractError):
+        return api_error("WIDGET_FAILED", "This widget couldn't load its data", 502)
+    return jsonify({"data": data}), 200

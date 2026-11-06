@@ -3884,5 +3884,9 @@
   "shell.more.about.dashboard": "Overview and your own widgets",
   "shell.more.about.settings": "Club, modules, apps and domains",
   "shell.more.about.translations": "Suggest translations for the app",
-  "shell.more.withTabs": "With {{pages}}"
+  "shell.more.withTabs": "With {{pages}}",
+  "dashboards.widgetFailed": "Couldn't load",
+  "dashboards.nothing": "Nothing to show",
+  "dashboards.more": "{{count}} more",
+  "dashboards.noView": "The plugin has no view for this widget"
 }

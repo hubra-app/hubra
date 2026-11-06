@@ -4233,6 +4233,10 @@
       "resetClub": "Die Startseite des Vereins zeigt wieder die Standard-Widgets, für alle Mitglieder.",
       "resetMe": "Deine Startseite zeigt wieder die Standard-Widgets.",
       "resetDone": "Standard wiederhergestellt"
-    }
+    },
+    "widgetFailed": "Konnte nicht geladen werden",
+    "nothing": "Nichts anzuzeigen",
+    "more": "{{count}} weitere",
+    "noView": "Das Plugin bringt keine Ansicht für dieses Widget mit"
   }
 }

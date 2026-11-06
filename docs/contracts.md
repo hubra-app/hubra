@@ -9,6 +9,7 @@ and version, and others use them through core:
 | event | a fact (`booking.confirmed`) | subscribe with `Module.events` | none; zero or more listeners |
 | action | a command with one owner (`keys.key.hand_out`) | `call()` now, or `send()` after the commit | the action's result |
 | query | a read (`inventory.items.get`) | `query()` | the result; writes are rolled back |
+| widget | a dashboard widget (`inventory.lent`) | members add it to dashboards | what it shows, read as the viewer |
 
 Core finds who offers a contract, checks that its module is on for the club,
 checks the acting member's right, checks the input and the result against
@@ -118,6 +119,14 @@ send("keys.key.hand_out", key_id=12, member_id=5, actor=SYSTEM)  # after the com
   and `ContractError` (a bug: bad input, undeclared use).
 - A plugin's own events need a contract too: `emit()` refuses a name no
   module lists under `provides` when a plugin sends it.
+
+## Widgets
+
+`widget_contract(name, handler, label=…, size=…, view=…, fields=…, perm=…)`
+offers a dashboard widget. Core lists it only to members who may see it
+(module on, `perm` held), runs its handler as the viewing member like a
+query, and checks the result against its view (`stat`, `list`, or the
+contract's `output` for `custom`). See [dashboards.md](dashboards.md).
 
 ## Versions
 

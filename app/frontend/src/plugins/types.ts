@@ -78,8 +78,20 @@ export interface PluginWidget extends Gated {
     kind: 'text' | 'number' | 'switch'
     default?: string | number | boolean
   }[]
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  component: ComponentType<{ config: Record<string, any>; size: 's' | 'm' | 'l' }>
+  /**
+   * The backend widget contract this component draws (a `widget_contract`
+   * with `view="custom"`, docs/contracts.md). The widget is then offered as
+   * that contract (type `w:<contract>`), and the component gets the data its
+   * handler read for the viewer as `data`. Without it, the widget is the
+   * plugin's own (type `p:<plugin>.<id>`) and loads its data itself.
+   */
+  contract?: string
+  component: ComponentType<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    config: Record<string, any>
+    size: 's' | 'm' | 'l'
+    data?: unknown
+  }>
 }
 
 export interface PluginDefinition {

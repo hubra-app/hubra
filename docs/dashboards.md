@@ -110,6 +110,54 @@ up to 80), `size` is `s`, `m` or `l`, and `config` is an object of at most
 4000 characters as JSON. The server doesn't check that a type exists, so a
 widget of a plugin that was removed stays saved and comes back with it.
 
+## Widgets offered as contracts
+
+A module or plugin can offer a widget from its backend manifest, as a
+contract (docs/contracts.md). Core then decides who sees it and reads its
+data: the widget list (`GET /widgets`) holds only widgets whose module is on
+for the club and whose permission the member has, and the data
+(`POST /widgets/<name>/data`) is read by the widget's handler as the viewing
+member, with any writes rolled back. Such a widget is stored as type
+`w:<name>`.
+
+```python
+from hubra.core.contracts import WidgetField, widget_contract
+
+module = Module(
+    code="inventory",
+    ...,
+    provides=(
+        widget_contract(
+            "inventory.lent",
+            "hubra_inventory.widgets:lent",
+            label="inventory.widget.lent",        # translation key or text
+            description="inventory.widget.lentHint",
+            size="m",                              # s, m or l
+            view="list",                           # stat, list or custom
+            perm="inventory.items.read",
+            fields=(WidgetField("count", "inventory.widget.count", "number", 5),),
+        ),
+    ),
+)
+
+
+def lent(ctx, config):
+    rows = ...  # the items lent out, newest first, at most config["count"]
+    return {"items": [{"label": r.name, "sub": r.holder, "path": f"/app/inventory/{r.id}"}
+                      for r in rows], "total": total}
+```
+
+`view="stat"` returns `{value, sub?, path?}` and the app draws a number tile;
+`view="list"` returns `{items: [{label, sub?, path?}], total?}` and the app
+draws rows. Neither needs any frontend code. `view="custom"` returns what
+`output` describes and the plugin's frontend draws it: register a widget with
+`contract: "inventory.lent"` and its component gets the data as `data`.
+
+| Call | Does |
+| --- | --- |
+| `GET /widgets` | `{items: [{name, type, module, plugin, label, description, perm, size, view, fields}]}` |
+| `POST /widgets/<name>/data` | `{config}` → `{data}`; `404` not offered or off, `403` right missing, `502` the handler broke |
+
 ## Widgets from plugins
 
 A plugin's frontend adds widgets with `widgets` in `registerPlugin` (type
@@ -139,3 +187,5 @@ the settings the member fills in (`text`, `number` or `switch`); the
 component gets them as `config`, and `size` so it can show more when wide.
 It renders inside an error boundary, so a failing widget doesn't break the
 dashboard. Load data from the plugin's own API, never from another plugin.
+A widget whose data the backend should check and read as the viewer is
+better offered as a contract (above).
