@@ -346,7 +346,7 @@ def apply_subscription(tenant: Tenant, sub: dict) -> None:
             "subscription_id": sub.get("id"),
             "customer_id": sub.get("customer") or state(tenant).get("customer_id"),
             "status": status,
-            "current_period_end": _iso(sub.get("current_period_end")),
+            "current_period_end": _iso(_period_end(sub)),
             "cancel_at_period_end": bool(sub.get("cancel_at_period_end")),
         },
     )
@@ -354,7 +354,7 @@ def apply_subscription(tenant: Tenant, sub: dict) -> None:
     change = {}
     if terms_status in club_billing.STATUSES:
         change["status"] = terms_status
-    end = sub.get("current_period_end")
+    end = _period_end(sub)
     if end:
         change["period_end"] = (
             datetime.fromtimestamp(int(end), tz=timezone.utc).date().isoformat()
@@ -392,6 +392,18 @@ def _alert(tenant: Tenant, status: str) -> None:
     )
 
 
+def _period_end(sub: dict):
+    """On the subscription, or (newer API versions) on its items."""
+    if sub.get("current_period_end"):
+        return sub["current_period_end"]
+    ends = [
+        i.get("current_period_end")
+        for i in ((sub.get("items") or {}).get("data") or [])
+        if i.get("current_period_end")
+    ]
+    return min(ends) if ends else None
+
+
 def _tenant_for(obj: dict) -> Tenant | None:
     meta = obj.get("metadata") or {}
     tid = meta.get("tenant_id") or obj.get("client_reference_id")
@@ -426,6 +438,11 @@ def handle_event(event: dict) -> str:
             )
             _save_state(tenant, {"synced": _signature(items(tenant))})
     elif kind.startswith("customer.subscription."):
+        # The payload follows the webhook's API version, which may be newer
+        # than ours (from 2025-03-31 the period end sits on the items): read
+        # the subscription again with our pinned version.
+        if key and obj.get("id"):
+            obj = stripe_api.call(key, "GET", f"/v1/subscriptions/{obj['id']}")
         apply_subscription(tenant, obj)
     elif kind == "invoice.payment_failed":
         _save_state(

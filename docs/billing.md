@@ -67,6 +67,10 @@ and Stripe Tax / VAT on the invoices.
      `customer.subscription.deleted`
    - `invoice.paid`, `invoice.payment_failed`
 
+   In Stripe's form: scope **Your account**, payload style **Snapshot**;
+   the API version can stay at the newest. Hubra reads subscriptions again
+   with its own pinned version, so newer payloads don't matter.
+
    Copy its signing secret (`whsec_…`) into manage › Payments › Club billing
    (`billing.stripe.webhook_secret`, or the env var
    `STRIPE_BILLING_WEBHOOK_SECRET`). Requests without a valid

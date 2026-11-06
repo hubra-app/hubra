@@ -280,7 +280,13 @@ def test_reconcile_reads_every_subscription(stripe, club, db):
 
 
 def test_club_routes_need_the_right(
-    client, stripe, club, db, auth_headers, plain_member_token, monkeypatch  # noqa: F811
+    client,
+    stripe,
+    club,
+    db,
+    auth_headers,
+    plain_member_token,  # noqa: F811
+    monkeypatch,
 ):
     from hubra.api.billing import routes
 
@@ -312,3 +318,28 @@ def test_billing_can_use_its_own_stripe_account(stripe, db):
     platform_settings.set_many({"billing.stripe.secret_key": "rk_live_" + "b" * 24})
     assert service._key() == "rk_live_" + "b" * 24
     assert service.test_mode() is False
+
+
+def test_subscription_events_are_read_again_with_our_api_version(stripe, club, db):
+    """A webhook on a newer API version carries the period end on the items
+    only; Hubra reads the subscription itself and also copes with that shape."""
+    service._save_state(club, {"customer_id": "cus_1"})
+    db.session.commit()
+    stripe.subscription["status"] = "past_due"
+    newer = {
+        "id": "sub_1",
+        "customer": "cus_1",
+        "status": "active",
+        "items": {"data": [{"current_period_end": 1798761600}]},
+    }
+    assert (
+        service.handle_event(
+            {"type": "customer.subscription.updated", "data": {"object": newer}}
+        )
+        == "customer.subscription.updated"
+    )
+    db.session.refresh(club)
+    assert club_billing.stored(club)["status"] == "past_due"
+    assert service._period_end(newer) == 1798761600
+    service.apply_subscription(club, newer)
+    assert club_billing.stored(club)["period_end"] == "2027-01-01"
