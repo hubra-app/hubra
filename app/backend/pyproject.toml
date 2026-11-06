@@ -1,6 +1,6 @@
 [project]
 name = "hubra"
-version = "0.2.2"
+version = "0.2.3"
 
 [tool.mypy]
 python_version = "3.12"
