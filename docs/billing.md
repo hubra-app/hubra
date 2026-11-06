@@ -161,10 +161,10 @@ Settings › Hubra subscription (permission `billing.billing.manage`):
 - **Breakdown:** plan, discount, each paid module with its quantity
   ("84 members × 0.20", "3 licences × 5.00"), what the plan includes, and
   the total per month.
-- **Plan:** the public plans (manage › Settings › Plans, *public*) and the
-  current one. A switch is refused (409 `PLAN_TOO_SMALL`) when the club has
-  more members than the plan allows. Private plans for one club's deal
-  stay manage's to give.
+- **Plan:** the public plans (manage › Settings › Plans, *public*), the
+  current one, and **custom plans** manage offered to this club. A switch
+  is refused (409 `PLAN_TOO_SMALL`) when the club has more members than
+  the plan allows. Other private plans stay manage's to give.
 - **Add-on modules:** modules with a public list price (manage › Plans ›
   Add-ons) and those on the club's bill. Taking one switches the module
   on, dropping it switches it off (data stays). Modules priced per licence
@@ -190,6 +190,23 @@ module's permissions as before.
   assigns licences, so assign them right after booking.
 - Modules included at no cost, or priced flat or per member, need no
   licence.
+
+**Plans that build on each other.** In manage › Settings › Plans a plan
+can optionally *build on* another plan (`builds_on`). It then includes
+every module of that plan, and of the plan that one builds on, plus its
+own: Starter includes A and B, Growth builds on Starter and adds C, so
+Growth has A, B and C. A change to the lower plan reaches the plans above
+it. When both plans list the same module, the higher plan's own entry (and
+price) counts. Plans without it stand alone, as before. A plan others
+build on cannot be deleted (409 `PLAN_IS_BASE`). The plan cards, the
+club's plan picker ("Everything in Starter, plus …"), the breakdown,
+licences and the public price list all use the full module list; each
+inherited module says which plan it comes from (`inherited_from`).
+
+**Custom plans.** A plan that is not public can list clubs (`club_ids`,
+*Custom plan for these clubs* on the plan form). Those clubs see it in
+Settings › Hubra subscription, marked *For your club*, and can switch to
+it themselves; other clubs and the website never see it.
 
 ## Hubra fee on online payments
 

@@ -8,6 +8,7 @@ import {
   Code,
   Group,
   Modal,
+  MultiSelect,
   NumberInput,
   Paper,
   Select,
@@ -24,6 +25,7 @@ import { BillingOverview } from '@/screens/platform/BillingOverview'
 import {
   IconArrowDown,
   IconArrowUp,
+  IconLock,
   IconPencil,
   IconPlus,
   IconTrash,
@@ -45,6 +47,7 @@ import {
   type PlanModuleInput,
   type PriceUnit,
 } from '@/api/platform'
+import { listTenants } from '@/api/tenants'
 import { BASE } from '@hubra/api-client'
 
 const chf = (v: string | null) =>
@@ -121,18 +124,13 @@ export function PlatformPlans() {
         </Group>
         <Text size="xs" c="dimmed" mb={12}>
           {tr(
-            'Öffentliche Tarife zeigt die Website (über die öffentliche API). Nicht öffentliche Tarife kann ein Verein trotzdem bekommen, etwa für eine Sonderabmachung. Eigener Preis, Rabatt und Sponsoring stehen beim Verein.',
-            'The website shows public plans (through the public API). A club can still be put on a plan that is not public, for a special deal. Own price, discount and sponsor are set on the club.',
+            'Öffentliche Tarife zeigt die Website (über die öffentliche API). Nicht öffentliche Tarife kann ein Verein trotzdem bekommen, etwa für eine Sonderabmachung; als eigener Tarif für ausgewählte Vereine können diese ihn auch selbst wählen. Ein Tarif kann auf einem anderen aufbauen und enthält dann dessen Module mit. Eigener Preis, Rabatt und Sponsoring stehen beim Verein.',
+            'The website shows public plans (through the public API). A club can still be put on a plan that is not public, for a special deal; as a custom plan for chosen clubs, those clubs can also pick it themselves. A plan can build on another plan and then includes its modules too. Own price, discount and sponsor are set on the club.',
           )}
         </Text>
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
           {plans.map((p, i) => (
-            <Paper
-              key={p.key}
-              withBorder
-              p="md"
-              style={p.hidden ? { opacity: 0.6 } : undefined}
-            >
+            <Paper key={p.key} withBorder p="md" style={p.hidden ? { opacity: 0.6 } : undefined}>
               <Group justify="space-between" align="flex-start" wrap="nowrap" mb={4}>
                 <Stack gap={2}>
                   <Text fw={700}>{tr(p.name_de, p.name_en)}</Text>
@@ -189,7 +187,30 @@ export function PlatformPlans() {
                     {tr('Ausgeblendet', 'Hidden')}
                   </Badge>
                 )}
+                {!p.public && p.club_ids.length > 0 && (
+                  <Badge
+                    size="sm"
+                    variant="light"
+                    color="orange"
+                    leftSection={<IconLock size={12} />}
+                  >
+                    {p.club_ids.length === 1
+                      ? tr('Eigener Tarif · 1 Verein', 'Custom · 1 club')
+                      : tr(
+                          `Eigener Tarif · ${p.club_ids.length} Vereine`,
+                          `Custom · ${p.club_ids.length} clubs`,
+                        )}
+                  </Badge>
+                )}
               </Group>
+              {p.builds_on && (
+                <Text size="xs" c="dimmed" mb={4}>
+                  {tr(
+                    `Alles aus ${planName(p.builds_on)}, plus:`,
+                    `Everything in ${planName(p.builds_on)}, plus:`,
+                  )}
+                </Text>
+              )}
               <Text fw={700} size="lg">
                 {chf(p.price_month_chf)}
                 {p.price_month_chf != null && (
@@ -226,7 +247,18 @@ export function PlatformPlans() {
                   </Text>
                   {p.modules.map((m) => (
                     <Group key={m.code} gap={6} wrap="nowrap" justify="space-between">
-                      <Text size="xs">{tr(m.name_de, m.name_en)}</Text>
+                      <Text size="xs" c={m.inherited_from ? 'dimmed' : undefined}>
+                        {tr(m.name_de, m.name_en)}
+                        {m.inherited_from && (
+                          <Text span size="xs" c="dimmed">
+                            {' '}
+                            {tr(
+                              `(aus ${planName(m.inherited_from)})`,
+                              `(from ${planName(m.inherited_from)})`,
+                            )}
+                          </Text>
+                        )}
+                      </Text>
                       <Text size="xs" c="dimmed" ta="right">
                         {m.price_chf == null
                           ? tr('inklusive', 'included')
@@ -357,6 +389,7 @@ export function PlatformPlans() {
       {editing && (
         <PlanModal
           plan={editing === 'new' ? null : editing}
+          plans={plans}
           addons={data.addons}
           onClose={() => setEditing(null)}
           onSave={async (body) => {
@@ -415,12 +448,14 @@ const count = (v: string | number) => (v === '' ? null : Number(v))
 
 function PlanModal({
   plan,
+  plans,
   addons,
   onClose,
   onSave,
   onDelete,
 }: {
   plan: Plan | null
+  plans: Plan[]
   addons: Addon[]
   onClose: () => void
   onSave: (body: PlanInput) => Promise<void>
@@ -442,9 +477,37 @@ function PlanModal({
     hidden: plan?.hidden ?? false,
   }))
   const [features, setFeatures] = useState<PlanFeature[]>(plan?.features ?? [])
+  // Only the plan's own modules; inherited ones follow from buildsOn.
   const [modules, setModules] = useState<PlanModuleInput[]>(
-    () => plan?.modules.map(({ code, price_chf, unit }) => ({ code, price_chf, unit })) ?? [],
+    () =>
+      plan?.modules
+        .filter((m) => !m.inherited_from)
+        .map(({ code, price_chf, unit }) => ({ code, price_chf, unit })) ?? [],
   )
+  const [buildsOn, setBuildsOn] = useState<string | null>(plan?.builds_on ?? null)
+  const [clubIds, setClubIds] = useState<string[]>(() => (plan?.club_ids ?? []).map(String))
+  const tenants = useQuery({
+    queryKey: ['tenants', 'plan-clubs'],
+    queryFn: () => listTenants({ per_page: 200 }),
+  })
+  const base = plans.find((p) => p.key === buildsOn)
+  // What the chosen lower plan brings along (its own and what it inherits),
+  // minus what this plan sets itself.
+  const inherited = (base?.modules ?? []).filter((m) => !modules.some((own) => own.code === m.code))
+  // Plans this one may build on: not itself, and none that builds on it.
+  const buildsOnThis = (key: string): boolean => {
+    let cur = plans.find((p) => p.key === key)
+    const seen = new Set<string>()
+    while (cur?.builds_on && !seen.has(cur.key)) {
+      if (plan && cur.builds_on === plan.key) return true
+      seen.add(cur.key)
+      cur = plans.find((p) => p.key === cur?.builds_on)
+    }
+    return false
+  }
+  const baseChoices = plans
+    .filter((p) => p.key !== plan?.key && !buildsOnThis(p.key))
+    .map((p) => ({ value: p.key, label: tr(p.name_de, p.name_en) }))
   const [pick, setPick] = useState<string | null>(null)
   const addonName = (code: string) => {
     const a = addons.find((x) => x.code === code)
@@ -617,15 +680,71 @@ function PlanModal({
             </Button>
           </Group>
         </Stack>
+        <Select
+          label={tr('Baut auf', 'Builds on')}
+          description={tr(
+            'Optional: Der Tarif enthält alle Module dieses Tarifs (und der Tarife, auf denen er aufbaut) und dazu die eigenen. Ändert sich der untere Tarif, ändert sich dieser mit.',
+            'Optional: the plan includes every module of that plan (and of the plans it builds on) plus its own. When the lower plan changes, this one follows.',
+          )}
+          placeholder={tr('Keiner, steht für sich', 'None, stands alone')}
+          clearable
+          data={baseChoices}
+          value={buildsOn}
+          onChange={setBuildsOn}
+        />
         <Stack gap={6}>
           <Text size="sm" fw={600}>
             {tr('Enthaltene Module', 'Included modules')}
           </Text>
+          {base && (
+            <Paper withBorder p="xs" bg="var(--mantine-color-default-hover)">
+              <Text size="xs" fw={600} mb={4}>
+                {tr(
+                  `Aus ${base.name_de} übernommen`,
+                  `Inherited from ${base.name_en || base.name_de}`,
+                )}
+              </Text>
+              {inherited.length === 0 ? (
+                <Text size="xs" c="dimmed">
+                  {tr('Dieser Tarif enthält keine Module.', 'That plan includes no modules.')}
+                </Text>
+              ) : (
+                <Stack gap={2}>
+                  {inherited.map((m) => (
+                    <Group key={m.code} gap={6} wrap="nowrap" justify="space-between">
+                      <Text size="xs">
+                        {tr(m.name_de, m.name_en)}
+                        {m.inherited_from && m.inherited_from !== base.key && (
+                          <Text span size="xs" c="dimmed">
+                            {' '}
+                            {tr(
+                              `(aus ${plans.find((p) => p.key === m.inherited_from)?.name_de ?? m.inherited_from})`,
+                              `(from ${plans.find((p) => p.key === m.inherited_from)?.name_en ?? m.inherited_from})`,
+                            )}
+                          </Text>
+                        )}
+                      </Text>
+                      <Text size="xs" c="dimmed" ta="right">
+                        {m.price_chf == null
+                          ? tr('inklusive', 'included')
+                          : `${chf(m.price_chf)}${priceUnitSuffix(m.unit, tr)}`}
+                      </Text>
+                    </Group>
+                  ))}
+                </Stack>
+              )}
+            </Paper>
+          )}
           <Text size="xs" c="dimmed">
             {tr(
               'Module und Plugins, die zum Tarif gehören. Ohne Preis sind sie inklusive; mit Preis kosten sie im Tarif so viel, pauschal, pro Mitglied oder pro Lizenz (pro Monat).',
               'Modules and plugins that come with the plan. Without a price they are included; with a price they cost that much in this plan, flat, per member or per licence (per month).',
             )}
+            {base &&
+              tr(
+                ' Ein Modul, das auch der untere Tarif hat, gilt hier mit dem Preis von diesem Tarif.',
+                ' A module the lower plan has too takes the price set here.',
+              )}
           </Text>
           {modules.map((m, i) => (
             <Group key={m.code} gap={8} wrap="nowrap" align="flex-end">
@@ -726,6 +845,28 @@ function PlanModal({
             onChange={(e) => set('hidden', e.currentTarget.checked)}
           />
         </SimpleGrid>
+        <MultiSelect
+          label={tr('Eigener Tarif für diese Vereine', 'Custom plan for these clubs')}
+          description={
+            v.public
+              ? tr(
+                  'Öffentliche Tarife kann jeder Verein wählen; die Auswahl gilt erst, wenn der Tarif nicht öffentlich ist.',
+                  'Any club can pick a public plan; this list only matters when the plan is not public.',
+                )
+              : tr(
+                  'Diese Vereine sehen den Tarif unter Einstellungen › Hubra-Abo und können ihn selbst wählen. Andere sehen ihn nicht.',
+                  'These clubs see the plan in Settings › Hubra subscription and can pick it themselves. Others do not see it.',
+                )
+          }
+          placeholder={tr('Vereine wählen', 'Pick clubs')}
+          searchable
+          data={(tenants.data?.tenants ?? []).map((t) => ({
+            value: String(t.id),
+            label: t.name,
+          }))}
+          value={clubIds}
+          onChange={setClubIds}
+        />
         <Group justify="space-between">
           {onDelete ? (
             <Button
@@ -764,6 +905,8 @@ function PlanModal({
                     modules: modules.map((m) =>
                       m.price_chf == null ? { ...m, unit: 'flat' as const } : m,
                     ),
+                    builds_on: buildsOn,
+                    club_ids: clubIds.map(Number),
                     public: v.public,
                     highlighted: v.highlighted,
                     hidden: v.hidden,

@@ -119,7 +119,8 @@ export async function saveHubraBillingContact(
   return apiFetch('/app/billing/contact', { method: 'PUT', body: JSON.stringify(body) })
 }
 
-/** A plan the club can pick (public, or its current one). */
+/** A plan the club can pick (public, its current one, or a custom plan
+ *  manage offered to this club). */
 export interface HubraPlanChoice {
   key: string
   name_de: string
@@ -136,7 +137,13 @@ export interface HubraPlanChoice {
     price_chf: string | null
     unit: string
     included: boolean
+    /** Key of the lower plan the module comes from; null: the plan's own. */
+    inherited_from: string | null
   }[]
+  /** The plan includes every module of this plan too; null: stands alone. */
+  builds_on: string | null
+  /** Not public: manage offered it to this club. */
+  custom: boolean
   limits: { members: number | null; mail_month: number | null; storage_mb: number | null }
   highlighted: boolean
 }
