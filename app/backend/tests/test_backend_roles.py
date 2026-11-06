@@ -60,11 +60,21 @@ def test_unknown_role_refused(monkeypatch):
 
 def test_task_routes_only_with_a_platform_queue(monkeypatch):
     monkeypatch.delenv("HUBRA_PLATFORM_QUEUE", raising=False)
+    monkeypatch.delenv("HUBRA_BULK_QUEUE", raising=False)
     assert roles.task_routes() == {}
     monkeypatch.setenv("HUBRA_PLATFORM_QUEUE", "platform")
     routes = roles.task_routes()
     assert routes["hubra.core.tasks.backup_tasks.*"] == {"queue": "platform"}
     assert not any("finance_tasks" in k or "reminder_tasks" in k for k in routes)
+
+
+def test_bulk_club_work_goes_to_the_bulk_queue_when_set(monkeypatch):
+    monkeypatch.delenv("HUBRA_PLATFORM_QUEUE", raising=False)
+    monkeypatch.setenv("HUBRA_BULK_QUEUE", "bulk")
+    routes = roles.task_routes()
+    assert routes["hubra.core.tasks.digest_tasks.*"] == {"queue": "bulk"}
+    # Mails people wait for stay on the default queue.
+    assert not any("email_tasks" in k or "mail_tasks" in k for k in routes)
 
 
 def test_task_routes_route_real_task_names(monkeypatch):

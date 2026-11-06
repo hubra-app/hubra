@@ -141,7 +141,14 @@ A plugin's event handlers and every `send()` go through the
    `ActionUnavailable` and `ContractError` are not retried.
 4. Every minute the sweep (`contract_tasks.sweep`) sends what is due again:
    retries, rows whose worker died, rows the transport lost because Redis
-   was down at the commit. Done rows are kept 7 days, dead ones 30.
+   was down at the commit. A new row is left to its own delivery for
+   2 minutes first, so a busy queue doesn't get a second copy of every row.
+   Done rows are kept 7 days, dead ones 30.
+5. A delivery is stopped after 4 minutes (inside the 5 minute claim), so a
+   row is never run by two workers at once. Keep handlers short; queue
+   longer work as a job of your own.
+6. A row that gives up after every retry, or fails with `ContractError`,
+   raises a system alert (once an hour per contract and module).
 
 Delivery is at least once. A handler that only writes to the database gets
 it once in effect. One that talks to an outside service should accept an

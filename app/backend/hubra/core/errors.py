@@ -70,6 +70,21 @@ def raise_error(status: int, code: str, message: str) -> NoReturn:
 # ── Registration ─────────────────────────────────────────────────────────────
 
 
+def _internal_error():
+    """A 500 with the request id, so the person can quote it to support."""
+    from hubra.core import request_id
+
+    response = jsonify(
+        {
+            "error": "INTERNAL_ERROR",
+            "message": "An unexpected error occurred.",
+            "requestId": request_id.current(),
+        }
+    )
+    response.status_code = 500
+    return response
+
+
 def register_error_handlers(app: Flask) -> None:
     """Attach JSON error handlers to *app*. Called from create_app()."""
 
@@ -145,12 +160,12 @@ def register_error_handlers(app: Flask) -> None:
 
         error_tracker.capture(exc)
         app.logger.exception("Unhandled exception: %s", exc)
-        return api_error("INTERNAL_ERROR", "An unexpected error occurred.", 500)
+        return _internal_error()
 
     @app.errorhandler(500)
     def internal_error(exc):
         app.logger.exception("Unhandled exception: %s", exc)
-        return api_error("INTERNAL_ERROR", "An unexpected error occurred.", 500)
+        return _internal_error()
 
     # Catch-all for other Werkzeug HTTP exceptions not listed above
     @app.errorhandler(HTTPException)

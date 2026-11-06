@@ -22,9 +22,19 @@ def _unseal(sealed_key: str | None) -> str | None:
         ) from None
 
 
+# Backups and restores of a big club take long. They are never acknowledged
+# late: Redis would hand a message still running after the visibility
+# timeout to a second worker, and that would back up (or restore) twice.
+LONG_SOFT = 3 * 3600
+LONG_HARD = LONG_SOFT + 300
+
+
 @celery_app.task(
     bind=True,
     name="hubra.core.tasks.backup_tasks.create_backup",
+    acks_late=False,
+    soft_time_limit=LONG_SOFT,
+    time_limit=LONG_HARD,
 )
 def create_backup_task(
     self,
@@ -54,6 +64,9 @@ def create_backup_task(
 @celery_app.task(
     bind=True,
     name="hubra.core.tasks.backup_tasks.verify_backup",
+    acks_late=False,
+    soft_time_limit=LONG_SOFT,
+    time_limit=LONG_HARD,
 )
 def verify_backup_task(self, record_id: int, sealed_key: str | None = None) -> dict:
     """Verify a backup by downloading, decrypting, and checking with pg_restore.
@@ -75,6 +88,9 @@ def verify_backup_task(self, record_id: int, sealed_key: str | None = None) -> d
 @celery_app.task(
     bind=True,
     name="hubra.core.tasks.backup_tasks.create_scheduled_backups",
+    acks_late=False,
+    soft_time_limit=LONG_SOFT,
+    time_limit=LONG_HARD,
 )
 def create_scheduled_backups_task(
     self, backup_type: str, triggered_by: str = "schedule"
@@ -95,6 +111,9 @@ def create_scheduled_backups_task(
 @celery_app.task(
     bind=True,
     name="hubra.core.tasks.backup_tasks.restore_club_backup",
+    acks_late=False,
+    soft_time_limit=LONG_SOFT,
+    time_limit=LONG_HARD,
 )
 def restore_club_backup_task(
     self, record_id: int, sealed_key: str | None = None

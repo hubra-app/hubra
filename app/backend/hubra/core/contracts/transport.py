@@ -49,6 +49,13 @@ def envelope(
     }
     if actor is not None:
         env["hubraactor"] = actor
+    from hubra.core import request_id
+
+    rid = request_id.current()
+    if rid:
+        # The request (or task) that stored it, for following one change
+        # through the logs of every worker that handles it.
+        env["hubrarequestid"] = rid
     return env
 
 

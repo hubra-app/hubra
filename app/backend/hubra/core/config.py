@@ -302,6 +302,9 @@ class BaseConfig:
     JSON_LOGGING: bool = os.environ.get("JSON_LOGGING", "true").lower() == "true"
 
 
+from hubra.core.db_limits import KEEPALIVES as _KEEPALIVES  # noqa: E402
+
+
 class DevelopmentConfig(BaseConfig):
     DEBUG: bool = True
     SQLALCHEMY_DATABASE_URI: str = os.environ.get("DATABASE_URL", "sqlite:///dev.db")
@@ -314,6 +317,9 @@ class DevelopmentConfig(BaseConfig):
         "pool_timeout": 10,
         "pool_size": 5,
         "max_overflow": 10,
+        # A connection whose peer vanished fails in about a minute
+        # (hubra.core.db_limits).
+        "connect_args": dict(_KEEPALIVES),
     }
 
 
@@ -326,6 +332,9 @@ class ProductionConfig(BaseConfig):
         "pool_timeout": 10,
         "pool_size": 5,
         "max_overflow": 10,
+        # A connection whose peer vanished fails in about a minute
+        # (hubra.core.db_limits).
+        "connect_args": dict(_KEEPALIVES),
     }
 
     @classmethod

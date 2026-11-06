@@ -133,6 +133,47 @@ manage › Diagnostics › Performance marks slow queries and requests that ran
 while their pod was CPU-throttled or at its memory limit, read from the
 pod's cgroup counters (`cpu.stat`, `memory.events`).
 
+## Job defaults
+
+Every task gets these unless it sets its own
+(`worker_defaults()` in `app/backend/hubra/core/tasks/__init__.py`):
+
+| Setting | Value | Why |
+| --- | --- | --- |
+| Soft / hard time limit | 15 min / 16 min (`CELERY_TASK_SOFT_TIME_LIMIT`) | A hung call can't hold a worker child, and a scheduled job's lock, for hours. Backups and restores allow 3 h; the health and infra checks 1 min; outbox deliveries 4 min. |
+| Late acks | on | A task stopped by a deploy or restart runs again on the next worker. Tasks must be safe to run twice. Backups and restores are not late-acked. |
+| Prefetch | 1 per child | A long task doesn't hold short ones another child could run. |
+| Results | not stored | Nothing reads them (the smoke task opts in). |
+| Child recycling | after 500 tasks or 250 000 KiB | A leak can't push the pod over its memory limit. |
+| Visibility timeout | 2 h | Redis hands an unacknowledged message to another worker after this; it is longer than any late-acked task and any retry countdown. |
+
+A job a worker has no code for (a plugin whose task module didn't load in
+that worker) used to be dropped without a trace. It now counts as failed
+with "not registered in this worker" under manage › Diagnostics ›
+Background jobs.
+
+**Bulk queue.** With `HUBRA_BULK_QUEUE=bulk`, digests, mailbox counters and
+translation reports (`roles.BULK_TASK_MODULES`) go to that queue. Start a
+worker for it (`celery ... worker -Q bulk`) or add it to the default worker
+(`-Q celery,bulk`); without a consumer they wait. Unset, everything stays on
+the default queue.
+
+**Database limits per process** (`hubra/core/db_limits.py`): API
+connections get `statement_timeout` 60 s and
+`idle_in_transaction_session_timeout` 120 s, worker connections a 5 min
+statement limit. The CLI (migrations, seeds, backups by hand) has none.
+Every Postgres connection uses TCP keepalives, so a connection whose peer
+vanished fails in about a minute instead of hanging.
+
+**Redis** runs with an append-only file in `docker-compose.yml`
+(`--appendonly yes --appendfsync everysec`), so queued jobs survive a
+restart. Give a Redis outside Compose the same.
+
+**Request ids.** Each API response carries `X-Request-ID` (taken from the
+incoming header when it is a plain id, otherwise new). Tasks queued by the
+request and outbox rows it stores carry it too, so their log lines have the
+same `request_id`; a 500 answer includes it as `requestId`.
+
 ## What the database needs
 
 - PostgreSQL with session-level advisory locks (any supported version;

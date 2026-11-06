@@ -31,6 +31,8 @@ mail variables blank.
 | Files       | `FILES_S3_*` (endpoint, bucket, region, access/secret key), `FILES_MAX_MB` (25), `FILES_DIR` (`/var/lib/hubra/files`, used without a bucket) | Clubs' files (e.g. the documents plugin); also in manage › Backups › Storage |
 | Payments    | `STRIPE_SECRET_KEY` (Connect platform key, `sk_test_…` for test mode) | Online invoice payments with the payments plugin (card, TWINT); better set in manage › Payments, with the platform fee |
 | Club domains | `CUSTOM_DOMAIN_TARGET` (host clubs CNAME to) | Serving club domains on Kubernetes with cert-manager; switch, issuer, ingress class and Service in manage › Club domains (docs/operator-guide.md#kubernetes) |
+| Workers     | `CELERY_WORKER_CONCURRENCY`, `CELERY_TASK_SOFT_TIME_LIMIT` (900 s; hard limit one minute later), `CELERY_MAX_TASKS_PER_CHILD` (500), `CELERY_MAX_MEMORY_PER_CHILD` (250000 KiB), `HUBRA_PLATFORM_QUEUE`, `HUBRA_BULK_QUEUE` | Optional, see [scaling.md](scaling.md#job-defaults) |
+| Database limits | `DB_STATEMENT_TIMEOUT_MS_API` (60000), `DB_IDLE_IN_TX_TIMEOUT_MS_API` (120000), `DB_STATEMENT_TIMEOUT_MS_WORKER` (300000), `DB_IDLE_IN_TX_TIMEOUT_MS_WORKER` (0 = off) | Optional, see [scaling.md](scaling.md#job-defaults) |
 | Plugins     | `HUBRA_PLUGIN_DIR`, `HUBRA_PLUGINS_RELOAD_POLL`, `HUBRA_OFFICIAL_INDEX`, `HUBRA_PLUGINS_ALLOW_PRIVATE` (1 = allow a repository on a private address) | Optional, see [plugins/README.md](../plugins/README.md)  |
 
 ## Platform settings and club settings
