@@ -105,9 +105,7 @@ module = Module(
             "plugins_bp",
             "/api/v1/platform/plugins",
         ),
-        Blueprint(
-            "hubra.api.plugins.routes", "plugin_assets_bp", "/api/v1/global/plugins"
-        ),
+        Blueprint("hubra.api.plugins.routes", "plugin_assets_bp", "/api/v1/global/plugins"),
         Blueprint(
             "hubra.api.platform.routes",
             "platform_bp",
