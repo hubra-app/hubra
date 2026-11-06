@@ -9,6 +9,7 @@ section and position, or the apps show that version in English.
 
 ### Added
 
+- **Changelogs on Discord, for Hubra and for plugin updates**: each new Hubra version and each new plugin version is announced once, with its changelog section. Clubs opt in on their own Discord server (Discord settings › Announcements: "Changelog: new Hubra versions" and "Changelog: plugin updates", both off by default) and pick the channel, for example an announcements or a dedicated changelog channel; plugin updates only reach clubs that use that plugin. Hubra's own server gets them in the new changelog channel (manage › Discord, platform log card). They travel as the new events `hubra.released` and `plugin.released`, through the outbox, and are never posted twice. See docs/discord.md, "Changelogs".
 - Licences go to members: for a module priced per licence the club assigns each licence to a member (Settings › Hubra subscription › Assign). Only holders see and use the module; everyone else gets "licence required".
 - Hubra subscription: clubs see a full breakdown (quantities per member or licence, what the plan includes), switch to another public plan, and take or drop paid add-on modules with their licences under Settings › Hubra subscription. Settings › Modules shows the price of paid modules; switching one on asks first and books it.
 - Hubra fee (formerly platform fee) on online payments per club: manage › All clubs › club › Billing can set a club's own percentage instead of the default; the club sees it on its subscription tab.
@@ -23,6 +24,7 @@ section and position, or the apps show that version in English.
 
 ### Fixed
 
+- **A plugin's notes keep their sub-headings**: the update notes in the plugin catalogue stopped at the first `### Added` inside a version; now they run to the next version.
 - Plugins built before Hubra 0.2 moved `hubra.api.auth.helpers`, `hubra.api.permissions`, `hubra.api.utils` and `hubra.api.notifications.services` to `hubra.core` load again on the app, global and platform backend images. Those images had left the old names out ("ModuleNotFoundError: No module named 'hubra.api.auth.helpers'").
 - Plugin catalogue in manage: a plugin that loads in manage but fails in the club backend or a worker (for example an import error) now shows the error and where it happened, instead of a green check.
 - Hubra subscription: Stripe invoices now show the club's billing address. Checkout asks for it (prefilled from the club's address in its settings) and the club's finance email is used when set.

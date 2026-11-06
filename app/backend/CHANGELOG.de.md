@@ -11,6 +11,7 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ### Added
 
+- **Changelogs auf Discord, für Hubra und für Plugin-Updates**: Jede neue Hubra-Version und jede neue Plugin-Version wird einmal angekündigt, mit ihrem Abschnitt aus dem Changelog. Vereine schalten das auf ihrem eigenen Discord-Server ein (Discord-Einstellungen › Ankündigungen: «Changelog: neue Hubra-Versionen» und «Changelog: Plugin-Updates», beide standardmässig aus) und wählen den Kanal, zum Beispiel einen Ankündigungs- oder einen eigenen Changelog-Kanal; Plugin-Updates erreichen nur Vereine, die das Plugin nutzen. Hubras eigener Server bekommt sie im neuen Changelog-Kanal (manage › Discord, Karte Plattform-Log). Sie laufen als die neuen Ereignisse `hubra.released` und `plugin.released` über die Outbox und werden nie doppelt gepostet. Siehe docs/discord.md, «Changelogs».
 - Lizenzen gehen an Mitglieder: Bei einem Modul mit Preis pro Lizenz gibt der Verein jede Lizenz einem Mitglied (Einstellungen › Hubra-Abo › Zuweisen). Nur sie sehen und nutzen das Modul; alle anderen erhalten «Lizenz nötig».
 - Hubra-Abo: Vereine sehen die volle Aufstellung (Menge pro Mitglied oder Lizenz, was der Tarif enthält), wechseln zu einem anderen öffentlichen Tarif und buchen kostenpflichtige Zusatzmodule samt Lizenzen unter Einstellungen › Hubra-Abo dazu oder ab. Einstellungen › Module zeigt den Preis kostenpflichtiger Module; Einschalten fragt zuerst nach und bucht das Modul dazu.
 - Hubra-Gebühr (bisher Plattformgebühr) auf Online-Zahlungen pro Verein: manage › Alle Vereine › Verein › Abrechnung setzt einen eigenen Prozentsatz statt des Standards; der Verein sieht ihn im Tab Hubra-Abo.
@@ -25,6 +26,7 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ### Fixed
 
+- **Die Notizen eines Plugins behalten ihre Zwischentitel**: Die Update-Notizen im Plugin-Katalog hörten beim ersten `### Added` innerhalb einer Version auf; jetzt laufen sie bis zur nächsten Version.
 - Plugins, die vor dem Umzug von `hubra.api.auth.helpers`, `hubra.api.permissions`, `hubra.api.utils` und `hubra.api.notifications.services` nach `hubra.core` gebaut wurden, laden wieder auf den App-, Global- und Plattform-Backend-Images. Diese Images hatten die alten Namen weggelassen («ModuleNotFoundError: No module named 'hubra.api.auth.helpers'»).
 - Plugin-Katalog in manage: Ein Plugin, das in manage lädt, im Vereins-Backend oder einem Worker aber scheitert (etwa wegen eines Importfehlers), zeigt jetzt den Fehler und wo er auftrat, statt eines grünen Hakens.
 - Hubra-Abo: Die Rechnungen von Stripe zeigen jetzt die Rechnungsadresse des Vereins. Checkout fragt danach (vorausgefüllt mit der Adresse aus den Vereinseinstellungen), und die Finanz-E-Mail des Vereins wird verwendet, falls gesetzt.

@@ -1306,8 +1306,9 @@ def handle(interaction: dict) -> dict:
 
 
 def notify_clubs(kind: str, payload: dict) -> None:
-    """Tell the clubs' Discord servers that opted in (``hubra_news`` for
-    releases, ``maintenance_notices`` for maintenance), in the background."""
+    """Tell the clubs' Discord servers that opted in (``maintenance_notices``),
+    in the background. New versions reach them as the ``hubra.released``
+    event instead (``services.changelogs``)."""
     try:
         from hubra.core.tasks.platform_bot_tasks import club_notice
 
@@ -1540,7 +1541,9 @@ def release_embed(version: str, entry: dict | None) -> dict:
 
 
 def announce_release() -> bool:
-    """Post the running version's release notes once per version."""
+    """Post the running version's release notes in the platform log once per
+    version. Not when a changelog channel is set: they go there instead
+    (``services.changelogs``, which also tells the clubs)."""
     from hubra.core.services.version import VersionService
     from hubra.core.services import platform_discord, platform_monitor
 
@@ -1550,21 +1553,16 @@ def announce_release() -> bool:
     if not _set(f"platform_bot:release:{version}", "1", ex=3600, nx=True):
         return False
     entry = release_notes(version)
-    if "releases" in platform_discord.enabled_categories():
+    if (
+        "releases" in platform_discord.enabled_categories()
+        and not platform_discord.changelog_channel()
+    ):
         try:
             platform_discord.post(release_embed(version, entry))
         except platform_discord.DiscordPostError:
             _delete(f"platform_bot:release:{version}")
             raise
     platform_monitor.record("system", "release.announced", version)
-    notify_clubs(
-        "release",
-        {
-            "version": version,
-            "date": (entry or {}).get("date"),
-            "sections": (entry or {}).get("sections") or {},
-        },
-    )
     return True
 
 

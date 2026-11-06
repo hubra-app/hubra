@@ -70,6 +70,11 @@ ACCOUNT_UNLINKED = "account.unlinked"
 # archived or deleted).
 MEMBER_JOINED = "member.joined"
 MEMBER_LEFT = "member.left"
+# A new Hubra version / a new version of a plugin runs, with its changelog
+# section (services.changelogs). Once per version; a plugin's only in the
+# clubs that have that plugin on.
+HUBRA_RELEASED = "hubra.released"
+PLUGIN_RELEASED = "plugin.released"
 
 
 def _resolve(target: str):

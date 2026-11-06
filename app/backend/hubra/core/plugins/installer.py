@@ -1211,15 +1211,22 @@ def install_from_repository(repo, pid: str, version: str | None = None) -> dict:
 
 
 def changes_for(changelog: str, version: str) -> str:
-    """The notes for one version from a plugin's CHANGELOG.md (a ``## <version>`` heading)."""
+    """The notes for one version from a plugin's CHANGELOG.md (a ``## <version>``
+    heading), up to the next heading of the same or a higher level: its own
+    ``### Added`` and so on stay in."""
     import re
 
     m = re.search(
-        rf"^##+\s*\[?v?{re.escape(version)}\]?\b[^\n]*\n(.*?)(?=^##+\s|\Z)",
+        rf"^(#{{2,}})\s*\[?v?{re.escape(version)}\]?\b[^\n]*\n",
         changelog,
-        re.M | re.S,
+        re.M,
     )
-    return m.group(1).strip()[:4000] if m else ""
+    if not m:
+        return ""
+    level = len(m.group(1))
+    rest = changelog[m.end() :]
+    end = re.search(rf"^#{{1,{level}}}\s", rest, re.M)
+    return (rest[: end.start()] if end else rest).strip()[:4000]
 
 
 # ── The Marketplace ──────────────────────────────────────────────────────────

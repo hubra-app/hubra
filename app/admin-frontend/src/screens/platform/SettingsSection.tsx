@@ -80,7 +80,11 @@ const DISCORD = [
   'discord.bot_token',
 ]
 
-const DISCORD_LOG = ['discord.log_channel_id', 'discord.audit_channel_id']
+const DISCORD_LOG = [
+  'discord.log_channel_id',
+  'discord.audit_channel_id',
+  'discord.changelog_channel_id',
+]
 const DISCORD_ROLES = ['discord.platform_roles']
 const DISCORD_SUPPORT = ['discord.support_channel_id', 'discord.support_add_reporters']
 // Defaults built into Hubra, not read from the environment.
@@ -336,6 +340,10 @@ const FIELD_DE: Record<string, [string, string]> = {
     'Meldende Personen in den Thread',
     'an: Wer einen Fall meldet, kommt mit verknüpftem Discord in den Thread (wer nicht auf dem Server ist, bekommt eine Einladung). aus: Das Team fügt Personen selbst hinzu',
   ],
+  'discord.changelog_channel_id': [
+    'Changelog-Kanal',
+    'Kanal-ID für die Release Notes von Hubra und jedem Plugin-Update. Gewählt: Hubras Release Notes kommen hierhin statt ins Plattform-Log. Leer: aus',
+  ],
   'discord.audit_channel_id': [
     'Audit-Kanal',
     'Kanal-ID für jeden Eintrag im Audit-Log, mit Links in manage. Warnungen bleiben im Plattform-Log. Leer: aus',
@@ -435,6 +443,8 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
     draft['discord.log_channel_id'] ?? byKey['discord.log_channel_id']?.value ?? ''
   const auditChannel =
     draft['discord.audit_channel_id'] ?? byKey['discord.audit_channel_id']?.value ?? ''
+  const changelogChannel =
+    draft['discord.changelog_channel_id'] ?? byKey['discord.changelog_channel_id']?.value ?? ''
   const manageUrl = byKey['alerts.manage_url']?.value ?? ''
 
   const rolesOn =
@@ -822,6 +832,18 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                       onChange: (id) => setDraft((d) => ({ ...d, 'discord.audit_channel_id': id })),
                       fallback: field('discord.audit_channel_id'),
                       suggestedName: 'hubra-audit',
+                    },
+                    {
+                      label: tr('Changelog-Kanal (optional)', 'Changelog channel (optional)'),
+                      description: tr(
+                        'Gewählt: Die Release Notes jeder neuen Hubra-Version und jedes Plugin-Updates gehen hierhin. Leer: aus. Vereine wählen ihren eigenen Kanal in ihren Discord-Einstellungen.',
+                        'Picked: the release notes of every new Hubra version and every plugin update go here. Empty: off. Clubs pick their own channel in their Discord settings.',
+                      ),
+                      channelId: changelogChannel,
+                      onChange: (id) =>
+                        setDraft((d) => ({ ...d, 'discord.changelog_channel_id': id })),
+                      fallback: field('discord.changelog_channel_id'),
+                      suggestedName: 'changelog',
                     },
                   ]}
                 />

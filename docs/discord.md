@@ -205,9 +205,10 @@ Platform log:
 
 ### Audit channel (optional)
 
-The platform log card has one **Server** picker and two channel pickers on
-that server: the **platform log** and an optional **audit channel**
-(`discord.audit_channel_id`). Without an audit channel, everything ticked
+The platform log card has one **Server** picker and three channel pickers on
+that server: the **platform log**, an optional **audit channel**
+(`discord.audit_channel_id`) and an optional **changelog channel** (see
+"Changelogs" below). Without an audit channel, everything ticked
 goes to the platform log. With one, the audit log entries go to the audit
 channel only and the platform log keeps the system alerts, so nothing is
 posted twice. The categories decide what is posted either way.
@@ -275,9 +276,38 @@ during maintenance so `/wartung ende` does; club commands answer that Hubra
 is being updated.
 
 Clubs can opt in to hear about it on their own server (Settings › Verbundene
-Apps › Discord: **Neue Hubra-Versionen ankündigen**, **Wartungen
-ankündigen**, both off by default): new versions with their main changes,
-and planned, started, ended or cancelled maintenance, in the main channel.
+Apps › Discord: **Wartungen ankündigen**, off by default): planned, started,
+ended or cancelled maintenance, in the main channel.
+
+### Changelogs: new Hubra and plugin versions
+
+Every minute the platform bot's tick (`services.changelogs`) compares the
+running Hubra version and the version of every loaded plugin with what it
+announced before. Each new version is announced **once**:
+
+- **On club servers**, as the contract events `hubra.released` (in every
+  active club) and `plugin.released` (only in clubs that have that plugin
+  on), with that version's changelog section: Hubra's from CHANGELOG.md
+  (German when translated), a plugin's from its CHANGELOG.md. The Discord
+  plugin posts it when the club opted in, in the channel the club picked.
+  A club sets it under Settings › Verbundene Apps › Discord › Ankündigungen:
+  **Changelog: neue Hubra-Versionen** (with a channel picker; empty = the
+  main channel) and **Changelog: Plugin-Updates** (same channel). Both are
+  off by default. Pick an announcements channel or a dedicated changelog
+  channel.
+- **On Hubra's own server**, in the **changelog channel**
+  (`discord.changelog_channel_id`, the third picker on the platform log
+  card; empty = off). With one set, Hubra's release notes go there instead
+  of the platform log.
+
+Nothing is posted twice: the "announced" mark (`changelog.sent` in the
+platform event log, per `hubra@<version>` or `<plugin>@<version>`) is
+written in the same transaction as the outbox rows that carry the event to
+the clubs, so a version is either sent and marked or neither. Going back to
+a version that was announced before posts nothing. The Discord plugin
+remembers what it posted per server, and every post carries a Discord
+nonce made from the delivery id, so a job that runs twice is dropped by
+Discord. The first run on an existing install only marks what runs now.
 
 ### Roles on the platform server
 
