@@ -4263,7 +4263,7 @@
     "discount": "Discount {{percent}} %",
     "due": "Due per month",
     "endsOn": "The subscription is cancelled and ends on {{date}}.",
-    "hint": "What the club pays for Hubra. You pay through Stripe, for example by card; manage the card, billing address and cancelling in Stripe's customer portal.",
+    "hint": "What the club pays for Hubra. You pay through Stripe, for example by card; manage the card and cancelling in Stripe's customer portal.",
     "hintOff": "What the club pays for Hubra. Paying online is not set up yet; Hubra will get in touch.",
     "invoiceDate": "Date",
     "invoiceNumber": "Number",

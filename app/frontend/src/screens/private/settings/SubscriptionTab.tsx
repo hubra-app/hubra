@@ -6,6 +6,7 @@ import {
   Anchor,
   Badge,
   Button,
+  Grid,
   Group,
   Paper,
   SimpleGrid,
@@ -157,27 +158,30 @@ function BillingContactCard() {
           label={t('subscription.contact.email', 'E-Mail für Rechnungen')}
           {...field('email')}
         />
-        <SimpleGrid cols={{ base: 1, sm: 4 }} spacing="sm">
-          <TextInput
-            style={{ gridColumn: 'span 3' }}
-            label={t('subscription.contact.street', 'Strasse')}
-            {...field('street')}
-          />
-          <TextInput label={t('subscription.contact.houseNo', 'Nr.')} {...field('houseNo')} />
-        </SimpleGrid>
-        <SimpleGrid cols={{ base: 1, sm: 4 }} spacing="sm">
-          <TextInput label={t('subscription.contact.postalCode', 'PLZ')} {...field('postalCode')} />
-          <TextInput
-            style={{ gridColumn: 'span 2' }}
-            label={t('subscription.contact.city', 'Ort')}
-            {...field('city')}
-          />
-          <TextInput
-            label={t('subscription.contact.country', 'Land')}
-            maxLength={2}
-            {...field('country')}
-          />
-        </SimpleGrid>
+        <Grid gap="sm">
+          <Grid.Col span={{ base: 12, sm: 9 }}>
+            <TextInput label={t('subscription.contact.street', 'Strasse')} {...field('street')} />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 3 }}>
+            <TextInput label={t('subscription.contact.houseNo', 'Nr.')} {...field('houseNo')} />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 3 }}>
+            <TextInput
+              label={t('subscription.contact.postalCode', 'PLZ')}
+              {...field('postalCode')}
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6 }}>
+            <TextInput label={t('subscription.contact.city', 'Ort')} {...field('city')} />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 3 }}>
+            <TextInput
+              label={t('subscription.contact.country', 'Land')}
+              maxLength={2}
+              {...field('country')}
+            />
+          </Grid.Col>
+        </Grid>
         <Group justify="flex-end">
           <Button loading={saving} onClick={save}>
             {t('subscription.contact.save', 'Speichern')}
@@ -293,7 +297,7 @@ export function SubscriptionTab() {
           {data.enabled
             ? t(
                 'subscription.hint',
-                'Was der Verein für Hubra bezahlt. Bezahlt wird über Stripe, zum Beispiel mit Karte; Karte, Rechnungsadresse und Kündigung verwaltet ihr im Stripe-Kundenportal.',
+                'Was der Verein für Hubra bezahlt. Bezahlt wird über Stripe, zum Beispiel mit Karte; Karte und Kündigung verwaltet ihr im Stripe-Kundenportal.',
               )
             : t(
                 'subscription.hintOff',

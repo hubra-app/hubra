@@ -4263,7 +4263,7 @@
     "discount": "Rabatt {{percent}} %",
     "due": "Fällig pro Monat",
     "endsOn": "Das Abo ist gekündigt und endet am {{date}}.",
-    "hint": "Was der Verein für Hubra bezahlt. Bezahlt wird über Stripe, zum Beispiel mit Karte; Karte, Rechnungsadresse und Kündigung verwaltet ihr im Stripe-Kundenportal.",
+    "hint": "Was der Verein für Hubra bezahlt. Bezahlt wird über Stripe, zum Beispiel mit Karte; Karte und Kündigung verwaltet ihr im Stripe-Kundenportal.",
     "hintOff": "Was der Verein für Hubra bezahlt. Online bezahlen ist noch nicht eingerichtet; Hubra meldet sich bei euch.",
     "invoiceDate": "Datum",
     "invoiceNumber": "Nummer",

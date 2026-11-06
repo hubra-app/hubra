@@ -7,6 +7,10 @@ section and position, or the apps show that version in English.
 
 ## [Unreleased]
 
+### Added
+
+- Hubra subscription: clubs set the email and address for Hubra's invoices under Settings › Hubra subscription › Billing details; saving updates Stripe at once.
+
 ### Fixed
 
 - Hubra subscription: Stripe invoices now show the club's billing address. Checkout asks for it (prefilled from the club's address in its settings) and the club's finance email is used when set.
