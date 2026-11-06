@@ -62,6 +62,9 @@ jobs:
   # CHANGELOG.md and CHANGELOG.de.md), README files and .gitignore files. They
   # do not change what the code does; release-checks.yml (full: true) still
   # runs every test, including the changelog checks, before a release.
+  # A version bump runs nothing either: a change to app/backend/pyproject.toml
+  # that only edits the version line is left out, and so is a changelog
+  # change that only adds "## [x.y.z] - date" headings.
   # Everything else (docs, the other workflows, brand/, tools/, ...) runs
   # nothing: "lint" and "tests" then report as skipped, which branch
   # protection counts as passed.
@@ -98,10 +101,33 @@ jobs:
             exit 0
           fi
           echo "$files"
+          # A version bump (bnb bump) changes only the version line in
+          # app/backend/pyproject.toml and adds a "## [x.y.z] - date" heading
+          # to the changelogs. Such lines run nothing; release-checks.yml
+          # (full: true) still runs every test before the release.
+          # only_lines FILE REGEX: true when every added or removed line of
+          # FILE matches REGEX (blank lines always do).
+          only_lines() {
+            other=$(git diff -U0 "$BASE...$HEAD" -- "$1" \
+              | grep -E '^[-+]' | grep -vE '^(\+\+\+ b/|--- a/)' \
+              | grep -vE "^[-+]($2|[[:space:]]*)$" || true)
+            [ -z "$other" ]
+          }
+          if echo "$files" | grep -qx 'app/backend/pyproject.toml' \
+            && only_lines app/backend/pyproject.toml 'version = "[^"]*"'; then
+            echo "app/backend/pyproject.toml: version only"
+            files=$(echo "$files" | grep -vx 'app/backend/pyproject.toml' || true)
+          fi
           # The changelogs are Markdown but What's new shows them, so they
-          # count for the browser tests before the text files are dropped.
+          # count for the browser tests before the text files are dropped,
+          # unless the change only adds version headings.
           changelog=false
-          if echo "$files" | grep -qE '^app/backend/CHANGELOG(\.de)?\.md$'; then changelog=true; fi
+          for f in app/backend/CHANGELOG.md app/backend/CHANGELOG.de.md; do
+            if echo "$files" | grep -qx "$f" \
+              && ! only_lines "$f" '## \[[0-9][^]]*\]( - [0-9-]+)?'; then
+              changelog=true
+            fi
+          done
           # Text files never run anything (see the list above).
           files=$(echo "$files" | grep -vE '(\.md|(^|/)README|(^|/)\.gitignore)$' || true)
           # out NAME REGEX [FORCE]: NAME=true when a changed file matches
