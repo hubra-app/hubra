@@ -58,7 +58,12 @@ const DOMAINS = [
   'domains.service',
 ]
 const PAYMENTS = ['payments.stripe.secret_key', 'payments.fee_percent']
-const BILLING = ['billing.enabled', 'billing.yearly', 'billing.stripe.webhook_secret']
+const BILLING = [
+  'billing.enabled',
+  'billing.yearly',
+  'billing.stripe.secret_key',
+  'billing.stripe.webhook_secret',
+]
 const DISCORD = [
   'discord.client_id',
   'discord.public_key',
@@ -223,11 +228,15 @@ const FIELD_DE: Record<string, [string, string]> = {
   ],
   'billing.enabled': [
     'Vereine über Stripe abrechnen',
-    'on: Admins eines Vereins sehen Einstellungen › Hubra-Abo und bezahlen ihren Tarif über Stripe Checkout, mit dem Stripe-Schlüssel oben; der Stand wird stündlich bei Stripe gelesen. off: Konditionen werden nur festgehalten',
+    'on: Admins eines Vereins sehen Einstellungen › Hubra-Abo und bezahlen ihren Tarif über Stripe Checkout, mit dem Stripe-Schlüssel unten; der Stand wird stündlich bei Stripe gelesen. off: Konditionen werden nur festgehalten',
   ],
   'billing.yearly': [
     'Jährlich abrechnen',
     'on: neue Abos werden einmal im Jahr belastet (12 × der Monatspreis). off: monatlich. Laufende Abos wechseln beim nächsten Abgleich',
+  ],
+  'billing.stripe.secret_key': [
+    'Stripe-Schlüssel der Abrechnung',
+    'Secret- oder Restricted-Key (sk_/rk_) des Stripe-Kontos, das den Vereinen Hubra verrechnet. Leer: der Schlüssel der Online-Zahlungen oben. sk_test_ für den Testmodus. Wird verschlüsselt gespeichert',
   ],
   'billing.stripe.webhook_secret': [
     'Webhook-Secret der Abrechnung',
@@ -704,8 +713,8 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
               </Group>
               <Text size="xs" c="dimmed" mb={12}>
                 {tr(
-                  'Hubra verrechnet den Vereinen ihren Tarif über das Stripe-Konto der Plattform (gleicher Schlüssel wie oben). Im Stripe-Dashboard einen Webhook auf /api/v1/global/billing/stripe/webhook anlegen (checkout.session.completed, customer.subscription.*, invoice.paid, invoice.payment_failed) und das Kundenportal einschalten. Siehe docs/billing.md.',
-                  "Hubra bills clubs for their plan through the platform's Stripe account (same key as above). In the Stripe dashboard add a webhook to /api/v1/global/billing/stripe/webhook (checkout.session.completed, customer.subscription.*, invoice.paid, invoice.payment_failed) and turn on the customer portal. See docs/billing.md.",
+                  'Hubra verrechnet den Vereinen ihren Tarif über ein eigenes Stripe-Konto (oder, ohne eigenen Schlüssel, das der Online-Zahlungen). Im Stripe-Dashboard einen Webhook auf /api/v1/global/billing/stripe/webhook anlegen (checkout.session.completed, customer.subscription.*, invoice.paid, invoice.payment_failed) und das Kundenportal einschalten. Siehe docs/billing.md.',
+                  "Hubra bills clubs for their plan through its own Stripe account (or, without its own key, the Online payments one). In the Stripe dashboard add a webhook to /api/v1/global/billing/stripe/webhook (checkout.session.completed, customer.subscription.*, invoice.paid, invoice.payment_failed) and turn on the customer portal. See docs/billing.md.",
                 )}
               </Text>
               <Stack gap="sm">{BILLING.map(field)}</Stack>

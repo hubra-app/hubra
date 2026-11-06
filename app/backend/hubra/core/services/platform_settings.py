@@ -295,7 +295,7 @@ SPECS: tuple[Spec, ...] = (
         "billing.enabled",
         "Bill clubs with Stripe",
         "on: club admins see Einstellungen › Hubra-Abo and pay their plan "
-        "through Stripe Checkout with the platform's Stripe key; Stripe's "
+        "through Stripe Checkout with the billing Stripe key; Stripe's "
         "state is read every hour. off: terms are only stored (docs/billing.md)",
         lambda cfg: "off",
         "on_off",
@@ -307,6 +307,16 @@ SPECS: tuple[Spec, ...] = (
         "price). off: monthly. Running subscriptions change at their next sync",
         lambda cfg: "off",
         "on_off",
+    ),
+    Spec(
+        "billing.stripe.secret_key",
+        "Stripe billing key",
+        "Secret or restricted key (sk_/rk_) of the Stripe account that bills "
+        "clubs for Hubra. Empty: the Online payments key above. sk_test_ for "
+        "test mode. Stored encrypted",
+        lambda cfg: cfg.get("STRIPE_BILLING_SECRET_KEY") or "",
+        "stripe_secret_key",
+        secret=True,
     ),
     Spec(
         "billing.stripe.webhook_secret",

@@ -56,8 +56,12 @@ _PRODUCT_ID = re.compile(r"[^a-z0-9_]+")
 
 
 def _key() -> str | None:
+    """The billing account's key; without one, the Online payments key."""
     from hubra.core.services import platform_settings
 
+    own = platform_settings.get("billing.stripe.secret_key")
+    if own:
+        return own
     stripe = platform_settings.stripe()
     return stripe.secret_key if stripe else None
 

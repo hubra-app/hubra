@@ -305,3 +305,10 @@ def test_stripe_errors_keep_their_text_out_of_answers():
     assert refused.public_message() == "Stripe refused the call (resource_missing)"
     odd = stripe_api.StripeError("x", 400, "<script>")
     assert odd.public_message() == "Stripe refused the call (400)"
+
+
+def test_billing_can_use_its_own_stripe_account(stripe, db):
+    assert service._key() == "sk_test_" + "a" * 24
+    platform_settings.set_many({"billing.stripe.secret_key": "rk_live_" + "b" * 24})
+    assert service._key() == "rk_live_" + "b" * 24
+    assert service.test_mode() is False

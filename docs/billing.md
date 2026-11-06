@@ -50,9 +50,15 @@ and Stripe Tax / VAT on the invoices.
 
 ## Setting it up
 
-1. **Stripe key.** manage › Payments › Online payments: the platform's
-   secret key (`payments.stripe.secret_key`). Billing uses the same key; an
-   `sk_test_…` key puts billing in test mode (shown in both apps).
+1. **Stripe key.** manage › Payments › Club billing: the key of the Stripe
+   account that bills clubs (`billing.stripe.secret_key`, env
+   `STRIPE_BILLING_SECRET_KEY`; a secret `sk_` or restricted `rk_` key).
+   Left empty, billing uses the Online payments key
+   (`payments.stripe.secret_key`). An `sk_test_…` key puts billing in test
+   mode (shown in both apps). A restricted key needs write access to
+   Customers, Products, Checkout Sessions, Customer portal and
+   Subscriptions, and read access to Invoices. The billing account needs no
+   Connect.
 2. **Webhook.** In the Stripe dashboard (Developers › Webhooks) add an
    endpoint `https://<your API host>/api/v1/global/billing/stripe/webhook`
    with the events:
@@ -80,8 +86,9 @@ club's settings (`tenants.settings["billing_stripe"]`).
 
 Hubra is not a registered company yet. Until it is, the seller is
 **BitsAndBricks** (Mike's sole proprietorship), and Hubra is its product:
-"Hubra, powered by BitsAndBricks". Billing uses the platform's Stripe key,
-the same one Online payments uses as its Connect platform.
+"Hubra, powered by BitsAndBricks". Billing has its own key
+(`billing.stripe.secret_key`), so it can run in a Stripe account of its
+own, apart from the Connect platform of Online payments.
 
 Use a **separate Stripe account for Hubra under the BitsAndBricks login**
 (Stripe: Account switcher › New account, same legal entity), not the
