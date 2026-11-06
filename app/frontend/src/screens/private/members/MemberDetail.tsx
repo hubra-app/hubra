@@ -31,6 +31,7 @@ import { listMemberInvoices } from '@/api/finance'
 import { listFunctions } from '@/api/functions'
 import { listAuditLog } from '@/api/settings'
 import { MemberEditModal } from '@/components/MemberEditModal'
+import { MemberPrivacySection } from './MemberPrivacySection'
 import {
   ActivityList,
   DetailEmpty as Empty,
@@ -411,6 +412,8 @@ export function MemberDetailScreen({
               )}
             </Section>
           )}
+
+          {id && <MemberPrivacySection memberId={id} />}
         </div>
 
         {/* ── What the member does in the club ── */}

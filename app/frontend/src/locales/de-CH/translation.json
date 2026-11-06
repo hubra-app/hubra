@@ -290,6 +290,23 @@
       "function": "Funktion",
       "group": "Gruppe",
       "toggle": "{{address}} aktiv"
+    },
+    "privacy": {
+      "title": "Datenschutz",
+      "photos": "Der Verein darf Fotos von mir zeigen",
+      "photosUnasked": "Noch nicht gewählt. In Galerien, Beiträgen und auf der Website des Vereins.",
+      "photosHint": "In Galerien, Beiträgen und auf der Website des Vereins. Du kannst das jederzeit ändern.",
+      "exportHint": "Alles, was der Verein über dich gespeichert hat, als Datei (JSON): Konto, Mitgliedschaft, Anmeldungen, Rechnungen und mehr.",
+      "export": "Meine Daten herunterladen",
+      "deletionPending": "Du hast am {{date}} die Löschung deiner Daten beantragt. Sie wird bis am {{due}} erledigt.",
+      "deletionHint": "Du kannst verlangen, dass der Verein deine Daten löscht. Du verlässt dann den Verein; Rechnungen und Buchungen bleiben ohne deinen Namen, weil der Verein seine Bücher aufbewahren muss. Dein Hubra-Konto bleibt.",
+      "deletion": "Löschung beantragen",
+      "retention": "Der Verein löscht die Daten ehemaliger Mitglieder {{count}} Jahre nach dem Austritt.",
+      "deletionConfirmTitle": "Löschung deiner Daten beantragen?",
+      "deletionConfirmBody": "Hubra bearbeitet deinen Antrag innerhalb von 30 Tagen. Danach bist du nicht mehr Mitglied, und deine Daten im Verein sind gelöscht. Das lässt sich nicht rückgängig machen.",
+      "deletionNote": "Nachricht (freiwillig)",
+      "deletionSent": "Löschung beantragt",
+      "deletionSentMsg": "Du bekommst innerhalb von 30 Tagen Bescheid."
     }
   },
   "app": {
@@ -1920,7 +1937,14 @@
       "years_other": "{{count}} Jahre",
       "months_one": "{{count}} Monat",
       "months_other": "{{count}} Monate",
-      "new": "neu"
+      "new": "neu",
+      "privacy": {
+        "notAsked": "Nicht gewählt",
+        "photos": "Fotos zeigen",
+        "directory": "Im Verzeichnis",
+        "nothing": "Nichts",
+        "changedLabel": "Zuletzt geändert"
+      }
     },
     "editMember": "Mitglied bearbeiten",
     "editMemberModalTitle": "Mitglied bearbeiten",
@@ -2888,7 +2912,10 @@
     "mfaAll": "Für alle Mitglieder",
     "mfaHint": "Wer es braucht, öffnet den Verein erst, wenn ein Passkey oder eine Authenticator-App eingerichtet ist. Das geht im Konto unter Zwei-Faktor. Admins sind Inhaber und Admins, auch über eine Funktion.",
     "mfaMissing": "{{n}} von ihnen haben noch keine Zwei-Faktor-Anmeldung und kommen erst wieder in den Verein, wenn sie es eingerichtet haben. Sag ihnen vorher Bescheid.",
-    "mfaMissingNone": "Alle, die es betrifft, haben Zwei-Faktor eingerichtet."
+    "mfaMissingNone": "Alle, die es betrifft, haben Zwei-Faktor eingerichtet.",
+    "retention": "Ehemalige Mitglieder nach einer Frist löschen",
+    "retentionHint": "Jede Nacht löscht Hubra Mitglieder, die vor mehr als so vielen Jahren ausgetreten sind (Datenschutz, revDSG). Rechnungen und Buchungen bleiben ohne Namen. Aus: Ehemalige bleiben, bis ihr sie löscht.",
+    "retentionYears": "Löschen nach (Jahren)"
   },
   "domains": {
     "added": "Domain hinzugefügt",

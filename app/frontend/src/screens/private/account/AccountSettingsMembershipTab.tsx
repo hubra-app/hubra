@@ -14,6 +14,7 @@ import { useModules } from '@/modules/useModules'
 import { NotificationsCard } from './NotificationsCard'
 import { PushCard } from './PushCard'
 import { InstallAppCard } from './InstallAppCard'
+import { PrivacyCard } from './PrivacyCard'
 import { roleLabels } from '@/roles'
 import { qk } from '@/data/keys'
 
@@ -209,6 +210,8 @@ export function AccountSettingsMembershipTab() {
       <InstallAppCard />
 
       <PushCard />
+
+      <PrivacyCard />
 
       <LeaveClubCard />
     </>

@@ -121,7 +121,12 @@ def set_my_directory():
             "shared must be a list of: " + ", ".join(DIRECTORY_FIELDS),
         )
     member = get_current_member()
-    member.directory_shared = [c for c in DIRECTORY_FIELDS if c in shared]
+    new = [c for c in DIRECTORY_FIELDS if c in shared]
+    if new != list(member.directory_shared or []):
+        from hubra.core.services.privacy import log_consent
+
+        member.directory_shared = new
+        log_consent(member, "directory", new, member.id)
     db.session.commit()
     return jsonify(
         {"shared": member.directory_shared, "choices": list(DIRECTORY_FIELDS)}
@@ -953,3 +958,4 @@ def revoke_member_sessions(member_id: int):
 
 
 from hubra.api.members import stats  # noqa: E402,F401  (registers /members/stats)
+from hubra.api.members import privacy  # noqa: E402,F401  (registers /members/me/privacy)

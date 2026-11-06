@@ -437,3 +437,52 @@ def delete_member(req: DataRequest, actor_id: int) -> set[int]:
         "kept_without_name": kept,
     }
     return affected
+
+
+# ── Retention ────────────────────────────────────────────────────────────────
+
+
+def purge_former_members(tenant: Tenant, years: int, now: datetime | None = None) -> dict:
+    """Delete members who left the club more than *years* ago.
+
+    Runs inside the club (the daily job).  A former member is an archived
+    one (``archived_at``); they are deleted like a deletion request:
+    their own rows go, invoices and bookings stay without the name.  A
+    member something still depends on (a binding, a club address) is
+    skipped and counted.  Commits after each member, so one that fails
+    does not undo the others.
+    """
+    from hubra.api.members.services import MemberService
+    from hubra.core.models.member import Member
+    from hubra.core.utils import log_audit
+
+    now = now or datetime.now(timezone.utc)
+    # Calendar years back, on 28 Feb for a 29 Feb.
+    try:
+        cutoff = now.replace(year=now.year - years)
+    except ValueError:
+        cutoff = now.replace(year=now.year - years, day=28)
+    ids = db.session.scalars(
+        select(Member.id)
+        .where(Member.archived_at.isnot(None))
+        .where(Member.archived_at < cutoff)
+        .order_by(Member.id)
+    ).all()
+    deleted = skipped = 0
+    for member_id in ids:
+        try:
+            member = MemberService.delete_permanent(member_id, 0)
+            log_audit(
+                actor_id=None,
+                action="privacy_retention_deletion",
+                target_type="Member",
+                target_id=member_id,
+                target_label=f"#{member_id}",
+            )
+            db.session.delete(member)
+            db.session.commit()
+            deleted += 1
+        except ApiError:
+            db.session.rollback()
+            skipped += 1
+    return {"deleted": deleted, "skipped": skipped, "tenant": tenant.slug}
