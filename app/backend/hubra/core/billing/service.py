@@ -217,20 +217,59 @@ def _ensure_products(key: str, lines: list[dict]) -> None:
 # ── Club admin: start paying, manage payment ────────────────────────────────
 
 
+def _club_setting(key: str) -> str:
+    """One of the club's own settings (current tenant), empty if unset."""
+    try:
+        from hubra.core.services.settings import SettingService
+
+        return (SettingService.get(key, default="") or "").strip()
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def club_address() -> dict | None:
+    """The club's postal address from Settings › Club (the same fields as on
+    its QR bills), as a Stripe address.  None without postal code and city."""
+    street = " ".join(
+        x
+        for x in (
+            _club_setting("Club.Banking.Street"),
+            _club_setting("Club.Banking.HouseNo"),
+        )
+        if x
+    )
+    code = _club_setting("Club.Banking.PostalCode")
+    city = _club_setting("Club.Banking.City")
+    if not code or not city:
+        return None
+    return {
+        "line1": street or None,
+        "postal_code": code,
+        "city": city,
+        "country": (_club_setting("Club.Banking.Country") or "CH").upper()[:2],
+    }
+
+
 def _ensure_customer(key: str, tenant: Tenant, email: str | None) -> str:
+    """The club's Stripe customer: named after the club, with the club's
+    finance email (else the paying admin's) and the club's address."""
     s = state(tenant)
     if s.get("customer_id"):
         return s["customer_id"]
+    body: dict = {
+        "name": tenant.name,
+        "email": _club_setting("Club.Contact.FinanceEmail") or email or None,
+        "metadata": {"tenant_id": tenant.id, "slug": tenant.slug},
+        "preferred_locales": [tenant.locale or "de-CH"],
+    }
+    address = club_address()
+    if address:
+        body["address"] = address
     customer = stripe_api.call(
         key,
         "POST",
         "/v1/customers",
-        {
-            "name": tenant.name,
-            "email": email or None,
-            "metadata": {"tenant_id": tenant.id, "slug": tenant.slug},
-            "preferred_locales": [tenant.locale or "de-CH"],
-        },
+        body,
         idempotency_key=f"hubra-customer-{tenant.id}",
     )
     _save_state(tenant, {"customer_id": customer["id"]})
@@ -275,6 +314,11 @@ def checkout(
                 {"price_data": _price_data(x), "quantity": x["quantity"]} for x in lines
             ],
             "subscription_data": sub,
+            # The invoice goes to the club: Checkout asks for its billing
+            # address (prefilled when the club has one) and stores it on the
+            # customer, so every invoice shows it.
+            "billing_address_collection": "required",
+            "customer_update": {"address": "auto"},
             "metadata": {"tenant_id": tenant.id},
             "locale": "de" if (tenant.locale or "de").startswith("de") else "auto",
             "success_url": success_url,

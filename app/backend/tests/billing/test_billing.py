@@ -151,6 +151,39 @@ def test_checkout_makes_customer_products_and_session(stripe, club, db):
     assert len(stripe.made("POST", "/v1/customers")) == 1
 
 
+def test_checkout_bills_the_club_with_its_address(stripe, club, db):
+    from hubra.core.models.setting import Setting
+
+    for key, value in {
+        "Club.Banking.Street": "Seeweg",
+        "Club.Banking.HouseNo": "3",
+        "Club.Banking.PostalCode": "8000",
+        "Club.Banking.City": "Zürich",
+        "Club.Contact.FinanceEmail": "finanzen@club.test",
+    }.items():
+        db.session.add(Setting(key=key, value=value))
+    db.session.commit()
+    service.checkout(club, "kassier@club.test", "https://s", "https://c")
+    customer = stripe.made("POST", "/v1/customers")[0]
+    assert customer["name"] == "Club A"
+    assert customer["email"] == "finanzen@club.test"
+    assert customer["address[line1]"] == "Seeweg 3"
+    assert customer["address[postal_code]"] == "8000"
+    assert customer["address[city]"] == "Zürich"
+    assert customer["address[country]"] == "CH"
+    session = stripe.made("POST", "/v1/checkout/sessions")[0]
+    assert session["billing_address_collection"] == "required"
+    assert session["customer_update[address]"] == "auto"
+    assert "customer_update[name]" not in session
+
+
+def test_checkout_without_club_address(stripe, club, db):
+    service.checkout(club, "kassier@club.test", "https://s", "https://c")
+    customer = stripe.made("POST", "/v1/customers")[0]
+    assert customer["email"] == "kassier@club.test"
+    assert not any(k.startswith("address") for k in customer)
+
+
 def test_checkout_refuses_when_off_paid_or_nothing_due(stripe, club, db):
     platform_settings.set_many({"billing.enabled": "off"})
     with pytest.raises(ApiError) as off:

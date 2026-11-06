@@ -57,21 +57,33 @@ subscription, and every invoice belongs to that customer.
 | In Stripe | Comes from | Set when |
 | --- | --- | --- |
 | Customer name | the club's name (`tenant.name`) | the first **Pay now** |
-| Customer email | the email of the club admin who clicked **Pay now** | the first **Pay now** |
+| Customer email | the club's finance email (`Club.Contact.FinanceEmail`), else the email of the club admin who clicked **Pay now** | the first **Pay now** |
+| Customer address | the club's address from its settings (`Club.Banking.Street`, `HouseNo`, `PostalCode`, `City`, `Country`, the same as on its QR bills) | the first **Pay now**; Checkout then asks for it and saves what the admin confirms |
 | Customer metadata | `tenant_id` and `slug` of the club | the first **Pay now** |
 | Customer language | the club's locale (default `de-CH`) | the first **Pay now** |
 | Subscription metadata | `tenant_id` | Checkout |
 | Checkout `client_reference_id` | `tenant_id` | Checkout |
-| Billing address, card | what the admin types in Checkout or the portal | Checkout, portal |
+| Card | what the admin types in Checkout or the portal | Checkout, portal |
 
 Hubra stores the customer id and the subscription id in the club's
 settings (`tenants.settings["billing_stripe"]`). The webhook finds the club
 by `tenant_id` in the metadata (or `client_reference_id`) and, failing
 that, by the stored customer id. Any admin of the club with the right
 `billing.billing.manage` opens the same customer in Checkout and the
-portal, so it doesn't matter which admin pays; the first admin's email is
-only where Stripe sends invoices and receipts. They can change it in the
-portal (if the portal allows updating customer details).
+portal, so it doesn't matter which admin pays. The email is where Stripe
+sends invoices and receipts.
+
+**The club's billing address.** Checkout always asks for a billing address
+(`billing_address_collection: required`), prefilled with the club's
+address when the club has entered one, and writes it to the customer
+(`customer_update[address]: auto`), so every invoice shows it under
+"Rechnungsempfänger". The customer's name stays the club's name: the name
+typed in Checkout is the cardholder's and is not copied. To change the
+address later, the club uses the portal; for that, turn on **Customer
+information › Billing address** (and email) in Stripe's portal settings.
+Customers made before this change keep their missing address until the
+next Checkout or until the club edits it in the portal; platform admins can
+also edit the customer in the Stripe dashboard.
 
 To find a club in the Stripe dashboard: manage › All clubs › club ›
 Billing shows the customer and subscription ids, or search Stripe for the
@@ -87,7 +99,8 @@ invoices and the portal carry Stripe's test-mode badge, and the test card
 `4242 4242 4242 4242` pays. The first invoice is made when Checkout
 completes:
 
-- To: the club's name, the admin's email and, if Checkout asked for it, the billing address.
+- To: the club's name, its billing address and its finance email (or the
+  admin's).
 - From: the Stripe account's public name, address and invoice footer (see
   [Which Stripe account](#which-stripe-account)).
 - One line `Hubra <plan>` (plan price after the club's discount), plus one
@@ -170,8 +183,8 @@ would need a smarter item update first.
    `STRIPE_BILLING_WEBHOOK_SECRET`). Requests without a valid
    `Stripe-Signature` (HMAC-SHA256, at most 5 minutes old) are refused.
 3. **Customer portal.** Settings › Billing › Customer portal in Stripe: turn
-   it on, allow updating payment methods and cancelling, and show invoice
-   history.
+   it on, allow updating payment methods, the billing address and email,
+   and cancelling, and show invoice history.
 4. **Switch it on.** `billing.enabled` = `on`. Optionally `billing.yearly` =
    `on` for yearly invoices.
 5. **Rights.** After the release run `flask seed` and
