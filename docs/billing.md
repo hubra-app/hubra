@@ -76,6 +76,30 @@ and Stripe Tax / VAT on the invoices.
 No database migration is needed: Stripe's ids and state are stored in the
 club's settings (`tenants.settings["billing_stripe"]`).
 
+## Which Stripe account
+
+Billing uses the platform's Stripe account, the same one that Online payments
+uses as its Connect platform. Things to know when opening it (checked against
+Stripe's pages on 2026-11-06):
+
+- Stripe accepts sole proprietors / individuals, not only companies. A
+  sole proprietor without a commercial register entry is a supported
+  business type (Stripe's page for Germany says so; the Swiss page could not
+  be read). The account is opened in the owner's name with their ID,
+  address and bank account.
+- TWINT through Stripe is **B2C only**. Clubs are organisations, so billing
+  Hubra subscriptions is B2B: expect clubs to pay by card (or another method
+  Stripe allows for B2B), not TWINT. Members paying their club with the
+  Online payments plugin is B2C and can use TWINT.
+- The website must show the legal form, and for a sole proprietorship the
+  owner's full name (a TWINT onboarding requirement, also expected by
+  Stripe's review).
+- When Hubra becomes a company, the legal name and tax ID can be changed
+  in the Stripe dashboard, but moving the account to a new legal entity
+  goes through Stripe Support. Stripe's pages do not say what happens to
+  customers, subscriptions and saved cards in that case, so ask Support
+  before registering the company.
+
 ## API
 
 Club app (`billing.billing.manage`):
