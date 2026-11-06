@@ -67,6 +67,7 @@ const DISCORD = [
 
 const DISCORD_LOG = ['discord.log_channel_id', 'discord.audit_channel_id']
 const DISCORD_ROLES = ['discord.platform_roles']
+const DISCORD_SUPPORT = ['discord.support_channel_id', 'discord.support_add_reporters']
 // Defaults built into Hubra, not read from the environment.
 const PERF = ['perf.slow_request_ms', 'perf.slow_query_ms', 'perf.p95_warning_ms']
 const LIMITS = ['limits.warn_percent']
@@ -86,6 +87,10 @@ const ALERTS = ['alerts.cooldown_minutes', 'alerts.retention_days', 'alerts.mana
 const LOG_BOT_PERMISSIONS = (1 << 10) | (1 << 11) | (1 << 14)
 // Manage Roles, only asked for when the bot keeps the platform server's roles.
 const MANAGE_ROLES = 1 << 28
+// Support threads: create invite, read message history, manage threads,
+// create private threads, send messages in threads. Above 2^31, so added up
+// as numbers (JavaScript's | works on 32 bits).
+const THREAD_PERMISSIONS = 2 ** 0 + 2 ** 16 + 2 ** 34 + 2 ** 36 + 2 ** 38
 
 /** One group of platform settings; each is shown on the page it configures. */
 export type SettingsSectionId =
@@ -112,7 +117,7 @@ const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
   payments: PAYMENTS,
   domains: DOMAINS,
   'discord-app': DISCORD,
-  'discord-channels': [...DISCORD_LOG, ...DISCORD_ROLES],
+  'discord-channels': [...DISCORD_LOG, ...DISCORD_ROLES, ...DISCORD_SUPPORT],
   alerts: ALERTS,
   performance: PERF,
   limits: LIMITS,
@@ -274,6 +279,14 @@ const FIELD_DE: Record<string, [string, string]> = {
     'Kanal für das Plattform-Log',
     'Kanal-ID auf dem Discord-Server der Plattform (Rechtsklick auf den Kanal › Kanal-ID kopieren, Entwicklermodus nötig). Leer: keine Meldungen',
   ],
+  'discord.support_channel_id': [
+    'Support-Kanal',
+    'Kanal-ID auf dem Plattform-Server. Jeder Support-Fall bekommt dort einen privaten Thread. Leer: aus',
+  ],
+  'discord.support_add_reporters': [
+    'Meldende Personen in den Thread',
+    'an: Wer einen Fall meldet, kommt mit verknüpftem Discord in den Thread (wer nicht auf dem Server ist, bekommt eine Einladung). aus: Das Team fügt Personen selbst hinzu',
+  ],
   'discord.audit_channel_id': [
     'Audit-Kanal',
     'Kanal-ID für jeden Eintrag im Audit-Log, mit Links in manage. Warnungen bleiben im Plattform-Log. Leer: aus',
@@ -377,9 +390,11 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
 
   const rolesOn =
     (draft['discord.platform_roles'] ?? byKey['discord.platform_roles']?.value) === 'on'
+  const supportChannel =
+    draft['discord.support_channel_id'] ?? byKey['discord.support_channel_id']?.value ?? ''
   const botAddLink = clientId ? (
     <Anchor
-      href={`https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&scope=bot&permissions=${LOG_BOT_PERMISSIONS | (rolesOn ? MANAGE_ROLES : 0)}`}
+      href={`https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&scope=bot&permissions=${(LOG_BOT_PERMISSIONS | (rolesOn ? MANAGE_ROLES : 0)) + (supportChannel ? THREAD_PERMISSIONS : 0)}`}
       target="_blank"
       rel="noreferrer"
     >
@@ -776,6 +791,42 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                     </Text>
                   )}
                 </Group>
+              </Stack>
+            </Paper>
+          )}
+
+          {section === 'discord-channels' && byKey['discord.support_channel_id'] && (
+            <Paper withBorder p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Support-Threads', 'Support threads')}</Title>
+                {resetButton(DISCORD_SUPPORT)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Jeder Support-Fall bekommt einen privaten Thread im Support-Kanal. Was dort geschrieben wird, kommt als Kommentar zum Fall (vom Team als Antwort, mit // am Anfang als interne Notiz), und Antworten aus manage und von der Support-Seite gehen in den Thread. Braucht den Message-Content-Intent der Discord-Anwendung (Developer Portal › Bot) und für den Bot im Kanal: Threads verwalten, private Threads erstellen, Nachrichten in Threads senden, Nachrichtenverlauf lesen, Einladung erstellen.',
+                  'Every support case gets a private thread in the support channel. What is written there becomes a comment on the case (from the team as an answer, starting with // as an internal note), and answers from manage and the support site go into the thread. Needs the Discord application’s Message Content intent (Developer Portal › Bot) and, for the bot in the channel: Manage Threads, Create Private Threads, Send Messages in Threads, Read Message History, Create Invite.',
+                )}
+              </Text>
+              <Stack gap="sm">
+                <DiscordLogPicker
+                  botTokenSet={!!byKey['discord.bot_token']?.isSet}
+                  addLink={botAddLink}
+                  slots={[
+                    {
+                      label: tr('Support-Kanal', 'Support channel'),
+                      description: tr(
+                        'Leer: keine Threads.',
+                        'Empty: no threads.',
+                      ),
+                      channelId: supportChannel,
+                      onChange: (id) => setDraft((d) => ({ ...d, 'discord.support_channel_id': id })),
+                      fallback: field('discord.support_channel_id'),
+                      suggestedName: 'hubra-support',
+                      threads: true,
+                    },
+                  ]}
+                />
+                {field('discord.support_add_reporters')}
               </Stack>
             </Paper>
           )}

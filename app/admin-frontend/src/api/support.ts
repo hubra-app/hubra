@@ -56,6 +56,31 @@ export interface StaffCase {
   awaitingReply?: boolean
   comments?: CaseComment[]
   merged?: { id: number; title: string; createdAt: string }[]
+  /** The reporter first, then everyone staff added. */
+  people?: CasePerson[]
+  discord?: { enabled: boolean; threadId: string | null; threadUrl: string | null }
+}
+
+/** Where someone stands in the case's Discord thread. */
+export type DiscordState = '' | 'added' | 'invited' | 'no_discord' | 'failed'
+
+export interface CasePerson {
+  id: number
+  name: string
+  email: string
+  reporter: boolean
+  /** On the case's list (the reporter only once added to the thread). */
+  added: boolean
+  discordLinked: boolean
+  discord: DiscordState
+  inviteUrl: string | null
+  addedAt: string | null
+}
+
+export interface Account {
+  id: number
+  name: string
+  email: string
 }
 
 export interface CaseList {
@@ -115,4 +140,25 @@ export function mergeCase(id: number, into: number) {
     method: 'POST',
     body: JSON.stringify({ into }),
   })
+}
+
+export function findAccounts(q: string) {
+  return apiFetch<{ items: Account[] }>(
+    `/platform/support/accounts?q=${encodeURIComponent(q)}`,
+  )
+}
+
+export function addPeople(id: number, userIds: number[]) {
+  return apiFetch<StaffCase>(`${S}/${id}/people`, {
+    method: 'POST',
+    body: JSON.stringify({ userIds }),
+  })
+}
+
+export function removePerson(id: number, userId: number) {
+  return apiFetch<StaffCase>(`${S}/${id}/people/${userId}`, { method: 'DELETE' })
+}
+
+export function openThread(id: number) {
+  return apiFetch<StaffCase>(`${S}/${id}/discord`, { method: 'POST' })
 }

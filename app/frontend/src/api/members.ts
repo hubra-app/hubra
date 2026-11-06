@@ -356,6 +356,63 @@ export function setMyDirectory(shared: DirectoryChoice[]): Promise<DirectoryStat
   });
 }
 
+// ── Data protection (revDSG) ─────────────────────────────────────────────────
+
+export interface ConsentLogEntry {
+  kind: "photos" | "directory";
+  value: boolean | string[] | null;
+  source: "self" | "board";
+  changed_by: number | null;
+  at: string;
+}
+
+export interface PrivacyState {
+  /** May the club show photos of me? null: never asked. */
+  photo_consent: boolean | null;
+  directory_shared: DirectoryChoice[];
+  /** My open deletion request, handled by the platform. */
+  deletion_request: { received_on: string; due_on: string } | null;
+  /** The club deletes former members this many years after they left. */
+  retention_years: number | null;
+  log: ConsentLogEntry[];
+}
+
+export function getMyPrivacy(): Promise<PrivacyState> {
+  return apiFetch<PrivacyState>("/app/members/me/privacy");
+}
+
+export function setMyPhotoConsent(photo_consent: boolean): Promise<PrivacyState> {
+  return apiFetch<PrivacyState>("/app/members/me/privacy", {
+    method: "PUT",
+    body: JSON.stringify({ photo_consent }),
+  });
+}
+
+export function requestMyDeletion(note: string): Promise<PrivacyState> {
+  return apiFetch<PrivacyState>("/app/members/me/privacy/deletion", {
+    method: "POST",
+    body: JSON.stringify({ note }),
+  });
+}
+
+/** Download everything the club holds about me as a JSON file. */
+export async function downloadMyData(club: string): Promise<void> {
+  const res = await apiFetchRaw("/app/members/me/privacy/export");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `hubra-${club}-my-data.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export function getMemberConsents(
+  memberId: string | number,
+): Promise<Pick<PrivacyState, "photo_consent" | "directory_shared" | "log">> {
+  return apiFetch(`/app/members/${memberId}/consents`);
+}
+
 // ── Notification choices ─────────────────────────────────────────────────────
 
 export type NotifyTopic =
@@ -365,8 +422,15 @@ export type NotifyTopic =
   | "event_reminders"
   | "poll_reminders"
   | "my_events"
+  | "bookings"
+  | "waitlist"
   | "my_polls"
-  | "tasks";
+  | "tasks"
+  | "requests"
+  | "payments"
+  | "membership"
+  | "qualifications"
+  | "digest";
 /** bell, push, mail, or a connected app's code ("discord") */
 export type NotifyChannel = "bell" | "push" | "mail" | (string & {});
 
@@ -379,6 +443,9 @@ export interface NotificationChoices {
   apps?: { key: string; name: string }[];
   /** The weekly digest mail on Monday morning (off until turned on). */
   digest?: boolean;
+  /** The account's "mute all direct messages" switch: no Discord direct
+   * message from Hubra, in any club or for the account. */
+  muted?: boolean;
 }
 
 export function getMyNotifications(): Promise<NotificationChoices> {
@@ -388,6 +455,7 @@ export function getMyNotifications(): Promise<NotificationChoices> {
 export function setMyNotifications(
   change: Partial<Record<NotifyTopic, Partial<Record<NotifyChannel, boolean>>>> & {
     digest?: boolean;
+    muted?: boolean;
   },
 ): Promise<NotificationChoices> {
   return apiFetch<NotificationChoices>("/app/members/me/notifications", {

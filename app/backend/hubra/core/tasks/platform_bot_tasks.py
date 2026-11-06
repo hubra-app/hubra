@@ -4,7 +4,8 @@
   or ends, marks alerts resolved,
   installs /plattform and /wartung on the platform server, announces a new
   release, keeps the platform server's roles up to date, and once a day at 08:00 (platform time zone) posts the digest
-  and the key-rotation reminder.
+  and the key-rotation reminder; reads the support threads
+  (``services.support_discord``).
 * ``approve_request``: Approve on a club request in Discord (setting the
   club up can take longer than Discord waits for an answer).
 * ``post_security``: one security ping.
@@ -68,6 +69,12 @@ def _daily(now: datetime) -> None:
     _step("roles (full)", _roles, True)
 
 
+def _support_threads() -> None:
+    from hubra.core.services import support_discord
+
+    support_discord.sync()
+
+
 def _roles(force: bool = False) -> None:
     from hubra.core.services import platform_roles
 
@@ -81,6 +88,7 @@ def tick() -> None:
 
     now = datetime.now(timezone.utc)
     _step("maintenance", _maintenance)
+    _step("support threads", _support_threads)
     channel, token = platform_discord._settings()
     if not channel or not token:
         return

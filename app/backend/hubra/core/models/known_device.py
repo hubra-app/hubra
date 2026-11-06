@@ -29,6 +29,10 @@ class KnownDevice(db.Model):
     )
     # SHA-256 of the cookie token, never the token itself.
     token_hash: Mapped[str] = mapped_column(db.String(64), nullable=False)
+    # Hash of browser, system, language, time zone and IP network
+    # (known_devices.soft_signature): a browser that lost its cookie but
+    # matches a recent one is not alerted about.
+    soft_hash: Mapped[str | None] = mapped_column(db.String(64), nullable=True)
     browser_family: Mapped[str | None] = mapped_column(db.String(50), nullable=True)
     platform: Mapped[str | None] = mapped_column(db.String(50), nullable=True)
     created_at: Mapped[datetime] = mapped_column(

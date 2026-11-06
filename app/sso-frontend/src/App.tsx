@@ -9,6 +9,7 @@ import { SignupScreen } from '@/screens/Signup'
 import { ForgotPassword } from '@/screens/ForgotPassword'
 import { ResetPassword } from '@/screens/ResetPassword'
 import { VerifyEmail } from '@/screens/VerifyEmail'
+import { NotMe } from '@/screens/NotMe'
 import { ClubsScreen } from '@/screens/Clubs'
 import { JoinClubScreen } from '@/screens/JoinClub'
 import { TrialScreen } from '@/screens/Trial'
@@ -98,6 +99,7 @@ function AppRoutes() {
         />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/not-me" element={<NotMe />} />
         <Route path="/clubs" element={<ClubsScreen />} />
         <Route path="/clubs/:slug" element={<JoinClubScreen />} />
         <Route path="/clubs/:slug/trial" element={<TrialScreen />} />

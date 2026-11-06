@@ -314,6 +314,32 @@ function ClubSettingsForm({
                 checked={form.public_group_listing ?? false}
                 onChange={(e) => update('public_group_listing', e.currentTarget.checked)}
               />
+              <Switch
+                label={t(
+                  'clubSettings.retention',
+                  'Ehemalige Mitglieder nach einer Frist löschen',
+                )}
+                description={t(
+                  'clubSettings.retentionHint',
+                  'Jede Nacht löscht Hubra Mitglieder, die vor mehr als so vielen Jahren ausgetreten sind (Datenschutz, revDSG). Rechnungen und Buchungen bleiben ohne Namen. Aus: Ehemalige bleiben, bis ihr sie löscht.',
+                )}
+                checked={form.former_member_retention_years != null}
+                onChange={(e) =>
+                  update('former_member_retention_years', e.currentTarget.checked ? 10 : null)
+                }
+              />
+              {form.former_member_retention_years != null && (
+                <NumberInput
+                  maw={240}
+                  label={t('clubSettings.retentionYears', 'Löschen nach (Jahren)')}
+                  min={1}
+                  max={30}
+                  value={form.former_member_retention_years}
+                  onChange={(v) =>
+                    typeof v === 'number' && update('former_member_retention_years', v)
+                  }
+                />
+              )}
             </Stack>
           </Paper>
 

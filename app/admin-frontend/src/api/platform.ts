@@ -148,7 +148,7 @@ export async function getDiscordServerChannels(serverId: string) {
 /** Make a text channel on one of the bot's servers (private by default). */
 export async function createDiscordChannel(
   serverId: string,
-  body: { name: string; private?: boolean; topic?: string },
+  body: { name: string; private?: boolean; topic?: string; threads?: boolean },
 ) {
   return apiFetch<{ id: string; name: string }>(
     `${P}/discord/servers/${encodeURIComponent(serverId)}/channels`,

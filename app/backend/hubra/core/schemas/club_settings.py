@@ -83,6 +83,11 @@ class ClubSettingsSchema(Schema):
     leave_requires_approval = fields.Bool(required=False, allow_none=True)
     # Off: the club takes new members by invite only (no "ask to join").
     join_requests_open = fields.Bool(required=False, allow_none=True)
+    # Delete former members this many years after they left (revDSG);
+    # None: keep them until the board deletes them.
+    former_member_retention_years = fields.Int(
+        required=False, allow_none=True, strict=True, validate=validate.Range(1, 30)
+    )
     # Two-factor sign-in: "off", "admins" (owners and admins) or "all".
     mfa_required = fields.Str(
         required=False,

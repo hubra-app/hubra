@@ -136,6 +136,45 @@ def _dispatch_invoice_email(
     _record_reminder_history(invoice, member, reminder_type, success, error_message)
 
 
+# Days before the due date a member hears that an invoice is due soon.
+DUE_SOON_DAYS = 3
+INVOICES_LINK = "/app/account/settings/membership"
+
+
+def _tell_member(invoice: Invoice, title: str, topic: str) -> None:
+    """A notice about one of the member's invoices: the bell, and a Discord
+    direct message when they turned *topic* on there."""
+    from hubra.core.notifications.services import notify_member
+
+    if not invoice.member_id:
+        return
+    notify_member(
+        invoice.member_id,
+        "warning" if "overdue" in title else "info",
+        title,
+        f"CHF {float(invoice.amount):,.2f} · {invoice.due:%d.%m.%Y}".replace(",", "'"),
+        link=INVOICES_LINK,
+        topic=topic,
+    )
+
+
+def _notify_due_soon(today: date) -> int:
+    """Members' open invoices due in ``DUE_SOON_DAYS`` days (the daily run
+    finds each once)."""
+    from sqlalchemy import select
+    from hubra.core.models.finance import Invoice
+
+    rows = db.session.scalars(
+        select(Invoice)
+        .where(Invoice.status == "Open")
+        .where(Invoice.member_id.is_not(None))
+        .where(Invoice.due == today + timedelta(days=DUE_SOON_DAYS))
+    ).all()
+    for invoice in rows:
+        _tell_member(invoice, "Invoice due soon", "payments")
+    return len(rows)
+
+
 def _record_reminder_history(
     invoice: Invoice,
     member: object,
@@ -303,6 +342,8 @@ def _generate_invoices(today: date | None = None) -> dict:
         from hubra.api.finance.services import _link_pending_transaction
 
         _link_pending_transaction(invoice)
+        # The renewal: the fee for the new period is out.
+        _tell_member(invoice, "Membership fee for the new period", "membership")
 
         logger.info(
             "invoice_generated member_id=%s tier=%s price_type=%s amount=%s invoice_id=%s",
@@ -399,6 +440,10 @@ def _send_overdue_reminders() -> dict:
     today = date.today()
     _base = _get_base_url()
     portal_url = f"{_base}/invoices" if _base else "the member portal"
+    due_soon = _notify_due_soon(today)
+    if due_soon:
+        db.session.commit()
+        logger.info("due_soon_notices sent=%s", due_soon)
 
     overdue_7d = 0
     overdue_14d = 0
@@ -496,6 +541,8 @@ def _send_overdue_reminders() -> dict:
         # event names a member.
         if member is not None and "overdue_7d" not in sent:
             emit(INVOICE_OVERDUE, member_id=member.id, invoice_id=invoice.id)
+        if member is not None:
+            _tell_member(invoice, "Invoice overdue", "payments")
         logger.info(
             "overdue_reminder_sent invoice_id=%s member_id=%s party_id=%s round=%s",
             invoice.id,

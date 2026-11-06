@@ -196,6 +196,9 @@ class Member(db.Model):
     poll_reminder_mail: Mapped[bool] = mapped_column(
         db.Boolean, default=True, server_default=sa.true(), nullable=False
     )
+    # May the club show photos of this member (galleries, the website,
+    # posts)? None: never asked. Every change is kept in member_consents.
+    photo_consent: Mapped[bool | None] = mapped_column(db.Boolean, nullable=True)
     # A summary of the club's week by mail on Monday morning (off until the
     # member turns it on), and when the last one went out.
     weekly_digest_mail: Mapped[bool] = mapped_column(

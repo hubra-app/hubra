@@ -68,6 +68,7 @@ def send_new_device_login_task(
     user_agent: str,
     timestamp: str,
     lang: str,
+    details: dict | None = None,
 ) -> bool:
     """The "new device" sign-in mail, sent here instead of inside the
     sign-in request (an SMTP hand-off to the relay costs a few hundred ms)."""
@@ -83,6 +84,7 @@ def send_new_device_login_task(
             user_agent=user_agent,
             timestamp=timestamp,
             lang=lang,
+            details=details,
         )
     except Exception:
         # A mail problem never stops anything else; no retry for a notice.

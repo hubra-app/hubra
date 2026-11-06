@@ -58,3 +58,17 @@ def deliver_app_notification(provider: str, member_id: int, payload: dict) -> in
     from hubra.core.notifications.channels import deliver
 
     return deliver(provider, member_id, payload)
+
+
+@celery_app.task(
+    name="hubra.core.tasks.connected_app_tasks.send_account_dm",
+    ignore_result=True,
+)
+def send_account_dm(
+    external_id: str, kind: str, embed: dict, components: list | None = None
+) -> bool:
+    """A Discord direct message to an account, outside a club (a sign-in
+    alert, an answer to a request): ``core/notifications/account_dm.py``."""
+    from hubra.core.notifications.account_dm import deliver
+
+    return deliver(external_id, kind, embed, components)

@@ -58,6 +58,12 @@ def notify_requester(req: TenantRequest) -> bool:
         return False
     lang = user.language or "de-CH"
     try:
+        from hubra.core.notifications import account_dm
+
+        account_dm.club_request_decided(user, req)
+    except Exception:  # noqa: BLE001
+        _log.warning("tenant_request_dm_failed request_id=%s", req.id, exc_info=True)
+    try:
         if req.status == "approved":
             return email_svc.send_club_request_approved(
                 user.email, user.name, req.name, lang=lang

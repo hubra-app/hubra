@@ -38,6 +38,7 @@ from hubra.core.models.member import (
 )
 from hubra.core.models.application import Application
 from hubra.core.models.group import Group, GroupMembership
+from hubra.core.models.consent import MemberConsent
 from hubra.core.models.function import Function, FunctionHolder
 from hubra.core.models.managed_mail import ManagedMailAddress
 from hubra.core.models.event import (
@@ -67,6 +68,7 @@ from hubra.core.models.translation_request import TranslationRequest
 from hubra.core.models.support_case import (
     SupportCase,
     SupportCaseComment,
+    SupportCasePerson,
     SupportCaseVote,
     RoadmapVote,
 )
@@ -153,6 +155,7 @@ __all__ = [
     "UserGlobalRole",
     "UserGlobalRoleTenant",
     "Member",
+    "MemberConsent",
     "MembershipTier",
     "member_groups",
     "member_roles",
@@ -190,6 +193,7 @@ __all__ = [
     "TranslationRequest",
     "SupportCase",
     "SupportCaseComment",
+    "SupportCasePerson",
     "SupportCaseVote",
     "RoadmapVote",
     "Notification",

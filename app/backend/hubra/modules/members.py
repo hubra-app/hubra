@@ -51,13 +51,14 @@ module = Module(
     ),
     tables=(
         "members",
+        "member_consents",
         "member_groups",
         "member_roles",
         "membership_tiers",
         "payment_plans",
         "applications",
     ),
-    tasks=("hubra.core.tasks.digest_tasks",),
+    tasks=("hubra.core.tasks.digest_tasks", "hubra.core.tasks.privacy_tasks"),
     # The weekly digest goes out on Monday morning, club time; the hourly
     # run finds the hour in each club's time zone.
     schedule=(
@@ -65,6 +66,12 @@ module = Module(
             "weekly-digest",
             "hubra.core.tasks.digest_tasks.send_weekly_digests_task",
             3600,
+        ),
+        # Former members past the club's retention period (off by default).
+        Schedule(
+            "privacy-retention",
+            "hubra.core.tasks.privacy_tasks.purge_former_members_task",
+            86400,
         ),
     ),
 )

@@ -73,7 +73,7 @@ def test_a_member_who_gets_a_place_is_told(client, auth_headers, seeded_db):
             Notification.member_id == second, Notification.title == "You got a place"
         )
     ).all()
-    assert titles == ["Last Seat"]
+    assert len(titles) == 1 and titles[0].startswith("Last Seat · ")
 
 
 def test_members_hear_when_their_event_is_deleted(client, auth_headers, seeded_db):

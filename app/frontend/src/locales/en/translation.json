@@ -249,14 +249,23 @@
         "posts": "New posts",
         "events": "New events",
         "polls": "New polls",
-        "event_reminders": "Reminder before events",
+        "event_reminders": "Reminder before events and trainings",
         "poll_reminders": "Reminder before a poll closes",
-        "my_events": "My sign-ups",
+        "my_events": "Changes to my events",
         "my_polls": "Votes in my polls, proxies",
-        "tasks": "Tasks for me (applications, sign-ups to approve)"
+        "tasks": "Tasks for me (applications, sign-ups to approve)",
+        "bookings": "Confirmation of my sign-ups",
+        "waitlist": "Waitlist: a place came free",
+        "requests": "Answers to my requests",
+        "payments": "Invoices: new, due soon, overdue",
+        "membership": "Membership renewal",
+        "qualifications": "Qualifications that end soon",
+        "digest": "Weekly overview on Monday"
       },
       "discordHint": "Discord sends you a direct message from the club's bot. Direct messages from server members must be allowed (Discord › the server's privacy settings).",
-      "discord": "Discord"
+      "discord": "Discord",
+      "muteAll": "Mute all direct messages",
+      "muteAllHint": "No Hubra direct message on Discord, in any club or for your account. Your choices above stay saved."
     },
     "push": {
       "title": "Notifications on this device",
@@ -281,6 +290,23 @@
       "function": "Function",
       "group": "Group",
       "toggle": "{{address}} active"
+    },
+    "privacy": {
+      "title": "Data protection",
+      "photos": "The club may show photos of me",
+      "photosUnasked": "Not chosen yet. In galleries, posts and on the club's website.",
+      "photosHint": "In galleries, posts and on the club's website. You can change this at any time.",
+      "exportHint": "Everything the club has stored about you, as a file (JSON): account, membership, sign-ups, invoices and more.",
+      "export": "Download my data",
+      "deletionPending": "On {{date}} you asked for your data to be deleted. It will be done by {{due}}.",
+      "deletionHint": "You can ask the club to delete your data. You then leave the club; invoices and bookings stay without your name, because the club has to keep its books. Your Hubra account stays.",
+      "deletion": "Ask for deletion",
+      "retention": "The club deletes former members' data {{count}} years after they left.",
+      "deletionConfirmTitle": "Ask for your data to be deleted?",
+      "deletionConfirmBody": "Hubra handles your request within 30 days. After that you are no longer a member and your data in the club is deleted. This cannot be undone.",
+      "deletionNote": "Message (optional)",
+      "deletionSent": "Deletion requested",
+      "deletionSentMsg": "You'll hear back within 30 days."
     }
   },
   "app": {
@@ -1911,7 +1937,14 @@
       "years_other": "{{count}} years",
       "months_one": "{{count}} month",
       "months_other": "{{count}} months",
-      "new": "new"
+      "new": "new",
+      "privacy": {
+        "notAsked": "Not chosen",
+        "photos": "Show photos",
+        "directory": "In the directory",
+        "nothing": "Nothing",
+        "changedLabel": "Last changed"
+      }
     },
     "editMember": "Edit Member",
     "editMemberModalTitle": "Edit member",
@@ -2436,7 +2469,15 @@
         "quotaMail": "Mails this month: {{used}} of {{limit}}.",
         "quotaStorage": "Storage: {{used}} MB of {{limit}} MB.",
         "aMember": "A member",
-        "eventReminder": "Event reminder"
+        "eventReminder": "Event reminder",
+        "signUpReceived": "Sign-up received, waiting for approval",
+        "onWaitlist": "On the waitlist",
+        "newInvoice": "New invoice",
+        "invoiceDueSoon": "Invoice due soon",
+        "invoiceOverdue": "Invoice overdue",
+        "membershipRenewal": "Membership fee for the new period",
+        "qualificationEnds": "Qualification ends soon",
+        "weeklyDigest": "Your week at the club"
       }
     },
     "notifPanel": {
@@ -2871,7 +2912,10 @@
     "mfaAll": "For all members",
     "mfaHint": "Those it applies to can open the club only once a passkey or an authenticator app is set up, in their account under Two-factor. Admins means owners and admins, also through a function.",
     "mfaMissing": "{{n}} of them have no two-factor sign-in yet and can't open the club until they set it up. Let them know first.",
-    "mfaMissingNone": "Everyone it applies to has two-factor set up."
+    "mfaMissingNone": "Everyone it applies to has two-factor set up.",
+    "retention": "Delete former members after a period",
+    "retentionHint": "Every night Hubra deletes members who left more than this many years ago (data protection, revDSG). Invoices and bookings stay without the name. Off: former members stay until you delete them.",
+    "retentionYears": "Delete after (years)"
   },
   "domains": {
     "added": "Domain added",

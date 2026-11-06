@@ -8,6 +8,8 @@ export interface ClubSettings {
   join_requests_open?: boolean
   /** How many days an invite link works (1–60). */
   invite_valid_days?: number
+  /** Delete former members this many years after they left (1–30); null: off. */
+  former_member_retention_years?: number | null
   /** Who needs two-factor sign-in to open the club. */
   mfa_required?: 'off' | 'admins' | 'all'
   club_description?: string

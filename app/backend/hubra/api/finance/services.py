@@ -572,6 +572,10 @@ class InvoicesService:
         db.session.flush()
 
         _link_pending_transaction(invoice, category_id=category_id)
+        if member is not None and invoice.status == "Open":
+            from hubra.core.tasks.finance_tasks import _tell_member
+
+            _tell_member(invoice, "New invoice", "payments")
 
         recipient_label = (
             member.name if member else (external_party.name if external_party else "?")
@@ -660,6 +664,9 @@ class InvoicesService:
             db.session.flush()
 
             _link_pending_transaction(invoice)
+            from hubra.core.tasks.finance_tasks import _tell_member
+
+            _tell_member(invoice, "Membership fee for the new period", "membership")
 
             log_audit(
                 actor_id=actor_id,
