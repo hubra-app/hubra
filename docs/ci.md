@@ -33,7 +33,12 @@ Anything else (docs, the other workflows, `brand/`,
 `tools/`) runs nothing: `lint` and `tests` report as skipped. Text files
 run nothing wherever they are: Markdown files (so also `CHANGELOG.md` and
 `CHANGELOG.de.md`), `README` files and `.gitignore` files. The changelog
-checks in the backend tests still run in release-checks before a release. Draft pull
+checks in the backend tests still run in release-checks before a release.
+A version bump (`bnb bump`) runs nothing as well: a change to
+`app/backend/pyproject.toml` that only edits the `version` line is left out,
+and a changelog change that only adds `## [x.y.z] - date` headings does not
+count for the browser tests. Any other line in those files runs the checks
+as before. Draft pull
 requests run nothing until they are marked ready for review.
 
 ## Browser tests
