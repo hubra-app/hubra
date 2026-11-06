@@ -227,42 +227,100 @@ def _club_setting(key: str) -> str:
         return ""
 
 
-def club_address() -> dict | None:
-    """The club's postal address from Settings › Club (the same fields as on
-    its QR bills), as a Stripe address.  None without postal code and city."""
-    street = " ".join(
-        x
-        for x in (
-            _club_setting("Club.Banking.Street"),
-            _club_setting("Club.Banking.HouseNo"),
-        )
-        if x
-    )
-    code = _club_setting("Club.Banking.PostalCode")
-    city = _club_setting("Club.Banking.City")
-    if not code or not city:
+CONTACT_KEY = "billing_contact"
+CONTACT_FIELDS = ("email", "street", "houseNo", "postalCode", "city", "country")
+_EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def contact(tenant: Tenant) -> dict:
+    """Where Hubra's invoices go: the club's billing email and address.
+
+    Set by the club on its subscription tab (``tenant.settings
+    ["billing_contact"]``). Until then it is taken from the club's settings:
+    the finance email and the address of its QR bills."""
+    own = (tenant.settings or {}).get(CONTACT_KEY)
+    if isinstance(own, dict):
+        out = {f: str(own.get(f) or "") for f in CONTACT_FIELDS}
+        out["country"] = out["country"] or "CH"
+        return {**out, "own": True}
+    return {
+        "email": _club_setting("Club.Contact.FinanceEmail"),
+        "street": _club_setting("Club.Banking.Street"),
+        "houseNo": _club_setting("Club.Banking.HouseNo"),
+        "postalCode": _club_setting("Club.Banking.PostalCode"),
+        "city": _club_setting("Club.Banking.City"),
+        "country": _club_setting("Club.Banking.Country") or "CH",
+        "own": False,
+    }
+
+
+def _stripe_address(c: dict) -> dict | None:
+    """A Stripe address, or None without postal code and city."""
+    if not c.get("postalCode") or not c.get("city"):
         return None
+    street = " ".join(x for x in (c.get("street"), c.get("houseNo")) if x)
     return {
         "line1": street or None,
-        "postal_code": code,
-        "city": city,
-        "country": (_club_setting("Club.Banking.Country") or "CH").upper()[:2],
+        "postal_code": c["postalCode"],
+        "city": c["city"],
+        "country": (c.get("country") or "CH").upper()[:2],
     }
+
+
+def _invalid(field: str, message: str):
+    raise ApiError(400, "VALIDATION_ERROR", message, {field: message})
+
+
+def set_contact(tenant: Tenant, body: dict) -> dict:
+    """Store the club's billing email and address, and copy them to its
+    Stripe customer if it has one.  Does NOT commit."""
+    clean: dict[str, str] = {}
+    for f in CONTACT_FIELDS:
+        value = body.get(f, "")
+        if value is None:
+            value = ""
+        if not isinstance(value, str) or len(value) > 200:
+            _invalid(f, f"{f} must be text of up to 200 characters")
+        clean[f] = value.strip()
+    if not clean["email"] or not _EMAIL.match(clean["email"]):
+        _invalid("email", "A valid email is needed")
+    clean["country"] = (clean["country"] or "CH").upper()
+    if not re.fullmatch(r"[A-Z]{2}", clean["country"]):
+        _invalid("country", "Country is a two-letter code")
+    if bool(clean["postalCode"]) != bool(clean["city"]):
+        _invalid(
+            "city" if clean["postalCode"] else "postalCode",
+            "Postal code and city go together",
+        )
+    settings = dict(tenant.settings or {})
+    settings[CONTACT_KEY] = clean
+    tenant.settings = settings
+    flag_modified(tenant, "settings")
+    customer = state(tenant).get("customer_id")
+    key = _key()
+    if customer and key:
+        update: dict = {"email": clean["email"]}
+        address = _stripe_address(clean)
+        if address:
+            update["address"] = address
+        stripe_api.call(key, "POST", f"/v1/customers/{customer}", update)
+    return contact(tenant)
 
 
 def _ensure_customer(key: str, tenant: Tenant, email: str | None) -> str:
     """The club's Stripe customer: named after the club, with the club's
-    finance email (else the paying admin's) and the club's address."""
+    billing email (else the paying admin's) and address."""
     s = state(tenant)
     if s.get("customer_id"):
         return s["customer_id"]
+    c = contact(tenant)
     body: dict = {
         "name": tenant.name,
-        "email": _club_setting("Club.Contact.FinanceEmail") or email or None,
+        "email": c["email"] or email or None,
         "metadata": {"tenant_id": tenant.id, "slug": tenant.slug},
         "preferred_locales": [tenant.locale or "de-CH"],
     }
-    address = club_address()
+    address = _stripe_address(c)
     if address:
         body["address"] = address
     customer = stripe_api.call(

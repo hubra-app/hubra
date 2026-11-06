@@ -12,11 +12,15 @@ import {
   Stack,
   Table,
   Text,
+  TextInput,
   Title,
 } from '@mantine/core'
 import { IconCreditCard, IconExternalLink, IconInfoCircle } from '@tabler/icons-react'
 import {
   getHubraBilling,
+  getHubraBillingContact,
+  saveHubraBillingContact,
+  type HubraBillingContact,
   listHubraInvoices,
   openHubraPortal,
   refreshHubraBilling,
@@ -63,6 +67,124 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
         {value}
       </Text>
     </Group>
+  )
+}
+
+type ContactForm = Omit<HubraBillingContact, 'own'>
+
+const EMPTY_CONTACT: ContactForm = {
+  email: '',
+  street: '',
+  houseNo: '',
+  postalCode: '',
+  city: '',
+  country: 'CH',
+}
+
+/** Billing email and address: who Hubra's invoices are addressed to. */
+function BillingContactCard() {
+  const { t } = useT()
+  const { notify } = useToast()
+  const queryClient = useQueryClient()
+  const { data } = useQuery({
+    queryKey: qk.settings.subscriptionContact,
+    queryFn: getHubraBillingContact,
+  })
+  // Only what the admin typed; the rest shows what the server has.
+  const [edits, setEdits] = useState<Partial<ContactForm>>({})
+  const [saving, setSaving] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const form: ContactForm = Object.fromEntries(
+    (Object.keys(EMPTY_CONTACT) as (keyof ContactForm)[]).map((k) => [
+      k,
+      edits[k] ?? data?.[k] ?? EMPTY_CONTACT[k],
+    ]),
+  ) as ContactForm
+
+  const field = (name: keyof ContactForm) => ({
+    value: form[name],
+    error: errors[name],
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.currentTarget.value
+      setEdits((f) => ({ ...f, [name]: value }))
+    },
+  })
+
+  const save = async () => {
+    setSaving(true)
+    setErrors({})
+    try {
+      const saved = await saveHubraBillingContact(form)
+      queryClient.setQueryData(qk.settings.subscriptionContact, saved)
+      setEdits({})
+      notify('success', t('subscription.contact.saved', 'Rechnungsangaben gespeichert'))
+    } catch (err) {
+      const fields = (err as { fields?: Record<string, string> } | null)?.fields
+      if (fields) setErrors(fields)
+      notify(
+        'error',
+        t('subscription.contact.failed', 'Rechnungsangaben nicht gespeichert'),
+        err instanceof Error ? err.message : undefined,
+      )
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!data) return null
+
+  return (
+    <Paper withBorder p="lg">
+      <Title order={4} mb={4}>
+        {t('subscription.contact.title', 'Rechnungsangaben')}
+      </Title>
+      <Text size="sm" c="dimmed" mb={14}>
+        {data.own
+          ? t(
+              'subscription.contact.hint',
+              'An diese E-Mail und Adresse gehen die Rechnungen von Hubra. Änderungen gelten auch bei Stripe sofort.',
+            )
+          : t(
+              'subscription.contact.hintDefault',
+              'Vorgeschlagen aus der Finanz-E-Mail und der Adresse eurer QR-Rechnungen. Speichert sie, damit die Rechnungen von Hubra an den Verein gehen.',
+            )}
+      </Text>
+      <Stack gap={10}>
+        <TextInput
+          type="email"
+          required
+          label={t('subscription.contact.email', 'E-Mail für Rechnungen')}
+          {...field('email')}
+        />
+        <SimpleGrid cols={{ base: 1, sm: 4 }} spacing="sm">
+          <TextInput
+            style={{ gridColumn: 'span 3' }}
+            label={t('subscription.contact.street', 'Strasse')}
+            {...field('street')}
+          />
+          <TextInput label={t('subscription.contact.houseNo', 'Nr.')} {...field('houseNo')} />
+        </SimpleGrid>
+        <SimpleGrid cols={{ base: 1, sm: 4 }} spacing="sm">
+          <TextInput label={t('subscription.contact.postalCode', 'PLZ')} {...field('postalCode')} />
+          <TextInput
+            style={{ gridColumn: 'span 2' }}
+            label={t('subscription.contact.city', 'Ort')}
+            {...field('city')}
+          />
+          <TextInput
+            label={t('subscription.contact.country', 'Land')}
+            maxLength={2}
+            {...field('country')}
+          />
+        </SimpleGrid>
+        <Group justify="flex-end">
+          <Button loading={saving} onClick={save}>
+            {t('subscription.contact.save', 'Speichern')}
+          </Button>
+        </Group>
+      </Stack>
+    </Paper>
   )
 }
 
@@ -272,6 +394,8 @@ export function SubscriptionTab() {
           </Stack>
         </SimpleGrid>
       </Paper>
+
+      {data.enabled && <BillingContactCard />}
 
       {invoices && invoices.items.length > 0 && (
         <Paper withBorder p="lg">

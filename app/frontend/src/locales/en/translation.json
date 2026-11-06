@@ -4298,7 +4298,21 @@
     "trialUntil": "Trial until",
     "trouble": "The last payment did not go through. Please check the card or account under “Manage payment”, Stripe then tries again.",
     "view": "View",
-    "yearlyNote": "Charged once a year: {{amount}} {{per}}."
+    "yearlyNote": "Charged once a year: {{amount}} {{per}}.",
+    "contact": {
+      "title": "Billing details",
+      "hint": "Hubra's invoices go to this email and address. Changes apply in Stripe at once.",
+      "hintDefault": "Suggested from the finance email and the address on your QR bills. Save them so Hubra's invoices go to the club.",
+      "email": "Email for invoices",
+      "street": "Street",
+      "houseNo": "No.",
+      "postalCode": "Postal code",
+      "city": "City",
+      "country": "Country",
+      "save": "Save",
+      "saved": "Billing details saved",
+      "failed": "Billing details not saved"
+    }
   },
   "federation": {
     "invited": "invited",

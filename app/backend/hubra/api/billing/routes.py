@@ -109,6 +109,30 @@ def start_checkout():
     return jsonify({"url": url}), 200
 
 
+@billing_bp.get("/contact")
+@permission_required(*PERM)
+def get_contact():
+    """Where Hubra's invoices go: billing email and address."""
+    return jsonify(service.contact(current_tenant())), 200
+
+
+@billing_bp.put("/contact")
+@permission_required(*PERM)
+def put_contact():
+    """Change the billing email and address; copied to Stripe at once."""
+    tenant = current_tenant()
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return api_error("VALIDATION_ERROR", "Send the billing details", 400)
+    try:
+        data = service.set_contact(tenant, body)
+    except StripeError as exc:
+        db.session.rollback()
+        return _stripe_failed(exc)
+    db.session.commit()
+    return jsonify(data), 200
+
+
 @billing_bp.post("/portal")
 @permission_required(*PERM)
 def open_portal():

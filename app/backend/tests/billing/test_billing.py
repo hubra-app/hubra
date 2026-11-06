@@ -51,7 +51,7 @@ class FakeStripe:
         if path == "/v1/products":
             self.products.add(form["id"])
             return 200, json.dumps({"id": form["id"]}).encode()
-        if path == "/v1/customers":
+        if path in ("/v1/customers", "/v1/customers/cus_1"):
             return 200, b'{"id": "cus_1"}'
         if path == "/v1/checkout/sessions":
             return 200, b'{"id": "cs_1", "url": "https://checkout.stripe.test/cs_1"}'
@@ -335,6 +335,45 @@ def test_club_routes_need_the_right(
     assert client.get("/api/v1/app/billing/invoices").get_json() == {"items": []}
     url = client.post("/api/v1/app/billing/checkout").get_json()["url"]
     assert url == "https://checkout.stripe.test/cs_1"
+    contact = {
+        "email": "rechnung@club.test",
+        "street": "Seeweg",
+        "houseNo": "3",
+        "postalCode": "8000",
+        "city": "Zürich",
+        "country": "ch",
+    }
+    saved = client.put("/api/v1/app/billing/contact", json=contact).get_json()
+    assert saved["own"] is True and saved["country"] == "CH"
+    assert client.get("/api/v1/app/billing/contact").get_json() == saved
+    bad = client.put("/api/v1/app/billing/contact", json={**contact, "email": "x"})
+    assert bad.status_code == 400
+
+
+def test_contact_falls_back_to_club_settings_and_reaches_stripe(stripe, club, db):
+    from hubra.core.models.setting import Setting
+
+    db.session.add(Setting(key="Club.Contact.FinanceEmail", value="kasse@club.test"))
+    db.session.commit()
+    c = service.contact(club)
+    assert c["email"] == "kasse@club.test" and c["own"] is False
+    # Without a Stripe customer only Hubra stores it.
+    body = {"email": "rechnung@club.test", "postalCode": "3000", "city": "Bern"}
+    assert service.set_contact(club, body)["email"] == "rechnung@club.test"
+    assert stripe.made("POST", "/v1/customers/cus_1") == []
+    # With one, the customer is updated at once.
+    service.checkout(club, "admin@club.test", "https://s", "https://c")
+    made = stripe.made("POST", "/v1/customers")[0]
+    assert made["email"] == "rechnung@club.test"
+    assert made["address[city]"] == "Bern"
+    service.set_contact(club, {**body, "email": "neu@club.test", "street": "Gasse"})
+    update = stripe.made("POST", "/v1/customers/cus_1")[0]
+    assert update["email"] == "neu@club.test"
+    assert update["address[line1]"] == "Gasse"
+    assert update["address[country]"] == "CH"
+    with pytest.raises(ApiError) as missing_city:
+        service.set_contact(club, {"email": "a@b.ch", "postalCode": "3000"})
+    assert missing_city.value.fields == {"city": "Postal code and city go together"}
 
 
 def test_stripe_errors_keep_their_text_out_of_answers():

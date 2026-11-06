@@ -93,3 +93,26 @@ export async function refreshHubraBilling(): Promise<{ stripe: HubraBilling['str
 export async function listHubraInvoices(): Promise<{ items: HubraInvoice[] }> {
   return apiFetch('/app/billing/invoices')
 }
+
+/** Where Hubra's invoices go. Until the club saves its own, taken from the
+ * club's finance email and the address of its QR bills (`own: false`). */
+export interface HubraBillingContact {
+  email: string
+  street: string
+  houseNo: string
+  postalCode: string
+  city: string
+  country: string
+  own: boolean
+}
+
+export async function getHubraBillingContact(): Promise<HubraBillingContact> {
+  return apiFetch('/app/billing/contact')
+}
+
+/** Saves the billing email and address; Stripe gets them at once. */
+export async function saveHubraBillingContact(
+  body: Omit<HubraBillingContact, 'own'>,
+): Promise<HubraBillingContact> {
+  return apiFetch('/app/billing/contact', { method: 'PUT', body: JSON.stringify(body) })
+}

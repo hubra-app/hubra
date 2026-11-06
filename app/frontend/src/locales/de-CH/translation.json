@@ -4298,7 +4298,21 @@
     "trialUntil": "Testphase bis",
     "trouble": "Die letzte Zahlung hat nicht geklappt. Bitte prüft unter «Zahlung verwalten» die Karte oder das Konto, Stripe versucht es dann erneut.",
     "view": "Ansehen",
-    "yearlyNote": "Verrechnet wird einmal im Jahr: {{amount}} {{per}}."
+    "yearlyNote": "Verrechnet wird einmal im Jahr: {{amount}} {{per}}.",
+    "contact": {
+      "title": "Rechnungsangaben",
+      "hint": "An diese E-Mail und Adresse gehen die Rechnungen von Hubra. Änderungen gelten auch bei Stripe sofort.",
+      "hintDefault": "Vorgeschlagen aus der Finanz-E-Mail und der Adresse eurer QR-Rechnungen. Speichert sie, damit die Rechnungen von Hubra an den Verein gehen.",
+      "email": "E-Mail für Rechnungen",
+      "street": "Strasse",
+      "houseNo": "Nr.",
+      "postalCode": "PLZ",
+      "city": "Ort",
+      "country": "Land",
+      "save": "Speichern",
+      "saved": "Rechnungsangaben gespeichert",
+      "failed": "Rechnungsangaben nicht gespeichert"
+    }
   },
   "federation": {
     "invited": "eingeladen",
