@@ -13,6 +13,7 @@ import { ReportScreen } from '@/screens/ReportForm'
 import { CaseScreen, MyCasesScreen } from '@/screens/MyCases'
 import { DevelopersScreen, SecurityScreen } from '@/screens/Developers'
 import { PrivacyScreen } from '@/screens/Privacy'
+import { AccountHelpScreen } from '@/screens/AccountHelp'
 
 function NotFound() {
   const { tr } = useLang()
@@ -44,6 +45,7 @@ function useTitle() {
       entwickler: tr('Entwickler', 'Developers'),
       sicherheit: tr('Sicherheit', 'Security'),
       datenschutz: tr('Meine Daten', 'My data'),
+      konto: tr('Konto und Mails', 'Account and mails'),
     }
     document.title = names[first] ? `${names[first]} · Hubra Support` : 'Hubra Support'
     window.scrollTo(0, 0)
@@ -70,6 +72,10 @@ export default function App() {
         <Route path="entwickler" element={<DevelopersScreen />} />
         <Route path="sicherheit" element={<SecurityScreen />} />
         <Route path="datenschutz" element={<PrivacyScreen />} />
+        <Route path="konto" element={<AccountHelpScreen />} />
+        <Route path="nicht-ich" element={<Navigate to="/konto#nicht-ich" replace />} />
+        <Route path="abmelden" element={<Navigate to="/konto#mails" replace />} />
+        <Route path="unsubscribe" element={<Navigate to="/konto#mails" replace />} />
         {/* English and old addresses. */}
         <Route path="help/*" element={<Navigate to="/hilfe" replace />} />
         <Route path="whats-new" element={<Navigate to="/neuigkeiten" replace />} />

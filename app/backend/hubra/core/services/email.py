@@ -707,6 +707,7 @@ def send_support_case_update(
     comment: str | None = None,
     merged_into: str | None = None,
     lang: str = DEFAULT_LANG,
+    with_link: bool = True,
 ) -> bool:
     """Tell a reporter that the Hubra team answered their problem report or
     feature request, changed its status or merged it.  True when sent."""
@@ -724,6 +725,7 @@ def send_support_case_update(
         status_label=t(f"mail.email.support_case.status_{status}"),
         comment=comment or "",
         merged_into=merged_into or "",
-        cases_url=support_cases_url(case_id),
+        # A guest (no account) has no "My reports" to open.
+        cases_url=support_cases_url(case_id) if with_link else "",
     )
     return _send(to_address, name, subject, body_html, body_text, system=True)

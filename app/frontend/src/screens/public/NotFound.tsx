@@ -1,4 +1,4 @@
-import { Anchor, Button, Stack, Text, Title } from '@mantine/core'
+import { Button, Group, Stack, Text, Title } from '@mantine/core'
 import { useNavigate } from 'react-router-dom'
 import { useT } from '@/locales/i18n'
 import { IconArrowLeft, IconBug } from '@tabler/icons-react'
@@ -33,21 +33,21 @@ export function NotFoundScreen() {
             'Diese Seite gibt es nicht oder sie wurde verschoben.',
           )}
         </Text>
-        <Button mt="md" leftSection={<IconArrowLeft size={16} />} onClick={() => navigate(target)}>
-          {t('common.goHome', 'Zur Startseite')}
-        </Button>
-        {/* Reached from a broken link: let people tell us where it was. */}
-        <Anchor
-          href={reportProblemUrl(window.location.href)}
-          target="_blank"
-          rel="noopener"
-          size="sm"
-          mt="xs"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-        >
-          <IconBug size={14} />
-          {t('common.reportBrokenLink', 'Problem melden')}
-        </Anchor>
+        <Group mt="md" justify="center" gap="sm">
+          <Button leftSection={<IconArrowLeft size={16} />} onClick={() => navigate(target)}>
+            {t('common.goHome', 'Zur Startseite')}
+          </Button>
+          {/* A broken link is a problem worth hearing about: the address goes along. */}
+          <Button
+            component="a"
+            href={reportProblemUrl(window.location.href)}
+            variant="default"
+            leftSection={<IconBug size={16} />}
+            data-testid="notfound-report"
+          >
+            {t('support.menu.bug', 'Problem melden')}
+          </Button>
+        </Group>
       </Stack>
     </div>
   )

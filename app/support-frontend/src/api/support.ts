@@ -178,3 +178,25 @@ export function sendCaseFor(body: NewCase, club: string | null) {
     headers: club ? { 'X-Tenant-Slug': club } : undefined,
   })
 }
+
+export type GuestReason = 'wrong_recipient' | 'unwanted_mail' | 'other'
+
+export interface GuestCase {
+  kind: 'bug' | 'question'
+  email: string
+  name?: string
+  reason: GuestReason
+  title: string
+  description: string
+  /** Which mail it is about (the footer link names its template). */
+  mail?: string
+  page?: string
+  fingerprint?: DeviceInfo
+  /** Honeypot: people never see or fill it. */
+  website?: string
+}
+
+/** A report without an account; answers come by mail only. */
+export function sendGuestCase(body: GuestCase) {
+  return apiFetch<{ ok: true }>('/global/support/guest-cases', { method: 'POST', body: JSON.stringify(body) })
+}

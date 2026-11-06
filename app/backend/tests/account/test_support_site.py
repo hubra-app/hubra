@@ -218,3 +218,61 @@ def test_deleting_anonymises_and_ends_every_sign_in(client, db):
     assert client.get("/api/v1/global/account/profile").status_code == 401
     resp = client.post("/api/v1/auth/login", json={"email": "solo@test.ch", "password": PASSWORD})
     assert resp.status_code in (400, 401)
+
+
+# ── Reports without an account ────────────────────────────────────────────────
+
+
+def _guest(**extra):
+    return {
+        "email": "Someone@Example.org",
+        "name": "Some One",
+        "reason": "wrong_recipient",
+        "title": "Got a mail for someone else",
+        "description": "An invoice for a member I don't know.",
+        "mail": "invoice_generated",
+        **extra,
+    }
+
+
+def test_a_guest_reports_a_mail_without_signing_in(client, db):
+    with patch("hubra.core.services.support.alert_staff"):
+        res = client.post("/api/v1/global/support/guest-cases", json=_guest())
+    assert res.status_code == 201, res.get_json()
+    assert res.get_json() == {"ok": True}
+    case = db.session.query(SupportCase).one()
+    assert case.user_id is None and case.tenant_id is None
+    assert case.kind == "bug" and case.area == "mail"
+    assert case.details["guest"] == {
+        "email": "someone@example.org",
+        "name": "Some One",
+        "reason": "wrong_recipient",
+        "mail": "invoice_generated",
+    }
+    from hubra.core.services import support
+
+    assert support.staff_detail(case)["reporter"]["guest"] is True
+
+
+def test_a_guest_report_needs_an_address_and_the_honeypot_stores_nothing(client, db):
+    res = client.post("/api/v1/global/support/guest-cases", json=_guest(email="nope"))
+    assert res.status_code == 400
+    res = client.post("/api/v1/global/support/guest-cases", json=_guest(kind="feature"))
+    assert res.status_code == 400
+    res = client.post("/api/v1/global/support/guest-cases", json=_guest(website="spam"))
+    assert res.status_code == 201
+    assert db.session.query(SupportCase).count() == 0
+
+
+def test_staff_answers_reach_the_guest_by_mail(app, db):
+    from hubra.core.services import support
+
+    with app.test_request_context():
+        case = support.submit_guest(_guest())
+        db.session.commit()
+        with patch.object(email, "send_support_case_update", return_value=True) as send:
+            assert support.mail_update(case, support.followers(case), comment="Thanks") == 1
+    args, kwargs = send.call_args
+    assert args[0] == "someone@example.org"
+    assert kwargs["comment"] == "Thanks"
+    assert kwargs["with_link"] is False

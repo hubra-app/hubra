@@ -1374,6 +1374,8 @@
   "mail.email.club_request.rejected_again": "Du kannst jederzeit eine neue Anfrage mit einem anderen Kürzel stellen.",
   "mail.email.club_request.rejected_cta": "<a href=\"{{start_url}}\">Neue Anfrage stellen</a>",
   "mail.email.footer": "Diese Nachricht wurde von {{club_name}} gesendet.",
+  "mail.email.footer_report": "Diese Mail ist nicht für dich oder etwas stimmt nicht? Melde es uns, auch ohne Konto.",
+  "mail.email.footer_unsubscribe": "Mails abbestellen",
   "mail.email.greeting": "Hallo {{name}}",
   "mail.email.invoice_generated.body": "Für deine Mitgliedschaft wurde eine neue Rechnung erstellt.",
   "mail.email.invoice_generated.cta_link": "melde dich an, um deine Rechnung anzusehen",

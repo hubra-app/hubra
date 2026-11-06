@@ -1374,6 +1374,8 @@
   "mail.email.club_request.rejected_again": "You can send a new request with a different slug at any time.",
   "mail.email.club_request.rejected_cta": "<a href=\"{{start_url}}\">Send a new request</a>",
   "mail.email.footer": "This message was sent by {{club_name}}.",
+  "mail.email.footer_report": "Not meant for you, or something wrong? Tell us, no account needed.",
+  "mail.email.footer_unsubscribe": "Unsubscribe",
   "mail.email.greeting": "Hi {{name}},",
   "mail.email.invoice_generated.body": "A new invoice has been generated for your membership.",
   "mail.email.invoice_generated.cta_link": "log in to view your invoice",
