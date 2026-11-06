@@ -16,6 +16,7 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ### Fixed
 
+- Plugin-Katalog in manage: Ein Plugin, das in manage lädt, im Vereins-Backend oder einem Worker aber scheitert (etwa wegen eines Importfehlers), zeigt jetzt den Fehler und wo er auftrat, statt eines grünen Hakens.
 - Hubra-Abo: Die Rechnungen von Stripe zeigen jetzt die Rechnungsadresse des Vereins. Checkout fragt danach (vorausgefüllt mit der Adresse aus den Vereinseinstellungen), und die Finanz-E-Mail des Vereins wird verwendet, falls gesetzt.
 
 ## [0.2.2] - 2026-11-06

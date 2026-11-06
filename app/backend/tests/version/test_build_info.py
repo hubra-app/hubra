@@ -96,3 +96,38 @@ def test_platform_health_says_when_reports_are_unknown(client, staff_headers, mo
     data = client.get("/api/v1/manager/platform/health", headers=staff_headers).get_json()
     assert data["processes"] == []
     assert data["processes_unknown"] is True
+
+
+def test_report_carries_plugin_load_errors(app, monkeypatch):
+    """Manage only reads manifests; the club backend tells it what failed."""
+    from types import SimpleNamespace
+
+    fake = _FakeRedis()
+    monkeypatch.setattr("hubra.core.redis_client.get_redis_client", lambda *a, **k: fake)
+    monkeypatch.setenv("HOSTNAME", "backend-1")
+    specs = {
+        "payments": SimpleNamespace(
+            version="1.0.0", loaded=False, error="ModuleNotFoundError: hubra.api"
+        ),
+        "notes": SimpleNamespace(version="1.0.0", loaded=True, error=""),
+    }
+    found = SimpleNamespace(wanted={"payments", "notes"}, get=specs.get)
+    monkeypatch.setattr("hubra.core.plugins.loader.current", lambda: found)
+    monkeypatch.setattr("hubra.core.plugins.loader.loads_plugin_code", lambda: True)
+    with app.app_context():
+        build_info._write("api")
+        errors = build_info.plugin_errors()
+    assert list(errors) == ["payments"]
+    assert errors["payments"][0]["component"] == "api"
+    assert errors["payments"][0]["host"] == "backend-1"
+    assert "hubra.api" in errors["payments"][0]["error"]
+
+
+def test_manifest_only_processes_report_no_plugins(app, monkeypatch):
+    fake = _FakeRedis()
+    monkeypatch.setattr("hubra.core.redis_client.get_redis_client", lambda *a, **k: fake)
+    monkeypatch.setattr("hubra.core.plugins.loader.loads_plugin_code", lambda: False)
+    with app.app_context():
+        build_info._write("platform-api")
+        assert build_info.reported()[0]["plugins"] is None
+        assert build_info.plugin_errors() == {}

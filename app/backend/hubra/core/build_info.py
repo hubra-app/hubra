@@ -10,6 +10,11 @@ and host (pod) with its commit and version fresh.  Manage shows what each one
 runs and spots one left behind after a deploy, and ``services/upgrades.py``
 tells when a deploy started and finished.  A process that stopped drops out
 after ``_TTL`` seconds.
+
+Processes that import plugin code (the club API, Celery) also report how
+each installed plugin loaded there, so manage, which runs in a backend that
+only reads plugin manifests, can show an import error that only the club
+backend hits (:func:`plugin_errors`).
 """
 
 from __future__ import annotations
@@ -60,6 +65,7 @@ def _write(component: str) -> None:
             "version": version(),
             "host": host,
             "seen": int(time.time()),
+            "plugins": _plugin_report(),
         }
     )
     try:
@@ -67,6 +73,58 @@ def _write(component: str) -> None:
     except Exception:
         _log.debug("Could not report the build of %s", component, exc_info=True)
         mark_redis_down()
+
+
+def _plugin_report() -> dict | None:
+    """How each installed plugin loaded in this process: ``{id: {version,
+    loaded, error}}``; None where plugin code isn't imported (manifest-only
+    roles), so their reports never hide or raise an error."""
+    try:
+        from hubra.core.plugins.loader import current, loads_plugin_code
+
+        if not loads_plugin_code():
+            return None
+        found = current()
+        out = {}
+        for pid in sorted(found.wanted):
+            spec = found.get(pid)
+            if spec is None:
+                continue
+            out[pid] = {
+                "version": spec.version,
+                "loaded": bool(spec.loaded),
+                "error": (spec.error or "")[:500],
+            }
+        return out
+    except Exception:
+        _log.debug("Could not report the plugins of this process", exc_info=True)
+        return None
+
+
+def plugin_errors(reports: list[dict] | None = None) -> dict[str, list[dict]]:
+    """Plugins that failed to load in another process, by plugin id:
+    ``[{component, host, version, error}]``, from the build reports."""
+    out: dict[str, list[dict]] = {}
+    for entry in reported() if reports is None else reports:
+        plugins = entry.get("plugins")
+        if not isinstance(plugins, dict):
+            continue
+        for pid, info in plugins.items():
+            if (
+                not isinstance(info, dict)
+                or info.get("loaded")
+                or not info.get("error")
+            ):
+                continue
+            out.setdefault(str(pid), []).append(
+                {
+                    "component": str(entry.get("component") or ""),
+                    "host": str(entry.get("host") or ""),
+                    "version": str(info.get("version") or ""),
+                    "error": str(info["error"]),
+                }
+            )
+    return out
 
 
 def start_heartbeat(component: str, app=None) -> None:

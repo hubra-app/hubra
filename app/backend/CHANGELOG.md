@@ -14,6 +14,7 @@ section and position, or the apps show that version in English.
 
 ### Fixed
 
+- Plugin catalogue in manage: a plugin that loads in manage but fails in the club backend or a worker (for example an import error) now shows the error and where it happened, instead of a green check.
 - Hubra subscription: Stripe invoices now show the club's billing address. Checkout asks for it (prefilled from the club's address in its settings) and the club's finance email is used when set.
 
 ## [0.2.2] - 2026-11-06

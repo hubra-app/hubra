@@ -65,6 +65,9 @@ export interface MarketplacePlugin {
   autoinstalled: boolean
   /** Installed or changed after this server started: live after the reload. */
   pendingReload: boolean
+  /** Load errors in the processes that import plugin code (the club backend,
+   *  workers): manage itself only reads manifests. */
+  processErrors?: { component: string; host: string; version: string; error: string }[]
   /** The plugin this one is an add-on of ('' for a plugin on its own). */
   parent?: string
   parentName?: string
