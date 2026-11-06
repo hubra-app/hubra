@@ -93,7 +93,10 @@ def start_connect(code: str):
     member = get_current_member()
     state, nonce = apps.make_state(code, _tenant_id(), member.id, scopes)
     redirect_uri = _callback_url(code)
-    url = apps.hook(app, "authorize_url")(state, redirect_uri, scopes)
+    authorize_url = apps.hook(app, "authorize_url")
+    if authorize_url is None:  # its handler didn't load
+        return api_error("APP_UNAVAILABLE", "This service can't be connected", 409)
+    url = authorize_url(state, redirect_uri, scopes)
     response = make_response(jsonify({"url": url}), 200)
     response.set_cookie(
         apps.NONCE_COOKIE,
@@ -151,10 +154,11 @@ def connect_callback(code: str):
         member = db.session.get(Member, data["m"])
         if member is None or member.archived_at is not None:
             return _back_to_club(tenant, app=code, error="expired")
+        complete = apps.hook(found[1], "complete")
+        if complete is None:  # its handler didn't load
+            return _back_to_club(tenant, app=code, error="failed")
         try:
-            draft = apps.hook(found[1], "complete")(
-                request.args.to_dict(), _callback_url(code)
-            )
+            draft = complete(request.args.to_dict(), _callback_url(code))
         except apps.AppError as exc:
             current_app.logger.info("connect %s failed: %s", code, exc)
             return _back_to_club(tenant, app=code, error="failed")

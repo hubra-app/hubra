@@ -24,12 +24,14 @@ def configure_logging(app: Flask) -> None:
         return
 
     try:
-        from pythonjsonlogger import jsonlogger  # type: ignore[import]
+        # python-json-logger 3+ (the old pythonjsonlogger.jsonlogger path
+        # only warns that it moved).
+        from pythonjsonlogger.json import JsonFormatter
     except ImportError:
         app.logger.warning("python-json-logger not installed; JSON logging disabled")
         return
 
-    class _RequestAwareFormatter(jsonlogger.JsonFormatter):
+    class _RequestAwareFormatter(JsonFormatter):
         """JsonFormatter that injects request_id from Flask's g when available."""
 
         def add_fields(
