@@ -14,6 +14,15 @@ import { pathOf } from '@/lib/labels'
  * account (or can't sign in). They leave an address; the answer comes by
  * mail. Mail footers link here with ?mail=<which mail>.
  */
+/** name@host.tld, without a regex (no backtracking on long input). */
+function looksLikeEmail(value: string): boolean {
+  const parts = value.split('@')
+  if (parts.length !== 2 || /\s/.test(value)) return false
+  const [local, domain] = parts
+  const dot = domain.lastIndexOf('.')
+  return local.length > 0 && dot > 0 && dot < domain.length - 1
+}
+
 export function GuestReportForm({ kind }: { kind: 'bug' | 'question' }) {
   const { tr } = useLang()
   const { signInUrl } = useAuth()
@@ -38,7 +47,7 @@ export function GuestReportForm({ kind }: { kind: 'bug' | 'question' }) {
 
   const submit = async () => {
     const next: Record<string, string> = {}
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim()))
+    if (!looksLikeEmail(email.trim()))
       next.email = tr('Bitte gib deine Mail-Adresse ein, damit wir antworten können.', 'Please enter your email address so we can answer.')
     if (!description.trim()) next.description = tr('Bitte beschreibe kurz, was los ist.', "Please describe briefly what's going on.")
     if (reason === 'other' && !title.trim()) next.title = tr('Bitte gib einen kurzen Titel ein.', 'Please enter a short title.')

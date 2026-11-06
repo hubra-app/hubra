@@ -17,7 +17,6 @@ when staff answer or change the status.
 from __future__ import annotations
 
 import logging
-import re
 from datetime import datetime, timezone
 
 from sqlalchemy import func, or_, select
@@ -197,7 +196,15 @@ def submit(user_id: int, tenant_id: int | None, body: dict) -> SupportCase:
     return case
 
 
-_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+def _looks_like_email(value: str) -> bool:
+    """name@host.tld, without a regex (no backtracking on long input)."""
+    if any(c.isspace() for c in value) or value.count("@") != 1:
+        return False
+    local, _, domain = value.partition("@")
+    head, dot, tld = domain.rpartition(".")
+    return bool(local and head and dot and tld)
+
+
 GUEST_KINDS = ("bug", "question")
 GUEST_REASONS = ("wrong_recipient", "unwanted_mail", "other")
 
@@ -211,7 +218,7 @@ def submit_guest(body: dict) -> SupportCase:
     if kind not in GUEST_KINDS:
         raise SupportError("kind must be bug or question")
     email = _text(body.get("email"), "email", 254, required=True)
-    if not _EMAIL_RE.match(email or ""):
+    if not _looks_like_email(email or ""):
         raise SupportError("email is not a valid address")
     name = _text(body.get("name"), "name", 120)
     reason = body.get("reason") or "other"
