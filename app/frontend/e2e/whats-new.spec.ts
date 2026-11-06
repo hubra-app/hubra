@@ -2,7 +2,9 @@ import { expect, test } from '@playwright/test'
 import { MANAGE_URL, appUrl } from './env'
 
 // "Neuigkeiten": the newest release open, older versions folded, a roadmap tab.
-test('what is new shows the latest release, older versions on demand and the roadmap', async ({ page }) => {
+test('what is new shows the latest release, older versions on demand and the roadmap', async ({
+  page,
+}) => {
   await page.goto(appUrl('dashboard'))
   const sidebar = page.locator('.mantine-AppShell-navbar')
   await sidebar.getByTestId('user-card').click()
@@ -14,8 +16,12 @@ test('what is new shows the latest release, older versions on demand and the roa
   // so the check does not depend on which entry is listed first.
   const showAll = dialog.getByRole('button', { name: /^Alle \d+ Änderungen zeigen$/ })
   if (await showAll.count()) await showAll.click()
-  // The notes follow the page language (German here, from CHANGELOG.de.md).
-  await expect(dialog.getByText('Wartungsmodus', { exact: true })).toBeVisible()
+  // The notes follow the page language (German here): the newest release
+  // shows its changes under German section names.  No specific entry is
+  // checked, since a PR's "Unreleased" notes become the newest release.
+  await expect(
+    dialog.getByText(/^(Neu|Geändert|Behoben|Entfernt|Veraltet|Sicherheit)$/).first(),
+  ).toBeVisible()
   // Older versions are folded: a heading per version, its changes hidden until opened.
   const older = dialog.locator('.mantine-Accordion-item')
   expect(await older.count()).toBeGreaterThan(0)
