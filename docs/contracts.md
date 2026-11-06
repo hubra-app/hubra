@@ -155,7 +155,8 @@ A plugin's event handlers and every `send()` go through the
 Delivery is at least once. A handler that only writes to the database gets
 it once in effect. One that talks to an outside service should accept an
 `event_id` argument (events) or read `ctx.message_id` (actions): both stay
-the same on every retry.
+the same on every retry. An event whose own data has an `event_id` (the club
+events `event.*`: the id of the event) passes that one instead.
 
 ```
 flask contracts list [--json]   # every contract, with JSON schemas
