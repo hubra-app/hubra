@@ -9,7 +9,7 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ## [Unreleased]
 
-## [0.2.3] - 2026-11-06
+## [0.2.4] - 2026-11-06
 
 ### Added
 
