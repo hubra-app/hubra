@@ -9,6 +9,8 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-06
+
 ### Changed
 
 - **Probleme ohne Konto melden, aus jeder Mail**: Wer eine Mail für jemand anderen bekommen hat, keine Mails mehr möchte oder ein anderes Problem hat, kann es auf der Support-Seite ohne Anmeldung melden. Man gibt eine Mail-Adresse an; in manage steht beim Fall «Ohne Konto» mit dem Grund und der Mail, und Antworten gehen per Mail an diese Adresse. Das Formular nimmt höchstens 5 Meldungen pro Stunde von einer Verbindung an und hat eine versteckte Spam-Falle. Jede Mail (HTML und Text) endet jetzt mit zwei Links: «Diese Mail ist nicht für dich oder etwas stimmt nicht? Melde es uns» (mit der Mail) und «Mails abbestellen». Sie erscheinen, sobald `support.url` gesetzt ist und `flask seed` die Texte geladen hat.
