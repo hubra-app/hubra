@@ -23,6 +23,7 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ### Fixed
 
+- Plugins, die vor dem Umzug von `hubra.api.auth.helpers`, `hubra.api.permissions`, `hubra.api.utils` und `hubra.api.notifications.services` nach `hubra.core` gebaut wurden, laden wieder auf den App-, Global- und Plattform-Backend-Images. Diese Images hatten die alten Namen weggelassen («ModuleNotFoundError: No module named 'hubra.api.auth.helpers'»).
 - Plugin-Katalog in manage: Ein Plugin, das in manage lädt, im Vereins-Backend oder einem Worker aber scheitert (etwa wegen eines Importfehlers), zeigt jetzt den Fehler und wo er auftrat, statt eines grünen Hakens.
 - Hubra-Abo: Die Rechnungen von Stripe zeigen jetzt die Rechnungsadresse des Vereins. Checkout fragt danach (vorausgefüllt mit der Adresse aus den Vereinseinstellungen), und die Finanz-E-Mail des Vereins wird verwendet, falls gesetzt.
 

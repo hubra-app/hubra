@@ -21,6 +21,7 @@ section and position, or the apps show that version in English.
 
 ### Fixed
 
+- Plugins built before Hubra 0.2 moved `hubra.api.auth.helpers`, `hubra.api.permissions`, `hubra.api.utils` and `hubra.api.notifications.services` to `hubra.core` load again on the app, global and platform backend images. Those images had left the old names out ("ModuleNotFoundError: No module named 'hubra.api.auth.helpers'").
 - Plugin catalogue in manage: a plugin that loads in manage but fails in the club backend or a worker (for example an import error) now shows the error and where it happened, instead of a green check.
 - Hubra subscription: Stripe invoices now show the club's billing address. Checkout asks for it (prefilled from the club's address in its settings) and the club's finance email is used when set.
 
