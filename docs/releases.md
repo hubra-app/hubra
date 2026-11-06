@@ -24,7 +24,8 @@ the checks themselves in [ci.md](ci.md).
    job summary, then **Review deployments > release > Approve**. Reject to
    stop; nothing called 1.3.0 exists yet, so tag a new version after the fix.
 4. The run then tags and signs the images, publishes the GitHub release
-   (notes from the changelog, the digest block, `images.yaml`, `images.txt`,
+   (the version's changelog section as the description and as the file
+   `CHANGELOG.md`, the digest block, `images.yaml`, `images.txt`,
    `SHA256SUMS`), creates `release/1.3` if it is missing and mirrors the tag
    to GitLab.
 

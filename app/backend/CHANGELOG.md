@@ -12,6 +12,10 @@ section and position, or the apps show that version in English.
 - Hubra fee (formerly platform fee) on online payments per club: manage › All clubs › club › Billing can set a club's own percentage instead of the default; the club sees it on its subscription tab.
 - Hubra subscription: clubs set the email and address for Hubra's invoices under Settings › Hubra subscription › Billing details; saving updates Stripe at once.
 
+### Changed
+
+- **Releases carry their changelog**: the GitHub release of a Hubra version shows that version's changelog section as its description and has it attached as `CHANGELOG.md` (also in `SHA256SUMS`). A release whose changelog section is empty now stops at the first check instead of going out without notes. The entries of 0.2.2 had landed under 0.2.1 and are now in their own section.
+
 ### Fixed
 
 - Plugin catalogue in manage: a plugin that loads in manage but fails in the club backend or a worker (for example an import error) now shows the error and where it happened, instead of a green check.
@@ -19,14 +23,17 @@ section and position, or the apps show that version in English.
 
 ## [0.2.2] - 2026-11-06
 
-## [0.2.1] - 2026-11-06
-
 ### Changed
 
 - **This repository builds the images, it no longer deploys them** (k3s change): the Kubernetes manifests (`deploy/`, `modules/mail/k8s/`, docs/k3s.md) are gone; the cluster's own GitOps repository holds them, and Flux follows version releases. What a cluster needs from Hubra (images, roles, RBAC for club domains) is in docs/operator-guide.md, "Kubernetes". Images are built only for releases: there is no manual Images run and no `main-…` or manual `latest` tag any more.
 - **Background jobs are safer against crashes and hangs**: every job has a time limit (15 min by default, backups 3 h, health checks 1 min), a job is acknowledged only once it ran so a killed worker's job runs again, workers take one job at a time and restart after 500 jobs or 250 MB, and a job the worker does not know is counted as failed instead of vanishing. Jobs queued with a change are stored with it and sent after the save, so a Redis outage no longer loses them; webhook retries are picked up every 5 minutes. An event that runs out of retries raises an alert. Redis keeps its data on disk (`appendonly`). Database statements stop after 60 s in the API and 5 min in workers, and a forgotten open transaction after 2 min. Each request has an id (`X-Request-ID`) that its jobs and logs carry and that a server error shows. See docs/scaling.md, "Job defaults".
 - **Form errors point at the field**: the API returns `fields` with a message per field for invalid input, and the apps show them in German too.
 - **manage opens faster**: each page loads its code when it is opened, so the first screen needs about 214 KB of script instead of 380 KB.
+
+## [0.2.1] - 2026-11-06
+
+### Changed
+
 - **Report problems without an account, from every mail**: someone who got a mail meant for another person, wants no more mails, or has another problem can report it on the support site without signing in. They leave an email address; staff see "No account" with the reason and the mail on the case in manage, and answers go to that address by mail. The form takes at most 5 reports an hour from one connection and has a hidden spam trap. Every mail (HTML and plain text) now ends with two links: "Not meant for you, or something wrong? Tell us" (naming the mail) and "Unsubscribe". They show once `support.url` is set and `flask seed` has loaded the texts.
 - **Report a problem from anywhere, and a support page for "not me" and unsubscribing**: the club app's "Page not found" and error screens and the manage account menu have a "Report a problem" button that opens the support site's form with the page address filled in. The support site has a new page "Account and mails" (/konto) that explains what to do after a sign-in you don't recognise, where to turn off Hubra and club mails, and how to report a problem.
 - **Plugins can offer dashboard widgets from their backend**: a widget is a contract now (`widget_contract`: name, label, size, settings, the permission it needs, and a handler that reads what it shows). Members only see widgets whose module is on for the club and whose right they hold, and the data is read as the viewing member. A number tile (`stat`) or a list (`list`) needs no frontend code; a plugin can still draw its own (`custom`). New: `GET /api/v1/app/dashboards/widgets` and `POST /api/v1/app/dashboards/widgets/<name>/data`. See docs/dashboards.md.
