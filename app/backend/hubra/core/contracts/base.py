@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from hubra.core.errors import ApiError
+
 EVENT = "event"
 ACTION = "action"
 QUERY = "query"
@@ -228,16 +230,24 @@ class ActionForbidden(PermissionError):
     code = "CONTRACT_FORBIDDEN"
 
 
-class Refused(Exception):
+class Refused(ApiError):
     """Raised by a handler to say no for a reason the caller can show
-    ("this key is already handed out"). Never retried."""
+    ("this key is already handed out"). Never retried.
+
+    It is an ``ApiError``: left alone in a route it answers with its
+    ``status`` (409 unless the handler said otherwise) and ``code``. An
+    ``ApiError`` a handler raises reaches the caller as a ``Refused`` with the
+    same status, code and message, so callers that caught Hubra's service
+    errors before keep working."""
 
     code = "CONTRACT_REFUSED"
 
-    def __init__(self, message: str, code: str | None = None):
-        super().__init__(message)
-        if code:
-            self.code = code
+    def __init__(self, message: str, code: str | None = None, status: int = 409):
+        super().__init__(status, code or type(self).code, message)
+
+    @classmethod
+    def from_api_error(cls, exc: ApiError) -> Refused:
+        return cls(exc.message, exc.code, exc.status)
 
 
 class ActionFailed(RuntimeError):

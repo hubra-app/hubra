@@ -205,7 +205,35 @@ and switch it on. Emitters and handlers don't change.
 | Contract | Kind | What it does |
 | --- | --- | --- |
 | `finance.billing_period` | query | `{on}` → `{start, end}`, the club's billing year around that day |
-| `finance.invoice.set_status` | action | `{invoice_id, status: Paid\|Open, actor_id?}`, with the mails and `invoice.updated`; needs `finance.invoices.update` |
+| `finance.invoice.set_status` | action | `{invoice_id, status: Paid\|Open, actor_id?, book?}`, with the mails and `invoice.updated`; `book` first announces a paid invoice that has no booking yet, so the books book it; needs `finance.invoices.update` |
+| `finance.invoice.create` | action | `{member_id \| external_party_id, issued, due, amount, purpose?, description?, category_id?, actor_id?}` → `{id, status, amount, ...}`, booked and announced like an invoice made in the app; needs `finance.invoices.create` |
+| `finance.invoice.delete` | action | `{invoice_id, actor_id?}`, with its booking; needs `finance.invoices.delete` |
+| `finance.external_party.save` | action | `{external_party_id?, name, email?, address_*?, notes?, actor_id?}` → `{id, name, created}`: a new outside party, or the given one kept up to date; needs `finance.external_parties.create` |
+| `events.event.get` | query | `{event_id}` → `{id, title, starts_at, ends_at, places_taken, maybe}` (local times; none for all-day); needs `events.events.read` |
+| `events.event.create` | action | the event form's fields (`title, date, type, time?, ...`, `actor_id?`), checked like the form → `{id, title, date}`; needs `events.events.create` |
+| `events.registration.set` | action | `{event_id, member_id, status: registered\|cancelled\|maybe, own?, notes?, guests?}` → `{status}`, with the waitlist and (for `own`) the deadlines; needs `events.events.register` |
+| `events.attendance.set` | action | `{event_id, member_id, status \| null, actor_id?}`; needs `events.events.add_attendee` |
+| `polls.poll.get` | query | `{poll_id}` → `{id, question, closed, required_member_ids, missing_member_ids}`; needs `polls.polls.read` |
+| `polls.poll.create` | action | the poll form's fields (`question, options: [{label}], closes_at?, ...`, `actor_id?`) → `{id, question}`; needs `polls.polls.create` |
+| `polls.poll.vote` | action | `{poll_id, member_id, option_index, on_behalf_of?}`; needs `polls.polls.vote` |
+| `polls.proxies.held` | query | `{poll_id, member_id}` → `[{poll_id, grantor_id, holder_id}]`; needs `polls.polls.read` |
+| `groups.self_join.list` | query | `{member_id}` → `[{id, name, description, color, icon_name, type, member_count, joined}]`, the open groups |
+| `groups.self_join.set` | action | `{group_id, member_id, joined}`: join or leave an open group |
+
+The handlers wrap Hubra's own services, so they keep their rules and their
+error codes: an `ApiError` a service raises (`REGISTRATION_CLOSED`,
+`CONFLICT`, `NOT_FOUND`, ...) reaches the caller as a `Refused` with the same
+`code`, `status` and message. `Refused` is an `ApiError` itself, so a route
+that lets it pass answers like the service did, and code that caught
+`ApiError` before keeps working.
+
+A plugin that checks the member's rights itself (a Discord command checks
+`events.events.register` before it signs someone up) calls with
+`actor=SYSTEM` and names the member in the input.
+
+The old ways in (`hubra.api.*.services`, `fee_basis.register_source`) stay
+for plugins built before these contracts; Hubra's official plugins use the
+contracts only.
 
 A plugin that adds a source to the fee basis (Finanzen › Beitragsgrundlage)
 offers a query named `<module>.fee_basis.<source>`: input `{on}`, output

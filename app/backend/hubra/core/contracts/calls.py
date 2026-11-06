@@ -6,6 +6,7 @@ import importlib
 import logging
 from typing import Any
 
+from hubra.core.errors import ApiError
 from hubra.core.extensions import db
 
 from . import registry as reg
@@ -119,6 +120,12 @@ def _run(offer: reg.Offer, data: dict, ctx: CallContext, *, read_only: bool):
     except Refused:
         savepoint.rollback()
         raise
+    except ApiError as exc:
+        # Hubra's services say no with ApiError (404, 409, ...): that is the
+        # handler refusing, with the service's code, not the handler breaking.
+        if savepoint.is_active:
+            savepoint.rollback()
+        raise Refused.from_api_error(exc) from exc
     except (ContractError, ActionForbidden, ActionUnavailable):
         savepoint.rollback()
         raise
