@@ -346,6 +346,10 @@ def problems() -> list[dict]:
 # ── Picking the platform log server and channel ─────────────────────────────
 
 _VIEW, _SEND, _EMBED, _ADMIN = 1 << 10, 1 << 11, 1 << 14, 1 << 3
+# What the support channel needs on top (``services.support_discord``):
+# create invite, read message history, manage threads, create private
+# threads, send messages in threads.
+THREAD_PERMISSIONS = (1 << 0) | (1 << 16) | (1 << 34) | (1 << 36) | (1 << 38)
 _POST = _VIEW | _SEND | _EMBED
 _TEXT_CHANNELS = (0, 5)
 
@@ -659,11 +663,18 @@ def channel_name(raw: str) -> str:
 
 
 def create_channel(
-    guild_id: str, name: str, *, private: bool = True, topic: str = ""
+    guild_id: str,
+    name: str,
+    *,
+    private: bool = True,
+    topic: str = "",
+    threads: bool = False,
 ) -> dict:
-    """A new text channel on one of the bot's servers (the platform log or
-    audit channel).  Private: only the bot and the Plattform-Admin role
-    (when platform roles are on) see it.  Raises PickerError."""
+    """A new text channel on one of the bot's servers (the platform log,
+    audit or support channel).  Private: only the bot and the Plattform-Admin
+    role (when platform roles are on) see it.  *threads*: the bot may also
+    open private threads, add people to them and invite (support channel).
+    Raises PickerError."""
     from hubra.core.services import platform_bot, platform_roles
     from hubra.core.services.platform_settings import discord
 
@@ -678,7 +689,7 @@ def create_channel(
     if topic:
         body["topic"] = topic.strip()[:1024]
     if private:
-        see = _VIEW | _SEND | _EMBED
+        see = _VIEW | _SEND | _EMBED | (THREAD_PERMISSIONS if threads else 0)
         overwrites = [
             {"id": str(guild_id), "type": 0, "deny": str(_VIEW), "allow": "0"}
         ]

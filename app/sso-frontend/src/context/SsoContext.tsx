@@ -44,7 +44,8 @@ const URLS: AppUrls = {
 
 /** Open to anyone; a signed-in visitor stays on them too. The old /roadmap
  * and /status only forward to the support site. */
-const PUBLIC_PAGES = ['/roadmap', '/status']
+// /not-me: the "This wasn't me" link works signed in or not.
+const PUBLIC_PAGES = ['/roadmap', '/status', '/not-me']
 
 const SIGNED_IN_PAGES = [
   '/clubs',

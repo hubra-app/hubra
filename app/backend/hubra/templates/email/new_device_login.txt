@@ -1,12 +1,24 @@
-{%- set device = t('mail.email.new_device_login.device_value', browser=browser_family, platform=platform) if browser_family and platform else user_agent -%}
+{%- set device = device or (t('mail.email.new_device_login.device_value', browser=browser_family, platform=platform) if browser_family and platform else user_agent) -%}
 {{ t('mail.email.new_device_login.intro', club_name=club_name) }}
 
   {{ t('mail.email.new_device_login.table_time') }}: {{ timestamp }}
   {{ t('mail.email.new_device_login.table_device') }}: {{ device }}
   {{ t('mail.email.new_device_login.table_ip') }}: {{ ip }}
+{%- if method %}
+  {{ t('mail.email.new_device_login.table_method') }}: {{ method }}
+{%- endif %}
+{%- if second_step %}
+  {{ t('mail.email.new_device_login.table_second_step') }}: {{ second_step }}
+{%- endif %}
+{%- if sessions is not none and sessions != '' %}
+  {{ t('mail.email.new_device_login.table_sessions') }}: {{ sessions }}
+{%- endif %}
 
 {{ t('mail.email.new_device_login.was_you') }}
 {{ t('mail.email.new_device_login.not_you') }}
+{% if not_me_url %}
+{{ t('mail.email.new_device_login.not_me') }}: {{ not_me_url }}
+{% endif %}
 {% if sessions_url %}
 {{ t('mail.email.new_device_login.button') }}: {{ sessions_url }}
 {{ t('mail.email.new_device_login.change_password') }}: {{ password_url }}

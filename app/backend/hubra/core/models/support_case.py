@@ -92,6 +92,13 @@ class SupportCase(db.Model):
     closed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # The case's private thread in the support channel on the platform's
+    # Discord server (``services.support_discord``), and the newest message
+    # of it that was read into the comments.
+    discord_thread_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    discord_last_message_id: Mapped[str | None] = mapped_column(
+        String(32), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False
     )
@@ -122,6 +129,52 @@ class SupportCaseComment(db.Model):
     internal: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=false()
     )
+    # The Discord message this comment came from, or was posted as, in the
+    # case's thread (so nothing is copied twice).
+    discord_message_id: Mapped[str | None] = mapped_column(
+        String(32), nullable=True, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False
+    )
+
+
+class SupportCasePerson(db.Model):
+    """Someone staff added to a case besides its reporter (or the reporter,
+    once added to the case's Discord thread).  They see the case on the
+    support site, may answer and hear about changes like the reporter.
+
+    ``discord``: where they stand in the case's Discord thread: ``added``,
+    ``invited`` (not on the platform server yet; an invite went out as a
+    direct message, ``invite_code``), ``no_discord`` (no linked Discord),
+    ``failed`` (Discord refused), or empty (no thread yet).
+    """
+
+    __tablename__ = "support_case_people"
+    __table_args__ = (
+        UniqueConstraint("case_id", "user_id", name="uq_support_case_person"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    case_id: Mapped[int] = mapped_column(
+        db.Integer,
+        ForeignKey("support_cases.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    user_id: Mapped[int] = mapped_column(
+        db.Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    added_by: Mapped[int | None] = mapped_column(
+        db.Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    discord: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="", server_default=""
+    )
+    invite_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False
     )

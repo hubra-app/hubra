@@ -10,6 +10,7 @@ import {
   Group,
   Loader,
   Modal,
+  MultiSelect,
   Paper,
   Select,
   SimpleGrid,
@@ -26,6 +27,7 @@ import { useDebouncedValue } from '@mantine/hooks'
 import {
   IconArrowBigUp,
   IconArrowLeft,
+  IconBrandDiscord,
   IconBug,
   IconBulb,
   IconGitMerge,
@@ -34,6 +36,8 @@ import {
   IconMessageQuestion,
   IconPencil,
   IconSearch,
+  IconUserPlus,
+  IconX,
 } from '@tabler/icons-react'
 import { EmptyState, PageHead, Pagination, Tabs } from '@/components/ui'
 import { useAdmin } from '@/context/AdminContext'
@@ -42,13 +46,20 @@ import { getLang, tr } from '@/lang'
 import { getRoadmap } from '@/api/platform'
 import { SettingsSection } from './SettingsSection'
 import {
+  addPeople,
   commentOnCase,
+  findAccounts,
   getCase,
+  openThread,
+  removePerson,
   listCases,
   mergeCase,
   updateCase,
+  type Account,
   type CaseKind,
+  type CasePerson,
   type CaseStatus,
+  type DiscordState,
   type Fingerprint,
   type StaffCase,
 } from '@/api/support'
@@ -572,6 +583,7 @@ function CaseDetail({ id }: { id: number }) {
               </Button>
             </Stack>
           </Section>
+          <PeopleSection c={c} onChange={refresh} />
           <Section title={tr('Details', 'Details')}>
             <SimpleGrid cols={2} spacing={12} verticalSpacing={10}>
               <Fact label={tr('Von', 'From')}>
@@ -652,6 +664,265 @@ function CaseDetail({ id }: { id: number }) {
         />
       )}
     </div>
+  )
+}
+
+const DISCORD_STATE: Record<Exclude<DiscordState, ''>, { color: string; de: string; en: string }> = {
+  added: { color: 'green', de: 'Im Thread', en: 'In the thread' },
+  invited: { color: 'orange', de: 'Eingeladen', en: 'Invited' },
+  no_discord: { color: 'gray', de: 'Kein Discord', en: 'No Discord' },
+  failed: { color: 'red', de: 'Fehlgeschlagen', en: 'Failed' },
+}
+
+function DiscordBadge({ p }: { p: CasePerson }) {
+  if (!p.discord) return null
+  const s = DISCORD_STATE[p.discord]
+  return (
+    <Badge size="xs" variant="light" color={s.color} leftSection={<IconBrandDiscord size={11} />}>
+      {tr(s.de, s.en)}
+    </Badge>
+  )
+}
+
+/** Who is on the case (reporter + people staff added) and its Discord thread. */
+function PeopleSection({ c, onChange }: { c: StaffCase; onChange: (fresh?: StaffCase) => Promise<void> }) {
+  const { notify } = useAdmin()
+  const [adding, setAdding] = useState(false)
+  const [busy, setBusy] = useState<string | null>(null)
+  const people = c.people ?? []
+  const discord = c.discord
+  const merged = !!c.mergedInto
+
+  const run = async (key: string, fn: () => Promise<StaffCase>, done?: string) => {
+    setBusy(key)
+    try {
+      await onChange(await fn())
+      if (done) notify('success', done)
+    } catch (err) {
+      notify('error', tr('Das hat nicht geklappt', 'That did not work'), (err as Error).message)
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  return (
+    <Section
+      title={tr('Personen', 'People')}
+      right={
+        <Button
+          size="xs"
+          variant="subtle"
+          leftSection={<IconUserPlus size={14} />}
+          disabled={merged}
+          onClick={() => setAdding(true)}
+        >
+          {tr('Hinzufügen', 'Add')}
+        </Button>
+      }
+    >
+      <Stack gap={10}>
+        {people.length === 0 && (
+          <Text size="sm" c="dimmed">
+            {tr('Niemand.', 'Nobody.')}
+          </Text>
+        )}
+        {people.map((p) => (
+          <Group key={p.id} gap="xs" wrap="nowrap" align="flex-start" justify="space-between">
+            <div style={{ minWidth: 0 }}>
+              <Group gap={6} wrap="wrap">
+                <Text size="sm" fw={500}>
+                  {p.name}
+                </Text>
+                {p.reporter && (
+                  <Badge size="xs" variant="outline" color="gray">
+                    {tr('meldet', 'reporter')}
+                  </Badge>
+                )}
+                <DiscordBadge p={p} />
+              </Group>
+              <Text size="xs" c="dimmed" style={{ wordBreak: 'break-all' }}>
+                {p.email}
+              </Text>
+              {p.discord === 'invited' && p.inviteUrl && (
+                <Text size="xs" c="dimmed">
+                  {tr('Einladung: ', 'Invite: ')}
+                  <Anchor href={p.inviteUrl} target="_blank" rel="noreferrer" size="xs">
+                    {p.inviteUrl.replace('https://', '')}
+                  </Anchor>
+                </Text>
+              )}
+            </div>
+            {p.reporter && !p.added && discord?.enabled && p.discordLinked ? (
+              <Button
+                size="compact-xs"
+                variant="light"
+                loading={busy === `add-${p.id}`}
+                disabled={merged}
+                onClick={() =>
+                  void run(`add-${p.id}`, () => addPeople(c.id, [p.id]), tr('Wird zum Thread hinzugefügt', 'Being added to the thread'))
+                }
+              >
+                {tr('In den Thread', 'Add to thread')}
+              </Button>
+            ) : (
+              !p.reporter && (
+                <Button
+                  size="compact-xs"
+                  variant="subtle"
+                  color="gray"
+                  aria-label={tr('Entfernen', 'Remove')}
+                  loading={busy === `rm-${p.id}`}
+                  onClick={() => void run(`rm-${p.id}`, () => removePerson(c.id, p.id))}
+                >
+                  <IconX size={14} />
+                </Button>
+              )
+            )}
+          </Group>
+        ))}
+        <Text size="xs" c="dimmed">
+          {tr(
+            'Hinzugefügte sehen den Fall auf der Support-Seite, können antworten und bekommen Antworten und Statuswechsel wie die meldende Person.',
+            'People you add see the case on the support site, can answer, and get answers and status changes like the reporter.',
+          )}
+        </Text>
+        {discord?.enabled ? (
+          discord.threadId ? (
+            <Group gap="xs">
+              {discord.threadUrl && (
+                <Button
+                  component="a"
+                  href={discord.threadUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  size="xs"
+                  variant="light"
+                  leftSection={<IconBrandDiscord size={14} />}
+                >
+                  {tr('Thread öffnen', 'Open thread')}
+                </Button>
+              )}
+              <Button
+                size="xs"
+                variant="subtle"
+                loading={busy === 'thread'}
+                disabled={merged}
+                onClick={() =>
+                  void run('thread', () => openThread(c.id), tr('Personen werden erneut hinzugefügt', 'Adding people again'))
+                }
+              >
+                {tr('Personen erneut hinzufügen', 'Add people again')}
+              </Button>
+            </Group>
+          ) : (
+            <Button
+              size="xs"
+              variant="light"
+              leftSection={<IconBrandDiscord size={14} />}
+              loading={busy === 'thread'}
+              disabled={merged}
+              onClick={() =>
+                void run('thread', () => openThread(c.id), tr('Thread wird angelegt', 'Opening the thread'))
+              }
+            >
+              {tr('Discord-Thread anlegen', 'Open a Discord thread')}
+            </Button>
+          )
+        ) : (
+          <Text size="xs" c="dimmed">
+            {tr(
+              'Discord-Threads: Support-Kanal unter Discord › Kanäle wählen.',
+              'Discord threads: pick a support channel under Discord › Channels.',
+            )}
+          </Text>
+        )}
+      </Stack>
+      {adding && (
+        <AddPeopleModal
+          c={c}
+          onClose={() => setAdding(false)}
+          onAdded={async (fresh) => {
+            setAdding(false)
+            await onChange(fresh)
+            notify('success', tr('Hinzugefügt', 'Added'))
+          }}
+        />
+      )}
+    </Section>
+  )
+}
+
+function AddPeopleModal({
+  c,
+  onClose,
+  onAdded,
+}: {
+  c: StaffCase
+  onClose: () => void
+  onAdded: (fresh: StaffCase) => Promise<void>
+}) {
+  const { notify } = useAdmin()
+  const [search, setSearch] = useState('')
+  const [debounced] = useDebouncedValue(search.trim(), 250)
+  const [picked, setPicked] = useState<Record<string, Account>>({})
+  const [saving, setSaving] = useState(false)
+  const found = useQuery({
+    queryKey: ['support-accounts', debounced],
+    queryFn: () => findAccounts(debounced),
+    enabled: debounced.length >= 2,
+  })
+  const onCase = new Set((c.people ?? []).filter((p) => p.added || !p.reporter).map((p) => p.id))
+  const options = new Map<string, Account>()
+  for (const a of Object.values(picked)) options.set(String(a.id), a)
+  for (const a of found.data?.items ?? []) if (!onCase.has(a.id)) options.set(String(a.id), a)
+
+  const save = async () => {
+    setSaving(true)
+    try {
+      await onAdded(await addPeople(c.id, Object.values(picked).map((a) => a.id)))
+    } catch (err) {
+      notify('error', tr('Hinzufügen fehlgeschlagen', 'Adding failed'), (err as Error).message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Modal opened onClose={onClose} title={tr('Personen hinzufügen', 'Add people')}>
+      <Stack gap="md">
+        <MultiSelect
+          label={tr('Konten', 'Accounts')}
+          description={tr('Name oder E-Mail, mindestens zwei Zeichen.', 'Name or e-mail, at least two characters.')}
+          placeholder={tr('Suchen …', 'Search…')}
+          searchable
+          searchValue={search}
+          onSearchChange={setSearch}
+          filter={({ options: all }) => all}
+          nothingFoundMessage={debounced.length >= 2 && !found.isFetching ? tr('Niemand gefunden', 'Nobody found') : undefined}
+          data={[...options.values()].map((a) => ({ value: String(a.id), label: `${a.name} · ${a.email}` }))}
+          value={Object.keys(picked)}
+          onChange={(ids) =>
+            setPicked(Object.fromEntries(ids.map((id) => [id, options.get(id)!]).filter(([, a]) => a)))
+          }
+          maxValues={20}
+          data-autofocus
+        />
+        <Text size="xs" c="dimmed">
+          {tr(
+            'Mit verknüpftem Discord kommen sie in den Thread des Falls; wer nicht auf dem Plattform-Server ist, bekommt eine Einladung als Direktnachricht.',
+            'With Discord linked they join the case’s thread; anyone not on the platform server gets an invite as a direct message.',
+          )}
+        </Text>
+        <Group justify="flex-end">
+          <Button variant="default" onClick={onClose}>
+            {tr('Abbrechen', 'Cancel')}
+          </Button>
+          <Button onClick={() => void save()} loading={saving} disabled={Object.keys(picked).length === 0}>
+            {tr('Hinzufügen', 'Add')}
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
   )
 }
 

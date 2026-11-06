@@ -266,7 +266,8 @@ def discord_server_channels(guild_id: str):
 @limiter.limit("20 per hour")
 def discord_create_channel(guild_id: str):
     """Make a text channel on one of the bot's servers (private by default),
-    for the platform log or audit channel."""
+    for the platform log, audit or support channel (``threads``: true lets
+    the bot open private threads there)."""
     from hubra.core.services import discord_status as svc
 
     body = request.get_json(silent=True) or {}
@@ -276,6 +277,7 @@ def discord_create_channel(guild_id: str):
             str(body.get("name") or ""),
             private=bool(body.get("private", True)),
             topic=str(body.get("topic") or ""),
+            threads=body.get("threads") is True,
         )
     except svc.PickerError as exc:
         return api_error("DISCORD_UNAVAILABLE", error_message(exc), 409)

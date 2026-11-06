@@ -43,6 +43,16 @@ interface RawAuthResponse {
   mfaToken?: string
 }
 
+/** The browser's time zone: with the language and network it tells a
+ * browser that lost its cookies from a new device (no sign-in alert). */
+function timeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || ''
+  } catch {
+    return ''
+  }
+}
+
 export async function login(
   email: string,
   password: string,
@@ -50,7 +60,7 @@ export async function login(
 ): Promise<RawAuthResponse> {
   return apiFetch<RawAuthResponse>('/global/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password, keepSignedIn }),
+    body: JSON.stringify({ email, password, keepSignedIn, timeZone: timeZone() }),
   })
 }
 
@@ -58,7 +68,7 @@ export async function login(
 export async function loginMfa(mfaToken: string, code: string): Promise<RawAuthResponse> {
   return apiFetch<RawAuthResponse>('/global/auth/login/mfa', {
     method: 'POST',
-    body: JSON.stringify({ mfaToken, code }),
+    body: JSON.stringify({ mfaToken, code, timeZone: timeZone() }),
   })
 }
 
@@ -160,7 +170,7 @@ export async function passkeyLogin(
 ): Promise<RawAuthResponse> {
   return apiFetch<RawAuthResponse>('/global/auth/passkey/login', {
     method: 'POST',
-    body: JSON.stringify({ state, credential, ...opts }),
+    body: JSON.stringify({ state, credential, ...opts, timeZone: timeZone() }),
   })
 }
 
@@ -640,4 +650,34 @@ export async function getOAuthGrants(): Promise<{ items: OAuthGrant[] }> {
 
 export async function endOAuthGrant(id: number): Promise<void> {
   await apiFetch(`/global/oauth/grants/${id}`, { method: 'DELETE' })
+}
+
+/** Discord direct messages to the account outside a club. */
+export interface DiscordDms {
+  /** The platform has a bot and the account linked Discord. */
+  available: boolean
+  /** Mutes every Hubra direct message, the clubs' ones too. */
+  muted: boolean
+  kinds: { sign_in: boolean; requests: boolean }
+}
+
+export async function getDiscordDms(): Promise<DiscordDms> {
+  return apiFetch<DiscordDms>('/global/account/discord-dms')
+}
+
+export async function setDiscordDms(
+  change: { muted?: boolean; kinds?: Partial<DiscordDms['kinds']> },
+): Promise<DiscordDms> {
+  return apiFetch<DiscordDms>('/global/account/discord-dms', {
+    method: 'PUT',
+    body: JSON.stringify(change),
+  })
+}
+
+/** "This wasn't me" from a new-device alert: ends every session. */
+export async function notMe(token: string): Promise<{ ok: boolean; ended: number }> {
+  return apiFetch('/global/auth/not-me', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  })
 }

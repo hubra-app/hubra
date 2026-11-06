@@ -182,35 +182,56 @@ def _notify_choices(member) -> dict:
 
     apps = channels.available(member)
     names = channels.providers()
+    user = member.user if member.user_id else None
     return {
         "topics": prefs.prefs_for(member, apps),
         "apps": [{"key": code, "name": names.get(code, code)} for code in apps],
-        # The weekly digest mail (hubra.core.tasks.digest_tasks), off by default.
+        # The weekly digest mail (hubra.core.tasks.digest_tasks), off by default;
+        # also the mail column of the "digest" topic.
         "digest": bool(member.weekly_digest_mail),
+        # The account's "mute all direct messages" switch (every club, and
+        # the account's own messages such as sign-in alerts).
+        "muted": bool(((user.dm_prefs if user else None) or {}).get("muted")),
     }
 
 
 @members_bp.put("/me/notifications")
 @jwt_required()
 def set_my_notifications():
-    """Body ``{topic: {channel: bool}}``, and ``digest: bool`` for the
-    weekly digest mail; what is left out keeps its value."""
+    """Body ``{topic: {channel: bool}}``, ``digest: bool`` for the weekly
+    digest mail and ``muted: bool`` for the account's "mute all direct
+    messages"; what is left out keeps its value."""
     from hubra.core.notifications import channels, prefs
 
     body = request.get_json(silent=True)
     member = get_current_member()
     digest = None
-    if isinstance(body, dict) and "digest" in body:
+    muted = None
+    # "digest": true/false is the older switch; {"digest": {...}} the topic.
+    if isinstance(body, dict) and "digest" in body and not isinstance(
+        body["digest"], dict
+    ):
         body = dict(body)
         digest = body.pop("digest")
         if not isinstance(digest, bool):
             raise_error(422, "VALIDATION_ERROR", "digest: true or false")
-    if body or digest is None:
+    if isinstance(body, dict) and "muted" in body:
+        body = dict(body)
+        muted = body.pop("muted")
+        if not isinstance(muted, bool):
+            raise_error(422, "VALIDATION_ERROR", "muted: true or false")
+        if member.user_id is None:
+            raise_error(422, "VALIDATION_ERROR", "muted: this member has no account")
+    if body or (digest is None and muted is None):
         if err := prefs.validate(body, channels.available(member)):
             raise_error(422, "VALIDATION_ERROR", err)
         prefs.apply(member, body)
     if digest is not None:
         member.weekly_digest_mail = digest
+    if muted is not None:
+        from hubra.core.notifications import account_dm
+
+        account_dm.apply(member.user, {"muted": muted})
     db.session.commit()
     return jsonify(_notify_choices(member)), 200
 

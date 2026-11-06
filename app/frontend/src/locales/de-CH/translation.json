@@ -249,14 +249,23 @@
         "posts": "Neue Beiträge",
         "events": "Neue Anlässe",
         "polls": "Neue Umfragen",
-        "event_reminders": "Erinnerung vor Anlässen",
+        "event_reminders": "Erinnerung vor Anlässen und Trainings",
         "poll_reminders": "Erinnerung vor Ende einer Umfrage",
-        "my_events": "Meine Anmeldungen",
+        "my_events": "Änderungen an meinen Anlässen",
         "my_polls": "Stimmen in meinen Umfragen, Vollmachten",
-        "tasks": "Aufgaben für mich (Gesuche, Anmeldungen zum Bestätigen)"
+        "tasks": "Aufgaben für mich (Gesuche, Anmeldungen zum Bestätigen)",
+        "bookings": "Bestätigung meiner Anmeldungen",
+        "waitlist": "Warteliste: Platz frei geworden",
+        "requests": "Antworten auf meine Anfragen",
+        "payments": "Rechnungen: neu, bald fällig, überfällig",
+        "membership": "Mitgliedschaft verlängern",
+        "qualifications": "Qualifikationen, die bald ablaufen",
+        "digest": "Wochenübersicht am Montag"
       },
       "discordHint": "Discord schickt dir eine Direktnachricht vom Bot des Vereins. Dafür müssen Direktnachrichten von Mitgliedern des Servers erlaubt sein (Discord › Privatsphäre-Einstellungen des Servers).",
-      "discord": "Discord"
+      "discord": "Discord",
+      "muteAll": "Alle Direktnachrichten stummschalten",
+      "muteAllHint": "Keine Direktnachricht von Hubra auf Discord, in keinem Verein und auch nicht für dein Konto. Deine Auswahl oben bleibt gespeichert."
     },
     "push": {
       "title": "Mitteilungen auf diesem Gerät",
@@ -2436,7 +2445,15 @@
         "quotaMail": "Mails diesen Monat: {{used}} von {{limit}}.",
         "quotaStorage": "Speicher: {{used}} MB von {{limit}} MB.",
         "aMember": "Ein Mitglied",
-        "eventReminder": "Erinnerung an einen Anlass"
+        "eventReminder": "Erinnerung an einen Anlass",
+        "signUpReceived": "Anmeldung erhalten, wartet auf Bestätigung",
+        "onWaitlist": "Auf der Warteliste",
+        "newInvoice": "Neue Rechnung",
+        "invoiceDueSoon": "Rechnung bald fällig",
+        "invoiceOverdue": "Rechnung überfällig",
+        "membershipRenewal": "Mitgliederbeitrag für die neue Periode",
+        "qualificationEnds": "Qualifikation läuft bald ab",
+        "weeklyDigest": "Deine Woche im Verein"
       }
     },
     "notifPanel": {

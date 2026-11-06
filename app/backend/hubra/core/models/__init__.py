@@ -67,6 +67,7 @@ from hubra.core.models.translation_request import TranslationRequest
 from hubra.core.models.support_case import (
     SupportCase,
     SupportCaseComment,
+    SupportCasePerson,
     SupportCaseVote,
     RoadmapVote,
 )
@@ -190,6 +191,7 @@ __all__ = [
     "TranslationRequest",
     "SupportCase",
     "SupportCaseComment",
+    "SupportCasePerson",
     "SupportCaseVote",
     "RoadmapVote",
     "Notification",

@@ -15,6 +15,7 @@ from flask_jwt_extended import jwt_required
 from hubra.core.auth.helpers import get_current_user_id
 from hubra.core.permissions import require_global_permission
 from hubra.core.services import support as services
+from hubra.core.services import support_discord
 from hubra.core.services.support import SupportError
 from hubra.core.errors import api_error, error_message
 from hubra.core.extensions import db, limiter
@@ -69,6 +70,7 @@ def create_case():
         return api_error("VALIDATION_ERROR", error_message(exc), 400)
     db.session.commit()
     services.alert_staff(case)
+    support_discord.case_created(case)
     return jsonify(
         services.as_dict(case, votes=1 if case.kind == "feature" else 0)
     ), 201
@@ -113,6 +115,7 @@ def comment_my_case(case_id: int):
         db.session.rollback()
         return api_error("VALIDATION_ERROR", error_message(exc), 400)
     db.session.commit()
+    support_discord.comment_added(comment)
     return jsonify(services.comment_dict(comment, user, staff_view=False)), 201
 
 
@@ -284,6 +287,8 @@ def staff_update(case_id: int):
         details["roadmapItem"] = case.roadmap_item
     _audit("support_case.update", case, details)
     db.session.commit()
+    if "status" in changed:
+        support_discord.status_changed(case)
     if "status" in changed and body.get("notify", True) is not False:
         services.mail_update(case, services.followers(case))
     return jsonify(services.staff_detail(case)), 200
@@ -310,10 +315,11 @@ def staff_comment(case_id: int):
         db.session.rollback()
         return api_error("VALIDATION_ERROR", error_message(exc), 400)
     db.session.commit()
-    if not internal and case.user_id:
-        reporter = db.session.get(User, case.user_id)
-        if reporter is not None and not reporter.is_disabled:
-            services.mail_update(case, [reporter], comment=comment.body)
+    if not internal:
+        support_discord.comment_added(comment)
+        people = services.followers(case)
+        if people:
+            services.mail_update(case, people, comment=comment.body)
     author = db.session.get(User, comment.user_id) if comment.user_id else None
     return jsonify(services.comment_dict(comment, author, staff_view=True)), 201
 
@@ -340,8 +346,88 @@ def staff_merge(case_id: int):
         return api_error("VALIDATION_ERROR", error_message(exc), 400)
     _audit("support_case.merge", case, {"into": target.id, "into_title": target.title})
     db.session.commit()
+    support_discord.status_changed(case)
     if case.user_id:
         reporter = db.session.get(User, case.user_id)
         if reporter is not None and not reporter.is_disabled:
             services.mail_update(case, [reporter], merged_into=target)
     return jsonify(services.staff_detail(target)), 200
+
+
+# ── Staff: people on a case and its Discord thread ────────────────────────────
+
+
+@support_admin_bp.get("/accounts")
+@require_global_permission(_PERM)
+def staff_find_accounts():
+    """``?q=`` (at least 2 characters): accounts by name or e-mail, to add
+    to a case."""
+    return jsonify({"items": support_discord.search_accounts(request.args.get("q", ""))}), 200
+
+
+@support_admin_bp.post("/cases/<int:case_id>/people")
+@require_global_permission(_PERM)
+@limiter.limit("120 per hour")
+def staff_add_people(case_id: int):
+    """Body: ``{"userIds": [int, ...]}`` (up to 20).  They see the case on
+    the support site, may answer, hear about answers and status changes, and
+    are put in the case's Discord thread.  The reporter's id puts the
+    reporter in the thread."""
+    case, err = _case_or_404(case_id)
+    if err:
+        return err
+    body = request.get_json(silent=True) or {}
+    ids = body.get("userIds")
+    if (
+        not isinstance(ids, list)
+        or not ids
+        or len(ids) > 20
+        or not all(isinstance(i, int) and not isinstance(i, bool) for i in ids)
+    ):
+        return api_error("VALIDATION_ERROR", "userIds must be 1 to 20 account ids", 400)
+    added = support_discord.add_people(case, ids, _actor_id())
+    if added:
+        _audit("support_case.people_added", case, {"user_ids": added})
+    db.session.commit()
+    support_discord.people_added(case, added)
+    if not case.discord_thread_id and added:
+        support_discord.open_now(case)
+    return jsonify(services.staff_detail(case)), 200
+
+
+@support_admin_bp.delete("/cases/<int:case_id>/people/<int:user_id>")
+@require_global_permission(_PERM)
+def staff_remove_person(case_id: int, user_id: int):
+    case, err = _case_or_404(case_id)
+    if err:
+        return err
+    try:
+        discord_user = support_discord.remove_person(case, user_id)
+    except LookupError:
+        return api_error("NOT_FOUND", "Not on this case", 404)
+    _audit("support_case.person_removed", case, {"user_id": user_id})
+    db.session.commit()
+    support_discord.person_removed(case, discord_user)
+    return jsonify(services.staff_detail(case)), 200
+
+
+@support_admin_bp.post("/cases/<int:case_id>/discord")
+@require_global_permission(_PERM)
+@limiter.limit("30 per hour")
+def staff_open_thread(case_id: int):
+    """Open the case's Discord thread now (cases from before the support
+    channel was set), or put its people in it again."""
+    case, err = _case_or_404(case_id)
+    if err:
+        return err
+    if not support_discord.enabled():
+        return api_error(
+            "CONFLICT", "Pick a support channel under Discord › Channels first", 409
+        )
+    if case.merged_into_id is not None:
+        return api_error("CONFLICT", "This case was merged into another one", 409)
+    if case.discord_thread_id:
+        support_discord.people_added(case, [p.user_id for p in support_discord.people(case)])
+    else:
+        support_discord.open_now(case)
+    return jsonify(services.staff_detail(case)), 202

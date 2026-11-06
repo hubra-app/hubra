@@ -238,6 +238,39 @@ def _post(
         raise DiscordPostError(f"Discord unreachable: {exc}") from None
 
 
+def dm(user_id: str, embed: dict, *, components: list | None = None) -> dict:
+    """A direct message from the platform's bot to one Discord user (an
+    account that linked Discord). Raises DiscordPostError.
+
+    Discord only delivers it when the person shares a server with the bot and
+    accepts direct messages from that server's members (403 otherwise).
+    """
+    _channel, token = _settings()
+    if not token:
+        raise DiscordPostError("Set the bot token first")
+    req = urllib.request.Request(
+        f"{API}/users/@me/channels",
+        data=json.dumps({"recipient_id": str(user_id)}).encode("utf-8"),
+        headers={
+            "Authorization": f"Bot {token}",
+            "Content-Type": "application/json",
+            "User-Agent": "Hubra (https://hubra.club, 1.0)",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:  # noqa: S310
+            channel = json.loads(resp.read() or b"{}")
+    except urllib.error.HTTPError as exc:
+        raise DiscordPostError(f"Discord answered {exc.code}") from None
+    except Exception as exc:
+        raise DiscordPostError(f"Discord unreachable: {exc}") from None
+    channel_id = str((channel or {}).get("id") or "")
+    if not channel_id:
+        raise DiscordPostError("Discord opened no direct message channel")
+    return _post(embed, channel_id=channel_id, token=token, components=components)
+
+
 _LAST_POST_KEY = "discord:platform_log:last"
 _local_last: dict[str, dict] = {}
 
@@ -368,6 +401,8 @@ ACTION_LABELS: dict[str, str] = {
     "tenant_request.reject": "Vereinsanfrage abgelehnt",
     "support_case.update": "Meldung geändert",
     "support_case.merge": "Meldungen zusammengeführt",
+    "support_case.people_added": "Personen zur Meldung hinzugefügt",
+    "support_case.person_removed": "Person von der Meldung entfernt",
     "impersonation.start": "Support-Zugriff gestartet",
     "impersonation.end": "Support-Zugriff beendet",
     "impersonation.revoked": "Support-Zugriff entzogen",

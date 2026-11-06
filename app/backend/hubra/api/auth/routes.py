@@ -7,7 +7,9 @@ Registered in create_app() under:
 
 from __future__ import annotations
 
+import hashlib
 import logging
+import re
 from datetime import datetime, timezone
 
 from argon2 import PasswordHasher as _PasswordHasher
@@ -63,7 +65,6 @@ from hubra.core.services import account as account_svc
 from hubra.core.services import email_verification
 from hubra.core.services.email import _get_sso_base_url
 from hubra.core.auth.account_guard import club_member_only
-from hubra.core.notifications.services import create_notification
 from hubra.core.notifications import account as account_notifications
 from hubra.core.tenant.context import current_tenant
 
@@ -148,17 +149,26 @@ def _record_account_login(user: User) -> int:
     )
 
 
-def _note_device(user: User) -> tuple[str | None, bool]:
+def _note_device(user: User, time_zone: str = "") -> tuple[str | None, bool]:
     """Remember this browser for *user*: (cookie token, new-device alert)."""
+    browser = _extract_browser_family(request.headers)
+    platform = _extract_platform(request.headers)
     return known_devices.remember(
         user,
         request.cookies.get(known_devices.DEVICE_COOKIE),
-        browser_family=_extract_browser_family(request.headers),
-        platform=_extract_platform(request.headers),
+        browser_family=browser,
+        platform=platform,
+        soft=known_devices.soft_signature(
+            browser,
+            platform,
+            request.headers.get("Accept-Language", ""),
+            time_zone,
+            request.remote_addr or "",
+        ),
     )
 
 
-def _alert_new_device(user: User) -> None:
+def _alert_new_device(user: User, method: str = "password", second_step: str = "") -> None:
     browser = _extract_browser_family(request.headers)
     platform = _extract_platform(request.headers)
     known_devices.send_alert(
@@ -167,6 +177,8 @@ def _alert_new_device(user: User) -> None:
         browser,
         platform,
         request.headers.get("User-Agent", "")[:512],
+        method=method,
+        second_step=second_step,
     )
     # Platform staff on a new device: also a ping in the platform log.
     try:
@@ -217,7 +229,7 @@ def login():
             mfaToken=mfa.challenge_for(user, email, keep_signed_in),
         ), 200
 
-    return _complete_login(user, member, email, keep_signed_in)
+    return _complete_login(user, member, email, keep_signed_in, method="password")
 
 
 def _check_may_sign_in(user: User, member: Member | None) -> None:
@@ -268,7 +280,14 @@ def login_mfa():
             len(user.recovery_codes or []),
         )
     db.session.commit()
-    return _complete_login(user, member, email, keep_signed_in)
+    return _complete_login(
+        user,
+        member,
+        email,
+        keep_signed_in,
+        method="password",
+        second_step="recovery" if used == "recovery" else "totp",
+    )
 
 
 @auth_bp.post("/passkey/options")
@@ -312,13 +331,42 @@ def passkey_login():
     member = AuthService.resolve_member(user.id)
     _check_may_sign_in(user, member)
     db.session.commit()
-    return _complete_login(user, member, user.email, keep_signed_in)
+    if mfa_user is not None:  # the step after the password
+        return _complete_login(
+            user, member, user.email, keep_signed_in, second_step="passkey"
+        )
+    return _complete_login(user, member, user.email, keep_signed_in, method="passkey")
+
+
+def _time_zone() -> str:
+    """The browser's time zone (IANA name) the sign-in page sends along."""
+    body = request.get_json(silent=True) or {}
+    value = body.get("timeZone") if isinstance(body, dict) else None
+    if isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_+\-/]{1,64}", value):
+        return value
+    return ""
+
+
+def _club_device_fingerprint() -> str:
+    """The club session's device: the browser's device cookie where it has
+    one (one row per real browser), else browser, system and mobile flag."""
+    token = request.cookies.get(known_devices.DEVICE_COOKIE) or ""
+    if re.fullmatch(r"[A-Za-z0-9_-]{32,128}", token):
+        return hashlib.sha256(f"device:{token}".encode()).hexdigest()[:32]
+    return compute_fingerprint(request.headers)
 
 
 def _complete_login(
-    user: User | None, member: Member | None, email: str, keep_signed_in: bool
+    user: User | None,
+    member: Member | None,
+    email: str,
+    keep_signed_in: bool,
+    method: str = "password",
+    second_step: str = "",
 ):
-    """Issue the tokens for a sign-in whose credentials are checked."""
+    """Issue the tokens for a sign-in whose credentials are checked.
+
+    *method* and *second_step* say how (for the new-device alert)."""
     if user is not None and email_verification.auto_verify_superadmin(user):
         db.session.commit()
 
@@ -331,10 +379,10 @@ def _complete_login(
             "account_sid": _record_account_login(user),
             "keep": keep_signed_in,
         }
-        device_token, new_device = _note_device(user)
+        device_token, new_device = _note_device(user, _time_zone())
         if new_device:
             # Queued: sent once this commit is done (no commit follows it).
-            _alert_new_device(user)
+            _alert_new_device(user, method, second_step)
         db.session.commit()
         access_token = create_access_token(
             identity=f"user:{user.id}",
@@ -379,59 +427,27 @@ def _complete_login(
         mfa.club_refusal()
 
     raw_ua = request.headers.get("User-Agent", "")[:512]
-    fp = compute_fingerprint(request.headers)
-    new_device, session_id = AuthService.record_login(
+    _new_device, session_id = AuthService.record_login(
         member,
         request.remote_addr or "",
         raw_ua,
-        fingerprint=fp,
+        fingerprint=_club_device_fingerprint(),
         browser_family=_extract_browser_family(request.headers),
         platform=_extract_platform(request.headers),
     )
-    # With an account, "new device" means new to the account, not to this
-    # club, and the account's address hears about it.
-    device_token = None
+    # New-device alerts belong to sign-ins to the account (SSO), not to a
+    # club: a club sign-in neither alerts nor marks the browser as known.
     account_sid = None
     if user is not None:
-        device_token, new_device = _note_device(user)
         # A club sign-in is an account sign-in too: the account token below
         # needs a session the person (or an admin) can end.
         account_sid = _record_account_login(user)
-    if new_device:
-        # Queued, sent by the worker once the commit below is done.
-        if user is not None:
-            _alert_new_device(user)
-        elif member.private_email_verified:
-            known_devices.queue_mail(
-                member.email,
-                member.name,
-                ip=request.remote_addr or "",
-                browser_family=_extract_browser_family(request.headers),
-                platform=_extract_platform(request.headers),
-                user_agent=request.headers.get("User-Agent", "")[:512],
-                lang=getattr(member, "language", "de-CH") or "de-CH",
-            )
-        else:
-            _log.info(
-                "skip_new_device_login member_id=%s — email not verified", member.id
-            )
 
     try:
         db.session.commit()
     except Exception:
         db.session.rollback()
         raise
-
-    if new_device:
-        ts = known_devices.sign_in_time()
-        create_notification(
-            member_id=member.id,
-            kind="warning",
-            title="New device login",
-            msg=f"Your account was accessed from a new device or location at {ts}. "
-            f"If this wasn't you, go to Settings → Account → Sessions to revoke it.",
-            link="/app/account/settings/sessions",
-        )
 
     session = db.session.get(Session, session_id)
     tenant = current_tenant()
@@ -469,8 +485,6 @@ def _complete_login(
     if user is not None:
         _set_theme_cookie(response, user.theme)
         account_token.issue(response, user, account_sid)
-    if device_token is not None:
-        known_devices.set_cookie(response, device_token)
     return response
 
 
@@ -1435,6 +1449,64 @@ def revoke_all_other_sessions():
 
     db.session.commit()
     return jsonify({"ok": True, "revoked": count}), 200
+
+
+# ── POST /auth/not-me ("This wasn't me" in the new-device alert) ─────────────
+
+
+@auth_bp.post("/not-me")
+@limiter.limit("10 per minute")
+def not_me():
+    """End every session of the account a new-device alert went to.
+
+    The token comes from the alert (mail or Discord); it works once and for
+    a week. The person then sets a new password (the page links to it)."""
+    body = request.get_json(silent=True) or {}
+    user = known_devices.read_not_me_token(str(body.get("token") or ""))
+    if user is None:
+        raise_error(
+            400,
+            "TOKEN_INVALID",
+            "The link is invalid, expired or was used already",
+        )
+    now = datetime.now(timezone.utc)
+    user.tokens_valid_after = now
+    ended = session_service.revoke_other_account_sessions(
+        user.id, None, reason="not_me"
+    )
+    db.session.commit()
+    _log.warning("not_me user_id=%s sessions_ended=%s", user.id, ended)
+    return jsonify({"ok": True, "ended": ended}), 200
+
+
+# ── /account/discord-dms (Discord direct messages outside a club) ─────────────
+
+
+@account_bp.get("/discord-dms")
+@jwt_required()
+def get_account_dms():
+    """What the account gets as a Discord direct message from the Hubra bot
+    outside a club, and the one switch that mutes every direct message."""
+    from hubra.core.notifications import account_dm
+
+    user = _signed_in_user()
+    return jsonify(account_dm.prefs_for(user)), 200
+
+
+@account_bp.put("/discord-dms")
+@jwt_required()
+def set_account_dms():
+    """Body ``{muted?: bool, kinds?: {sign_in?: bool, requests?: bool}}``."""
+    from hubra.core.notifications import account_dm
+
+    refuse_during_impersonation()
+    user = _signed_in_user()
+    body = request.get_json(silent=True)
+    if err := account_dm.validate(body):
+        raise_error(422, "VALIDATION_ERROR", err)
+    account_dm.apply(user, body)
+    db.session.commit()
+    return jsonify(account_dm.prefs_for(user)), 200
 
 
 # ── /account/notifications (every club's, for the account page) ───────────────

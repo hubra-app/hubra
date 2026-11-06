@@ -365,8 +365,15 @@ export type NotifyTopic =
   | "event_reminders"
   | "poll_reminders"
   | "my_events"
+  | "bookings"
+  | "waitlist"
   | "my_polls"
-  | "tasks";
+  | "tasks"
+  | "requests"
+  | "payments"
+  | "membership"
+  | "qualifications"
+  | "digest";
 /** bell, push, mail, or a connected app's code ("discord") */
 export type NotifyChannel = "bell" | "push" | "mail" | (string & {});
 
@@ -379,6 +386,9 @@ export interface NotificationChoices {
   apps?: { key: string; name: string }[];
   /** The weekly digest mail on Monday morning (off until turned on). */
   digest?: boolean;
+  /** The account's "mute all direct messages" switch: no Discord direct
+   * message from Hubra, in any club or for the account. */
+  muted?: boolean;
 }
 
 export function getMyNotifications(): Promise<NotificationChoices> {
@@ -388,6 +398,7 @@ export function getMyNotifications(): Promise<NotificationChoices> {
 export function setMyNotifications(
   change: Partial<Record<NotifyTopic, Partial<Record<NotifyChannel, boolean>>>> & {
     digest?: boolean;
+    muted?: boolean;
   },
 ): Promise<NotificationChoices> {
   return apiFetch<NotificationChoices>("/app/members/me/notifications", {
