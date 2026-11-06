@@ -625,9 +625,13 @@ export interface BillingTerms {
   /** Licences per module code (for prices per licence; 1 if not set). */
   licenses: Record<string, number>
   note: string
+  /** Hubra fee in % on the club's online member payments; null: the default. */
+  payments_fee_percent: number | null
 }
 
 export interface TenantBilling extends BillingTerms {
+  /** The platform's default fee on online payments (manage › Payments), null without a key. */
+  payments_fee_default: number | null
   plan: string
   plan_price_chf: string | null
   base_chf: string

@@ -51,7 +51,7 @@ class FakeStripe:
         if path == "/v1/products":
             self.products.add(form["id"])
             return 200, json.dumps({"id": form["id"]}).encode()
-        if path == "/v1/customers":
+        if path in ("/v1/customers", "/v1/customers/cus_1"):
             return 200, b'{"id": "cus_1"}'
         if path == "/v1/checkout/sessions":
             return 200, b'{"id": "cs_1", "url": "https://checkout.stripe.test/cs_1"}'
@@ -151,6 +151,39 @@ def test_checkout_makes_customer_products_and_session(stripe, club, db):
     assert len(stripe.made("POST", "/v1/customers")) == 1
 
 
+def test_checkout_bills_the_club_with_its_address(stripe, club, db):
+    from hubra.core.models.setting import Setting
+
+    for key, value in {
+        "Club.Banking.Street": "Seeweg",
+        "Club.Banking.HouseNo": "3",
+        "Club.Banking.PostalCode": "8000",
+        "Club.Banking.City": "Zürich",
+        "Club.Contact.FinanceEmail": "finanzen@club.test",
+    }.items():
+        db.session.add(Setting(key=key, value=value))
+    db.session.commit()
+    service.checkout(club, "kassier@club.test", "https://s", "https://c")
+    customer = stripe.made("POST", "/v1/customers")[0]
+    assert customer["name"] == "Club A"
+    assert customer["email"] == "finanzen@club.test"
+    assert customer["address[line1]"] == "Seeweg 3"
+    assert customer["address[postal_code]"] == "8000"
+    assert customer["address[city]"] == "Zürich"
+    assert customer["address[country]"] == "CH"
+    session = stripe.made("POST", "/v1/checkout/sessions")[0]
+    assert session["billing_address_collection"] == "required"
+    assert session["customer_update[address]"] == "auto"
+    assert "customer_update[name]" not in session
+
+
+def test_checkout_without_club_address(stripe, club, db):
+    service.checkout(club, "kassier@club.test", "https://s", "https://c")
+    customer = stripe.made("POST", "/v1/customers")[0]
+    assert customer["email"] == "kassier@club.test"
+    assert not any(k.startswith("address") for k in customer)
+
+
 def test_checkout_refuses_when_off_paid_or_nothing_due(stripe, club, db):
     platform_settings.set_many({"billing.enabled": "off"})
     with pytest.raises(ApiError) as off:
@@ -182,24 +215,84 @@ def test_subscription_sets_the_clubs_status(stripe, club, db):
     assert service.public_state(club)["hasSubscription"] is False
 
 
-def test_sync_replaces_items_when_terms_change(stripe, club, db):
+def test_sync_updates_changed_items_pro_rata(stripe, club, db):
     service.apply_subscription(club, stripe.subscription)
     assert service.sync(club) is True
     update = stripe.made("POST", "/v1/subscriptions/sub_1")[-1]
-    assert update["items[0][id]"] == "si_old"
-    assert update["items[0][deleted]"] == "true"
-    assert update["items[1][price_data][unit_amount]"] == "3000"
-    assert update["proration_behavior"] == "none"
+    # An item Hubra doesn't know goes, the plan comes in.
+    assert update["items[0][price_data][unit_amount]"] == "3000"
+    assert update["items[1][id]"] == "si_old"
+    assert update["items[1][deleted]"] == "true"
+    assert update["proration_behavior"] == "create_prorations"
     # Nothing changed: no second update.
     assert service.sync(club) is False
+
+    # Stripe now holds the plan item; a price change touches only it.
+    stripe.subscription["items"] = {
+        "data": [
+            {
+                "id": "si_plan",
+                "quantity": 1,
+                "price": {
+                    "product": "hubra_plan_starter",
+                    "unit_amount": 3000,
+                    "recurring": {"interval": "month"},
+                },
+            }
+        ]
+    }
     club_billing.update(club, {"discount_percent": 0})
     assert service.sync(club) is True
-    assert (
-        stripe.made("POST", "/v1/subscriptions/sub_1")[-1][
-            "items[1][price_data][unit_amount]"
-        ]
-        == "4000"
+    update = stripe.made("POST", "/v1/subscriptions/sub_1")[-1]
+    assert update["items[0][id]"] == "si_plan"
+    assert update["items[0][price_data][unit_amount]"] == "4000"
+    assert "items[1][id]" not in update
+
+
+def test_a_new_member_changes_only_the_quantity(stripe, club, db, monkeypatch):
+    from hubra.core.services import quotas
+
+    club_billing.update(
+        club,
+        {
+            "addons": [
+                {"code": "polls", "label": "Polls", "price_chf": "1", "unit": "member"}
+            ]
+        },
     )
+    service.apply_subscription(club, stripe.subscription)
+    monkeypatch.setattr(quotas, "member_count", lambda t: 10)
+    stripe.subscription["items"] = {
+        "data": [
+            {
+                "id": "si_plan",
+                "quantity": 1,
+                "price": {
+                    "product": "hubra_plan_starter",
+                    "unit_amount": 3000,
+                    "recurring": {"interval": "month"},
+                },
+            },
+            {
+                "id": "si_polls",
+                "quantity": 10,
+                "price": {
+                    "product": {"id": "hubra_module_polls"},
+                    "unit_amount": 100,
+                    "recurring": {"interval": "month"},
+                },
+            },
+        ]
+    }
+    assert service.sync(club) is False  # already in step
+    monkeypatch.setattr(quotas, "member_count", lambda t: 11)
+    assert service.sync(club) is True
+    update = stripe.made("POST", "/v1/subscriptions/sub_1")[-1]
+    assert update == {
+        "items[0][id]": "si_polls",
+        "items[0][quantity]": "11",
+        "proration_behavior": "create_prorations",
+    }
 
 
 def _signed(body: dict, secret=WEBHOOK_SECRET, stamp=None):
@@ -302,6 +395,45 @@ def test_club_routes_need_the_right(
     assert client.get("/api/v1/app/billing/invoices").get_json() == {"items": []}
     url = client.post("/api/v1/app/billing/checkout").get_json()["url"]
     assert url == "https://checkout.stripe.test/cs_1"
+    contact = {
+        "email": "rechnung@club.test",
+        "street": "Seeweg",
+        "houseNo": "3",
+        "postalCode": "8000",
+        "city": "Zürich",
+        "country": "ch",
+    }
+    saved = client.put("/api/v1/app/billing/contact", json=contact).get_json()
+    assert saved["own"] is True and saved["country"] == "CH"
+    assert client.get("/api/v1/app/billing/contact").get_json() == saved
+    bad = client.put("/api/v1/app/billing/contact", json={**contact, "email": "x"})
+    assert bad.status_code == 400
+
+
+def test_contact_falls_back_to_club_settings_and_reaches_stripe(stripe, club, db):
+    from hubra.core.models.setting import Setting
+
+    db.session.add(Setting(key="Club.Contact.FinanceEmail", value="kasse@club.test"))
+    db.session.commit()
+    c = service.contact(club)
+    assert c["email"] == "kasse@club.test" and c["own"] is False
+    # Without a Stripe customer only Hubra stores it.
+    body = {"email": "rechnung@club.test", "postalCode": "3000", "city": "Bern"}
+    assert service.set_contact(club, body)["email"] == "rechnung@club.test"
+    assert stripe.made("POST", "/v1/customers/cus_1") == []
+    # With one, the customer is updated at once.
+    service.checkout(club, "admin@club.test", "https://s", "https://c")
+    made = stripe.made("POST", "/v1/customers")[0]
+    assert made["email"] == "rechnung@club.test"
+    assert made["address[city]"] == "Bern"
+    service.set_contact(club, {**body, "email": "neu@club.test", "street": "Gasse"})
+    update = stripe.made("POST", "/v1/customers/cus_1")[0]
+    assert update["email"] == "neu@club.test"
+    assert update["address[line1]"] == "Gasse"
+    assert update["address[country]"] == "CH"
+    with pytest.raises(ApiError) as missing_city:
+        service.set_contact(club, {"email": "a@b.ch", "postalCode": "3000"})
+    assert missing_city.value.fields == {"city": "Postal code and city go together"}
 
 
 def test_stripe_errors_keep_their_text_out_of_answers():
@@ -515,3 +647,157 @@ def test_a_club_paying_live_cannot_become_sandbox(
     )
     assert resp.status_code == 409
     assert resp.get_json()["error"] == "LIVE_SUBSCRIPTION"
+
+
+def test_club_platform_fee_overrides_the_default(stripe, club, db, app):
+    from flask import g
+
+    platform_settings.set_many({"payments.fee_percent": "1.5"})
+    with app.test_request_context():
+        assert platform_settings.stripe().fee_percent == 1.5
+        g.tenant = club
+        assert platform_settings.stripe().fee_percent == 1.5
+        club_billing.update(club, {"payments_fee_percent": 3})
+        assert platform_settings.stripe().fee_percent == 3.0
+        club_billing.update(club, {"payments_fee_percent": 0})
+        assert platform_settings.stripe().fee_percent == 0.0
+        club_billing.update(club, {"payments_fee_percent": None})
+        assert platform_settings.stripe().fee_percent == 1.5
+    with pytest.raises(ApiError):
+        club_billing.update(club, {"payments_fee_percent": 11})
+    with pytest.raises(ApiError):
+        club_billing.update(club, {"payments_fee_percent": True})
+
+
+def test_club_changes_its_plan_and_add_ons(
+    client,
+    stripe,
+    club,
+    db,
+    auth_headers,
+    plain_member_token,  # noqa: F811
+    monkeypatch,
+):
+    from hubra.api.billing import routes
+    from hubra.core.services import quotas
+
+    monkeypatch.setattr(routes, "current_tenant", lambda: club)
+    monkeypatch.setattr(quotas, "member_count", lambda t: 12)
+    plans.update(plans.get("starter"), {"public": True})
+    plans.create(
+        {"key": "club", "name_de": "Club", "price_month_chf": "60", "public": True}
+    )
+    plans.create(
+        {"key": "tiny", "name_de": "Tiny", "public": True, "limit_members": 10}
+    )
+    plans.create({"key": "deal", "name_de": "Deal", "public": False})
+    plans.set_addon(
+        "polls", {"price_month_chf": "2", "price_unit": "member", "public": True}
+    )
+    plans.set_addon(
+        "groups", {"price_month_chf": "5", "price_unit": "license", "public": True}
+    )
+    club.plan = "starter"
+    db.session.commit()
+
+    # Any member sees the prices; changing needs the billing right.
+    _login_member(client, "admin@test.ch")
+    cat = client.get("/api/v1/app/billing/catalog").get_json()
+    assert [p["key"] for p in cat["plans"]] == ["starter", "club", "tiny"]
+    offered = {a["code"]: a for a in cat["addons"]}
+    assert offered["polls"]["source"] is None
+    assert offered["polls"]["price_month_chf"] == "2.00"
+
+    r = client.put("/api/v1/app/billing/plan", json={"plan": "deal"})
+    assert r.status_code == 400
+    r = client.put("/api/v1/app/billing/plan", json={"plan": "tiny"})
+    assert r.status_code == 409 and r.get_json()["error"] == "PLAN_TOO_SMALL"
+    r = client.put("/api/v1/app/billing/plan", json={"plan": "club"})
+    assert r.status_code == 200 and r.get_json()["plan"] == "club"
+    assert club.plan == "club"
+
+    r = client.put("/api/v1/app/billing/addons/polls", json={"on": True})
+    assert r.status_code == 200, r.get_json()
+    line = next(x for x in r.get_json()["module_lines"] if x["code"] == "polls")
+    assert line["quantity"] == 12 and line["total_chf"] == "24.00"
+    r = client.put(
+        "/api/v1/app/billing/addons/groups", json={"on": True, "licenses": 3}
+    )
+    line = next(x for x in r.get_json()["module_lines"] if x["code"] == "groups")
+    assert line["quantity"] == 3 and line["total_chf"] == "15.00"
+    bad = client.put("/api/v1/app/billing/addons/polls", json={"licenses": 3})
+    assert bad.status_code == 400
+    r = client.put("/api/v1/app/billing/addons/polls", json={"on": False})
+    assert all(x["code"] != "polls" for x in r.get_json()["module_lines"])
+    assert (
+        client.put("/api/v1/app/billing/addons/nope", json={"on": True}).status_code
+        == 404
+    )
+
+    _login_member(client, "plain@test.ch")
+    assert client.get("/api/v1/app/billing/catalog").status_code == 200
+    r = client.put("/api/v1/app/billing/plan", json={"plan": "starter"})
+    assert r.status_code == 403
+
+
+def test_licences_go_to_members(
+    stripe,
+    club,
+    db,
+    app,
+    monkeypatch,
+    plain_member_token,  # noqa: F811
+):
+    from flask import g
+
+    from hubra.core.models.member import Member
+    from hubra.core.modules import gate, registry
+    from hubra.core.services import licenses
+
+    ids = list(db.session.scalars(select_member_ids()))[:3]
+    assert len(ids) >= 2
+    club_billing.update(
+        club,
+        {
+            "addons": [
+                {"code": "polls", "label": "Polls", "price_chf": "5", "unit": "license"}
+            ],
+            "licenses": {"polls": 1},
+        },
+    )
+    assert licenses.licensed_modules(club) == {"polls": 1}
+    assert licenses.may_use(club, "events", ids[0]) is True  # not licensed
+    assert licenses.may_use(club, "polls", ids[0]) is False
+    with pytest.raises(ApiError) as too_many:
+        licenses.set_holders(club, "polls", ids[:2])
+    assert too_many.value.code == "TOO_MANY_HOLDERS"
+    with pytest.raises(ApiError):
+        licenses.set_holders(club, "polls", [999999])
+    with pytest.raises(ApiError):
+        licenses.set_holders(club, "events", ids[:1])
+    licenses.set_holders(club, "polls", ids[:1])
+    assert licenses.may_use(club, "polls", ids[0]) is True
+    assert licenses.unlicensed_for(club, ids[1]) == {"polls"}
+    rows = licenses.holder_rows(club)["polls"]
+    assert rows[0]["id"] == ids[0] and rows[0]["name"]
+    assert db.session.get(Member, ids[0]) is not None
+
+    # The gate: the holder passes, anyone else gets LICENSE_REQUIRED.
+    module = registry.get("polls")
+    with app.test_request_context("/api/v1/app/polls/"):
+        g.tenant = club
+        monkeypatch.setattr(gate, "_member_id", lambda: ids[0])
+        assert gate._license_check(module) is None
+        g._licensed_modules = None
+        monkeypatch.setattr(gate, "_member_id", lambda: ids[1])
+        resp = gate._license_check(module)
+        assert resp.status_code == 403
+        assert resp.get_json()["error"] == "LICENSE_REQUIRED"
+
+
+def select_member_ids():
+    from sqlalchemy import select
+
+    from hubra.core.models.member import Member
+
+    return select(Member.id).where(Member.archived_at.is_(None)).order_by(Member.id)

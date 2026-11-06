@@ -268,8 +268,8 @@ const FIELD_DE: Record<string, [string, string]> = {
     'Signing Secret (whsec_…) desselben Webhooks in der Stripe-Sandbox. Wird verschlüsselt gespeichert',
   ],
   'payments.fee_percent': [
-    'Plattformgebühr',
-    'Anteil jeder Online-Zahlung für die Plattform (%), zusätzlich zu den Stripe-Gebühren, die der Verein trägt. 0: keine',
+    'Hubra-Gebühr',
+    'Anteil jeder Online-Zahlung für Hubra (%), zusätzlich zu den Stripe-Gebühren. Der Verein trägt beide oder gibt sie als Zuschlag an die Mitglieder weiter. 0: keine',
   ],
   'discord.client_id': [
     'Discord-Application-ID',

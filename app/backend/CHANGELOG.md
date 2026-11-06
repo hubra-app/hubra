@@ -7,10 +7,24 @@ section and position, or the apps show that version in English.
 
 ## [Unreleased]
 
+### Added
+
+- Licences go to members: for a module priced per licence the club assigns each licence to a member (Settings › Hubra subscription › Assign). Only holders see and use the module; everyone else gets "licence required".
+- Hubra subscription: clubs see a full breakdown (quantities per member or licence, what the plan includes), switch to another public plan, and take or drop paid add-on modules with their licences under Settings › Hubra subscription. Settings › Modules shows the price of paid modules; switching one on asks first and books it.
+- Hubra fee (formerly platform fee) on online payments per club: manage › All clubs › club › Billing can set a club's own percentage instead of the default; the club sees it on its subscription tab.
+- Hubra subscription: clubs set the email and address for Hubra's invoices under Settings › Hubra subscription › Billing details; saving updates Stripe at once.
+
 ### Changed
 
 - **Sandbox and live Stripe keys, sandbox clubs**: Online payments and Hubra's billing each take a live key and a sandbox key (and billing a webhook secret for each), and manage › Payments has a Stripe mode switch, Sandbox or Live (default Sandbox). Sandbox clubs (manage › club › Sandbox club, or when creating a club) are demo and test clubs: they always use the sandbox keys, even when the platform is live, and are left out of revenue. Stripe's ids are kept per mode, and webhook events from the other mode are ignored. A test key stored in the old single key field keeps working as the sandbox key. See docs/billing.md, "Sandbox and live".
+- Hubra subscription: changes during the month are billed pro rata on the next invoice (a member who joins, an add-on taken, a plan change; credits for the reverse). Only the subscription items that changed are updated in Stripe.
 - **Releases carry their changelog**: the GitHub release of a Hubra version shows that version's changelog section as its description and has it attached as `CHANGELOG.md` (also in `SHA256SUMS`). A release whose changelog section is empty now stops at the first check instead of going out without notes. The entries of 0.2.2 had landed under 0.2.1 and are now in their own section.
+
+### Fixed
+
+- Plugins built before Hubra 0.2 moved `hubra.api.auth.helpers`, `hubra.api.permissions`, `hubra.api.utils` and `hubra.api.notifications.services` to `hubra.core` load again on the app, global and platform backend images. Those images had left the old names out ("ModuleNotFoundError: No module named 'hubra.api.auth.helpers'").
+- Plugin catalogue in manage: a plugin that loads in manage but fails in the club backend or a worker (for example an import error) now shows the error and where it happened, instead of a green check.
+- Hubra subscription: Stripe invoices now show the club's billing address. Checkout asks for it (prefilled from the club's address in its settings) and the club's finance email is used when set.
 
 ## [0.2.2] - 2026-11-06
 

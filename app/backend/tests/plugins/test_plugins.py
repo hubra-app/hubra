@@ -565,6 +565,26 @@ def test_marketplace_lists_bundled_plugins(client, superadmin):
     assert body["updateMode"] == "notify"
 
 
+def test_marketplace_shows_errors_from_the_club_backend(
+    client, superadmin, monkeypatch
+):
+    """A plugin that loads here (manifest only) but fails in the club backend."""
+    reports = [
+        {
+            "component": "api",
+            "host": "backend-1",
+            "plugins": {
+                "notes": {"version": "", "loaded": False, "error": "ImportError: x"}
+            },
+        }
+    ]
+    monkeypatch.setattr("hubra.core.build_info.reported", lambda: reports)
+    body = client.get("/api/v1/manager/plugins/?fetch=0").get_json()
+    notes = next(p for p in body["plugins"] if p["id"] == "notes")
+    assert notes["error"] == "ImportError: x (api)"
+    assert notes["processErrors"][0]["host"] == "backend-1"
+
+
 def test_upload_and_confirm_over_the_api(client, superadmin, tmp_path, plugin_dir):
     blob = publish.pack(make_plugin(tmp_path))
     resp = client.post(

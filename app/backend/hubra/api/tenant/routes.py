@@ -427,6 +427,12 @@ def _billing_view(tenant, stripe_error: str | None = None) -> dict:
         "enabled": service.enabled(tenant),
         "testMode": service.test_mode(tenant),
     }
+    # The platform's default fee on online member payments (manage › Payments);
+    # the club's own one is payments_fee_percent in the terms.
+    from hubra.core.services import platform_settings
+
+    payments = platform_settings.stripe()
+    view["payments_fee_default"] = payments.fee_percent if payments else None
     if stripe_error:
         view["stripe"]["error"] = stripe_error
     return view

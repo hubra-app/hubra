@@ -16,7 +16,11 @@ path could import is left out:
   runs them) and the module manifests (``hubra.modules``);
 - the blueprint modules of the role's API area, read from the manifests the
   same way ``hubra.core.roles.registers`` picks them at start-up, plus the
-  shared ones (probes, version, OAuth metadata).
+  shared ones (probes, version, OAuth metadata);
+- the old module names kept for plugins (``hubra.api.auth.helpers`` and the
+  other ``sys.modules[__name__] = ...`` shims). Hubra's own code never
+  imports them, so the import graph alone would leave them out, and every
+  plugin release built before they moved would fail to load.
 
 Everything that isn't a ``hubra`` module (migrations, templates, seed data,
 requirements, changelogs) goes into every image. tests/test_role_files.py
@@ -130,6 +134,32 @@ def _closure(starts: set[str], modules: dict[str, Path]) -> set[str]:
     return seen
 
 
+def _is_shim(path: Path) -> bool:
+    """A module that replaces itself with the module it moved to
+    (``sys.modules[__name__] = _moved``), kept for older plugins."""
+    tree = ast.parse(path.read_text(), filename=str(path))
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign):
+            continue
+        for target in node.targets:
+            if (
+                isinstance(target, ast.Subscript)
+                and isinstance(target.value, ast.Attribute)
+                and target.value.attr == "modules"
+                and isinstance(target.value.value, ast.Name)
+                and target.value.value.id == "sys"
+                and isinstance(target.slice, ast.Name)
+                and target.slice.id == "__name__"
+            ):
+                return True
+    return False
+
+
+def compat_modules(root: Path) -> set[str]:
+    """The old module names that stay importable for plugins."""
+    return {name for name, path in _modules(root).items() if _is_shim(path)}
+
+
 # ── Entry points ─────────────────────────────────────────────────────────────
 
 
@@ -181,6 +211,8 @@ def role_modules(role: str, root: Path) -> set[str]:
     starts.update(n for n in modules if n == "hubra.core" or n.startswith("hubra.core."))
     starts.update(n for n in modules if n == "hubra.modules" or n.startswith("hubra.modules."))
     starts.update(bp[0] for bp in role_blueprints(role, root))
+    # Plugins import these; Hubra itself doesn't.
+    starts.update(n for n in modules if _is_shim(modules[n]))
     return _closure(starts, modules)
 
 
