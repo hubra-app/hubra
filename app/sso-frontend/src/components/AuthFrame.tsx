@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Box, Group, SegmentedControl, Stack, Text, Title } from '@mantine/core'
-import { ThemeToggle } from '@hubra/ui'
+import { LegalFooter, ThemeToggle } from '@hubra/ui'
 import { themeLabels, useLang, type Lang } from '@/lang'
 
 /**
@@ -36,6 +36,16 @@ export function AuthFrame({ children, wide = false }: { children: ReactNode; wid
             </Group>
           </Group>
           {children}
+          <Box mt={40}>
+            <LegalFooter
+              ta="center"
+              labels={{
+                privacy: tr('Datenschutz', 'Privacy'),
+                terms: tr('Nutzungsbedingungen', 'Terms'),
+                imprint: tr('Impressum', 'Imprint'),
+              }}
+            />
+          </Box>
         </Box>
       </main>
       <BrandPanel />

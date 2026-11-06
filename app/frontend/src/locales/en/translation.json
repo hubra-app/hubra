@@ -2539,7 +2539,10 @@
       "appearance": "Appearance",
       "light": "Light",
       "dark": "Dark",
-      "system": "Like device"
+      "system": "Like device",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "imprint": "Imprint"
     },
     "whatsNew": {
       "changelogSoon": "Changelog coming soon.",

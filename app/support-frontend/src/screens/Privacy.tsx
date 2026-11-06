@@ -15,7 +15,7 @@ import {
   ThemeIcon,
 } from '@mantine/core'
 import { IconAlertTriangle, IconDownload, IconTrash } from '@tabler/icons-react'
-import { Modal } from '@hubra/ui'
+import { Modal, useLegalLinks } from '@hubra/ui'
 import { Page } from '@/components/Layout'
 import { SignInNeeded } from '@/components/SignInNeeded'
 import { useAuth } from '@/auth'
@@ -31,6 +31,7 @@ import { deleteAccount, deletionCheck, downloadExport } from '@/api/support'
 export function PrivacyScreen() {
   const { tr } = useLang()
   const { status } = useAuth()
+  const privacyUrl = useLegalLinks()?.privacyUrl ?? 'https://hubra.club/datenschutz/'
   return (
     <Page
       narrow
@@ -46,7 +47,7 @@ export function PrivacyScreen() {
           <DeleteCard />
           <Text size="sm" c="dimmed">
             {tr('Mehr dazu in der', 'More in the')}{' '}
-            <Anchor href="https://hubra.club/datenschutz" size="sm">
+            <Anchor href={privacyUrl} size="sm">
               {tr('Datenschutzerklärung', 'privacy policy')}
             </Anchor>
             . {tr('Fragen?', 'Questions?')}{' '}

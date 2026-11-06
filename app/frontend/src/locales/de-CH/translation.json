@@ -2539,7 +2539,10 @@
       "appearance": "Darstellung",
       "light": "Hell",
       "dark": "Dunkel",
-      "system": "Wie Gerät"
+      "system": "Wie Gerät",
+      "privacy": "Datenschutz",
+      "terms": "Nutzungsbedingungen",
+      "imprint": "Impressum"
     },
     "whatsNew": {
       "changelogSoon": "Die Änderungshistorie folgt bald.",

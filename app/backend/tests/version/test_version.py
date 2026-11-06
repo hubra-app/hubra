@@ -247,3 +247,21 @@ def test_changelog_endpoint_takes_a_language(client):
     resp = client.get("/api/v1/version/changelog?lang=de")
     assert resp.status_code == 200
     assert any(e["lang"] == "de" for e in resp.get_json()["entries"])
+
+
+def test_instance_lists_the_legal_pages(client, db):
+    from hubra.core.services import platform_settings
+
+    body = client.get("/api/v1/instance").get_json()
+    assert body["legal"] == {
+        "privacyUrl": "https://hubra.club/datenschutz/",
+        "termsUrl": "https://hubra.club/nutzungsbedingungen/",
+        "imprintUrl": "https://hubra.club/impressum/",
+    }
+    platform_settings.set_many(
+        {"legal.terms_url": "https://example.test/agb", "legal.imprint_url": ""}
+    )
+    db.session.commit()
+    body = client.get("/api/v1/instance").get_json()
+    assert body["legal"]["termsUrl"] == "https://example.test/agb"
+    assert body["legal"]["imprintUrl"] is None

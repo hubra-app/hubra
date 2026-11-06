@@ -463,6 +463,7 @@ export function navSections(): NavSection[] {
                 <Stack gap="lg">
                   <SettingsSection section="payments" />
                   <SettingsSection section="billing" />
+                  <SettingsSection section="legal" />
                 </Stack>
               ),
             },

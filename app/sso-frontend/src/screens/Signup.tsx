@@ -16,6 +16,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import * as authApi from '@/api/auth'
+import { LegalConsent } from '@hubra/ui'
 import { AuthFrame } from '@/components/AuthFrame'
 import { useLang } from '@/lang'
 
@@ -33,7 +34,7 @@ function passwordStrength(password: string, tr: (de: string, en: string) => stri
 
 export function SignupScreen() {
   const { notify, continueSignedIn } = useSso()
-  const { tr } = useLang()
+  const { tr, lang } = useLang()
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -140,6 +141,24 @@ export function SignupScreen() {
           label={tr('Angemeldet bleiben', 'Keep me signed in')}
           checked={keepSignedIn}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setKeepSignedIn(e.currentTarget.checked)}
+        />
+
+        <LegalConsent
+          labels={{
+            terms: tr('Nutzungsbedingungen', 'terms of service'),
+            privacy: tr('Datenschutzerklärung', 'privacy policy'),
+          }}
+          render={(terms, privacy) =>
+            lang === 'de' ? (
+              <>
+                Mit dem Konto akzeptierst du die {terms} und die {privacy} von Hubra.
+              </>
+            ) : (
+              <>
+                By creating an account you accept Hubra&apos;s {terms} and {privacy}.
+              </>
+            )
+          }
         />
 
         <Button size="md" fullWidth onClick={handleSignup} loading={loading} mt={4}>

@@ -303,6 +303,16 @@ Each slot only takes a key of its mode (`sk_live_` in the live slot,
 `sk_test_` in the sandbox slot). A test key stored in a live slot before
 there were two keeps working as the sandbox key, and is never used live.
 
+### Privacy policy and terms of service
+
+Stripe asks for Hubra's privacy policy and terms of service URLs (dashboard:
+Settings › Public details, and Connect › Platform profile for the Connect
+platform). Use the same addresses as the platform settings `legal.privacy_url`
+and `legal.terms_url` (manage › Payments › Legal pages; defaults
+https://hubra.club/datenschutz/ and https://hubra.club/nutzungsbedingungen/).
+Hubra links them itself on sign-up, in the footers (`GET /api/v1/instance`
+returns them as `legal`) and above the pay button of Stripe Checkout.
+
 ## Which Stripe account
 
 Hubra is not a registered company yet. Until it is, the seller is

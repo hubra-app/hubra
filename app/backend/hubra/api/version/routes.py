@@ -43,6 +43,17 @@ def get_roadmap():
 
 @version_bp.get("/instance")
 def get_instance():
-    """Tell the SPAs where the SSO portal is, before anyone signs in."""
+    """Tell the SPAs where the SSO portal is and where Hubra's legal pages
+    are (platform settings ``legal.*``), before anyone signs in."""
+    from hubra.core.services import platform_settings
+
     sso = current_app.config.get("SSO_BASE_URL", "")
-    return jsonify({"ssoUrl": str(sso).rstrip("/") or None}), 200
+    return (
+        jsonify(
+            {
+                "ssoUrl": str(sso).rstrip("/") or None,
+                "legal": platform_settings.legal_links(),
+            }
+        ),
+        200,
+    )
