@@ -116,6 +116,8 @@ function verify(secret, header, rawBody, tolerance = 300) {
 Answer with any `2xx` within 5 seconds; do slow work afterwards. Anything
 else (another status, a timeout, no connection) counts as failed and is
 sent again after 1 minute, 10 minutes and 1 hour. A `ping` is not retried.
+If a retry is lost (Redis restarted), a sweep every five minutes sends the
+deliveries that are more than five minutes overdue.
 
 After 20 failed deliveries in a row the webhook switches itself off and
 says so in the settings. Fix the address and switch it back on; that resets

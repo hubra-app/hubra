@@ -161,6 +161,15 @@ flask contracts outbox [--dead] # rows per status, or the dead ones
 flask contracts retry <uid>     # another round for a dead row
 ```
 
+## Jobs queued after the commit
+
+`delay_after_commit(task, ...)` (`hubra/core/tasks/after_commit.py`) uses the
+same table: just before the commit each held task becomes a row of kind
+`job`, and delivering it queues the real Celery task. A mail, push or Discord
+message for a committed change therefore reaches the queue even when Redis
+was down at the commit. Arguments that aren't plain JSON go straight to the
+broker after the commit, as before; in tests (eager Celery) nothing changes.
+
 ## Ready for a message broker
 
 Nothing here assumes Celery:

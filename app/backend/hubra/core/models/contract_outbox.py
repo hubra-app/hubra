@@ -37,7 +37,7 @@ class ContractMessage(db.Model):
     # The event or command (the envelope's id): shared by the deliveries
     # of one event to several subscribers.
     message_id: Mapped[str] = mapped_column(db.String(36), nullable=False, index=True)
-    # event | action
+    # event | action | job (a Celery task queued after the commit)
     kind: Mapped[str] = mapped_column(db.String(10), nullable=False)
     name: Mapped[str] = mapped_column(db.String(120), nullable=False)
     # The module that handles it, and for an event its handler.

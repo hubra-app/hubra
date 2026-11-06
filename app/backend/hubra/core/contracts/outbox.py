@@ -80,6 +80,35 @@ def add(
     return uid
 
 
+def add_job(task_name: str, args: list, kwargs: dict) -> str:
+    """Store "queue Celery task *task_name*" in the caller's transaction
+    (``tasks.after_commit.delay_after_commit``). Delivering the row queues
+    the task, in the club the caller was in."""
+    from hubra.core.tenant.context import current_tenant
+
+    try:
+        tenant = current_tenant()
+    except RuntimeError:
+        tenant = None
+    tid = getattr(tenant, "id", None)
+    env = transport_mod.envelope(
+        kind="job",
+        name=task_name,
+        version=1,
+        data={"args": args, "kwargs": kwargs},
+        tenant_id=tid,
+        source="core",
+    )
+    return add(
+        kind="job",
+        name=task_name[:120],
+        module_code="core",
+        target=task_name,
+        tenant_id=tid,
+        env=env,
+    )
+
+
 # ── After the commit ────────────────────────────────────────────────────────
 
 
@@ -171,6 +200,8 @@ def deliver(uid: str) -> str:
     try:
         if kind == "event":
             _run_event(module_code, target, env)
+        elif kind == "job":
+            _run_job(target, env)
         else:
             _run_action(name, env)
     except _Skip as exc:
@@ -263,6 +294,17 @@ def _run_event(module_code: str, target: str, env: dict) -> None:
     extra = {"event_id": env["id"]} if _accepts_event_id(fn) else {}
     fn(tenant_id=tid, **dict(env.get("data") or {}), **extra)
     db.session.commit()
+
+
+def _run_job(task_name: str, env: dict) -> None:
+    """Queue the Celery task; the row is done once the broker has it."""
+    from hubra.core.tasks import celery_app
+
+    task = celery_app.tasks.get(task_name)
+    if task is None:
+        raise ContractError(f"no task {task_name} in this process")
+    data = env.get("data") or {}
+    task.delay(*list(data.get("args") or []), **dict(data.get("kwargs") or {}))
 
 
 def _run_action(name: str, env: dict) -> None:

@@ -72,6 +72,8 @@ says what a second run used to cause; it doesn't happen any more.
 | `plugin-updates` | every 6 h, :40 | Duplicate "update available" notices |
 | `discord-role-sync` (Discord plugin) | 24 h | Duplicate Discord API calls, rate limits |
 | `inbox-sync-5min` (IMAP inbox plugin) | 5 min | Two fetches importing the same mail |
+| `webhook-retry-sweep` (webhooks module) | 5 min | The same overdue delivery sent twice |
+| `contract-outbox-every-minute` | 60 s | Harmless, each row is claimed once |
 
 Other background work is per process and meant to be:
 
