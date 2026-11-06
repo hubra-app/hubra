@@ -13,6 +13,12 @@ The club picks a source in Finanzen › Beitragsgrundlage:
 
 ``recurring`` and ``last_year`` add an optional extra amount for costs that
 are neither (repairs, events).
+
+A plugin offers a source as a query contract named
+``<module>.fee_basis.<source>`` (input ``{"on": date}``, output
+``{"lines": [...], "period": {...} | None}``; see ``contracts.py``). The
+older ``register_basis_source`` and ``register_source`` still work for
+plugins that don't offer the contract yet.
 """
 
 from __future__ import annotations
@@ -60,6 +66,24 @@ def register_source(code: str, module: str, lines: Callable[[int], list[dict] | 
     _PLUGIN_SOURCES[code] = (module, lines)
 
 
+_CONTRACT_MARK = ".fee_basis."
+
+
+def _contract_sources() -> dict[str, str]:
+    """source code -> the query contract that offers it."""
+    from hubra.core.contracts import QUERY
+    from hubra.core.contracts.registry import offers
+
+    found: dict[str, str] = {}
+    for name, offer in offers().items():
+        if offer.contract.kind != QUERY or _CONTRACT_MARK not in name:
+            continue
+        code = name.rsplit(_CONTRACT_MARK, 1)[1]
+        if code and "." not in code and code != "manual":
+            found.setdefault(code, name)
+    return found
+
+
 def _decimal(value, default: Decimal = Decimal(0)) -> Decimal:
     try:
         number = Decimal(str(value))
@@ -81,7 +105,11 @@ def basis_settings(overrides: dict | None = None) -> dict:
 
     config = {**get_config("finance"), **(overrides or {})}
     source = config.get("fee_basis_source") or "manual"
-    if source not in SOURCES and source not in _BASIS_SOURCES:
+    if (
+        source not in SOURCES
+        and source not in _BASIS_SOURCES
+        and source not in _contract_sources()
+    ):
         source = "manual"
     manual = config.get("fee_basis_manual")
     return {
@@ -103,9 +131,13 @@ def _billing_year(today: date) -> tuple[date, date]:
 
 def available_sources() -> list[str]:
     """``manual``, and the registered sources whose module is on."""
+    from hubra.core.contracts import available
     from hubra.core.modules import is_enabled
 
     sources = ["manual"]
+    for code, name in _contract_sources().items():
+        if code not in sources and available(name):
+            sources.append(code)
     for registry in (_BASIS_SOURCES, _PLUGIN_SOURCES):
         for code, (module, _fn) in registry.items():
             if code not in sources and is_enabled(module):
@@ -121,7 +153,20 @@ def fee_basis(overrides: dict | None = None, today: date | None = None) -> dict:
     lines: list[dict] = []
     period = None
     note = None
-    if source in _BASIS_SOURCES:
+    contract = _contract_sources().get(source)
+    if contract is not None:
+        if source in available_sources():
+            from hubra.core.contracts import SYSTEM, query
+
+            found = query(contract, on=today.isoformat(), actor=SYSTEM)
+            lines = [
+                {**line, "amount": _decimal(line.get("amount"))}
+                for line in found.get("lines") or []
+            ]
+            period = found.get("period")
+        else:
+            note = f"NO_{source.upper()}"
+    elif source in _BASIS_SOURCES:
         if source in available_sources():
             found, period = _BASIS_SOURCES[source][1](today)
             lines = [{**line, "amount": _decimal(line.get("amount"))} for line in found]

@@ -135,3 +135,77 @@ def test_a_registered_source_with_its_own_period(app, db, books, monkeypatch):
     assert "ledger" not in basis["sources"]
     assert basis["note"] == "NO_LEDGER"
     assert basis["total"] == 50
+
+
+# ── Sources offered as contracts (docs/contracts.md) ────────────────────────
+
+
+def hall_source(ctx, data):
+    return {
+        "lines": [{"category_id": None, "name": "Halle", "amount": 1500}],
+        "period": {"year": data.on.year},
+    }
+
+
+def broken_source(ctx, data):
+    raise RuntimeError("boom")
+
+
+@pytest.fixture
+def contract_source(app, db, monkeypatch):
+    from hubra.api.finance.contracts import FeeBasisIn, FeeBasisOut
+    from hubra.core.contracts import query_contract
+    from hubra.core.modules import Module, registry
+
+    def offer(handler):
+        module = Module(
+            code="demo.hall",
+            name="Hall",
+            provides=(
+                query_contract(
+                    "demo.hall.fee_basis.hall",
+                    f"{__name__}:{handler}",
+                    input=FeeBasisIn,
+                    output=FeeBasisOut,
+                ),
+            ),
+        )
+        monkeypatch.setitem(registry._modules, "demo.hall", module)
+
+    monkeypatch.setattr(
+        "hubra.core.modules.state.is_enabled", lambda code, tenant_id=None: True
+    )
+    return offer
+
+
+def test_a_source_offered_as_a_query(app, db, books, contract_source):
+    contract_source("hall_source")
+    with _config(fee_basis_source="hall", fee_basis_extra=100):
+        basis = fee_basis(today=date(2026, 10, 31))
+    assert "hall" in basis["sources"]
+    assert basis["source"] == "hall"
+    assert basis["period"] == {"year": 2026}
+    assert basis["total"] == 1600
+    assert basis["lines"][0]["name"] == "Halle"
+
+
+def test_a_query_source_whose_module_is_off(
+    app, db, books, contract_source, monkeypatch
+):
+    contract_source("hall_source")
+    monkeypatch.setattr(
+        "hubra.core.modules.state.is_enabled", lambda code, tenant_id=None: False
+    )
+    with _config(fee_basis_source="hall", fee_basis_extra=50):
+        basis = fee_basis(today=date(2026, 10, 31))
+    assert "hall" not in basis["sources"]
+    assert basis["note"] == "NO_HALL"
+    assert basis["total"] == 50
+
+
+def test_a_broken_query_source_falls_back_to_the_old_setting(
+    app, db, books, contract_source
+):
+    contract_source("broken_source")
+    with _config(fee_basis_source="hall"):
+        assert fb.yearly_expenses() == Decimal("7000")
