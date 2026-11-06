@@ -81,7 +81,11 @@ export function BuildsPanel({ health }: { health: HealthDetail }) {
     'platform-worker': tr('Plattform-Worker', 'Platform worker'),
   }
   const byComponent = new Map<string, BuildReport[]>()
-  for (const r of reports) byComponent.set(r.component, [...(byComponent.get(r.component) ?? []), r])
+  for (const r of reports) {
+    // Beat from a release before the fix reported as platform-beat (role image).
+    const component = r.component === 'platform-beat' ? 'beat' : r.component
+    byComponent.set(component, [...(byComponent.get(component) ?? []), r])
+  }
 
   // API, worker and beat always run; others (the Discord gateway) show once they report.
   const components = [...new Set(['api', 'worker', 'beat', ...byComponent.keys()])]
