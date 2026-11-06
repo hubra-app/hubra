@@ -58,6 +58,7 @@ _GLOBAL_ONLY_TABLES = frozenset(
         "passkeys",
         "push_subscriptions",
         "club_invites",
+        "federation_links",
         # API tokens: found before the request's club is known.
         "api_tokens",
         "oauth_clients",

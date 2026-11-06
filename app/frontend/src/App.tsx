@@ -27,6 +27,11 @@ const DashboardScreen = lazy(() =>
     default: m.DashboardScreen,
   })),
 )
+const FederationScreen = lazy(() =>
+  import('./screens/private/federation/FederationScreen').then((m) => ({
+    default: m.FederationScreen,
+  })),
+)
 const MemberDetailScreen = lazy(() =>
   import('./screens/private/members/MemberDetail').then((m) => ({
     default: m.MemberDetailScreen,
@@ -340,6 +345,14 @@ function PrivateRoutes() {
                   element={
                     <RequireModule code="events">
                       <OperationsTabScreen />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="federation"
+                  element={
+                    <RequireModule code="federation">
+                      <FederationScreen />
                     </RequireModule>
                   }
                 />

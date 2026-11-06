@@ -17,6 +17,7 @@ interface BackendEvent {
   max_attendees: number | null;
   requires_approval: boolean;
   is_public: boolean;
+  federation_shared?: boolean;
   trial_spots?: number | null;
   cover_image_url: string | null;
   color: string | null;
@@ -78,6 +79,7 @@ function adapt(b: BackendEvent): ClubEvent {
     maxAttendees: b.max_attendees ?? null,
     requiresApproval: b.requires_approval ?? false,
     isPublic: b.is_public ?? false,
+    federationShared: b.federation_shared ?? false,
     trialSpots: b.trial_spots ?? null,
     coverImageUrl: b.cover_image_url ?? null,
     color: b.color ?? null,
@@ -121,6 +123,7 @@ export interface EventCreate {
   maxAttendees?: number | null;
   requiresApproval?: boolean;
   isPublic?: boolean;
+  federationShared?: boolean;
   /** Places for people who aren't members yet (trial training). */
   trialSpots?: number | null;
   coverImageUrl?: string;
@@ -150,6 +153,7 @@ export async function createEvent(input: EventCreate): Promise<ClubEvent> {
   if (input.maxAttendees !== undefined) body.max_attendees = input.maxAttendees;
   if (input.requiresApproval !== undefined) body.requires_approval = input.requiresApproval;
   if (input.isPublic !== undefined) body.is_public = input.isPublic;
+  if (input.federationShared !== undefined) body.federation_shared = input.federationShared;
   if (input.trialSpots !== undefined) body.trial_spots = input.trialSpots;
   if (input.coverImageUrl !== undefined) body.cover_image_url = input.coverImageUrl;
   if (input.color !== undefined) body.color = input.color;
@@ -185,6 +189,7 @@ export async function updateEvent(
   if (input.maxAttendees !== undefined) body.max_attendees = input.maxAttendees;
   if (input.requiresApproval !== undefined) body.requires_approval = input.requiresApproval;
   if (input.isPublic !== undefined) body.is_public = input.isPublic;
+  if (input.federationShared !== undefined) body.federation_shared = input.federationShared;
   if (input.trialSpots !== undefined) body.trial_spots = input.trialSpots;
   if (input.coverImageUrl !== undefined) body.cover_image_url = input.coverImageUrl;
   if (input.color !== undefined) body.color = input.color;

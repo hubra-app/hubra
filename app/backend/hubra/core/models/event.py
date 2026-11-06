@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 
+import sqlalchemy as sa
 from sqlalchemy import (
     JSON,
     Column,
@@ -110,6 +111,10 @@ class ClubEvent(db.Model):
         db.Boolean, default=False, nullable=False
     )
     is_public: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+    # Shown to the member clubs of this association (the federation module).
+    federation_shared: Mapped[bool] = mapped_column(
+        db.Boolean, default=False, nullable=False, server_default=sa.text("false")
+    )
     # Places for people who aren't members yet (a trial training), booked on
     # the club's public trial page; None: the event takes no trials.
     trial_spots: Mapped[int | None] = mapped_column(Integer, nullable=True)
