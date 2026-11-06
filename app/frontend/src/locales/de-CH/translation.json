@@ -4348,7 +4348,16 @@
     "addonOff": "Abbestellen",
     "lineMembers": "{{n}} Mitglieder × {{price}}",
     "lineLicenses": "{{n}} Lizenzen × {{price}}",
-    "included": "Im Tarif inklusive: {{list}}"
+    "included": "Im Tarif inklusive: {{list}}",
+    "holdersSaved": "Lizenzen vergeben",
+    "holdersFailed": "Lizenzen nicht gespeichert",
+    "holdersTitle": "Lizenzen für {{name}}",
+    "holdersHint": "Nur Mitglieder mit einer Lizenz sehen und nutzen das Modul. {{used}} von {{max}} vergeben.",
+    "holderRemove": "Lizenz entziehen",
+    "holderAdd": "Lizenz geben an",
+    "holdersFull": "Alle Lizenzen sind vergeben. Für mehr Mitglieder erhöht ihr die Anzahl Lizenzen.",
+    "holdersLine": "{{used}} von {{max}} Lizenzen vergeben",
+    "holdersEdit": "Zuweisen"
   },
   "federation": {
     "invited": "eingeladen",

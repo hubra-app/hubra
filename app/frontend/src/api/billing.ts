@@ -155,6 +155,8 @@ export interface HubraAddonOffer {
    *  addon: the club took it; null: offered. */
   source: 'included' | 'plan' | 'addon' | null
   licenses: number | null
+  /** Members holding a licence (modules priced per licence). */
+  holders: { id: number; name: string }[] | null
 }
 
 export interface HubraCatalog {
@@ -185,5 +187,17 @@ export async function setHubraAddon(
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
+  })
+}
+
+/** Give a licensed module's licences to exactly these members. */
+export async function setHubraLicenseHolders(
+  code: string,
+  memberIds: number[],
+): Promise<{ code: string; holders: { id: number; name: string }[] }> {
+  return apiFetch(`/app/billing/licenses/${encodeURIComponent(code)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ memberIds }),
   })
 }

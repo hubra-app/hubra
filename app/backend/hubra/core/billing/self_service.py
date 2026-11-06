@@ -33,9 +33,10 @@ def _plan_choices(tenant: Tenant) -> list:
 
 
 def catalog(tenant: Tenant) -> dict:
-    from hubra.core.services import club_billing, plans, quotas
+    from hubra.core.services import club_billing, licenses, plans, quotas
 
     names = plans._module_names()
+    held = licenses.holder_rows(tenant)
     current = plans.get(tenant.plan)
     in_plan = (
         {m["code"]: m for m in plans.plan_modules(current, names)} if current else {}
@@ -73,6 +74,8 @@ def catalog(tenant: Tenant) -> dict:
                 "licenses": int(terms["licenses"].get(code, 1))
                 if unit == "license"
                 else None,
+                # Members holding a licence (modules priced per licence).
+                "holders": held.get(code, []) if unit == "license" else None,
             }
         )
     return {

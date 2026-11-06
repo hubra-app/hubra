@@ -4348,7 +4348,16 @@
     "addonOff": "Cancel it",
     "lineMembers": "{{n}} members × {{price}}",
     "lineLicenses": "{{n}} licences × {{price}}",
-    "included": "Included in the plan: {{list}}"
+    "included": "Included in the plan: {{list}}",
+    "holdersSaved": "Licences assigned",
+    "holdersFailed": "Licences not saved",
+    "holdersTitle": "Licences for {{name}}",
+    "holdersHint": "Only members with a licence see and use the module. {{used}} of {{max}} assigned.",
+    "holderRemove": "Take the licence back",
+    "holderAdd": "Give a licence to",
+    "holdersFull": "All licences are assigned. For more members, raise the number of licences.",
+    "holdersLine": "{{used}} of {{max}} licences assigned",
+    "holdersEdit": "Assign"
   },
   "federation": {
     "invited": "invited",

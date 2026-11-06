@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
+  ActionIcon,
+  Anchor,
   Badge,
+  Modal,
   Button,
   Group,
   NumberInput,
@@ -12,8 +15,14 @@ import {
   Text,
   Title,
 } from '@mantine/core'
-import { IconCheck } from '@tabler/icons-react'
-import { chooseHubraPlan, type HubraAddonOffer, type HubraPlanChoice } from '@/api/billing'
+import { IconCheck, IconX } from '@tabler/icons-react'
+import {
+  chooseHubraPlan,
+  setHubraLicenseHolders,
+  type HubraAddonOffer,
+  type HubraPlanChoice,
+} from '@/api/billing'
+import { MemberPicker } from '@/components/MemberPicker'
 import { ConfirmModal } from '@/components/feedback'
 import { useToast } from '@/context/AppContext'
 import { qk } from '@/data/keys'
@@ -182,11 +191,101 @@ function LicenseInput({
   )
 }
 
+/** Who holds the module's licences: only they can use the module. */
+function HoldersModal({ addon, onClose }: { addon: HubraAddonOffer; onClose: () => void }) {
+  const { t } = useT()
+  const { notify } = useToast()
+  const queryClient = useQueryClient()
+  const [list, setList] = useState(addon.holders ?? [])
+  const [saving, setSaving] = useState(false)
+  const max = addon.licenses ?? 1
+  const save = async () => {
+    setSaving(true)
+    try {
+      await setHubraLicenseHolders(
+        addon.code,
+        list.map((h) => h.id),
+      )
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: qk.settings.subscription }),
+        queryClient.invalidateQueries({ queryKey: qk.modules }),
+      ])
+      notify('success', t('subscription.holdersSaved', 'Lizenzen vergeben'))
+      onClose()
+    } catch (err) {
+      notify(
+        'error',
+        t('subscription.holdersFailed', 'Lizenzen nicht gespeichert'),
+        (err as Error).message,
+      )
+    } finally {
+      setSaving(false)
+    }
+  }
+  return (
+    <Modal
+      opened
+      onClose={onClose}
+      title={t('subscription.holdersTitle', 'Lizenzen für {{name}}', { name: addonName(addon) })}
+    >
+      <Stack gap="sm">
+        <Text size="sm" c="dimmed">
+          {t(
+            'subscription.holdersHint',
+            'Nur Mitglieder mit einer Lizenz sehen und nutzen das Modul. {{used}} von {{max}} vergeben.',
+            { used: list.length, max },
+          )}
+        </Text>
+        {list.map((h) => (
+          <Group key={h.id} justify="space-between" wrap="nowrap" data-holder={h.id}>
+            <Text size="sm">{h.name}</Text>
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              aria-label={t('subscription.holderRemove', 'Lizenz entziehen')}
+              onClick={() => setList((l) => l.filter((x) => x.id !== h.id))}
+            >
+              <IconX size={16} />
+            </ActionIcon>
+          </Group>
+        ))}
+        {list.length < max ? (
+          <MemberPicker
+            key={list.length}
+            label={t('subscription.holderAdd', 'Lizenz geben an')}
+            value={null}
+            exclude={list.map((h) => String(h.id))}
+            onChange={(id, m) => {
+              if (id) setList((l) => [...l, { id: Number(id), name: m?.name ?? `#${id}` }])
+            }}
+          />
+        ) : (
+          <Text size="xs" c="dimmed">
+            {t(
+              'subscription.holdersFull',
+              'Alle Lizenzen sind vergeben. Für mehr Mitglieder erhöht ihr die Anzahl Lizenzen.',
+            )}
+          </Text>
+        )}
+        <Group justify="flex-end">
+          <Button variant="default" onClick={onClose}>
+            {t('common.cancel', 'Abbrechen')}
+          </Button>
+          <Button loading={saving} onClick={save}>
+            {t('subscription.save', 'Speichern')}
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
+  )
+}
+
 /** Paid modules: what the plan includes, what the club took, what it can add. */
 export function AddonsCard() {
   const { t } = useT()
   const { data } = useHubraCatalog()
   const sw = useAddonSwitch()
+  const [holding, setHolding] = useState<HubraAddonOffer | null>(null)
   if (!data || data.addons.length === 0) return null
   return (
     <Paper withBorder p="lg">
@@ -237,6 +336,18 @@ export function AddonsCard() {
                     {en() ? a.note_en : a.note_de}
                   </Text>
                 )}
+                {on && a.holders && (
+                  <Text size="xs" data-holders={a.code}>
+                    {t('subscription.holdersLine', '{{used}} von {{max}} Lizenzen vergeben', {
+                      used: a.holders.length,
+                      max: a.licenses ?? 1,
+                    })}
+                    {a.holders.length > 0 && `: ${a.holders.map((h) => h.name).join(', ')}`}{' '}
+                    <Anchor component="button" size="xs" onClick={() => setHolding(a)}>
+                      {t('subscription.holdersEdit', 'Zuweisen')}
+                    </Anchor>
+                  </Text>
+                )}
               </Stack>
               <Group gap="md" align="flex-end">
                 {on && a.unit === 'license' && (
@@ -260,6 +371,7 @@ export function AddonsCard() {
         })}
       </Stack>
       {sw.modal}
+      {holding && <HoldersModal addon={holding} onClose={() => setHolding(null)} />}
     </Paper>
   )
 }

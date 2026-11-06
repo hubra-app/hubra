@@ -503,8 +503,8 @@ def test_club_changes_its_plan_and_add_ons(
     club,
     db,
     auth_headers,
-    plain_member_token,
-    monkeypatch,  # noqa: F811
+    plain_member_token,  # noqa: F811
+    monkeypatch,
 ):
     from hubra.api.billing import routes
     from hubra.core.services import quotas
@@ -566,3 +566,66 @@ def test_club_changes_its_plan_and_add_ons(
     assert client.get("/api/v1/app/billing/catalog").status_code == 200
     r = client.put("/api/v1/app/billing/plan", json={"plan": "starter"})
     assert r.status_code == 403
+
+
+def test_licences_go_to_members(
+    stripe,
+    club,
+    db,
+    app,
+    monkeypatch,
+    plain_member_token,  # noqa: F811
+):
+    from flask import g
+
+    from hubra.core.models.member import Member
+    from hubra.core.modules import gate, registry
+    from hubra.core.services import licenses
+
+    ids = list(db.session.scalars(select_member_ids()))[:3]
+    assert len(ids) >= 2
+    club_billing.update(
+        club,
+        {
+            "addons": [
+                {"code": "polls", "label": "Polls", "price_chf": "5", "unit": "license"}
+            ],
+            "licenses": {"polls": 1},
+        },
+    )
+    assert licenses.licensed_modules(club) == {"polls": 1}
+    assert licenses.may_use(club, "events", ids[0]) is True  # not licensed
+    assert licenses.may_use(club, "polls", ids[0]) is False
+    with pytest.raises(ApiError) as too_many:
+        licenses.set_holders(club, "polls", ids[:2])
+    assert too_many.value.code == "TOO_MANY_HOLDERS"
+    with pytest.raises(ApiError):
+        licenses.set_holders(club, "polls", [999999])
+    with pytest.raises(ApiError):
+        licenses.set_holders(club, "events", ids[:1])
+    licenses.set_holders(club, "polls", ids[:1])
+    assert licenses.may_use(club, "polls", ids[0]) is True
+    assert licenses.unlicensed_for(club, ids[1]) == {"polls"}
+    rows = licenses.holder_rows(club)["polls"]
+    assert rows[0]["id"] == ids[0] and rows[0]["name"]
+    assert db.session.get(Member, ids[0]) is not None
+
+    # The gate: the holder passes, anyone else gets LICENSE_REQUIRED.
+    module = registry.get("polls")
+    with app.test_request_context("/api/v1/app/polls/"):
+        g.tenant = club
+        monkeypatch.setattr(gate, "_member_id", lambda: ids[0])
+        assert gate._license_check(module) is None
+        g._licensed_modules = None
+        monkeypatch.setattr(gate, "_member_id", lambda: ids[1])
+        resp = gate._license_check(module)
+        assert resp.status_code == 403
+        assert resp.get_json()["error"] == "LICENSE_REQUIRED"
+
+
+def select_member_ids():
+    from sqlalchemy import select
+
+    from hubra.core.models.member import Member
+
+    return select(Member.id).where(Member.archived_at.is_(None)).order_by(Member.id)

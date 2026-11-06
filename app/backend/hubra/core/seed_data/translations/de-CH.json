@@ -4033,5 +4033,14 @@
   "settings.modules.extra": "Aufpreis: {{price}}",
   "subscription.lineMembers": "{{n}} Mitglieder × {{price}}",
   "subscription.lineLicenses": "{{n}} Lizenzen × {{price}}",
-  "subscription.included": "Im Tarif inklusive: {{list}}"
+  "subscription.included": "Im Tarif inklusive: {{list}}",
+  "subscription.holdersSaved": "Lizenzen vergeben",
+  "subscription.holdersFailed": "Lizenzen nicht gespeichert",
+  "subscription.holdersTitle": "Lizenzen für {{name}}",
+  "subscription.holdersHint": "Nur Mitglieder mit einer Lizenz sehen und nutzen das Modul. {{used}} von {{max}} vergeben.",
+  "subscription.holderRemove": "Lizenz entziehen",
+  "subscription.holderAdd": "Lizenz geben an",
+  "subscription.holdersFull": "Alle Lizenzen sind vergeben. Für mehr Mitglieder erhöht ihr die Anzahl Lizenzen.",
+  "subscription.holdersLine": "{{used}} von {{max}} Lizenzen vergeben",
+  "subscription.holdersEdit": "Zuweisen"
 }

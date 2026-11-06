@@ -315,7 +315,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const moduleList = useMemo(() => modulesData ?? [], [modulesData])
   const modulesMap = useMemo(() => {
     const map: Record<string, boolean> = {}
-    for (const m of moduleList) map[m.code] = m.enabled
+    for (const m of moduleList) map[m.code] = m.enabled && m.licensed !== false
     return map
   }, [moduleList])
   const modulesLoaded = modulesData !== undefined

@@ -10,6 +10,7 @@ Club app, ``/api/v1/app/billing`` (needs ``billing.billing.manage``):
   modules page shows the prices)
 * ``PUT  /plan``      switch to another public plan
 * ``PUT  /addons/<code>``  take or drop a paid module, set its licences
+* ``PUT  /licenses/<code>``  give the module's licences to members
 
 Sign-in area, ``/api/v1/global/billing`` (no sign-in, signed by Stripe):
 
@@ -232,6 +233,38 @@ def put_addon(code: str):
         "tenant.addon.self",
         {"code": code, **{k: body[k] for k in ("on", "licenses") if k in body}},
     )
+
+
+@billing_bp.put("/licenses/<string:code>")
+@permission_required(*PERM)
+def put_license_holders(code: str):
+    """``{"memberIds": [..]}``: the members who may use a licensed module."""
+    from hubra.core.models.tenant import GlobalAuditEntry
+    from hubra.core.services import licenses
+
+    tenant = current_tenant()
+    ids = licenses.set_holders(
+        tenant, code, (request.get_json(silent=True) or {}).get("memberIds")
+    )
+    member = get_current_member()
+    db.session.add(
+        GlobalAuditEntry(
+            tenant_id=tenant.id,
+            action="tenant.licenses",
+            target_type="Tenant",
+            target_id=str(tenant.id),
+            details={
+                "code": code,
+                "member_ids": ids,
+                "member_id": getattr(member, "id", None),
+            },
+            ip_address=request.remote_addr,
+        )
+    )
+    db.session.commit()
+    return jsonify(
+        {"code": code, "holders": licenses.holder_rows(tenant).get(code, [])}
+    ), 200
 
 
 @billing_bp.post("/portal")

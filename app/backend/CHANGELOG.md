@@ -9,6 +9,7 @@ section and position, or the apps show that version in English.
 
 ### Added
 
+- Licences go to members: for a module priced per licence the club assigns each licence to a member (Settings › Hubra subscription › Assign). Only holders see and use the module; everyone else gets "licence required".
 - Hubra subscription: clubs see a full breakdown (quantities per member or licence, what the plan includes), switch to another public plan, and take or drop paid add-on modules with their licences under Settings › Hubra subscription. Settings › Modules shows the price of paid modules; switching one on asks first and books it.
 - Hubra fee (formerly platform fee) on online payments per club: manage › All clubs › club › Billing can set a club's own percentage instead of the default; the club sees it on its subscription tab.
 - Hubra subscription: clubs set the email and address for Hubra's invoices under Settings › Hubra subscription › Billing details; saving updates Stripe at once.

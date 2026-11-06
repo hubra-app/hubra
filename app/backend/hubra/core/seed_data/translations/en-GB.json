@@ -4033,5 +4033,14 @@
   "settings.modules.extra": "Extra: {{price}}",
   "subscription.lineMembers": "{{n}} members × {{price}}",
   "subscription.lineLicenses": "{{n}} licences × {{price}}",
-  "subscription.included": "Included in the plan: {{list}}"
+  "subscription.included": "Included in the plan: {{list}}",
+  "subscription.holdersSaved": "Licences assigned",
+  "subscription.holdersFailed": "Licences not saved",
+  "subscription.holdersTitle": "Licences for {{name}}",
+  "subscription.holdersHint": "Only members with a licence see and use the module. {{used}} of {{max}} assigned.",
+  "subscription.holderRemove": "Take the licence back",
+  "subscription.holderAdd": "Give a licence to",
+  "subscription.holdersFull": "All licences are assigned. For more members, raise the number of licences.",
+  "subscription.holdersLine": "{{used}} of {{max}} licences assigned",
+  "subscription.holdersEdit": "Assign"
 }

@@ -172,10 +172,24 @@ Settings › Hubra subscription (permission `billing.billing.manage`):
 - **Settings › Modules** shows each paid module's price; switching on a
   module the club doesn't pay yet asks first and books it.
 
-**Licences** are a number per module that the price is multiplied by
-(`licenses[code]` in the terms). They are not tied to members yet: any
-member with the module's rights uses it, however many licences the club
-pays for.
+**Licences.** A module priced per licence (an add-on with unit
+`license`, or a module the plan adds at a per-licence price) is billed for
+`licenses[code]` licences, and the club gives each licence to a member
+(*Zuweisen* next to the module; `PUT /api/v1/app/billing/licenses/<code>`,
+`hubra/core/services/licenses.py`). **Only holders may use the module:** the
+module gate answers everyone else `403 LICENSE_REQUIRED`, and `GET
+/api/v1/modules/` marks the module `licensed: false` for them so their
+navigation hides it. Rights still apply on top: a holder needs the
+module's permissions as before.
+
+- Holders are stored on the club (`tenants.settings["license_holders"]`,
+  `{code: [member id]}`), at most as many as licences (409
+  `TOO_MANY_HOLDERS`). If manage lowers the count, the first holders keep
+  theirs.
+- A licensed module with no holders is closed to everyone until the club
+  assigns licences, so assign them right after booking.
+- Modules included at no cost, or priced flat or per member, need no
+  licence.
 
 ## Hubra fee on online payments
 
@@ -301,6 +315,7 @@ Club app (`billing.billing.manage`):
 | GET | `/api/v1/app/billing/invoices` | The last 12 Stripe invoices with PDF links |
 | GET | `/api/v1/app/billing/catalog` | Plans the club can pick and paid modules with prices; any member (the modules page shows prices) |
 | PUT | `/api/v1/app/billing/plan` | `{plan}`: switch to a public plan (400, 409 `PLAN_TOO_SMALL`) |
+| PUT | `/api/v1/app/billing/licenses/<code>` | `{memberIds}`: the members who hold the module's licences (409 `TOO_MANY_HOLDERS`, 404 not licensed) |
 | PUT | `/api/v1/app/billing/addons/<code>` | `{on?, licenses?}`: take or drop a paid module, set its licences (404 not offered, 409 `IN_PLAN`, 403 `MODULE_BLOCKED`) |
 
 Platform (manage):
