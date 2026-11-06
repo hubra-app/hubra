@@ -59,11 +59,20 @@ def list_modules():
             in _get_member_permission_keys(member)
         )
     )
+    from hubra.core.services import licenses
+    from hubra.core.tenant.context import current_tenant
+
+    tenant = current_tenant()
+    # Modules priced per licence the member holds none for: off in their nav.
+    unlicensed = (
+        licenses.unlicensed_for(tenant, getattr(member, "id", None)) if tenant else set()
+    )
     data = []
     for state in modules.states().values():
         item = state.to_dict()
         if not can_write:
             item["config"] = {}
+        item["licensed"] = state.module.code not in unlicensed
         data.append(item)
     return jsonify(data), 200
 

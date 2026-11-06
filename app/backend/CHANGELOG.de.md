@@ -9,9 +9,22 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ## [Unreleased]
 
+### Added
+
+- Lizenzen gehen an Mitglieder: Bei einem Modul mit Preis pro Lizenz gibt der Verein jede Lizenz einem Mitglied (Einstellungen › Hubra-Abo › Zuweisen). Nur sie sehen und nutzen das Modul; alle anderen erhalten «Lizenz nötig».
+- Hubra-Abo: Vereine sehen die volle Aufstellung (Menge pro Mitglied oder Lizenz, was der Tarif enthält), wechseln zu einem anderen öffentlichen Tarif und buchen kostenpflichtige Zusatzmodule samt Lizenzen unter Einstellungen › Hubra-Abo dazu oder ab. Einstellungen › Module zeigt den Preis kostenpflichtiger Module; Einschalten fragt zuerst nach und bucht das Modul dazu.
+- Hubra-Gebühr (bisher Plattformgebühr) auf Online-Zahlungen pro Verein: manage › Alle Vereine › Verein › Abrechnung setzt einen eigenen Prozentsatz statt des Standards; der Verein sieht ihn im Tab Hubra-Abo.
+- Hubra-Abo: Vereine erfassen E-Mail und Adresse für die Rechnungen von Hubra unter Einstellungen › Hubra-Abo › Rechnungsangaben; Speichern übernimmt sie sofort bei Stripe.
+
 ### Changed
 
+- Hubra-Abo: Änderungen während des Monats werden anteilig auf der nächsten Rechnung verrechnet (ein neues Mitglied, ein dazugebuchtes Modul, ein Tarifwechsel; Gutschriften im umgekehrten Fall). Bei Stripe werden nur die geänderten Positionen angepasst.
 - **Releases bringen ihr Changelog mit**: Das GitHub-Release einer Hubra-Version zeigt den Changelog-Abschnitt dieser Version als Beschreibung und hängt ihn als `CHANGELOG.md` an (auch in `SHA256SUMS`). Ein Release mit leerem Changelog-Abschnitt stoppt jetzt bei der ersten Prüfung, statt ohne Notizen zu erscheinen. Die Einträge von 0.2.2 standen unter 0.2.1 und haben jetzt ihren eigenen Abschnitt.
+
+### Fixed
+
+- Plugin-Katalog in manage: Ein Plugin, das in manage lädt, im Vereins-Backend oder einem Worker aber scheitert (etwa wegen eines Importfehlers), zeigt jetzt den Fehler und wo er auftrat, statt eines grünen Hakens.
+- Hubra-Abo: Die Rechnungen von Stripe zeigen jetzt die Rechnungsadresse des Vereins. Checkout fragt danach (vorausgefüllt mit der Adresse aus den Vereinseinstellungen), und die Finanz-E-Mail des Vereins wird verwendet, falls gesetzt.
 
 ## [0.2.2] - 2026-11-06
 

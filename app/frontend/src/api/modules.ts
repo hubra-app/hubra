@@ -37,6 +37,9 @@ export interface ModuleInfo {
   /** False when the platform manager blocked the module for this club. */
   allowed: boolean
   missingDependencies: string[]
+  /** False when the module is priced per licence and the signed-in member
+   *  holds none: hidden in their navigation, its API answers 403. */
+  licensed?: boolean
   nav: ModuleNavItem[]
   settings: ModuleSettingField[]
   config: Record<string, string | number | boolean | null>
