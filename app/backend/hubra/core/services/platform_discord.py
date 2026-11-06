@@ -50,6 +50,9 @@ _log = logging.getLogger(__name__)
 API = "https://discord.com/api/v10"
 CHANNEL_KEY = "discord.log_channel_id"
 AUDIT_CHANNEL_KEY = "discord.audit_channel_id"
+# Release notes of Hubra and its plugins (services.changelogs); empty: Hubra's
+# release notes stay in the platform log ("releases").
+CHANGELOG_CHANNEL_KEY = "discord.changelog_channel_id"
 EVENTS_KEY = "discord.log_events"
 
 # Category → label (manage shows these).  ``members`` is off by default:
@@ -150,6 +153,13 @@ def _settings() -> tuple[str, str]:
     return platform_settings.get(CHANNEL_KEY), platform_settings.discord().bot_token
 
 
+def changelog_channel() -> str:
+    """The changelog channel id, or "" when there is none."""
+    from hubra.core.services import platform_settings
+
+    return platform_settings.get(CHANGELOG_CHANNEL_KEY)
+
+
 def audit_channel() -> str:
     """The audit channel id, or "" when there is none."""
     from hubra.core.services import platform_settings
@@ -170,16 +180,23 @@ def post(
     channel_id: str = "",
     token: str = "",
     components: list | None = None,
+    nonce: str = "",
 ) -> dict:
     """Post one embed to the platform log channel.  Raises DiscordPostError.
 
-    *components*: buttons under the message (``platform_bot``).  Returns
+    *components*: buttons under the message (``platform_bot``).  *nonce*
+    (at most 25 characters): Discord drops a second message with the same
+    nonce sent within a few minutes (a job that ran twice).  Returns
     Discord's message (``id``, ``channel_id``), or ``{}``.  The outcome is
     remembered for manage › Discord › Status.
     """
     try:
         message = _post(
-            embed, channel_id=channel_id, token=token, components=components
+            embed,
+            channel_id=channel_id,
+            token=token,
+            components=components,
+            nonce=nonce,
         )
     except DiscordPostError as exc:
         _remember_post(False, str(exc))
@@ -194,6 +211,7 @@ def _post(
     channel_id: str = "",
     token: str = "",
     components: list | None = None,
+    nonce: str = "",
 ) -> dict:
     if not channel_id or not token:
         default_channel, default_token = _settings()
@@ -204,6 +222,9 @@ def _post(
     payload: dict[str, Any] = {"embeds": [embed], "allowed_mentions": {"parse": []}}
     if components:
         payload["components"] = components
+    if nonce:
+        payload["nonce"] = nonce[:25]
+        payload["enforce_nonce"] = True
     body = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
         f"{API}/channels/{channel_id}/messages",

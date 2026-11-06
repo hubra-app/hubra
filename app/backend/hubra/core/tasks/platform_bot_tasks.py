@@ -12,7 +12,10 @@
 * ``sync_roles``: platform server roles of one person who just linked
   Discord (``services.platform_roles``; the tick syncs everyone every ten
   minutes, and in full once a day).
-* ``club_notice``: release and maintenance notices to the clubs' servers.
+* ``club_notice``: maintenance notices to the clubs' servers.
+* ``post_changelog``: one release note (Hubra or a plugin) in the changelog
+  channel on Hubra's own server (``services.changelogs``; the tick finds
+  new versions and sends them to the clubs as events).
 
 None of them raise: a Discord problem is logged and must not turn into a
 failed-task alert about itself.
@@ -69,6 +72,12 @@ def _daily(now: datetime) -> None:
     _step("roles (full)", _roles, True)
 
 
+def _changelogs() -> None:
+    from hubra.core.services import changelogs
+
+    changelogs.announce()
+
+
 def _support_threads() -> None:
     from hubra.core.services import support_discord
 
@@ -88,6 +97,9 @@ def tick() -> None:
 
     now = datetime.now(timezone.utc)
     _step("maintenance", _maintenance)
+    # New Hubra and plugin versions reach the clubs whether or not the
+    # platform has a Discord log of its own.
+    _step("changelogs", _changelogs)
     _step("support threads", _support_threads)
     channel, token = platform_discord._settings()
     if not channel or not token:
@@ -114,6 +126,18 @@ def approve_request(req_id: int, user_id: int, interaction_token: str = "") -> N
         db.session.rollback()
         text = "Das hat nicht geklappt; der Fehler ist im Log."
     platform_bot.follow_up(interaction_token, text)
+
+
+@celery_app.task(
+    name="hubra.core.tasks.platform_bot_tasks.post_changelog", ignore_result=True
+)
+def post_changelog(kind: str, payload: dict, nonce: str = "") -> None:
+    from hubra.core.services import changelogs
+
+    try:
+        changelogs.post_to_platform(kind, dict(payload), nonce)
+    except Exception as exc:  # noqa: BLE001
+        _log.warning("platform bot: changelog %s not posted: %s", kind, exc)
 
 
 @celery_app.task(

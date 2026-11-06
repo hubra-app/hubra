@@ -526,7 +526,8 @@ def test_release_is_announced_once(bot, db):
         assert platform_bot.announce_release() is False
     post.assert_called_once()
     assert post.call_args.args[0]["title"] == "Hubra 9.9.9 läuft"
-    assert notify.call_args.args[0] == "release"
+    # Clubs hear of it through the hubra.released event (services.changelogs).
+    notify.assert_not_called()
 
 
 # ── Security ──────────────────────────────────────────────────────────────────

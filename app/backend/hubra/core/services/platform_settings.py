@@ -50,7 +50,9 @@ every linked account goes through (see docs/discord.md). Set here only, with
 no env fallback.  ``discord.log_*`` is the platform log: the bot posts
 platform events to a channel on the platform's own server
 (``services.platform_discord``); ``discord.audit_channel_id`` is an optional
-channel that takes the audit entries off the log.  ``discord.support_*``:
+channel that takes the audit entries off the log, and
+``discord.changelog_channel_id`` one for the release notes of Hubra and its
+plugins (``services.changelogs``).  ``discord.support_*``:
 one private thread per support case (``services.support_discord``).
 """
 
@@ -385,6 +387,15 @@ SPECS: tuple[Spec, ...] = (
         "Audit channel",
         "Channel ID on the same server for the audit entries. Set: they go "
         "there instead of the platform log, which keeps the alerts. Empty: off",
+        lambda cfg: "",
+        "number",
+    ),
+    Spec(
+        "discord.changelog_channel_id",
+        "Changelog channel",
+        "Channel ID on the same server for the release notes of Hubra and of "
+        "every plugin update. Set: Hubra's release notes go there instead of "
+        "the platform log. Empty: off",
         lambda cfg: "",
         "number",
     ),

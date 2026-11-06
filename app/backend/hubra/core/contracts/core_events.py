@@ -79,6 +79,30 @@ class MemberRef(_Payload):
     member_id: int
 
 
+class HubraReleased(_Payload):
+    """A new Hubra version runs (sent once per version, in every club).
+
+    ``sections``: the changelog section of that version, {heading: [items]},
+    in English; ``sections_de`` the same in German when it is translated."""
+
+    version: str
+    date: str | None = None
+    sections: dict[str, list[str]] = {}
+    sections_de: dict[str, list[str]] = {}
+
+
+class PluginReleased(_Payload):
+    """A new version of a plugin runs (sent once per version, in every club
+    that has the plugin on). ``notes``: that version's section of the
+    plugin's CHANGELOG.md, as Markdown."""
+
+    plugin_id: str
+    name: str
+    version: str
+    previous_version: str | None = None
+    notes: str = ""
+
+
 CORE_EVENTS: tuple[base.Contract, ...] = (
     base.event_contract(
         "invoice.overdue", InvoiceOverdue, description="An invoice is past due"
@@ -126,4 +150,14 @@ CORE_EVENTS: tuple[base.Contract, ...] = (
         "member.joined", MemberRef, description="A member joined the club"
     ),
     base.event_contract("member.left", MemberRef, description="A member left the club"),
+    base.event_contract(
+        "hubra.released",
+        HubraReleased,
+        description="A new Hubra version runs, with its changelog section",
+    ),
+    base.event_contract(
+        "plugin.released",
+        PluginReleased,
+        description="A new version of a plugin runs, with its changelog section",
+    ),
 )
