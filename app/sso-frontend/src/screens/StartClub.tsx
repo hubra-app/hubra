@@ -18,6 +18,7 @@ import { IconArrowLeft } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import * as authApi from '@/api/auth'
+import { LegalConsent } from '@hubra/ui'
 import { SignedInFrame } from '@/components/SignedInFrame'
 import { useLang } from '@/lang'
 
@@ -57,7 +58,7 @@ function slugify(name: string): string {
 export function StartClubScreen() {
   const { authStatus, notify } = useSso()
   const navigate = useNavigate()
-  const { tr } = useLang()
+  const { tr, lang } = useLang()
   const queryClient = useQueryClient()
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
@@ -175,6 +176,23 @@ export function StartClubScreen() {
               setSlugEdited(true)
             }}
             onKeyDown={(e) => e.key === 'Enter' && send()}
+          />
+          <LegalConsent
+            labels={{
+              terms: tr('Nutzungsbedingungen', 'terms of service'),
+              privacy: tr('Datenschutzerklärung', 'privacy policy'),
+            }}
+            render={(terms, privacy) =>
+              lang === 'de' ? (
+                <>
+                  Für deinen Verein gelten die {terms} und die {privacy} von Hubra.
+                </>
+              ) : (
+                <>
+                  Hubra&apos;s {terms} and {privacy} apply to your club.
+                </>
+              )
+            }
           />
           <Button size="md" onClick={send} loading={submit.isPending}>
             {tr('Anfrage senden', 'Send request')}

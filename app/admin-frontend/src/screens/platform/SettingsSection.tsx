@@ -80,12 +80,13 @@ const LIMITS = ['limits.warn_percent']
 const MCP = ['mcp.url']
 const OAUTH = ['oauth.dynamic_clients', 'oauth.dynamic_redirect_hosts']
 const SUPPORT = ['support.url']
+const LEGAL = ['legal.privacy_url', 'legal.terms_url', 'legal.imprint_url']
 const BUILT_IN = [
   'domains.serving',
   'domains.cluster_issuer',
   'domains.ingress_class',
   'domains.service',
-  'alerts.cooldown_minutes', 'alerts.retention_days', ...PERF, ...LIMITS, ...OAUTH]
+  'alerts.cooldown_minutes', 'alerts.retention_days', ...PERF, ...LIMITS, ...OAUTH, ...LEGAL]
 const ALERTS = ['alerts.cooldown_minutes', 'alerts.retention_days', 'alerts.manage_url']
 
 
@@ -115,6 +116,7 @@ export type SettingsSectionId =
   | 'mcp'
   | 'oauth'
   | 'support'
+  | 'legal'
 /** The keys each section saves. */
 const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
   relay: [...RELAY, ...FALLBACK],
@@ -132,6 +134,7 @@ const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
   mcp: MCP,
   oauth: OAUTH,
   support: SUPPORT,
+  legal: LEGAL,
 }
 
 function SourceBadge({ s }: { s: PlatformSetting }) {
@@ -279,6 +282,15 @@ const FIELD_DE: Record<string, [string, string]> = {
     'Adresse der Support-Seite',
     'Hilfe, Roadmap, Status und Meldungen (Image support-frontend), z. B. https://support.hubra.club. Mails an Meldende verlinken dorthin. Leer: auf die Meldungen in der Vereins-App',
   ],
+  'legal.privacy_url': [
+    'Datenschutzerklärung',
+    'Hubras Datenschutzerklärung. Verlinkt bei der Registrierung, in den Fussleisten und im Stripe Checkout. Leer: kein Link',
+  ],
+  'legal.terms_url': [
+    'Nutzungsbedingungen',
+    'Hubras Nutzungsbedingungen. Verlinkt bei der Registrierung, in den Fussleisten und im Stripe Checkout. Leer: kein Link',
+  ],
+  'legal.imprint_url': ['Impressum', 'Hubras Impressum, verlinkt in den Fussleisten. Leer: kein Link'],
   'alerts.manage_url': [
     'Adresse von manage',
     'Für den Knopf «Warnungen öffnen» in Warnmails, z. B. https://manage.hubra.club. Leer: kein Knopf',
@@ -622,6 +634,22 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                 )}
               </Text>
               <Stack gap="sm">{SUPPORT.map(field)}</Stack>
+            </Paper>
+          )}
+
+          {section === 'legal' && (
+            <Paper withBorder p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Rechtliches', 'Legal pages')}</Title>
+                {resetButton(LEGAL)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Wo Hubras Datenschutzerklärung, Nutzungsbedingungen und Impressum stehen. Stripe fragt nach denselben Adressen: im Dashboard unter Einstellungen › Öffentliche Angaben und bei Connect › Plattformprofil.',
+                  "Where Hubra's privacy policy, terms of service and imprint are. Stripe asks for the same addresses: in the dashboard under Settings › Public details and in Connect › Platform profile.",
+                )}
+              </Text>
+              <Stack gap="sm">{LEGAL.map(field)}</Stack>
             </Paper>
           )}
 

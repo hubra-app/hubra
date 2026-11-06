@@ -16,9 +16,35 @@ export function clubLogoUrl(
   return `${BASE}/global/clubs/${encodeURIComponent(slug)}/logo?v=${version}`;
 }
 
-/** Where the SSO portal is, from GET /instance (public, no auth). */
+/** Hubra's legal pages (platform settings legal.*); null: not set. */
+export interface LegalLinks {
+  privacyUrl: string | null;
+  termsUrl: string | null;
+  imprintUrl: string | null;
+}
+
+/** Where the SSO portal and the legal pages are, from GET /instance (public, no auth). */
 export interface InstanceInfo {
   ssoUrl: string | null;
+  /** Missing on a backend older than the legal.* settings. */
+  legal?: LegalLinks;
+}
+
+// Used when the backend can't be reached or predates the legal.* settings.
+const DEFAULT_LEGAL: LegalLinks = {
+  privacyUrl: "https://hubra.club/datenschutz/",
+  termsUrl: "https://hubra.club/nutzungsbedingungen/",
+  imprintUrl: "https://hubra.club/impressum/",
+};
+
+let legalLinks: Promise<LegalLinks> | null = null;
+
+/** The legal pages, asked for once per page load. */
+export function getLegalLinks(): Promise<LegalLinks> {
+  legalLinks ??= getInstance()
+    .then((info) => info.legal ?? DEFAULT_LEGAL)
+    .catch(() => DEFAULT_LEGAL);
+  return legalLinks;
 }
 
 export async function getInstance(signal?: AbortSignal): Promise<InstanceInfo> {

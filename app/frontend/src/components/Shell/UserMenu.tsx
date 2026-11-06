@@ -9,7 +9,7 @@ import {
   IconBulb,
   IconLifebuoy,
 } from '@tabler/icons-react'
-import { ThemeSwitch } from '@hubra/ui'
+import { LegalFooter, ThemeSwitch } from '@hubra/ui'
 import { useT } from '@/locales/i18n'
 import { useAuth, useNav, useData } from '@/context/AppContext'
 import { useInstance } from '@/context/InstanceContext'
@@ -233,6 +233,15 @@ export function UserMenu({
           <IconLogout size={16} />
           {t('shell.userMenu.logout')}
         </UnstyledButton>
+        <Box px={10} pt={6}>
+          <LegalFooter
+            labels={{
+              privacy: t('shell.userMenu.privacy', 'Datenschutz'),
+              terms: t('shell.userMenu.terms', 'Nutzungsbedingungen'),
+              imprint: t('shell.userMenu.imprint', 'Impressum'),
+            }}
+          />
+        </Box>
       </Box>
     </Box>
   )

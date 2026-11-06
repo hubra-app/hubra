@@ -25,7 +25,7 @@ import {
   IconShieldLock,
   IconUserCircle,
 } from '@tabler/icons-react'
-import { ThemeToggle } from '@hubra/ui'
+import { LegalFooter, ThemeToggle } from '@hubra/ui'
 import { useAuth } from '@/auth'
 import { ACCOUNT_URL, APP_URL } from '@/urls'
 import { themeLabels, useLang, type Lang } from '@/lang'
@@ -160,16 +160,18 @@ function Footer() {
           ))}
         </SimpleGrid>
         <Divider my="lg" />
-        <Text size="xs" c="dimmed">
-          © {new Date().getFullYear()} Hubra ·{' '}
-          <Anchor href="https://hubra.club/impressum" size="xs" c="dimmed">
-            {tr('Impressum', 'Imprint')}
-          </Anchor>{' '}
-          ·{' '}
-          <Anchor href="https://hubra.club/datenschutz" size="xs" c="dimmed">
-            {tr('Datenschutzerklärung', 'Privacy policy')}
-          </Anchor>
-        </Text>
+        <Group gap={6} wrap="wrap">
+          <Text size="xs" c="dimmed">
+            © {new Date().getFullYear()} Hubra ·
+          </Text>
+          <LegalFooter
+            labels={{
+              privacy: tr('Datenschutzerklärung', 'Privacy policy'),
+              terms: tr('Nutzungsbedingungen', 'Terms of service'),
+              imprint: tr('Impressum', 'Imprint'),
+            }}
+          />
+        </Group>
       </Box>
     </Box>
   )

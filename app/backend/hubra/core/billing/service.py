@@ -382,9 +382,37 @@ def checkout(
             "locale": "de" if (tenant.locale or "de").startswith("de") else "auto",
             "success_url": success_url,
             "cancel_url": cancel_url,
+            **_legal_text(tenant),
         },
     )
     return session["url"]
+
+
+def _legal_text(tenant: Tenant) -> dict:
+    """A line above Checkout's pay button linking Hubra's terms and privacy
+    policy (platform settings ``legal.*``); nothing when neither is set.
+
+    Not ``consent_collection``: that needs the terms address in Stripe's
+    dashboard and fails the whole session without it."""
+    from hubra.core.services import platform_settings
+
+    links = platform_settings.legal_links()
+    terms, privacy = links["termsUrl"], links["privacyUrl"]
+    if not terms and not privacy:
+        return {}
+    de = (tenant.locale or "de").startswith("de")
+    parts = []
+    if terms:
+        parts.append(f"[{'Nutzungsbedingungen' if de else 'terms of service'}]({terms})")
+    if privacy:
+        parts.append(f"[{'Datenschutzerklärung' if de else 'privacy policy'}]({privacy})")
+    joined = (" und " if de else " and ").join(parts)
+    message = (
+        f"Es gelten die {joined} von Hubra."
+        if de
+        else f"Hubra's {joined} apply."
+    )
+    return {"custom_text": {"submit": {"message": message}}}
 
 
 def portal(tenant: Tenant, return_url: str) -> str:

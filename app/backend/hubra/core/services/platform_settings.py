@@ -45,6 +45,10 @@ monthly or yearly, its Stripe key and the webhook secret
 Translation (``translate.*``): the DeepL key that pre-fills the other
 languages of a post (``services.machine_translation``); empty: none.
 
+Legal (``legal.*``): where Hubra's privacy policy, terms of service and
+imprint are (``legal_links``).  The sign-in pages, the footers and Stripe
+Checkout link them; Stripe asks for the same addresses in its dashboard.
+
 Discord (``discord.*``): the one Hubra application every club's server and
 every linked account goes through (see docs/discord.md). Set here only, with
 no env fallback.  ``discord.log_*`` is the platform log: the bot posts
@@ -554,6 +558,32 @@ SPECS: tuple[Spec, ...] = (
         "url",
     ),
     Spec(
+        "legal.privacy_url",
+        "Privacy policy URL",
+        "Hubra's privacy policy. Linked on sign-up, in the footers and in "
+        "Stripe Checkout; enter the same address in Stripe (Settings › "
+        "Public details, Connect › Platform profile). Empty: no link",
+        lambda cfg: cfg.get("LEGAL_PRIVACY_URL") or "https://hubra.club/datenschutz/",
+        "url",
+    ),
+    Spec(
+        "legal.terms_url",
+        "Terms of service URL",
+        "Hubra's terms of service. Linked on sign-up, in the footers and in "
+        "Stripe Checkout; enter the same address in Stripe (Settings › "
+        "Public details, Connect › Platform profile). Empty: no link",
+        lambda cfg: cfg.get("LEGAL_TERMS_URL")
+        or "https://hubra.club/nutzungsbedingungen/",
+        "url",
+    ),
+    Spec(
+        "legal.imprint_url",
+        "Imprint URL",
+        "Hubra's imprint (Impressum), linked in the footers. Empty: no link",
+        lambda cfg: cfg.get("LEGAL_IMPRINT_URL") or "https://hubra.club/impressum/",
+        "url",
+    ),
+    Spec(
         "perf.slow_request_ms",
         "Slow request",
         "API requests at least this long (ms) are counted as slow and written "
@@ -696,6 +726,22 @@ def set_many(values: dict, actor_id: int | None = None) -> None:
         row.updated_by = actor_id
     db.session.flush()
     _forget(db.session())
+
+
+def legal_links() -> dict[str, str | None]:
+    """Hubra's legal pages for the SPAs and Stripe Checkout (None: not set)."""
+    out: dict[str, str | None] = {}
+    for name, key in (
+        ("privacyUrl", "legal.privacy_url"),
+        ("termsUrl", "legal.terms_url"),
+        ("imprintUrl", "legal.imprint_url"),
+    ):
+        try:
+            out[name] = get(key).strip() or None
+        except Exception:  # noqa: BLE001 - no database yet: the public page still loads
+            current_app.logger.debug("platform setting %s not readable", key, exc_info=True)
+            out[name] = None
+    return out
 
 
 def as_list() -> list[dict]:

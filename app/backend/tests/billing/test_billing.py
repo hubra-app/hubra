@@ -151,6 +151,28 @@ def test_checkout_makes_customer_products_and_session(stripe, club, db):
     assert len(stripe.made("POST", "/v1/customers")) == 1
 
 
+def test_checkout_links_terms_and_privacy(stripe, club, db):
+    platform_settings.set_many(
+        {
+            "legal.terms_url": "https://example.test/terms",
+            "legal.privacy_url": "https://example.test/privacy",
+        }
+    )
+    service.checkout(club, None, "https://s", "https://c")
+    message = stripe.made("POST", "/v1/checkout/sessions")[0][
+        "custom_text[submit][message]"
+    ]
+    assert "(https://example.test/terms)" in message
+    assert "(https://example.test/privacy)" in message
+
+
+def test_checkout_without_legal_links_has_no_text(stripe, club, db):
+    platform_settings.set_many({"legal.terms_url": "", "legal.privacy_url": ""})
+    service.checkout(club, None, "https://s", "https://c")
+    session = stripe.made("POST", "/v1/checkout/sessions")[0]
+    assert "custom_text[submit][message]" not in session
+
+
 def test_checkout_bills_the_club_with_its_address(stripe, club, db):
     from hubra.core.models.setting import Setting
 

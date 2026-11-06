@@ -64,3 +64,4 @@ export {
   osOf,
   type DeviceInfo,
 } from './deviceInfo'
+export { LegalConsent, LegalFooter, useLegalLinks, type LegalLabels } from './legal'

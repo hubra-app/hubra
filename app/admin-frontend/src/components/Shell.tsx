@@ -33,7 +33,7 @@ import {
 } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
 import { getProfile } from '@/api/auth'
-import { textOn as contrastColor, ThemeSwitch } from '@hubra/ui'
+import { LegalFooter, textOn as contrastColor, ThemeSwitch } from '@hubra/ui'
 import { useLang, type Lang } from '@/lang'
 import { navSections, visibleTabs, type NavPage, type PageTab } from '@/nav'
 
@@ -311,6 +311,15 @@ function UserCard() {
         <Menu.Item color="red" leftSection={<IconLogout size={16} />} onClick={logout}>
           {tr('Abmelden', 'Sign out')}
         </Menu.Item>
+        <Box px={12} pt={4} pb={6}>
+          <LegalFooter
+            labels={{
+              privacy: tr('Datenschutz', 'Privacy'),
+              terms: tr('Nutzungsbedingungen', 'Terms'),
+              imprint: tr('Impressum', 'Imprint'),
+            }}
+          />
+        </Box>
       </Menu.Dropdown>
     </Menu>
   )
