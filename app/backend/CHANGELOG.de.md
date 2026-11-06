@@ -9,6 +9,8 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-11-06
+
 ### Added
 
 - **Changelogs auf Discord, für Hubra und für Plugin-Updates**: Jede neue Hubra-Version und jede neue Plugin-Version wird einmal angekündigt, mit ihrem Abschnitt aus dem Changelog. Vereine schalten das auf ihrem eigenen Discord-Server ein (Discord-Einstellungen › Ankündigungen: «Changelog: neue Hubra-Versionen» und «Changelog: Plugin-Updates», beide standardmässig aus) und wählen den Kanal, zum Beispiel einen Ankündigungs- oder einen eigenen Changelog-Kanal; Plugin-Updates erreichen nur Vereine, die das Plugin nutzen. Hubras eigener Server bekommt sie im neuen Changelog-Kanal (manage › Discord, Karte Plattform-Log). Sie laufen als die neuen Ereignisse `hubra.released` und `plugin.released` über die Outbox und werden nie doppelt gepostet. Siehe docs/discord.md, «Changelogs».
