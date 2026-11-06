@@ -7,7 +7,7 @@ section and position, or the apps show that version in English.
 
 ## [Unreleased]
 
-## [0.2.3] - 2026-11-06
+## [0.2.4] - 2026-11-06
 
 ### Added
 
