@@ -80,6 +80,7 @@ from hubra.core.models.known_device import KnownDevice
 from hubra.core.models.passkey import Passkey
 from hubra.core.models.api_token import ApiToken
 from hubra.core.models.webhook import Webhook, WebhookDelivery
+from hubra.core.models.contract_outbox import ContractMessage
 from hubra.core.models.dashboard import Dashboard
 from hubra.core.models.oauth import OAuthClient, OAuthCode
 from hubra.core.models.push_subscription import PushSubscription
@@ -120,6 +121,7 @@ __all__ = [
     "ApiToken",
     "Webhook",
     "WebhookDelivery",
+    "ContractMessage",
     "Dashboard",
     "OAuthClient",
     "OAuthCode",

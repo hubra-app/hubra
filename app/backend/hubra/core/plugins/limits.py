@@ -23,6 +23,9 @@ The checks:
 - Tables are the plugin's own: none of Hubra's tenant tables.
 - Processes and in-transaction event handlers are for official plugins
   (signed with Hubra's key, or shipped with Hubra) only.
+- Contracts (``provides``) are named after the module (``<code>.<what>``),
+  their handlers and schemas are the plugin's own code, and ``consumes``
+  gives a version range for each contract it uses (docs/contracts.md).
 - A plugin that lists ``uses:`` in plugin.yaml touches only the areas it
   listed. A plugin without the list still loads (plugins released before
   it existed) and the catalogue shows it as undeclared.
@@ -76,6 +79,8 @@ def areas_used(module, spec) -> set[str]:
         used.add("apps")
     if module.nav:
         used.add("nav")
+    if module.provides or module.consumes:
+        used.add("contracts")
     if spec.frontend_file is not None:
         used.add("frontend")
     return used
@@ -177,7 +182,10 @@ def check(module, spec, taken_prefixes: dict[str, str], core_tables: set[str]):
         )
         in_tx = ()
 
-    # 5. Only the areas it declared.
+    # 5. Contracts: its own names and code, version ranges that parse.
+    _check_contracts(module, pkg)
+
+    # 6. Only the areas it declared.
     declared = spec.uses
     if declared is not None:
         extra = sorted(areas_used(module, spec) - set(declared))
@@ -190,3 +198,46 @@ def check(module, spec, taken_prefixes: dict[str, str], core_tables: set[str]):
     return dataclasses.replace(
         module, blueprints=tuple(blueprints), events_in_transaction=in_tx
     )
+
+
+def _check_contracts(module, pkg: str) -> None:
+    from packaging.specifiers import InvalidSpecifier, SpecifierSet
+
+    from hubra.core.contracts.base import Contract
+    from hubra.core.contracts.core_events import CORE_EVENTS
+
+    core = {c.name for c in CORE_EVENTS}
+    seen: set[str] = set()
+    for c in module.provides:
+        if not isinstance(c, Contract):
+            raise LimitError(f"module {module.code}: provides lists {c!r}, not a Contract")
+        if not c.name.startswith(module.code + "."):
+            raise LimitError(
+                f"module {module.code} offers {c.name}; its contracts are named"
+                f" {module.code}.<what>"
+            )
+        if c.name in core or c.name in seen:
+            raise LimitError(f"module {module.code} offers {c.name} twice or Hubra's own")
+        seen.add(c.name)
+        refs = [c.handler] if c.handler else []
+        for schema in (c.input, c.output):
+            if isinstance(schema, str):
+                refs.append(schema)
+            elif schema is not None:
+                refs.append(f"{getattr(schema, '__module__', '')}:{getattr(schema, '__name__', '')}")
+        foreign = sorted({r for r in refs if not _own(r, pkg)})
+        if foreign:
+            raise LimitError(
+                f"contract {c.name} points at code outside {pkg}: {', '.join(foreign)}"
+            )
+    for name, rng in (module.consumes or {}).items():
+        if not isinstance(name, str) or "." not in name:
+            raise LimitError(f"module {module.code}: consumes names {name!r}")
+        if rng in (None, ""):
+            continue
+        try:
+            SpecifierSet(str(rng))
+        except InvalidSpecifier:
+            raise LimitError(
+                f"module {module.code}: consumes {name}: {rng!r} isn't a range like '>=1,<2'"
+            ) from None

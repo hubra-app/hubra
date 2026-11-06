@@ -10,12 +10,20 @@ the payload as keyword arguments.  A failing handler is logged and does
 not stop the others or the caller.
 
 Hubra's own modules' handlers run synchronously in the caller's
-transaction. A plugin's handlers run after that transaction commits, in
-the worker (``hubra.core.tasks.plugin_event_tasks``), so a slow or failing
-plugin can't hold up or roll back the caller's work, and nothing reaches
-a plugin for a change that was rolled back. An official plugin can ask for
-in-transaction delivery of named events (``Module.events_in_transaction``).
-Payloads are ids and plain values, so they can travel to the worker.
+transaction. A plugin's handlers get the event from the contract outbox
+(``hubra.core.contracts.outbox``): one row per handler, written in the
+caller's transaction and delivered by the worker after it commits, retried
+when the handler fails. So a slow or failing plugin can't hold up or roll
+back the caller's work, nothing reaches a plugin for a change that was
+rolled back, and an event isn't lost when Redis is down at the commit. An
+official plugin can ask for in-transaction delivery of named events
+(``Module.events_in_transaction``).
+
+Every event is a contract (``hubra.core.contracts``): Hubra's own are in
+``contracts.core_events``, a plugin's in its ``Module.provides``. The
+payload is checked against the contract's schema before anyone hears of
+it. Payloads are ids and plain values, so they can travel to the worker
+(and, later, through a message broker).
 """
 
 from __future__ import annotations
@@ -140,7 +148,10 @@ def install_after_commit_delivery() -> None:
     """Register the session hooks once per process (from the app factory)."""
     from sqlalchemy import event as sa_event
 
+    from hubra.core.contracts import outbox
     from hubra.core.extensions import db
+
+    outbox.install()
 
     for name, fn in (
         ("after_commit", _after_commit),
@@ -155,17 +166,94 @@ def _defer(module, event: str) -> bool:
     return bool(module.plugin) and event not in module.events_in_transaction
 
 
+def _check_contract(event: str, payload: dict):
+    """The event's contract, after checking *payload* against it (None for a
+    name no contract declares: allowed for Hubra's own code, refused for a
+    plugin's)."""
+    from hubra.core.contracts import registry as contracts
+    from hubra.core.contracts.base import EVENT, ContractError
+
+    offer = contracts.get(event)
+    if offer is None:
+        plugin = contracts.plugin_of(contracts.caller_module())
+        if plugin is not None:
+            raise ContractError(
+                f"{plugin} emits {event}, which no module lists under provides"
+            )
+        _log.debug("Event %s has no contract", event)
+        return None
+    if offer.contract.kind != EVENT:
+        raise ContractError(f"{event} is an {offer.contract.kind}, not an event")
+    contracts.check_input(offer.contract, payload, portable=True)
+    return offer
+
+
+def _wants(module, offer) -> bool:
+    """Whether a plugin's handler takes this version of the event."""
+    from hubra.core.contracts import registry as contracts
+
+    if offer is None or not module.plugin:
+        return True
+    rng = module.consumes.get(offer.contract.name)
+    if contracts.accepts(rng, offer.contract.version):
+        return True
+    _log.warning(
+        "%s wants %s %s; this is version %s: not delivered",
+        module.code,
+        offer.contract.name,
+        rng,
+        offer.contract.version,
+    )
+    return False
+
+
+def _to_outbox(event, module, target, tid, env) -> bool:
+    from hubra.core.contracts import outbox
+
+    try:
+        outbox.add(
+            kind="event",
+            name=event,
+            module_code=module.code,
+            target=target,
+            tenant_id=tid,
+            env=env,
+        )
+        return True
+    except Exception:
+        _log.exception("Couldn't store %s for %s", event, target)
+        return False
+
+
 def emit(event: str, tenant_id=CURRENT, **payload: Any) -> list[str]:
     """Deliver *event* to enabled subscribers.  Returns the module codes called
-    (or, for a plugin's handler, queued for after the commit)."""
+    (or, for a plugin's handler, stored for after the commit)."""
+    from hubra.core.contracts import registry as contracts
+    from hubra.core.contracts.transport import envelope
+
     registry.load()
+    offer = _check_contract(event, payload)
     tid = _resolve_tenant_id(tenant_id)
     called: list[str] = []
+    env = None
     for module, target in registry.subscribers(event):
         if not is_enabled(module.code, tenant_id=tid):
             continue
         if _defer(module, event):
-            if _after_commit_or_now((event, module.code, target, tid, dict(payload))):
+            if not _wants(module, offer):
+                continue
+            if env is None:
+                # One envelope (one id) for every handler of this event.
+                env = envelope(
+                    kind="event",
+                    name=event,
+                    version=offer.contract.version if offer else 1,
+                    data=dict(payload),
+                    tenant_id=tid,
+                    source=contracts.plugin_of(contracts.caller_module())
+                    or (offer.module_code if offer else "hubra"),
+                )
+            if _to_outbox(event, module, target, tid, env):
                 called.append(module.code)
             continue
         try:
