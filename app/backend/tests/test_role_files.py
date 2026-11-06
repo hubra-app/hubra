@@ -93,6 +93,21 @@ def test_each_role_leaves_out_the_other_areas_routes():
     assert role_files.role_modules("all", BACKEND) >= app | platform | glob
 
 
+@pytest.mark.parametrize("role", ["app", "global", "platform"])
+def test_every_role_keeps_the_old_names_plugins_import(role):
+    """Plugin releases built before hubra.api.auth.helpers & co. moved to
+    hubra.core still import the old names; an image without them fails to
+    load those plugins (ModuleNotFoundError: hubra.api.auth.helpers)."""
+    shims = role_files.compat_modules(BACKEND)
+    assert {
+        "hubra.api.auth.helpers",
+        "hubra.api.permissions",
+        "hubra.api.utils",
+        "hubra.api.notifications.services",
+    } <= shims
+    assert shims <= role_files.role_modules(role, BACKEND)
+
+
 def test_listed_files_and_prune_agree(tmp_path):
     """--prune leaves exactly the listed hubra modules (the Dockerfile uses
     it, images.yml compares the list)."""
