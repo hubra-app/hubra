@@ -29,7 +29,7 @@ from hubra.api.bindings.services import (
 )
 from hubra.core.permissions import permission_required
 from hubra.core.utils import log_audit
-from hubra.core.errors import api_error, raise_error
+from hubra.core.errors import api_error, raise_error, validation_error
 from hubra.core.extensions import db
 from hubra.core.models.internal_key import InternalKey
 from hubra.core.services.binding_engine import (
@@ -79,7 +79,7 @@ def create_key():
     try:
         data = _key_create_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     existing = db.session.scalar(
         select(InternalKey).where(InternalKey.key == data["key"])
@@ -122,7 +122,7 @@ def update_key(key_id: int):
     try:
         data = _key_update_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     has_bindings = get_key_bindings_count(key_id) > 0
 
@@ -216,7 +216,7 @@ def create_binding_route():
     try:
         data = _binding_create_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     if not is_valid_attribute(data["type"], data["source_attribute"]):
         return api_error(
@@ -284,7 +284,7 @@ def update_binding_route(binding_id: int):
     try:
         data = _binding_update_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     fields = {k: v for k, v in data.items() if v is not None}
 
@@ -362,7 +362,7 @@ def toggle_binding_route(binding_id: int):
     try:
         data = _binding_toggle_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     binding = toggle_binding(binding_id, data["enabled"])
 

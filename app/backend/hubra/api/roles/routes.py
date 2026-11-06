@@ -14,7 +14,7 @@ from hubra.core.permissions import (
     can_update,
 )
 from hubra.core.utils import log_audit
-from hubra.core.errors import api_error, raise_error
+from hubra.core.errors import api_error, raise_error, validation_error
 from hubra.core.extensions import db
 from hubra.core.schemas.role import RoleCreateSchema, RoleSchema
 from hubra.core.services.roles import RoleScopeService, RoleService, RolesService
@@ -50,7 +50,7 @@ def create_role():
     try:
         data = _create_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     role = RolesService.create(data, get_current_member().id)
 

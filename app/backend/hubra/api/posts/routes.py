@@ -16,7 +16,7 @@ from hubra.core.permissions import (
     scoped_permission_keys,
 )
 from hubra.api.posts.services import PostService, PostsService
-from hubra.core.errors import api_error
+from hubra.core.errors import api_error, validation_error
 from hubra.core.extensions import db
 from hubra.core.schemas.post import (
     CommentCreateSchema,
@@ -108,7 +108,7 @@ def create_post():
     try:
         data = _create_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     post = PostsService.create(data, get_current_member().id)
 
@@ -137,7 +137,7 @@ def update_post(post_id: int):
     try:
         data = _update_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
     if not _may_move(post, member_id, data):
         return api_error(
             "GROUP_SCOPE", "You can only move this to a group you manage", 403
@@ -243,7 +243,7 @@ def add_comment(post_id: int):
     try:
         data = _comment_create_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     comment = PostService.add_comment(post_id, member_id, data["body"])
 

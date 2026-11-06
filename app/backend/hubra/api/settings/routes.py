@@ -15,7 +15,7 @@ from hubra.core.permissions import (
     member_is_admin,
 )
 from hubra.core.utils import log_audit
-from hubra.core.errors import api_error
+from hubra.core.errors import api_error, validation_error
 from hubra.core.extensions import db
 from hubra.core.schemas.settings import SettingSchema, SettingWriteSchema
 from hubra.core.services.settings import SettingService, SettingsService
@@ -122,7 +122,7 @@ def upsert_setting(key: str):
     try:
         data = _write_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     if not member_is_admin(_current_member()):
         perms = _get_member_permission_keys(_current_member())

@@ -16,7 +16,7 @@ from hubra.core.permissions import check_grant, held_roles, invalidate_member_pe
 from hubra.core.services.settings import SettingService
 from hubra.core.utils import csv_safe, escape_like, log_audit
 from hubra.core.services import quotas
-from hubra.core.errors import raise_error
+from hubra.core.errors import field_errors, raise_error
 from hubra.core.extensions import db
 from hubra.core.models.group import Group
 from hubra.core.modules.events import MEMBER_JOINED, MEMBER_LEFT
@@ -1084,7 +1084,9 @@ class MembersService:
         try:
             validated = MemberCreateSchema().load(data)
         except ValidationError as exc:
-            raise_error(400, "VALIDATION_ERROR", str(exc.messages))
+            raise_error(
+            400, "VALIDATION_ERROR", str(exc.messages), field_errors(exc.messages)
+        )
         email = (validated.get("email") or "").strip().lower()
         if not email:
             raise_error(400, "VALIDATION_ERROR", "email is required")
@@ -1239,7 +1241,9 @@ class MembersService:
             from marshmallow import ValidationError
 
             if isinstance(exc, ValidationError):
-                raise_error(400, "VALIDATION_ERROR", str(exc.messages))
+                raise_error(
+            400, "VALIDATION_ERROR", str(exc.messages), field_errors(exc.messages)
+        )
             raise
 
         # "Suspended" closes the club to the member (Member.is_blocked), so

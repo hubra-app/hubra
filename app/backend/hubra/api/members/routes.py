@@ -22,7 +22,7 @@ from hubra.core.permissions import (
     refuse_during_impersonation,
 )
 from hubra.core.utils import log_audit
-from hubra.core.errors import api_error, raise_error
+from hubra.core.errors import api_error, raise_error, validation_error
 from hubra.core.extensions import db
 from hubra.core.schemas.member import (
     MemberCreateSchema,
@@ -424,7 +424,7 @@ def create_member():
     try:
         data = _create_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     # A club invites; the person joins when they accept (see invite).
     result = MembersService.invite(
@@ -545,7 +545,7 @@ def update_member(member_id: int):
     try:
         data = _update_schema.load(body)
     except ValidationError as exc:
-        return api_error("VALIDATION_ERROR", str(exc.messages), 400)
+        return validation_error(exc)
 
     data = filter_updatable_fields(data)
 
