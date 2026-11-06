@@ -10,6 +10,7 @@ import { BackupKeyTab } from '@/screens/private/settings/BackupKeyTab'
 import { DomainsTab } from '@/screens/private/settings/DomainsTab'
 import { AppsTab } from '@/screens/private/settings/AppsTab'
 import { ApiAccessTab } from '@/screens/private/settings/ApiAccessTab'
+import { SubscriptionTab } from '@/screens/private/settings/SubscriptionTab'
 import { AuditLogScreen } from '@/screens/private/system/AuditLog'
 import { RolesTab } from '@/screens/private/system/RolesTab'
 
@@ -54,6 +55,12 @@ const TABS = [
     Component: BackupKeyTab,
   },
   { id: 'domains', labelKey: 'settings.tabs.domains', label: 'Domains', Component: DomainsTab },
+  {
+    id: 'subscription',
+    labelKey: 'settings.tabs.subscription',
+    label: 'Hubra-Abo',
+    Component: SubscriptionTab,
+  },
   { id: 'roles', labelKey: 'shell.nav.permissions', label: 'Rollen', Component: RolesTab },
   { id: 'audit', labelKey: 'shell.nav.auditLog', label: 'Protokoll', Component: AuditLogTab },
   {
@@ -87,14 +94,16 @@ export function SettingsScreen() {
     tab.id === 'bank'
       ? canSettings && !bankInFinance
       : tab.id === 'modules'
-      ? canWriteModules
-      : tab.id === 'apps'
-        ? canManageApps
-        : tab.id === 'roles'
-          ? hasPermission('roles.roles.create')
-          : tab.id === 'audit'
-            ? hasPermission('audit.audit.read')
-            : canSettings,
+        ? canWriteModules
+        : tab.id === 'apps'
+          ? canManageApps
+          : tab.id === 'subscription'
+            ? hasPermission('billing.billing.manage')
+            : tab.id === 'roles'
+              ? hasPermission('roles.roles.create')
+              : tab.id === 'audit'
+                ? hasPermission('audit.audit.read')
+                : canSettings,
   )
 
   // The path may start with the club's slug: /<club>/app/settings/<tab>.

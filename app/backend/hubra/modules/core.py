@@ -149,6 +149,12 @@ module = Module(
             "/api/v1/platform/oauth",
         ),
         Blueprint("hubra.api.oauth.routes", "club_oauth_bp", "/api/v1/app/oauth"),
+        Blueprint("hubra.api.billing.routes", "billing_bp", "/api/v1/app/billing"),
+        Blueprint(
+            "hubra.api.billing.routes",
+            "billing_webhook_bp",
+            "/api/v1/global/billing",
+        ),
         Blueprint(
             "hubra.api.backups.routes",
             "platform_backups_bp",

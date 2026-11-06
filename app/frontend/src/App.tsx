@@ -545,6 +545,14 @@ function PrivateRoutes() {
                   }
                 />
                 <Route
+                  path="settings/subscription"
+                  element={
+                    <RequirePermission permKey="billing.billing.manage">
+                      <SettingsScreen />
+                    </RequirePermission>
+                  }
+                />
+                <Route
                   path="settings/advanced"
                   element={
                     <RequirePermission permKey="settings.settings.read">

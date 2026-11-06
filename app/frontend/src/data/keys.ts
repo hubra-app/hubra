@@ -139,6 +139,8 @@ export const qk = {
     apiTokens: ['api-access', 'tokens'] as const,
     webhooks: ['webhooks'] as const,
     associations: ['associations'] as const,
+    subscription: ['hubra-billing'] as const,
+    subscriptionInvoices: ['hubra-billing', 'invoices'] as const,
     webhookDeliveries: (id: number) => ['webhooks', id, 'deliveries'] as const,
     signInApps: ['api-access', 'sign-in-apps'] as const,
     appConnection: (id: number) => ['connected-apps', id] as const,
