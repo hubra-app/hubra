@@ -38,6 +38,9 @@ Limits (``limits.warn_percent``): when clubs are warned about their
 limits (``services.quotas``).  The limits and prices of each plan are on the
 plan (``services.plans``); a club can have its own on top, set in manage.
 
+Billing (``billing.*``): whether clubs pay Hubra through Stripe Billing,
+monthly or yearly, and the webhook secret (``hubra.core.billing``).
+
 Discord (``discord.*``): the one Hubra application every club's server and
 every linked account goes through (see docs/discord.md). Set here only, with
 no env fallback.  ``discord.log_*`` is the platform log: the bot posts
@@ -287,6 +290,32 @@ SPECS: tuple[Spec, ...] = (
         "of Stripe's own fees, which the club pays. 0: none",
         lambda cfg: "0",
         "fee_percent",
+    ),
+    Spec(
+        "billing.enabled",
+        "Bill clubs with Stripe",
+        "on: club admins see Einstellungen › Hubra-Abo and pay their plan "
+        "through Stripe Checkout with the platform's Stripe key; Stripe's "
+        "state is read every hour. off: terms are only stored (docs/billing.md)",
+        lambda cfg: "off",
+        "on_off",
+    ),
+    Spec(
+        "billing.yearly",
+        "Bill yearly",
+        "on: new subscriptions are charged once a year (12 × the monthly "
+        "price). off: monthly. Running subscriptions change at their next sync",
+        lambda cfg: "off",
+        "on_off",
+    ),
+    Spec(
+        "billing.stripe.webhook_secret",
+        "Stripe billing webhook secret",
+        "Signing secret (whsec_…) of the Stripe webhook pointing at "
+        "/api/v1/global/billing/stripe/webhook. Without it the status follows "
+        "Stripe only through the hourly check. Stored encrypted",
+        lambda cfg: cfg.get("STRIPE_BILLING_WEBHOOK_SECRET") or "",
+        secret=True,
     ),
     Spec(
         "push.vapid_public_key",

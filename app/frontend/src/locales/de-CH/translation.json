@@ -2314,7 +2314,8 @@
       "bank": "Bank & QR-Rechnung",
       "apps": "Verbundene Apps",
       "encryption": "Verschlüsselung",
-      "api": "API & Apps"
+      "api": "API & Apps",
+      "subscription": "Hubra-Abo"
     },
     "title": "Einstellungen",
     "yourAccount": "Dein Konto",
@@ -3507,7 +3508,8 @@
       "events_trials_read": "Schnuppertrainings ansehen",
       "events_trials_manage": "Schnuppertrainings verwalten",
       "dashboards_dashboards_share": "Dashboards mit dem Verein teilen",
-      "dashboards_home_update": "Startseite des Vereins anpassen"
+      "dashboards_home_update": "Startseite des Vereins anpassen",
+      "billing_billing_manage": "Hubra-Abo des Vereins bezahlen und verwalten"
     },
     "areas": {
       "applications": "Anträge",
@@ -4238,5 +4240,47 @@
     "nothing": "Nichts anzuzeigen",
     "more": "{{count}} weitere",
     "noView": "Das Plugin bringt keine Ansicht für dieses Widget mit"
+  },
+  "subscription": {
+    "cancelled": "Zahlung abgebrochen, es wurde nichts belastet.",
+    "discount": "Rabatt {{percent}} %",
+    "due": "Fällig pro Monat",
+    "endsOn": "Das Abo ist gekündigt und endet am {{date}}.",
+    "hint": "Was der Verein für Hubra bezahlt. Bezahlt wird über Stripe, zum Beispiel mit Karte; Karte, Rechnungsadresse und Kündigung verwaltet ihr im Stripe-Kundenportal.",
+    "hintOff": "Was der Verein für Hubra bezahlt. Online bezahlen ist noch nicht eingerichtet; Hubra meldet sich bei euch.",
+    "invoiceDate": "Datum",
+    "invoiceNumber": "Nummer",
+    "invoiceStatus": "Status",
+    "invoiceTotal": "Betrag",
+    "invoices": "Rechnungen von Hubra",
+    "manage": "Zahlung verwalten",
+    "nextInvoice": "Nächste Rechnung",
+    "open": "Offen",
+    "paid": "Bezahlt",
+    "pay": "Jetzt bezahlen",
+    "perMonth": "pro Monat",
+    "perYear": "pro Jahr",
+    "plan": "Tarif {{plan}}",
+    "sponsored": "{{name}} bezahlt euer Abo.",
+    "sponsoredUntil": "{{name}} bezahlt euer Abo bis am {{date}}.",
+    "status": {
+      "none": "Nicht verrechnet",
+      "trialing": "Testphase",
+      "active": "Aktiv",
+      "past_due": "Zahlung überfällig",
+      "unpaid": "Unbezahlt",
+      "canceled": "Gekündigt",
+      "incomplete": "Unvollständig",
+      "paused": "Pausiert"
+    },
+    "stripeFailed": "Stripe ist gerade nicht erreichbar",
+    "testMode": "Testmodus",
+    "thanks": "Danke! Das Hubra-Abo des Vereins läuft.",
+    "title": "Hubra-Abo",
+    "trialPay": "Ihr könnt jetzt schon eine Zahlungsart hinterlegen. Belastet wird erst nach der Testphase.",
+    "trialUntil": "Testphase bis",
+    "trouble": "Die letzte Zahlung hat nicht geklappt. Bitte prüft unter «Zahlung verwalten» die Karte oder das Konto, Stripe versucht es dann erneut.",
+    "view": "Ansehen",
+    "yearlyNote": "Verrechnet wird einmal im Jahr: {{amount}} {{per}}."
   }
 }

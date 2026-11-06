@@ -2314,7 +2314,8 @@
       "bank": "Bank & QR invoice",
       "apps": "Connected apps",
       "encryption": "Encryption",
-      "api": "API & apps"
+      "api": "API & apps",
+      "subscription": "Hubra subscription"
     },
     "title": "Settings",
     "yourAccount": "Your Account",
@@ -3507,7 +3508,8 @@
       "events_trials_read": "View trial trainings",
       "events_trials_manage": "Manage trial trainings",
       "dashboards_dashboards_share": "Share dashboards with the club",
-      "dashboards_home_update": "Change the club's start page"
+      "dashboards_home_update": "Change the club's start page",
+      "billing_billing_manage": "Pay and manage the club's Hubra subscription"
     },
     "areas": {
       "applications": "Applications",
@@ -4238,5 +4240,47 @@
     "nothing": "Nothing to show",
     "more": "{{count}} more",
     "noView": "The plugin has no view for this widget"
+  },
+  "subscription": {
+    "cancelled": "Payment cancelled, nothing was charged.",
+    "discount": "Discount {{percent}} %",
+    "due": "Due per month",
+    "endsOn": "The subscription is cancelled and ends on {{date}}.",
+    "hint": "What the club pays for Hubra. You pay through Stripe, for example by card; manage the card, billing address and cancelling in Stripe's customer portal.",
+    "hintOff": "What the club pays for Hubra. Paying online is not set up yet; Hubra will get in touch.",
+    "invoiceDate": "Date",
+    "invoiceNumber": "Number",
+    "invoiceStatus": "Status",
+    "invoiceTotal": "Amount",
+    "invoices": "Invoices from Hubra",
+    "manage": "Manage payment",
+    "nextInvoice": "Next invoice",
+    "open": "Open",
+    "paid": "Paid",
+    "pay": "Pay now",
+    "perMonth": "per month",
+    "perYear": "per year",
+    "plan": "{{plan}} plan",
+    "sponsored": "{{name}} pays your subscription.",
+    "sponsoredUntil": "{{name}} pays your subscription until {{date}}.",
+    "status": {
+      "none": "Not billed",
+      "trialing": "Trial",
+      "active": "Active",
+      "past_due": "Past due",
+      "unpaid": "Unpaid",
+      "canceled": "Cancelled",
+      "incomplete": "Incomplete",
+      "paused": "Paused"
+    },
+    "stripeFailed": "Stripe cannot be reached right now",
+    "testMode": "Test mode",
+    "thanks": "Thank you! The club's Hubra subscription is running.",
+    "title": "Hubra subscription",
+    "trialPay": "You can add a payment method now. Nothing is charged before the trial ends.",
+    "trialUntil": "Trial until",
+    "trouble": "The last payment did not go through. Please check the card or account under “Manage payment”, Stripe then tries again.",
+    "view": "View",
+    "yearlyNote": "Charged once a year: {{amount}} {{per}}."
   }
 }

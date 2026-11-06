@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ActionIcon,
   Alert,
+  Anchor,
   Badge,
   Button,
   Group,
@@ -19,9 +20,16 @@ import {
   Textarea,
   Title,
 } from '@mantine/core'
-import { IconInfoCircle, IconPencil, IconPlus, IconTrash } from '@tabler/icons-react'
+import {
+  IconExternalLink,
+  IconInfoCircle,
+  IconPencil,
+  IconPlus,
+  IconRefresh,
+  IconTrash,
+} from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
-import { formatDate } from '@/format'
+import { formatDate, formatDateTime } from '@/format'
 import { tr } from '@/lang'
 import { planLabel, priceUnitOptions, priceUnitSuffix } from '@/labels'
 import { usePlanChoices } from '@/plans'
@@ -30,33 +38,14 @@ import {
   getTenantModules,
   setTenantBilling,
   setTenantPlan,
+  syncTenantBilling,
   type BillingAddon,
   type BillingStatus,
   type BillingTerms,
   type TenantBilling as Billing,
 } from '@/api/tenants'
 import type { PriceUnit } from '@/api/platform'
-
-const STATUS: Record<BillingStatus, { de: string; en: string; color: string }> = {
-  none: { de: 'Nicht verrechnet', en: 'Not billed', color: 'gray' },
-  trialing: { de: 'Testphase', en: 'Trial', color: 'acc' },
-  active: { de: 'Aktiv', en: 'Active', color: 'green' },
-  past_due: { de: 'Zahlung überfällig', en: 'Past due', color: 'orange' },
-  unpaid: { de: 'Unbezahlt', en: 'Unpaid', color: 'red' },
-  canceled: { de: 'Gekündigt', en: 'Canceled', color: 'gray' },
-  incomplete: { de: 'Unvollständig', en: 'Incomplete', color: 'orange' },
-  paused: { de: 'Pausiert', en: 'Paused', color: 'gray' },
-}
-
-const statusText = (s: BillingStatus) => tr(STATUS[s].de, STATUS[s].en)
-
-const chf = (amount: string | number | null | undefined) =>
-  amount == null || amount === ''
-    ? '–'
-    : `CHF ${Number(amount).toLocaleString('de-CH', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`
+import { chf, STATUS, statusText } from '@/billing'
 
 function Row({
   label,
@@ -81,8 +70,8 @@ function Row({
 
 /**
  * What the club pays the platform: plan status, its own price, discount,
- * sponsor and paid add-ons. Kept here until Hubra charges through Stripe;
- * nothing is charged or sent to anyone yet.
+ * sponsor and paid add-ons, and its Stripe subscription (docs/billing.md).
+ * Saving the terms pushes them to the club's Stripe subscription.
  */
 export function TenantBilling({ tenantId }: { tenantId: number }) {
   const { notify } = useAdmin()
@@ -120,10 +109,15 @@ export function TenantBilling({ tenantId }: { tenantId: number }) {
         </Button>
       </Group>
       <Text size="sm" c="dimmed" mb={16}>
-        {tr(
-          'Nur festgehalten: Es wird noch nichts verrechnet. Der Status folgt später dem Stripe-Abo des Vereins.',
-          'Recorded only: nothing is charged yet. Later the status follows the club’s Stripe subscription.',
-        )}
+        {data.stripe.enabled
+          ? tr(
+              'Der Verein bezahlt über Stripe. Änderungen hier gehen beim Speichern an sein Stripe-Abo, ab der nächsten Rechnung.',
+              'The club pays through Stripe. Changes here go to its Stripe subscription when saved, from the next invoice.',
+            )
+          : tr(
+              'Nur festgehalten: Die Abrechnung über Stripe ist ausgeschaltet (Zahlungen › Abrechnung der Vereine).',
+              'Recorded only: billing through Stripe is off (Payments › Club billing).',
+            )}
       </Text>
 
       {data.sponsorship_ending_soon && (
@@ -241,6 +235,8 @@ export function TenantBilling({ tenantId }: { tenantId: number }) {
         </Stack>
       </SimpleGrid>
 
+      {data.stripe.enabled && <StripeSection tenantId={tenantId} data={data} />}
+
       {editing && (
         <BillingModal
           tenantId={tenantId}
@@ -256,7 +252,16 @@ export function TenantBilling({ tenantId }: { tenantId: number }) {
               }
               const fresh = await setTenantBilling(tenantId, values)
               queryClient.setQueryData(['tenant-billing', tenantId], fresh)
-              notify('success', tr('Abrechnung gespeichert', 'Billing saved'))
+              if (fresh.stripe.error)
+                notify(
+                  'error',
+                  tr(
+                    'Gespeichert, aber Stripe hat die Änderung nicht übernommen',
+                    'Saved, but Stripe did not take the change',
+                  ),
+                  fresh.stripe.error,
+                )
+              else notify('success', tr('Abrechnung gespeichert', 'Billing saved'))
               setEditing(false)
             } catch (err) {
               notify(
@@ -267,6 +272,131 @@ export function TenantBilling({ tenantId }: { tenantId: number }) {
             }
           }}
         />
+      )}
+    </Paper>
+  )
+}
+
+/** The club's Stripe customer and subscription, with links into Stripe. */
+function StripeSection({ tenantId, data }: { tenantId: number; data: Billing }) {
+  const { notify } = useAdmin()
+  const queryClient = useQueryClient()
+  const [busy, setBusy] = useState(false)
+  const st = data.stripe
+  const dash = `https://dashboard.stripe.com${st.testMode ? '/test' : ''}`
+  const stripeStatus = st.status as BillingStatus | undefined
+
+  const sync = async () => {
+    setBusy(true)
+    try {
+      const fresh = await syncTenantBilling(tenantId)
+      queryClient.setQueryData(['tenant-billing', tenantId], fresh)
+      notify('success', tr('Mit Stripe abgeglichen', 'Synced with Stripe'))
+    } catch (err) {
+      notify(
+        'error',
+        tr('Abgleich fehlgeschlagen', 'Sync failed'),
+        err instanceof Error ? err.message : undefined,
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Paper withBorder p="md" mt={20} bg="var(--mantine-color-default-hover)">
+      <Group justify="space-between" mb={8} gap={8}>
+        <Group gap={8}>
+          <Text fw={700}>Stripe</Text>
+          {st.testMode && (
+            <Badge variant="light" color="orange" size="sm">
+              {tr('Testmodus', 'Test mode')}
+            </Badge>
+          )}
+          {stripeStatus && (
+            <Badge variant="light" size="sm" color={STATUS[stripeStatus]?.color ?? 'gray'}>
+              {STATUS[stripeStatus] ? statusText(stripeStatus) : st.status}
+            </Badge>
+          )}
+        </Group>
+        {st.subscription_id && (
+          <Button
+            size="xs"
+            variant="light"
+            loading={busy}
+            leftSection={<IconRefresh size={16} />}
+            onClick={sync}
+          >
+            {tr('Mit Stripe abgleichen', 'Sync with Stripe')}
+          </Button>
+        )}
+      </Group>
+      {st.error && (
+        <Alert color="red" variant="light" icon={<IconInfoCircle size={18} />} mb={10}>
+          {st.error}
+        </Alert>
+      )}
+      {st.payment_failed_at && (
+        <Alert color="orange" variant="light" icon={<IconInfoCircle size={18} />} mb={10}>
+          {tr(
+            `Die letzte Zahlung ist am ${formatDateTime(st.payment_failed_at)} fehlgeschlagen. Stripe versucht es nach seinen Regeln erneut.`,
+            `The last payment failed on ${formatDateTime(st.payment_failed_at)}. Stripe retries by its own rules.`,
+          )}
+        </Alert>
+      )}
+      {!st.customer_id ? (
+        <Text size="sm" c="dimmed">
+          {tr(
+            'Der Verein hat noch nicht bezahlt. Er startet das Abo in der App unter Einstellungen › Hubra-Abo.',
+            'The club has not paid yet. It starts the subscription in the app under Settings › Hubra subscription.',
+          )}
+        </Text>
+      ) : (
+        <Stack gap={6}>
+          <Row
+            label={tr('Kunde', 'Customer')}
+            value={
+              <Anchor href={`${dash}/customers/${st.customer_id}`} target="_blank" size="sm">
+                {st.customer_id} <IconExternalLink size={12} />
+              </Anchor>
+            }
+          />
+          {st.subscription_id && (
+            <Row
+              label={tr('Abo', 'Subscription')}
+              value={
+                <Anchor
+                  href={`${dash}/subscriptions/${st.subscription_id}`}
+                  target="_blank"
+                  size="sm"
+                >
+                  {st.subscription_id} <IconExternalLink size={12} />
+                </Anchor>
+              }
+            />
+          )}
+          {st.current_period_end && (
+            <Row
+              label={tr('Nächste Rechnung', 'Next invoice')}
+              value={
+                st.cancel_at_period_end
+                  ? tr(
+                      `endet am ${formatDate(st.current_period_end)}`,
+                      `ends on ${formatDate(st.current_period_end)}`,
+                    )
+                  : formatDate(st.current_period_end)
+              }
+            />
+          )}
+          {st.updated_at && (
+            <Text size="xs" c="dimmed">
+              {tr(
+                `Zuletzt von Stripe gelesen: ${formatDateTime(st.updated_at)}`,
+                `Last read from Stripe: ${formatDateTime(st.updated_at)}`,
+              )}
+            </Text>
+          )}
+        </Stack>
       )}
     </Paper>
   )

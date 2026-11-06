@@ -58,6 +58,7 @@ const DOMAINS = [
   'domains.service',
 ]
 const PAYMENTS = ['payments.stripe.secret_key', 'payments.fee_percent']
+const BILLING = ['billing.enabled', 'billing.yearly', 'billing.stripe.webhook_secret']
 const DISCORD = [
   'discord.client_id',
   'discord.public_key',
@@ -99,6 +100,7 @@ export type SettingsSectionId =
   | 'backups'
   | 'files'
   | 'payments'
+  | 'billing'
   | 'domains'
   | 'discord-app'
   | 'discord-channels'
@@ -115,6 +117,7 @@ const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
   backups: BACKUP,
   files: FILES,
   payments: PAYMENTS,
+  billing: BILLING,
   domains: DOMAINS,
   'discord-app': DISCORD,
   'discord-channels': [...DISCORD_LOG, ...DISCORD_ROLES, ...DISCORD_SUPPORT],
@@ -217,6 +220,18 @@ const FIELD_DE: Record<string, [string, string]> = {
   'payments.stripe.secret_key': [
     'Stripe-Secret-Key',
     'Der Schlüssel des Plattform-Kontos (Connect). sk_test_ für den Testmodus. Wird verschlüsselt gespeichert',
+  ],
+  'billing.enabled': [
+    'Vereine über Stripe abrechnen',
+    'on: Admins eines Vereins sehen Einstellungen › Hubra-Abo und bezahlen ihren Tarif über Stripe Checkout, mit dem Stripe-Schlüssel oben; der Stand wird stündlich bei Stripe gelesen. off: Konditionen werden nur festgehalten',
+  ],
+  'billing.yearly': [
+    'Jährlich abrechnen',
+    'on: neue Abos werden einmal im Jahr belastet (12 × der Monatspreis). off: monatlich. Laufende Abos wechseln beim nächsten Abgleich',
+  ],
+  'billing.stripe.webhook_secret': [
+    'Webhook-Secret der Abrechnung',
+    'Signing Secret (whsec_…) des Stripe-Webhooks auf /api/v1/global/billing/stripe/webhook. Ohne es folgt der Status Stripe nur über die stündliche Prüfung. Wird verschlüsselt gespeichert',
   ],
   'payments.fee_percent': [
     'Plattformgebühr',
@@ -678,6 +693,22 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                 )}
               </Text>
               <Stack gap="sm">{PAYMENTS.map(field)}</Stack>
+            </Paper>
+          )}
+
+          {section === 'billing' && (
+            <Paper withBorder p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Abrechnung der Vereine (Stripe Billing)', 'Club billing (Stripe Billing)')}</Title>
+                {resetButton(BILLING)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Hubra verrechnet den Vereinen ihren Tarif über das Stripe-Konto der Plattform (gleicher Schlüssel wie oben). Im Stripe-Dashboard einen Webhook auf /api/v1/global/billing/stripe/webhook anlegen (checkout.session.completed, customer.subscription.*, invoice.paid, invoice.payment_failed) und das Kundenportal einschalten. Siehe docs/billing.md.',
+                  "Hubra bills clubs for their plan through the platform's Stripe account (same key as above). In the Stripe dashboard add a webhook to /api/v1/global/billing/stripe/webhook (checkout.session.completed, customer.subscription.*, invoice.paid, invoice.payment_failed) and turn on the customer portal. See docs/billing.md.",
+                )}
+              </Text>
+              <Stack gap="sm">{BILLING.map(field)}</Stack>
             </Paper>
           )}
 

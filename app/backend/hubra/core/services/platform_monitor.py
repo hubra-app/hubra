@@ -65,6 +65,7 @@ ALERT_TYPES = (
     "upgrades",
     "system",
     "support_cases",
+    "billing",
 )
 # Off unless the admin turns them on: news, not trouble.
 _OFF_BY_DEFAULT = frozenset({"plugin_updates"})

@@ -378,6 +378,7 @@ export type AlertType =
   | 'upgrades'
   | 'system'
   | 'support_cases'
+  | 'billing'
 
 export interface OpenProblem {
   id: string
