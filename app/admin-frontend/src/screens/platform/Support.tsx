@@ -593,6 +593,16 @@ function CaseDetail({ id }: { id: number }) {
                     <Text size="xs" c="dimmed" style={{ wordBreak: 'break-all' }}>
                       {c.reporter.email}
                     </Text>
+                    {c.reporter.guest && (
+                      <Badge size="xs" variant="light" color="gray" mt={4}>
+                        {c.reporter.reason === 'wrong_recipient'
+                          ? tr('Ohne Konto · Mail an falsche Person', 'No account · mail to the wrong person')
+                          : c.reporter.reason === 'unwanted_mail'
+                            ? tr('Ohne Konto · will keine Mails', 'No account · wants no mails')
+                            : tr('Ohne Konto', 'No account')}
+                        {c.reporter.mail ? ` · ${c.reporter.mail}` : ''}
+                      </Badge>
+                    )}
                   </>
                 ) : (
                   '–'

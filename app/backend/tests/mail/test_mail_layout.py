@@ -111,34 +111,52 @@ def _render_reset(app) -> str:
     return html
 
 
-def test_the_footer_links_the_support_sites_account_page(app, db):
-    from hubra.core.services import platform_settings
-
-    _password_reset_texts(db)
+def _footer_texts(db) -> None:
     db.session.add(
         Translation(
             locale="en-GB",
-            key="mail.email.footer_help",
-            value="Report a problem or unsubscribe",
+            key="mail.email.footer_report",
+            value="Not meant for you? Tell us.",
         )
     )
+    db.session.add(
+        Translation(locale="en-GB", key="mail.email.footer_unsubscribe", value="Unsubscribe")
+    )
+
+
+def test_every_mail_footer_links_report_and_unsubscribe(app, db):
+    from hubra.core.services import platform_settings
+
+    _password_reset_texts(db)
+    _footer_texts(db)
     platform_settings.set_many({"support.url": "https://support.hubra.club/"})
     db.session.commit()
-    html = _render_reset(app)
-    assert 'href="https://support.hubra.club/konto"' in html
-    assert ">Report a problem or unsubscribe</a>" in html
+    with app.test_request_context():
+        html, text, _ = render_mail_template(
+            "password_reset",
+            "en-GB",
+            name="Anna",
+            club_name="Alpha Club",
+            reset_url="https://sso.example/reset#token=x",
+        )
+    assert 'href="https://support.hubra.club/melden?mail=password_reset"' in html
+    assert ">Not meant for you? Tell us.</a>" in html
+    assert 'href="https://support.hubra.club/konto#mails"' in html
+    # The plain-text part carries the same links.
+    assert "Not meant for you? Tell us. https://support.hubra.club/melden?mail=password_reset" in text
+    assert "Unsubscribe: https://support.hubra.club/konto#mails" in text
 
 
-def test_no_footer_link_without_a_support_site_or_its_text(app, db):
+def test_no_footer_links_without_a_support_site_or_its_text(app, db):
     from hubra.core.services import platform_settings
 
     _password_reset_texts(db)
     platform_settings.set_many({"support.url": ""})
     db.session.commit()
-    assert "/konto" not in _render_reset(app)
-    # Set, but `flask seed` has not loaded the text yet: no "[key]" in mails.
+    assert "/melden" not in _render_reset(app)
+    # Set, but `flask seed` has not loaded the texts yet: no "[key]" in mails.
     platform_settings.set_many({"support.url": "https://support.hubra.club"})
     db.session.commit()
     html = _render_reset(app)
-    assert "/konto" not in html
-    assert "[mail.email.footer_help]" not in html
+    assert "/melden" not in html
+    assert "[mail.email.footer_report]" not in html

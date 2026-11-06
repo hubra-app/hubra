@@ -51,7 +51,15 @@ export interface StaffCase {
   createdAt: string
   updatedAt: string
   closedAt: string | null
-  reporter: { id: number; name: string; email: string } | null
+  /** guest: sent without an account (from the support site or a mail footer). */
+  reporter: {
+    id: number | null
+    name: string
+    email: string
+    guest?: boolean
+    reason?: 'wrong_recipient' | 'unwanted_mail' | 'other'
+    mail?: string | null
+  } | null
   club: { id: number; name: string; slug: string } | null
   awaitingReply?: boolean
   comments?: CaseComment[]

@@ -190,8 +190,8 @@ function ReportCard() {
     <Card id="problem" icon={<IconBug size={22} />} color="grape" title={tr('Problem melden', 'Report a problem')}>
       <Text size="sm" c="dimmed">
         {tr(
-          'Ein Link führt ins Leere, eine Seite zeigt einen Fehler, eine Mail stimmt nicht? Sag uns, was passiert ist. Wir antworten per Mail und unter «Meine Meldungen».',
-          "A link leads nowhere, a page shows an error, a mail is wrong? Tell us what happened. We answer by mail and under \"My reports\".",
+          'Ein Link führt ins Leere, eine Seite zeigt einen Fehler, eine Mail ging an die falsche Person? Sag uns, was passiert ist, auch ohne Konto. Wir antworten per Mail.',
+          'A link leads nowhere, a page shows an error, a mail went to the wrong person? Tell us what happened, no account needed. We answer by mail.',
         )}
       </Text>
       <Group gap="sm">

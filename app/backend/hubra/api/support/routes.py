@@ -76,6 +76,32 @@ def create_case():
     ), 201
 
 
+@support_bp.post("/guest-cases")
+@limiter.limit("5 per hour; 20 per day")
+def create_guest_case():
+    """No sign-in: a mail that reached the wrong person, unwanted mails, or
+    another problem from someone without an account.  Body: ``email``,
+    ``name``?, ``reason`` (wrong_recipient | unwanted_mail | other),
+    ``kind``? (bug | question), ``title``, ``description``, ``mail``? (which
+    mail, from the footer link), ``page``?, ``fingerprint``?.  ``website``
+    is a honeypot: when filled, the answer looks the same and nothing is
+    stored."""
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return api_error("VALIDATION_ERROR", "Expected an object", 400)
+    if body.get("website"):
+        return jsonify({"ok": True}), 201
+    try:
+        case = services.submit_guest(body)
+    except SupportError as exc:
+        db.session.rollback()
+        return api_error("VALIDATION_ERROR", error_message(exc), 400)
+    db.session.commit()
+    services.alert_staff(case)
+    support_discord.case_created(case)
+    return jsonify({"ok": True}), 201
+
+
 @support_bp.get("/cases")
 @jwt_required()
 def list_my_cases():
@@ -317,9 +343,8 @@ def staff_comment(case_id: int):
     db.session.commit()
     if not internal:
         support_discord.comment_added(comment)
-        people = services.followers(case)
-        if people:
-            services.mail_update(case, people, comment=comment.body)
+        # Guests (no account) are mailed by mail_update too.
+        services.mail_update(case, services.followers(case), comment=comment.body)
     author = db.session.get(User, comment.user_id) if comment.user_id else None
     return jsonify(services.comment_dict(comment, author, staff_view=True)), 201
 
@@ -351,6 +376,8 @@ def staff_merge(case_id: int):
         reporter = db.session.get(User, case.user_id)
         if reporter is not None and not reporter.is_disabled:
             services.mail_update(case, [reporter], merged_into=target)
+    elif services.guest_contact(case) is not None:
+        services.mail_update(case, [], merged_into=target)
     return jsonify(services.staff_detail(target)), 200
 
 
