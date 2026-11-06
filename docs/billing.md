@@ -48,6 +48,100 @@ before.
 Not built yet: putting a club into read-only mode after it stays unpaid,
 and Stripe Tax / VAT on the invoices.
 
+## Who the subscription belongs to
+
+The customer in Stripe is **the club**, not the person who pays. Each
+Hubra club (tenant) has at most one Stripe customer and one running
+subscription, and every invoice belongs to that customer.
+
+| In Stripe | Comes from | Set when |
+| --- | --- | --- |
+| Customer name | the club's name (`tenant.name`) | the first **Pay now** |
+| Customer email | the email of the club admin who clicked **Pay now** | the first **Pay now** |
+| Customer metadata | `tenant_id` and `slug` of the club | the first **Pay now** |
+| Customer language | the club's locale (default `de-CH`) | the first **Pay now** |
+| Subscription metadata | `tenant_id` | Checkout |
+| Checkout `client_reference_id` | `tenant_id` | Checkout |
+| Billing address, card | what the admin types in Checkout or the portal | Checkout, portal |
+
+Hubra stores the customer id and the subscription id in the club's
+settings (`tenants.settings["billing_stripe"]`). The webhook finds the club
+by `tenant_id` in the metadata (or `client_reference_id`) and, failing
+that, by the stored customer id. Any admin of the club with the right
+`billing.billing.manage` opens the same customer in Checkout and the
+portal, so it doesn't matter which admin pays; the first admin's email is
+only where Stripe sends invoices and receipts. They can change it in the
+portal (if the portal allows updating customer details).
+
+To find a club in the Stripe dashboard: manage › All clubs › club ›
+Billing shows the customer and subscription ids, or search Stripe for the
+club's name or `metadata['slug']:'<slug>'`.
+
+Good to know: the customer's name is copied once. Renaming the club in
+Hubra does not rename the Stripe customer, so change it in Stripe (or the
+portal) as well. The same goes for line names: a product is named once
+(`Hubra <plan>`, `Hubra <add-on label>`) when Hubra first uses it.
+
+**What the test invoice shows.** With an `sk_test_…` key, Checkout,
+invoices and the portal carry Stripe's test-mode badge, and the test card
+`4242 4242 4242 4242` pays. The first invoice is made when Checkout
+completes:
+
+- To: the club's name, the admin's email and, if Checkout asked for it, the billing address.
+- From: the Stripe account's public name, address and invoice footer (see
+  [Which Stripe account](#which-stripe-account)).
+- One line `Hubra <plan>` (plan price after the club's discount), plus one
+  line `Hubra <add-on>` per paid module or add-on with its quantity
+  (1, members or licences) and unit price, in CHF, for the coming month
+  (or year with `billing.yearly`).
+- During a trial: an invoice of CHF 0.00 now, and the first real one on the
+  day the trial ends.
+
+The club sees the same invoices (number, date, total, paid, PDF link) in
+Settings › Hubra subscription. The portal shows the club's card, billing
+address, the invoice history and the next payment date, and lets the club
+cancel (at the end of the period, depending on the portal's settings).
+
+## Add-ons added during the month
+
+Stripe bills a subscription **in advance**: each invoice charges the
+coming period (month or year). The billing day is the day Checkout was
+completed, or the day the trial ended.
+
+When manage adds an add-on (or a module, or raises licences) in the middle
+of a period, Hubra replaces the subscription's items at once, with
+`proration_behavior: none`:
+
+- **Nothing is charged now.** There is no extra invoice and no prorated
+  line for the rest of the current period: the add-on runs free until the
+  next billing day.
+- **The next invoice has it in full.** On the next billing day the invoice
+  shows the add-on as its own line `Hubra <add-on>` at its full price for
+  the new period, next to the plan.
+- **Removing works the same way.** An add-on removed mid-period gives no
+  credit; it is gone from the next invoice.
+- **Per-member prices follow the member count.** The hourly reconcile
+  reads every subscription again and pushes the quantities when they
+  changed, so the invoice uses the number of members that are not archived
+  at most an hour before the billing day. Joins and leaves in between are
+  not prorated either.
+- **During a trial** any change just sets what the first real invoice will
+  charge.
+- **Yearly billing** (`billing.yearly`): the same rule means an add-on
+  added in month two runs free for the rest of the year. If that matters,
+  charge yearly clubs by hand for the gap, or switch proration on (below).
+
+The club's subscription tab in Hubra shows the new amount at once (what is
+due); Stripe's subscription page in the dashboard shows it under
+**Upcoming invoice**.
+
+Changing this is one parameter in `sync()` in
+`hubra/core/billing/service.py`: `create_prorations` puts a prorated
+charge for the rest of the period on the next invoice, `always_invoice`
+charges it at once. Because Hubra replaces all items on each change, both
+would also show a credit and a charge for the unchanged lines, so they
+would need a smarter item update first.
+
 ## Setting it up
 
 1. **Stripe key.** manage › Payments › Club billing: the key of the Stripe
