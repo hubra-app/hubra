@@ -1,7 +1,8 @@
-import { Button, Stack, Text, Title } from '@mantine/core'
+import { Button, Group, Stack, Text, Title } from '@mantine/core'
 import { useNavigate } from 'react-router-dom'
 import { useT } from '@/locales/i18n'
-import { IconArrowLeft } from '@tabler/icons-react'
+import { IconArrowLeft, IconBug } from '@tabler/icons-react'
+import { reportProblemUrl } from '@/screens/private/support/supportSite'
 import { hasTokens } from '@hubra/api-client'
 
 export function NotFoundScreen() {
@@ -32,9 +33,21 @@ export function NotFoundScreen() {
             'Diese Seite gibt es nicht oder sie wurde verschoben.',
           )}
         </Text>
-        <Button mt="md" leftSection={<IconArrowLeft size={16} />} onClick={() => navigate(target)}>
-          {t('common.goHome', 'Zur Startseite')}
-        </Button>
+        <Group mt="md" justify="center" gap="sm">
+          <Button leftSection={<IconArrowLeft size={16} />} onClick={() => navigate(target)}>
+            {t('common.goHome', 'Zur Startseite')}
+          </Button>
+          {/* A broken link is a problem worth hearing about: the address goes along. */}
+          <Button
+            component="a"
+            href={reportProblemUrl()}
+            variant="default"
+            leftSection={<IconBug size={16} />}
+            data-testid="notfound-report"
+          >
+            {t('support.menu.bug', 'Problem melden')}
+          </Button>
+        </Group>
       </Stack>
     </div>
   )

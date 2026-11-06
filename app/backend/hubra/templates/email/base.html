@@ -59,6 +59,11 @@
           <tr>
             <td class="hb-foot" align="center" style="padding: 22px 16px 0; font-family: {{ ui.font_body }}; font-size: 12px; line-height: 18px; color: #5e5873;">
               {{ t('mail.email.footer', club_name=club_name) }}<br />
+              {%- if help_url %}{% set help_label = t('mail.email.footer_help') %}{% endif %}
+              {#- Until `flask seed` loads the text, leave the link out rather than show the key. #}
+              {%- if help_url and not help_label.startswith('[') %}
+              <a href="{{ help_url }}" style="color: #5e5873; text-decoration: underline;">{{ help_label }}</a><br />
+              {%- endif %}
               {{ t('mail.email.sent_with') }}
               <span class="hb-word" style="font-family: 'Bricolage Grotesque', {{ ui.font_body }}; font-weight: 800; letter-spacing: -0.2px; color: #7441e0;">hubra</span>
             </td>

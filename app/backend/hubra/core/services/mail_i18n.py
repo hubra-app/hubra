@@ -145,6 +145,19 @@ def mail_logo_src() -> str:
     )
 
 
+def _help_url() -> str:
+    """The support site's "Account and mails" page for the footer of every
+    mail ("not me", unsubscribe, report a problem), or "" while the platform
+    setting ``support.url`` is empty."""
+    try:
+        from hubra.core.services.email import support_site_url
+
+        return support_site_url("/konto")
+    except Exception:  # no app context or settings table yet: no link
+        logger.debug("support.url not readable for the mail footer", exc_info=True)
+        return ""
+
+
 def render_mail_template(
     template_name: str, locale: str, **context
 ) -> tuple[str, str, str]:
@@ -154,7 +167,13 @@ def render_mail_template(
     ``email/<template_name>_subject.j2`` and stripped of whitespace.
     """
     t = get_mail_translator(locale)
-    shared_ctx = {"t": t, "locale": locale, "logo_src": mail_logo_src(), **context}
+    shared_ctx = {
+        "t": t,
+        "locale": locale,
+        "logo_src": mail_logo_src(),
+        "help_url": _help_url(),
+        **context,
+    }
 
     html = render_template(f"email/{template_name}.html", **shared_ctx)
     # The texts carry simple HTML (<strong>, <br>) for the HTML part; the

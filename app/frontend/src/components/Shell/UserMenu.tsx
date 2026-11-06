@@ -17,10 +17,9 @@ import { useMyTenants } from '@/data/lists'
 import { initials, contrastColor } from './nav'
 import { setWhatsNewOpen } from './whatsNewStore'
 import { openReport } from '@/screens/private/support/reportStore'
+import { SUPPORT_URL } from '@/screens/private/support/supportSite'
 import { useWhatsNewUnseen } from './whatsNewData'
 
-/** Help, roadmap, status and reports (app/support-frontend). */
-const SUPPORT_URL = import.meta.env.VITE_SUPPORT_URL ?? 'https://support.hubra.club'
 
 const rowStyle = {
   display: 'flex',

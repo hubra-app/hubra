@@ -11,6 +11,7 @@ import { InstanceProvider, useInstance } from '@/context/InstanceContext'
 import { RequireModule } from '@/modules/RequireModule'
 import { PluginBoundary, usePluginLoader, usePluginRoutes } from '@/plugins'
 import { NotFoundScreen } from '@/screens/public/NotFound'
+import { openReport } from '@/screens/private/support/reportStore'
 import { Toasts } from '@/components/ui'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ForcedPasswordChangeModal } from '@/components/ForcedPasswordChangeModal'
@@ -231,6 +232,10 @@ function PrivateRoutes() {
                     </Text>
                     <Button onClick={() => resetErrorBoundary()}>
                       {i18n.t('app.retry', 'Nochmals versuchen')}
+                    </Button>
+                    {/* The shell is still there, so the in-app dialog opens (it records the page). */}
+                    <Button variant="default" onClick={() => openReport('bug')}>
+                      {i18n.t('support.menu.bug', 'Problem melden')}
                     </Button>
                   </Stack>
                 </Paper>

@@ -20,10 +20,12 @@ import { useQuery } from '@tanstack/react-query'
 import { SSO_URL } from '@hubra/api-client'
 import {
   IconArrowUpRight,
+  IconBug,
   IconCheck,
   IconChevronRight,
   IconDotsVertical,
   IconLayoutSidebarLeftCollapse,
+  IconLifebuoy,
   IconLogout,
   IconMenu2,
   IconUserCircle,
@@ -184,6 +186,9 @@ function NavSections({ sections, collapsed = false }: { sections: NavSection[]; 
   )
 }
 
+/** Help, status and reports (app/support-frontend). */
+const SUPPORT_URL: string = import.meta.env.VITE_SUPPORT_URL ?? 'https://support.hubra.club'
+
 function LanguageMenu() {
   const { lang, setLang } = useLang()
   const labels: Record<Lang, string> = { de: 'Deutsch', en: 'English' }
@@ -274,6 +279,17 @@ function UserCard() {
       <Menu.Dropdown>
         <Menu.Item component="a" href={`${SSO_URL}/account`} leftSection={<IconUserCircle size={16} />}>
           {tr('Mein Konto', 'My account')}
+        </Menu.Item>
+        <Menu.Item
+          component="a"
+          href={`${SUPPORT_URL}/melden?page=${encodeURIComponent(window.location.href)}`}
+          leftSection={<IconBug size={16} />}
+          data-testid="menu-report-bug"
+        >
+          {tr('Problem melden', 'Report a problem')}
+        </Menu.Item>
+        <Menu.Item component="a" href={SUPPORT_URL} leftSection={<IconLifebuoy size={16} />}>
+          {tr('Hilfe und Support', 'Help and support')}
         </Menu.Item>
         <Menu.Item
           leftSection={<IconWorld size={16} />}
