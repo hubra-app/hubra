@@ -450,8 +450,8 @@ export function navSections(): NavSection[] {
           label: tr('Zahlungen', 'Payments'),
           icon: icon(IconCreditCard),
           desc: tr(
-            'Online-Zahlungen der Vereine über Stripe Connect: der Schlüssel des Plattform-Kontos und die Plattformgebühr.',
-            "Clubs' online payments through Stripe Connect: the platform account's key and the platform fee.",
+            'Stripe: der Schlüssel des Plattform-Kontos, die Plattformgebühr für Online-Zahlungen der Vereine (Connect) und die Abrechnung der Vereine (Billing).',
+            "Stripe: the platform account's key, the platform fee for clubs' online payments (Connect) and billing clubs (Billing).",
           ),
           tabs: [
             {
@@ -459,7 +459,12 @@ export function navSections(): NavSection[] {
               path: '/app/platform/payments',
               label: '',
               perm: 'platform.settings',
-              render: () => <SettingsSection section="payments" />,
+              render: () => (
+                <Stack gap="lg">
+                  <SettingsSection section="payments" />
+                  <SettingsSection section="billing" />
+                </Stack>
+              ),
             },
           ],
         },

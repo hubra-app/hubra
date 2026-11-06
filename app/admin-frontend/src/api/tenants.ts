@@ -573,7 +573,7 @@ export async function setTenantEarlyAccess(
   })
 }
 
-// ── Billing terms (stored and shown only, nothing is charged yet) ────────────
+// ── Billing terms and Stripe Billing (docs/billing.md) ──────────────────────
 
 /** Stripe's subscription statuses, plus "none" for a club that is not billed. */
 export type BillingStatus =
@@ -640,6 +640,53 @@ export interface TenantBilling extends BillingTerms {
   sponsorship_ending_soon: boolean
   sponsorship_ended: boolean
   trial_days_left: number | null
+  /** Stripe's side: ids, its status, and whether billing is on at all. */
+  stripe: TenantStripeState
+}
+
+export interface TenantStripeState {
+  enabled: boolean
+  testMode: boolean
+  customer_id?: string
+  subscription_id?: string
+  /** Stripe's own subscription status (may differ from the terms' status). */
+  status?: string
+  current_period_end?: string | null
+  cancel_at_period_end?: boolean
+  payment_failed_at?: string | null
+  updated_at?: string
+  /** Set when saving the terms could not push them to Stripe. */
+  error?: string
+}
+
+export interface BillingOverview {
+  enabled: boolean
+  testMode: boolean
+  yearly: boolean
+  mrrChf: string
+  arrChf: string
+  payingClubs: number
+  perStatus: Partial<Record<BillingStatus, number>>
+  trouble: {
+    id: number
+    name: string
+    slug: string
+    status: BillingStatus
+    dueChf: string
+    paymentFailedAt: string | null
+    periodEnd: string | null
+  }[]
+}
+
+/** Read the club's subscription from Stripe and push the terms to it. */
+export async function syncTenantBilling(tenantId: number) {
+  return apiFetch<TenantBilling>(`/platform/system/tenants/${tenantId}/billing/sync`, {
+    method: 'POST',
+  })
+}
+
+export async function getBillingOverview() {
+  return apiFetch<BillingOverview>('/platform/system/billing/overview')
 }
 
 export async function getTenantBilling(tenantId: number) {

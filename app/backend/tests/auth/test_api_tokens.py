@@ -9,6 +9,7 @@ club tokens) or to the platform API (read-only platform tokens).
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
@@ -396,7 +397,12 @@ def test_club_tokens_never_open_platform_routes(app, made):
 
 def test_rate_limit(app, made):
     c = app.test_client()
-    with patch.object(api_tokens, "READS_PER_MINUTE", 3):
+    # The limit counts per clock minute: hold the clock still, or five
+    # requests that straddle a minute boundary land in two windows.
+    with (
+        patch.object(api_tokens, "READS_PER_MINUTE", 3),
+        patch.object(api_tokens, "time", SimpleNamespace(time=lambda: 1_800_000_030.0)),
+    ):
         codes = [
             c.get("/api/v1/events/", headers=_bearer(made["token"])).status_code
             for _ in range(5)

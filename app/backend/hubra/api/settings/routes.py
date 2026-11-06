@@ -268,3 +268,5 @@ def revert_setting(key: str):
         db.session.rollback()
         raise
     return jsonify(_setting_schema.dump(setting)), 200
+
+from hubra.api.settings import associations  # noqa: E402,F401

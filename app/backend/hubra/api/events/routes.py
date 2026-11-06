@@ -685,6 +685,12 @@ def public_links():
             "calendar": url_for(
                 "events_bp.public_calendar", slug=tenant.slug, _external=True
             ),
+            # One line of HTML that shows the list on any website.
+            "widget": '<script src="{}" async></script>'.format(
+                url_for(
+                    "events_bp.public_events_widget", slug=tenant.slug, _external=True
+                )
+            ),
             "upcoming": int(count or 0),
         }
     ), 200
@@ -693,3 +699,4 @@ def public_links():
 # Trial trainings (public trial page and the trainers' list) add their routes
 # to this blueprint.
 from hubra.api.events import trials  # noqa: E402,F401
+from hubra.api.events import federation  # noqa: E402,F401

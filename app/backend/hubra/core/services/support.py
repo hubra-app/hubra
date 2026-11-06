@@ -196,6 +196,82 @@ def submit(user_id: int, tenant_id: int | None, body: dict) -> SupportCase:
     return case
 
 
+def _looks_like_email(value: str) -> bool:
+    """name@host.tld, without a regex (no backtracking on long input)."""
+    if any(c.isspace() for c in value) or value.count("@") != 1:
+        return False
+    local, _, domain = value.partition("@")
+    head, dot, tld = domain.rpartition(".")
+    return bool(local and head and dot and tld)
+
+
+GUEST_KINDS = ("bug", "question")
+GUEST_REASONS = ("wrong_recipient", "unwanted_mail", "other")
+
+
+def submit_guest(body: dict) -> SupportCase:
+    """A report from someone without an account (or not signed in): a mail
+    that reached the wrong person, mails they don't want, or another
+    problem.  They leave an address so staff can answer; no vote, no club,
+    and nothing is mailed to that address until staff answers."""
+    kind = body.get("kind") or "bug"
+    if kind not in GUEST_KINDS:
+        raise SupportError("kind must be bug or question")
+    email = _text(body.get("email"), "email", 254, required=True)
+    if not _looks_like_email(email or ""):
+        raise SupportError("email is not a valid address")
+    name = _text(body.get("name"), "name", 120)
+    reason = body.get("reason") or "other"
+    if reason not in GUEST_REASONS:
+        raise SupportError("Unknown reason")
+    title = _text(body.get("title"), "title", TITLE_MAX, required=True)
+    description = _text(body.get("description"), "description", TEXT_MAX, required=True)
+    details: dict = {"guest": {"email": email.lower(), "name": name, "reason": reason}}
+    mail = _text(body.get("mail"), "mail", 120)
+    if mail:
+        details["guest"]["mail"] = mail
+    case = SupportCase(
+        kind=kind,
+        status="open",
+        title=title,
+        description=description,
+        details=details,
+        area="mail" if reason != "other" else None,
+        severity="annoying" if kind == "bug" else None,
+        page=_page(body.get("page")),
+        fingerprint=_with_version(clean_fingerprint(body.get("fingerprint"))) or None,
+        user_id=None,
+        tenant_id=None,
+    )
+    db.session.add(case)
+    db.session.flush()
+    return case
+
+
+def guest_contact(case: SupportCase) -> dict | None:
+    """The address a guest report left, or None for an account's case."""
+    if case.user_id is not None:
+        return None
+    guest = (case.details or {}).get("guest")
+    return guest if isinstance(guest, dict) and guest.get("email") else None
+
+
+def _reporter(case: SupportCase, user: User | None) -> dict | None:
+    if user is not None:
+        return _person(user)
+    guest = guest_contact(case)
+    if guest is None:
+        return None
+    return {
+        "id": None,
+        "name": guest.get("name") or guest["email"],
+        "email": guest["email"],
+        "guest": True,
+        "reason": guest.get("reason"),
+        "mail": guest.get("mail"),
+    }
+
+
 # ── Reading ───────────────────────────────────────────────────────────────────
 
 
@@ -566,7 +642,7 @@ def staff_listing(
     items = []
     for c in cases:
         item = as_dict(c, votes=votes.get(c.id, 0), comments=counts.get(c.id, 0))
-        item["reporter"] = _person(users.get(c.user_id))
+        item["reporter"] = _reporter(c, users.get(c.user_id))
         item["club"] = clubs.get(c.tenant_id)
         item["awaitingReply"] = c.id in waiting and c.status not in FINISHED
         items.append(item)
@@ -632,8 +708,8 @@ def staff_detail(case: SupportCase) -> dict:
         votes=_votes([case.id]).get(case.id, 0),
         comments=_comment_counts([case.id], staff=True).get(case.id, 0),
     )
-    item["reporter"] = _person(
-        db.session.get(User, case.user_id) if case.user_id else None
+    item["reporter"] = _reporter(
+        case, db.session.get(User, case.user_id) if case.user_id else None
     )
     item["club"] = _clubs({case.tenant_id}).get(case.tenant_id)
     item["comments"] = comments_for(case, staff=True)
@@ -821,6 +897,15 @@ def followers(case: SupportCase) -> list[User]:
 # ── Messages ──────────────────────────────────────────────────────────────────
 
 
+def _guest_line(case: SupportCase) -> str:
+    guest = guest_contact(case)
+    if guest is None:
+        return "From: unknown"
+    who = f"{guest['name']} <{guest['email']}>" if guest.get("name") else guest["email"]
+    line = f"From: {who} (no account, {guest.get('reason', 'other')})"
+    return line + (f", mail: {guest['mail']}" if guest.get("mail") else "")
+
+
 def alert_staff(case: SupportCase) -> None:
     """Tell platform admins about a new case.  Never raises."""
     try:
@@ -845,7 +930,7 @@ def alert_staff(case: SupportCase) -> None:
             f"{label} #{case.id}: {case.title}",
             f"From: {reporter.name} <{reporter.email}>"
             if reporter
-            else "From: unknown",
+            else _guest_line(case),
         ]
         if club:
             lines.append(f"Club: {club['name']}")
@@ -906,4 +991,25 @@ def mail_update(
                 sent += 1
         except Exception:  # noqa: BLE001
             logger.warning("support_case_mail_failed id=%s", case.id, exc_info=True)
+    guest = guest_contact(case)
+    if guest is not None:
+        # A guest has no account to read answers in: the mail is all they get.
+        try:
+            if email.send_support_case_update(
+                guest["email"],
+                guest.get("name") or guest["email"],
+                case_id=case.id,
+                kind=case.kind,
+                title=case.title,
+                status=case.status,
+                comment=comment,
+                merged_into=(
+                    f"#{merged_into.id} {merged_into.title}" if merged_into else None
+                ),
+                lang=email.DEFAULT_LANG,
+                with_link=False,
+            ):
+                sent += 1
+        except Exception:  # noqa: BLE001
+            logger.warning("support_case_guest_mail_failed id=%s", case.id, exc_info=True)
     return sent

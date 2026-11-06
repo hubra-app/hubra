@@ -9,6 +9,7 @@ and version, and others use them through core:
 | event | a fact (`booking.confirmed`) | subscribe with `Module.events` | none; zero or more listeners |
 | action | a command with one owner (`keys.key.hand_out`) | `call()` now, or `send()` after the commit | the action's result |
 | query | a read (`inventory.items.get`) | `query()` | the result; writes are rolled back |
+| widget | a dashboard widget (`inventory.lent`) | members add it to dashboards | what it shows, read as the viewer |
 
 Core finds who offers a contract, checks that its module is on for the club,
 checks the acting member's right, checks the input and the result against
@@ -119,6 +120,14 @@ send("keys.key.hand_out", key_id=12, member_id=5, actor=SYSTEM)  # after the com
 - A plugin's own events need a contract too: `emit()` refuses a name no
   module lists under `provides` when a plugin sends it.
 
+## Widgets
+
+`widget_contract(name, handler, label=…, size=…, view=…, fields=…, perm=…)`
+offers a dashboard widget. Core lists it only to members who may see it
+(module on, `perm` held), runs its handler as the viewing member like a
+query, and checks the result against its view (`stat`, `list`, or the
+contract's `output` for `custom`). See [dashboards.md](dashboards.md).
+
 ## Versions
 
 `version` is the contract's major version, a whole number. Adding an
@@ -153,7 +162,8 @@ A plugin's event handlers and every `send()` go through the
 Delivery is at least once. A handler that only writes to the database gets
 it once in effect. One that talks to an outside service should accept an
 `event_id` argument (events) or read `ctx.message_id` (actions): both stay
-the same on every retry.
+the same on every retry. An event whose own data has an `event_id` (the club
+events `event.*`: the id of the event) passes that one instead.
 
 ```
 flask contracts list [--json]   # every contract, with JSON schemas
@@ -190,10 +200,23 @@ Moving to a broker means: write the transport, run a consumer that calls
 `outbox.deliver(uid)` (or reads the envelope straight from the message),
 and switch it on. Emitters and handlers don't change.
 
+## What Hubra's own modules offer
+
+| Contract | Kind | What it does |
+| --- | --- | --- |
+| `finance.billing_period` | query | `{on}` → `{start, end}`, the club's billing year around that day |
+| `finance.invoice.set_status` | action | `{invoice_id, status: Paid\|Open, actor_id?}`, with the mails and `invoice.updated`; needs `finance.invoices.update` |
+
+A plugin that adds a source to the fee basis (Finanzen › Beitragsgrundlage)
+offers a query named `<module>.fee_basis.<source>`: input `{on}`, output
+`{lines: [{category_id, name, color, amount, items}], period}` (shapes in
+`hubra/api/finance/contracts.py`). The Finances plugin offers
+`finance.books.fee_basis.recurring` and `.last_year` this way.
+
 ## Not covered yet
 
 - Club webhooks keep their own delivery and retries (`webhooks.md`).
-- Hubra's own modules still call each other directly; they may offer
-  contracts as features move into plugins.
+- Hubra's own modules still call each other directly; they offer
+  contracts as features move into plugins (below).
 - Frontend slots are declared in core (`SlotProps`); a plugin can't yet
   declare a slot of its own for others to fill.

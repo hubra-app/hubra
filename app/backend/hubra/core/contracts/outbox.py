@@ -291,8 +291,16 @@ def _run_event(module_code: str, target: str, env: dict) -> None:
     if not is_enabled(module_code, tenant_id=tid):
         raise _Skip(f"{module_code} is off")
     fn = _resolve(target)
-    extra = {"event_id": env["id"]} if _accepts_event_id(fn) else {}
-    fn(tenant_id=tid, **dict(env.get("data") or {}), **extra)
+    data = dict(env.get("data") or {})
+    # The delivery id goes in as ``event_id`` only when the event's own data
+    # has no ``event_id`` (club events do: the id of the ClubEvent, which
+    # the handler needs).
+    extra = (
+        {"event_id": env["id"]}
+        if "event_id" not in data and _accepts_event_id(fn)
+        else {}
+    )
+    fn(tenant_id=tid, **data, **extra)
     db.session.commit()
 
 

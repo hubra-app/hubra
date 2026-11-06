@@ -20,6 +20,7 @@ import {
   Textarea,
   Title,
 } from '@mantine/core'
+import { BillingOverview } from '@/screens/platform/BillingOverview'
 import {
   IconArrowDown,
   IconArrowUp,
@@ -110,6 +111,7 @@ export function PlatformPlans() {
 
   return (
     <Stack gap={20} maw={960}>
+      <BillingOverview />
       <Paper withBorder p="lg">
         <Group justify="space-between" mb={4}>
           <Title order={3}>{tr('Tarife', 'Plans')}</Title>
@@ -119,8 +121,8 @@ export function PlatformPlans() {
         </Group>
         <Text size="xs" c="dimmed" mb={12}>
           {tr(
-            'Öffentliche Tarife zeigt die Website (über die öffentliche API). Nicht öffentliche Tarife kann ein Verein trotzdem bekommen, etwa für eine Sonderabmachung. Eigener Preis, Rabatt und Sponsoring stehen beim Verein. Es wird noch nichts verrechnet.',
-            'The website shows public plans (through the public API). A club can still be put on a plan that is not public, for a special deal. Own price, discount and sponsor are set on the club. Nothing is charged yet.',
+            'Öffentliche Tarife zeigt die Website (über die öffentliche API). Nicht öffentliche Tarife kann ein Verein trotzdem bekommen, etwa für eine Sonderabmachung. Eigener Preis, Rabatt und Sponsoring stehen beim Verein.',
+            'The website shows public plans (through the public API). A club can still be put on a plan that is not public, for a special deal. Own price, discount and sponsor are set on the club.',
           )}
         </Text>
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">

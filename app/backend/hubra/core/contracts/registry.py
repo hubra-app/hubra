@@ -41,6 +41,16 @@ class Offer:
             "description": c.description,
             "input": json_schema(c.input),
             "output": json_schema(c.output),
+            **(self.widget_dict() if c.kind == "widget" else {}),
+        }
+
+    def widget_dict(self) -> dict:
+        c = self.contract
+        return {
+            "label": c.label,
+            "size": c.size,
+            "view": c.view,
+            "fields": [f.to_dict() for f in c.fields],
         }
 
 

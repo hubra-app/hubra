@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, TextInput, Paper, Loader, Center } from '@mantine/core'
+import { Button, TextInput, Paper, Loader, Center, SegmentedControl } from '@mantine/core'
 import {
   IconArrowLeft,
   IconHeart,
@@ -12,7 +12,8 @@ import { useT } from '@/locales/i18n'
 import { useToast, useAuth } from '@/context/AppContext'
 import { PageHead, Avatar } from '@/components/ui'
 import { MarkdownRenderer } from '@/components/MarkdownRenderer'
-import type { Post, PostComment as PostCommentType } from '@/types'
+import type { ContentLanguage, Post, PostComment as PostCommentType } from '@/types'
+import { useLanguageNames } from './contentLanguages'
 import {
   getPost,
   likePost,
@@ -20,6 +21,8 @@ import {
   listComments,
   addComment,
   deleteComment,
+  postIn,
+  postLanguages,
 } from '@/api/posts'
 import { qk } from '@/data/keys'
 
@@ -30,6 +33,8 @@ export function PostDetailScreen() {
   const { notify } = useToast()
   const { currentUser, isAdmin, hasPermission } = useAuth()
   const queryClient = useQueryClient()
+  const [lang, setLang] = useState<ContentLanguage | null>(null)
+  const languageNames = useLanguageNames()
 
   const {
     data: post,
@@ -141,10 +146,14 @@ export function PostDetailScreen() {
 
   const liked = post.likeMemberIds.includes(currentUser?.id ?? '')
 
+  // The member may read the post in another of its languages.
+  const view = lang ? postIn(post, lang) : post
+  const languages = postLanguages(post)
+
   return (
     <div>
       <PageHead
-        title={post.title}
+        title={view.title}
         actions={
           <Button
             variant="default"
@@ -187,7 +196,18 @@ export function PostDetailScreen() {
             marginBottom: 16,
           }}
         >
-          <MarkdownRenderer content={post.body} />
+          {languages.length > 1 && (
+            <SegmentedControl
+              size="xs"
+              mb="sm"
+              data-testid="post-language-switch"
+              value={view.shownLanguage ?? languages[0]}
+              onChange={(v) => setLang(v as ContentLanguage)}
+              data={languages.map((l) => ({ value: l, label: languageNames[l] }))}
+              aria-label={t('content.readIn', 'Sprache')}
+            />
+          )}
+          <MarkdownRenderer content={view.body} />
         </div>
         <div
           style={{

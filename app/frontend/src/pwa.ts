@@ -105,6 +105,26 @@ export function rememberClub(club: string): void {
   }
 }
 
+/** The club used last on this device, or null. */
+function lastClub(): string | null {
+  let club: string | null
+  try {
+    club = localStorage.getItem(LAST_CLUB_KEY)
+  } catch {
+    return null
+  }
+  return club && /^[a-z0-9][a-z0-9-]{0,62}$/i.test(club) ? club : null
+}
+
+/**
+ * An in-app path (/app/…) in the club used last, or null when this device
+ * has not opened a club yet. Old links without a club use it.
+ */
+export function lastClubPath(path: string): string | null {
+  const club = lastClub()
+  return club ? `/${encodeURIComponent(club)}${path}` : null
+}
+
 /**
  * Where `/` should go when the installed app starts: the last club's page,
  * or null (then the usual sign-in). `to` is an in-app path from a manifest
@@ -113,14 +133,7 @@ export function rememberClub(club: string): void {
 export function pwaStartPath(search: string): string | null {
   const params = new URLSearchParams(search)
   if (params.get('source') !== 'pwa') return null
-  let club: string | null
-  try {
-    club = localStorage.getItem(LAST_CLUB_KEY)
-  } catch {
-    return null
-  }
-  if (!club || !/^[a-z0-9][a-z0-9-]{0,62}$/i.test(club)) return null
   const to = params.get('to') ?? ''
   const path = /^\/app\/[a-z0-9/_-]*$/i.test(to) && !to.includes('//') ? to : '/app/dashboard'
-  return `/${encodeURIComponent(club)}${path}`
+  return lastClubPath(path)
 }

@@ -31,6 +31,8 @@ import { useT } from '@/locales/i18n'
 import { qk } from '@/data/keys'
 import { useToast } from '@/context/AppContext'
 import { ErrorBanner } from '@/components/ui'
+import { PublicPageCard } from './PublicPageCard'
+import { AssociationsCard } from './AssociationsCard'
 
 /** Which part of the club settings a tab shows; each saves the whole set. */
 export type ClubSettingsSection = 'club' | 'membership'
@@ -291,11 +293,19 @@ function ClubSettingsForm({
               />
             </Stack>
           </Paper>
+          <AssociationsCard />
         </>
       )}
 
       {section === 'membership' && (
         <>
+          <PublicPageCard
+            on={form.public_page ?? false}
+            website={form.website ?? ''}
+            onToggle={(v) => update('public_page', v)}
+            onWebsite={(v) => update('website', v.trim() ? v.trim() : null)}
+          />
+
           <Paper withBorder p="lg">
             <Title order={3} mb="md">
               {t('clubSettings.privacy', 'Privatsphäre')}

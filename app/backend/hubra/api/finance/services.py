@@ -369,11 +369,10 @@ class InvoiceService:
         recipient_name = ""
 
         if member and member.email and member.private_email_verified:
-            from hubra.core.services.email import _get_base_url
+            from hubra.core.services.email import MY_INVOICES_PATH, club_app_url
 
-            _base = _get_base_url()
             club_name = club_display_name()
-            portal_url = f"{_base}/invoices" if _base else ""
+            portal_url = club_app_url(MY_INVOICES_PATH)
 
             lang = getattr(member, "language", "de-CH") or "de-CH"
             body_html, body_text, subject = render_mail_template(

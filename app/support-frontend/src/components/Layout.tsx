@@ -18,6 +18,7 @@ import {
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import {
+  IconBellOff,
   IconChevronDown,
   IconInbox,
   IconLogout,
@@ -83,6 +84,9 @@ function AccountButton() {
         <Menu.Item component={Link} to="/datenschutz" leftSection={<IconShieldLock size={16} />}>
           {tr('Meine Daten', 'My data')}
         </Menu.Item>
+        <Menu.Item component={Link} to="/konto" leftSection={<IconBellOff size={16} />}>
+          {tr('Konto und Mails', 'Account and mails')}
+        </Menu.Item>
         <Menu.Item component="a" href={ACCOUNT_URL} leftSection={<IconUserCircle size={16} />}>
           {tr('Mein Konto', 'My account')}
         </Menu.Item>
@@ -120,6 +124,7 @@ function Footer() {
         { to: '/status', label: tr('Systemstatus', 'System status') },
         { to: '/sicherheit', label: tr('Sicherheit', 'Security') },
         { to: '/datenschutz', label: tr('Meine Daten', 'My data') },
+        { to: '/konto', label: tr('Konto und Mails', 'Account and mails') },
       ],
     },
     {

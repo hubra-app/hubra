@@ -6,6 +6,7 @@ monthly statement and the annual accounts) are the Finances plugin, module
 booking, so they live in every club schema either way.
 """
 
+from hubra.core.contracts import action_contract, query_contract
 from hubra.core.modules import Blueprint, Module, NavItem, SettingField
 
 module = Module(
@@ -145,5 +146,22 @@ module = Module(
         "recurring_transactions",
         "accounts",
         "fiscal_years",
+    ),
+    provides=(
+        query_contract(
+            "finance.billing_period",
+            "hubra.api.finance.contracts:billing_period",
+            input="hubra.api.finance.contracts:PeriodIn",
+            output="hubra.api.finance.contracts:Period",
+            description="The club's billing year around a day",
+        ),
+        action_contract(
+            "finance.invoice.set_status",
+            "hubra.api.finance.contracts:set_invoice_status",
+            input="hubra.api.finance.contracts:InvoiceStatusIn",
+            output="hubra.api.finance.contracts:InvoiceStatus",
+            perm="finance.invoices.update",
+            description="Mark an invoice paid, or open again",
+        ),
     ),
 )

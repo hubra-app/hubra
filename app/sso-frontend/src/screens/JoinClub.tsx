@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import {
   Alert,
+  Anchor,
   Badge,
   Button,
   Center,
+  Group,
   Loader,
   Paper,
   Radio,
@@ -16,6 +18,10 @@ import { IconArrowLeft, IconCheck } from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import { SignedInFrame } from '@/components/SignedInFrame'
+import { AuthFrame } from '@/components/AuthFrame'
+import { PublicClubDetails } from '@/components/PublicClubDetails'
+import { getPublicClub, type PublicClub } from '@/api/publicClub'
+import { clubLogoUrl } from '@hubra/api-client'
 import { clubAppUrl } from '@/redirect'
 import * as authApi from '@/api/auth'
 import { useLang } from '@/lang'
@@ -33,10 +39,19 @@ export function JoinClubScreen() {
   const [tierChoice, setTierChoice] = useState<string | null>(null)
   const { tr } = useLang()
 
+  // Anyone may see the club's public page; without one, signing in comes first.
+  const publicPage = useQuery({
+    queryKey: ['public-club', slug],
+    queryFn: () => getPublicClub(slug),
+    enabled: !!slug,
+    retry: false,
+  })
+  const signIn = () =>
+    navigate(`/login?redirect=${encodeURIComponent(window.location.href)}`, { replace: true })
   useEffect(() => {
-    if (authStatus === 'anon')
-      navigate(`/login?redirect=${encodeURIComponent(window.location.href)}`, { replace: true })
-  }, [authStatus, navigate])
+    if (authStatus === 'anon' && publicPage.isError) signIn()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authStatus, publicPage.isError])
 
   const authed = authStatus === 'authed'
   const club = useQuery({
@@ -79,6 +94,9 @@ export function JoinClubScreen() {
       )
     }
   }
+
+  if (authStatus === 'anon' && publicPage.data)
+    return <PublicClubView club={publicPage.data} onJoin={signIn} />
 
   if (!authed || club.isLoading)
     return (
@@ -195,6 +213,59 @@ export function JoinClubScreen() {
           )}
         </Stack>
       </Paper>
+      {publicPage.data && (
+        <Paper withBorder p="xl" mt="md">
+          <PublicClubDetails club={publicPage.data} />
+        </Paper>
+      )}
     </SignedInFrame>
+  )
+}
+
+/** The club's public page for someone who isn't signed in. */
+function PublicClubView({ club, onJoin }: { club: PublicClub; onJoin: () => void }) {
+  const { tr } = useLang()
+  const logo = clubLogoUrl(club.slug, club.logoVersion)
+  return (
+    <AuthFrame wide>
+      <Stack gap="lg" data-testid="public-club-page">
+        <Group gap="md" wrap="nowrap">
+          {logo && (
+            <img
+              src={logo}
+              alt=""
+              width={56}
+              height={56}
+              style={{ borderRadius: 12, objectFit: 'contain', flex: 'none' }}
+            />
+          )}
+          <Title order={2}>{club.name}</Title>
+        </Group>
+        <PublicClubDetails club={club} />
+        {club.acceptsRequests ? (
+          <Stack gap={6}>
+            <Button size="md" onClick={onJoin}>
+              {tr('Mitglied werden', 'Become a member')}
+            </Button>
+            <Text size="xs" c="dimmed" ta="center">
+              {tr(
+                'Mit deinem Hubra-Konto anmelden oder eines erstellen, dann eine Beitrittsanfrage schicken.',
+                'Sign in with your Hubra account or create one, then send a request to join.',
+              )}
+            </Text>
+          </Stack>
+        ) : (
+          <Text size="sm" c="dimmed">
+            {tr(
+              `${club.name} nimmt neue Mitglieder nur auf Einladung auf.`,
+              `${club.name} only takes new members by invitation.`,
+            )}
+          </Text>
+        )}
+        <Anchor size="sm" ta="center" onClick={onJoin}>
+          {tr('Schon Mitglied? Anmelden', 'Already a member? Sign in')}
+        </Anchor>
+      </Stack>
+    </AuthFrame>
   )
 }

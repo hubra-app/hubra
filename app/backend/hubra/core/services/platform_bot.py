@@ -359,8 +359,10 @@ ALERT_PAGES: dict[str, tuple[str, str]] = {
     "upgrades": ("Update", "/app/platform/diagnostics"),
     "system": ("System", "/app/platform/alerts"),
     "support_cases": ("Meldungen und Ideen", "/app/reports"),
+    "billing": ("Abrechnung", "/app/tenants"),
 }
 _LINK_LABELS = {
+    "billing": "Verein öffnen",
     "support_cases": "Meldung öffnen",
     "plugin_updates": "Zum Katalog",
     "backup_failed": "Zu den Backups",

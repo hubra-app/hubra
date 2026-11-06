@@ -247,3 +247,57 @@ def run_queued(name: str, env: dict) -> Any:
         message_id=env.get("id"),
     )
     return _run(offer, dict(env.get("data") or {}), ctx, read_only=False)
+
+
+# ── Widgets ─────────────────────────────────────────────────────────────────
+
+
+def _widget_output(contract):
+    import dataclasses
+
+    from .base import ListData, StatData
+
+    model = {"stat": StatData, "list": ListData}.get(contract.view)
+    return dataclasses.replace(contract, output=model) if model else contract
+
+
+def widgets(actor: Any = CURRENT) -> list[reg.Offer]:
+    """The widgets *actor* may put on a dashboard here: module on, right held."""
+    from .base import WIDGET
+
+    tid = _tenant_id()
+    member, system = _actor(actor)
+    out = []
+    for offer in reg.offers().values():
+        if offer.contract.kind != WIDGET:
+            continue
+        try:
+            _check_on(offer, tid)
+            _check_perm(offer, member, system)
+        except (ActionUnavailable, ActionForbidden):
+            continue
+        out.append(offer)
+    return sorted(out, key=lambda o: o.contract.name)
+
+
+def widget_data(name: str, config: Any = None, *, actor: Any = CURRENT):
+    """What widget *name* shows for *actor* with its saved *config*: checked
+    like a query (module on, right held, result against the view's shape),
+    and its writes rolled back."""
+    from .base import WIDGET
+
+    offer = reg.get(name)
+    if offer is None or offer.contract.kind != WIDGET:
+        raise ActionUnavailable(f"no widget {name} here")
+    tid = _tenant_id()
+    _check_on(offer, tid)
+    member, system = _actor(actor)
+    _check_perm(offer, member, system)
+    contract = _widget_output(offer.contract)
+    ctx = CallContext(tid, name, "dashboards", actor=member, system=system)
+    return _run(
+        reg.Offer(contract, offer.module_code, offer.plugin),
+        offer.contract.config(config),
+        ctx,
+        read_only=True,
+    )

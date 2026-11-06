@@ -100,6 +100,25 @@ def _get_base_url() -> str:
     return str(base).rstrip("/") if base else ""
 
 
+def club_app_url(path: str) -> str:
+    """A link into the current club's app, e.g. ``/app/dashboard/me``.
+
+    Club pages live below ``/<club slug>``; a path without it lands on the
+    404 page. Empty when FRONTEND_BASE_URL is not set.
+    """
+    from hubra.core.tenant.context import current_tenant
+
+    base = _get_base_url()
+    if not base:
+        return ""
+    tenant = current_tenant()
+    return f"{base}/{tenant.slug}{path}" if tenant else f"{base}{path}"
+
+
+# Members see their open invoices (with QR bill) on their personal start page.
+MY_INVOICES_PATH = "/app/dashboard/me"
+
+
 def _get_sso_base_url() -> str:
     """Return the SSO portal's base URL for auth-related email links.
 
@@ -688,6 +707,7 @@ def send_support_case_update(
     comment: str | None = None,
     merged_into: str | None = None,
     lang: str = DEFAULT_LANG,
+    with_link: bool = True,
 ) -> bool:
     """Tell a reporter that the Hubra team answered their problem report or
     feature request, changed its status or merged it.  True when sent."""
@@ -705,6 +725,7 @@ def send_support_case_update(
         status_label=t(f"mail.email.support_case.status_{status}"),
         comment=comment or "",
         merged_into=merged_into or "",
-        cases_url=support_cases_url(case_id),
+        # A guest (no account) has no "My reports" to open.
+        cases_url=support_cases_url(case_id) if with_link else "",
     )
     return _send(to_address, name, subject, body_html, body_text, system=True)

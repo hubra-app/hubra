@@ -17,6 +17,7 @@ import logging
 import re
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import quote
 
 import nh3
 from flask import render_template
@@ -145,6 +146,47 @@ def mail_logo_src() -> str:
     )
 
 
+def _footer_links(template_name: str) -> dict[str, str]:
+    """Links for the footer of every mail: report this mail (wrong person,
+    something wrong; works without an account) and unsubscribe.  Empty while
+    the platform setting ``support.url`` is empty."""
+    try:
+        from hubra.core.services.email import support_site_url
+
+        base = support_site_url("")
+    except Exception:  # noqa: BLE001 - no app context or settings yet: no links
+        logger.debug("support.url not readable for the mail footer", exc_info=True)
+        base = ""
+    if not base:
+        return {"report_url": "", "unsubscribe_url": ""}
+    return {
+        "report_url": f"{base}/melden?mail={quote(template_name)}",
+        "unsubscribe_url": f"{base}/konto#mails",
+    }
+
+
+def _footer_texts(t, ctx: dict) -> tuple[str, str] | None:
+    """The two footer texts, or None when there are no links or `flask
+    seed` has not loaded the texts yet (no "[key]" in mails)."""
+    if not ctx.get("report_url"):
+        return None
+    report = t("mail.email.footer_report")
+    unsubscribe = t("mail.email.footer_unsubscribe")
+    if report.startswith("[") or unsubscribe.startswith("["):
+        return None
+    return report, unsubscribe
+
+
+def _text_footer(t, ctx: dict) -> str:
+    from html import unescape
+
+    texts = _footer_texts(t, ctx)
+    if texts is None:
+        return ""
+    report, unsubscribe = (unescape(str(x)) for x in texts)
+    return f"{report} {ctx['report_url']}\n{unsubscribe}: {ctx['unsubscribe_url']}"
+
+
 def render_mail_template(
     template_name: str, locale: str, **context
 ) -> tuple[str, str, str]:
@@ -154,7 +196,14 @@ def render_mail_template(
     ``email/<template_name>_subject.j2`` and stripped of whitespace.
     """
     t = get_mail_translator(locale)
-    shared_ctx = {"t": t, "locale": locale, "logo_src": mail_logo_src(), **context}
+    shared_ctx = {
+        "t": t,
+        "locale": locale,
+        "logo_src": mail_logo_src(),
+        **_footer_links(template_name),
+        **context,
+    }
+    shared_ctx["footer_texts"] = _footer_texts(t, shared_ctx)
 
     html = render_template(f"email/{template_name}.html", **shared_ctx)
     # The texts carry simple HTML (<strong>, <br>) for the HTML part; the
@@ -164,6 +213,9 @@ def render_mail_template(
 
     text = render_template(f"email/{template_name}.txt", **shared_ctx)
     text = unescape(re.sub(r"<[^>]+>", "", text))
+    footer = _text_footer(t, shared_ctx)
+    if footer:
+        text = text.rstrip("\n") + "\n\n-- \n" + footer + "\n"
     # t() escapes values for the HTML part; a subject is plain text.
     subject = unescape(
         render_template(f"email/{template_name}_subject.j2", **shared_ctx).strip()

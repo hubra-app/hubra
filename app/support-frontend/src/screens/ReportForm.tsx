@@ -19,6 +19,7 @@ import { IconChevronDown, IconChevronRight } from '@tabler/icons-react'
 import { currentDeviceInfo, type DeviceInfo } from '@hubra/ui'
 import { Page } from '@/components/Layout'
 import { SignInNeeded } from '@/components/SignInNeeded'
+import { GuestReportForm } from '@/screens/GuestReport'
 import { useAuth } from '@/auth'
 import { useLang } from '@/lang'
 import { AREAS, myClubs, sendCaseFor, type Area, type CaseKind, type Severity } from '@/api/support'
@@ -60,21 +61,15 @@ export function ReportScreen({ kind }: { kind: CaseKind }) {
     <Page narrow title={copy.title} intro={copy.intro}>
       {status === 'authed' ? (
         <ReportForm kind={kind} />
+      ) : kind !== 'feature' && status === 'anon' ? (
+        <GuestReportForm kind={kind} />
       ) : (
-        <Stack gap="lg">
-          <SignInNeeded
-            why={tr(
-              'Damit wir dir antworten können, braucht es dein Hubra-Konto.',
-              'We need your Hubra account so we can answer you.',
-            )}
-          />
-          {kind === 'question' && status === 'anon' && (
-            <Text size="sm" c="dimmed">
-              {tr('Noch kein Konto? Schreib an', 'No account yet? Write to')}{' '}
-              <Anchor href="mailto:hi@hubra.club">hi@hubra.club</Anchor>.
-            </Text>
+        <SignInNeeded
+          why={tr(
+            'Ideen brauchen ein Konto, damit andere dafür stimmen können.',
+            'Ideas need an account so others can vote for them.',
           )}
-        </Stack>
+        />
       )}
     </Page>
   )
@@ -91,7 +86,8 @@ function ReportForm({ kind }: { kind: CaseKind }) {
   const [steps, setSteps] = useState('')
   const [expected, setExpected] = useState('')
   const [useCase, setUseCase] = useState('')
-  const [where, setWhere] = useState('')
+  // 404 and error pages in the apps link here with ?where=<their address>.
+  const [where, setWhere] = useState((params.get('where') ?? params.get('page') ?? '').slice(0, 500))
   const [area, setArea] = useState<Area | null>(initialArea)
   const [severity, setSeverity] = useState<Severity>('annoying')
   const [club, setClub] = useState<string | null>(params.get('club'))

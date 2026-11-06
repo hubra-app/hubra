@@ -191,6 +191,16 @@ export const ALERT_TYPES: {
         'Someone reported a problem or suggested an idea in the app. Handled under Support.',
       ),
   },
+  {
+    id: 'billing',
+    group: 'platform',
+    label: () => tr('Zahlung eines Vereins fehlgeschlagen', 'A club payment failed'),
+    desc: () =>
+      tr(
+        'Stripe konnte das Hubra-Abo eines Vereins nicht einziehen, oder das Abo ist überfällig oder unbezahlt.',
+        "Stripe could not charge a club's Hubra subscription, or the subscription is past due or unpaid.",
+      ),
+  },
 ]
 
 /** Platform events: the audit log categories (services/platform_discord.py). */

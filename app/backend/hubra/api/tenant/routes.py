@@ -403,12 +403,59 @@ def set_tenant_early_access(tenant_id: int):
 @require_global_permission("tenants.read")
 def get_tenant_billing(tenant_id: int):
     """Plan status, price, discount, sponsor and add-ons (stored only)."""
-    from hubra.core.services import club_billing
 
     tenant = TenantService.get_by_id(tenant_id)
     if tenant is None:
         raise_error(404, "NOT_FOUND", "Tenant not found")
-    return jsonify(club_billing.summary(tenant)), 200
+    return jsonify(_billing_view(tenant)), 200
+
+
+def _billing_view(tenant, stripe_error: str | None = None) -> dict:
+    """The terms with Stripe's side (ids included: manage links to Stripe)."""
+    from hubra.core.billing import service
+    from hubra.core.services import club_billing
+
+    view = club_billing.summary(tenant)
+    view["stripe"] = {
+        **service.state(tenant),
+        "enabled": service.enabled(),
+        "testMode": service.test_mode(),
+    }
+    if stripe_error:
+        view["stripe"]["error"] = stripe_error
+    return view
+
+
+@tenant_admin_bp.route("/tenants/<int:tenant_id>/billing/sync", methods=["POST"])
+@require_global_permission("tenants.update")
+def sync_tenant_billing(tenant_id: int):
+    """Read the club's subscription from Stripe and push the terms to it."""
+    from hubra.core.billing import service
+    from hubra.core.billing.stripe_api import StripeError
+
+    tenant = TenantService.get_by_id(tenant_id)
+    if tenant is None:
+        raise_error(404, "NOT_FOUND", "Tenant not found")
+    if not service.state(tenant).get("subscription_id"):
+        raise_error(409, "NO_SUBSCRIPTION", "The club has no Stripe subscription")
+    try:
+        service.refresh(tenant)
+        service.sync(tenant, force=True)
+    except StripeError as exc:
+        db.session.rollback()
+        _log.warning("billing_sync_failed tenant=%s error=%s", tenant.id, exc)
+        raise_error(502, "STRIPE_ERROR", exc.public_message())
+    db.session.commit()
+    return jsonify(_billing_view(tenant)), 200
+
+
+@tenant_admin_bp.route("/billing/overview", methods=["GET"])
+@require_global_permission("tenants.read")
+def billing_overview():
+    """Monthly revenue, clubs per status, clubs with a payment problem."""
+    from hubra.core.billing import service
+
+    return jsonify(service.overview()), 200
 
 
 @tenant_admin_bp.route("/tenants/<int:tenant_id>/billing", methods=["PATCH"])
@@ -442,7 +489,19 @@ def update_tenant_billing(tenant_id: int):
         )
     )
     db.session.commit()
-    return jsonify(club_billing.summary(tenant)), 200
+    # A running subscription takes the new terms from its next invoice.
+    from hubra.core.billing import service
+    from hubra.core.billing.stripe_api import StripeError
+
+    stripe_error = None
+    try:
+        if service.sync(tenant):
+            db.session.commit()
+    except StripeError as exc:
+        db.session.rollback()
+        _log.warning("billing_sync_failed tenant=%s error=%s", tenant.id, exc)
+        stripe_error = exc.public_message()
+    return jsonify(_billing_view(tenant, stripe_error)), 200
 
 
 @tenant_admin_bp.route("/tenants/<int:tenant_id>/limits", methods=["GET"])
@@ -2893,3 +2952,6 @@ def close_data_request(request_id: int, status: str):
     _privacy_audit(req, f"privacy.request.{status}")
     db.session.commit()
     return jsonify(data_requests.to_dict(req)), 200
+
+
+from hubra.api.tenant import public_page  # noqa: E402,F401  (registers /clubs/<slug>/public)

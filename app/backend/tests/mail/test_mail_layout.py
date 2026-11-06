@@ -81,3 +81,82 @@ def test_the_logo_travels_as_an_inline_image(app, db):
 def test_a_mail_without_images_stays_plain_alternative(app):
     body = _mail_body("<p>Hi</p>", "Hi")
     assert body.get_content_type() == "multipart/alternative"
+
+
+def _password_reset_texts(db) -> None:
+    for key, value in {
+        "mail.email.greeting": "Hi {{name}},",
+        "mail.email.password_reset.body": "Reset your password.",
+        "mail.email.password_reset.cta_note": "Use the button",
+        "mail.email.password_reset.button": "Reset password",
+        "mail.email.password_reset.ignore": "Ignore it.",
+        "mail.email.button_fallback": "Or open:",
+        "mail.email.footer": "Sent by {{club_name}}.",
+        "mail.email.sent_with": "Sent with",
+        "mail.email.subject.password_reset": "Reset",
+    }.items():
+        db.session.add(Translation(locale="en-GB", key=key, value=value))
+    db.session.commit()
+
+
+def _render_reset(app) -> str:
+    with app.test_request_context():
+        html, _, _ = render_mail_template(
+            "password_reset",
+            "en-GB",
+            name="Anna",
+            club_name="Alpha Club",
+            reset_url="https://sso.example/reset#token=x",
+        )
+    return html
+
+
+def _footer_texts(db) -> None:
+    db.session.add(
+        Translation(
+            locale="en-GB",
+            key="mail.email.footer_report",
+            value="Not meant for you? Tell us.",
+        )
+    )
+    db.session.add(
+        Translation(locale="en-GB", key="mail.email.footer_unsubscribe", value="Unsubscribe")
+    )
+
+
+def test_every_mail_footer_links_report_and_unsubscribe(app, db):
+    from hubra.core.services import platform_settings
+
+    _password_reset_texts(db)
+    _footer_texts(db)
+    platform_settings.set_many({"support.url": "https://support.hubra.club/"})
+    db.session.commit()
+    with app.test_request_context():
+        html, text, _ = render_mail_template(
+            "password_reset",
+            "en-GB",
+            name="Anna",
+            club_name="Alpha Club",
+            reset_url="https://sso.example/reset#token=x",
+        )
+    assert 'href="https://support.hubra.club/melden?mail=password_reset"' in html
+    assert ">Not meant for you? Tell us.</a>" in html
+    assert 'href="https://support.hubra.club/konto#mails"' in html
+    # The plain-text part carries the same links.
+    assert "Not meant for you? Tell us. https://support.hubra.club/melden?mail=password_reset" in text
+    assert "Unsubscribe: https://support.hubra.club/konto#mails" in text
+
+
+def test_no_footer_links_without_a_support_site_or_its_text(app, db):
+    from hubra.core.services import platform_settings
+
+    _password_reset_texts(db)
+    platform_settings.set_many({"support.url": ""})
+    db.session.commit()
+    assert "/melden" not in _render_reset(app)
+    # Set, but `flask seed` has not loaded the texts yet: no "[key]" in mails.
+    platform_settings.set_many({"support.url": "https://support.hubra.club"})
+    db.session.commit()
+    html = _render_reset(app)
+    assert "/melden" not in html
+    assert "[mail.email.footer_report]" not in html

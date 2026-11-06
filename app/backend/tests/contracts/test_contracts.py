@@ -177,6 +177,32 @@ def test_plugin_events_go_through_the_outbox(wired, db):
     assert CALLS == [("thing", 3, row.message_id)]
 
 
+def on_club_event(tenant_id, event_id=None, **_):
+    CALLS.append(("club_event", event_id))
+
+
+def test_an_events_own_event_id_wins_over_the_delivery_id(
+    wired, db, monkeypatch
+):
+    """Club events carry ``event_id`` (the ClubEvent): the handler must get
+    that one, not the outbox's delivery id (or the call fails twice over)."""
+    monkeypatch.setitem(
+        registry._modules,
+        "other",
+        Module(
+            code="other",
+            name="Other",
+            plugin="other",
+            events={"event.changed": f"{HERE}:on_club_event"},
+        ),
+    )
+    events_mod.emit("event.changed", tenant_id=None, event_id=42)
+    db.session.commit()
+    (row,) = _rows()
+    assert row.status == "done"
+    assert CALLS == [("club_event", 42)]
+
+
 def test_a_rollback_stores_nothing(wired, db):
     db.session.merge(PluginState(key="x", value="2"))
     events_mod.emit("demo.thing.happened", tenant_id=None, thing_id=4)

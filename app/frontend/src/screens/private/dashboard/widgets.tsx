@@ -19,7 +19,14 @@ import { VoteNeededCard } from './homeCards'
 import { qk } from '@/data/keys'
 import { useDashboardSummary, useEvents, usePolls, usePosts } from '@/data/lists'
 import { getMemberStats } from '@/api/members'
-import type { WidgetSize } from '@/api/dashboards'
+import {
+  getWidgetData,
+  listContractWidgets,
+  type ContractWidget,
+  type ListWidgetData,
+  type StatWidgetData,
+  type WidgetSize,
+} from '@/api/dashboards'
 
 /** A setting the member fills in when adding a widget. */
 export interface WidgetField {
@@ -413,12 +420,112 @@ function Links({ config }: { config: Config }) {
   )
 }
 
+// ── Widgets offered as contracts ───────────────────────────────────────────
+
+/** The data a contract widget's handler reads for the viewer. */
+function useWidgetData<T>(name: string, config: Config) {
+  return useQuery({
+    queryKey: qk.widgetData(name, config),
+    queryFn: () => getWidgetData<T>(name, config).then((r) => r.data),
+    staleTime: 60_000,
+  })
+}
+
+function ContractStat({ widget, config }: { widget: ContractWidget; config: Config }) {
+  const { t } = useT()
+  const { go } = useNav()
+  const { data, isError } = useWidgetData<StatWidgetData>(widget.name, config)
+  const path = data?.path
+  return (
+    <StatTile
+      label={str(config, 'title') || t(widget.label, widget.label)}
+      value={isError ? '!' : data ? String(data.value) : '—'}
+      sub={isError ? t('dashboards.widgetFailed', 'Konnte nicht geladen werden') : (data?.sub ?? undefined)}
+      onClick={path ? () => go(path) : undefined}
+    />
+  )
+}
+
+function ContractList({ widget, config }: { widget: ContractWidget; config: Config }) {
+  const { t } = useT()
+  const { go } = useNav()
+  const { data, isError } = useWidgetData<ListWidgetData>(widget.name, config)
+  const title = str(config, 'title') || t(widget.label, widget.label)
+  const items = data?.items ?? []
+  return (
+    <WidgetFrame title={title}>
+      {isError ? (
+        <Empty>{t('dashboards.widgetFailed', 'Konnte nicht geladen werden')}</Empty>
+      ) : data && items.length === 0 ? (
+        <Empty>{t('dashboards.nothing', 'Nichts anzuzeigen')}</Empty>
+      ) : (
+        <Stack gap={0}>
+          {items.map((row, i) => (
+            <Row
+              key={i}
+              title={row.label}
+              sub={row.sub ?? undefined}
+              onClick={row.path ? () => go(row.path as string) : undefined}
+            />
+          ))}
+          {data?.total != null && data.total > items.length && (
+            <Text fz="xs" c="dimmed" pt={4}>
+              {t('dashboards.more', '{{count}} weitere', { count: data.total - items.length })}
+            </Text>
+          )}
+        </Stack>
+      )}
+    </WidgetFrame>
+  )
+}
+
+function ContractCustom({
+  widget,
+  config,
+  size,
+  component: C,
+}: {
+  widget: ContractWidget
+  config: Config
+  size: WidgetSize
+  component?: ComponentType<{ config: Config; size: WidgetSize; data?: unknown }>
+}) {
+  const { t } = useT()
+  const { data, isError } = useWidgetData<unknown>(widget.name, config)
+  if (!C) {
+    return (
+      <WidgetFrame title={t(widget.label, widget.label)}>
+        <Empty>{t('dashboards.noView', 'Das Plugin bringt keine Ansicht für dieses Widget mit')}</Empty>
+      </WidgetFrame>
+    )
+  }
+  if (isError) {
+    return (
+      <WidgetFrame title={t(widget.label, widget.label)}>
+        <Empty>{t('dashboards.widgetFailed', 'Konnte nicht geladen werden')}</Empty>
+      </WidgetFrame>
+    )
+  }
+  return <C config={config} size={size} data={data} />
+}
+
+/** Widgets modules and plugins offer as contracts, for this member. */
+function useContractWidgets(): ContractWidget[] {
+  const { data } = useQuery({
+    queryKey: qk.contractWidgets,
+    queryFn: () => listContractWidgets().then((r) => r.items),
+    staleTime: 5 * 60_000,
+  })
+  return data ?? []
+}
+
 // ── The catalogue ──────────────────────────────────────────────────────────
 
 /** Every widget there is, built in and from plugins, translated. */
 export function useWidgetCatalogue(): WidgetDef[] {
   const { t } = useT()
   const pluginWidgets = usePluginWidgets()
+  const contractWidgets = useContractWidgets()
   return useMemo(() => {
     const title: WidgetField = {
       key: 'title',
@@ -633,7 +740,39 @@ export function useWidgetCatalogue(): WidgetDef[] {
         render: PluginCards,
       },
     ]
-    const fromPlugins: WidgetDef[] = pluginWidgets.map((w) => ({
+    // A plugin component that draws a contract widget isn't a widget of its own.
+    const drawers = new Map(
+      pluginWidgets.filter((w) => w.contract).map((w) => [w.contract as string, w.component]),
+    )
+    const fromContracts: WidgetDef[] = contractWidgets.map((c) => ({
+      type: c.type,
+      label: t(c.label, c.label),
+      description: c.description ? t(c.description, c.description) : '',
+      size: c.size,
+      module: c.module,
+      perm: c.perm ?? undefined,
+      plugin: c.plugin ?? undefined,
+      fields: c.fields.map((f) => ({
+        key: f.key,
+        label: t(f.label, f.label),
+        kind: f.kind,
+        default: f.default as string | number | boolean | undefined,
+      })),
+      render:
+        c.view === 'stat'
+          ? (p) => <ContractStat widget={c} config={p.config} />
+          : c.view === 'list'
+            ? (p) => <ContractList widget={c} config={p.config} />
+            : (p) => (
+                <ContractCustom
+                  widget={c}
+                  config={p.config}
+                  size={p.size}
+                  component={drawers.get(c.name)}
+                />
+              ),
+    }))
+    const fromPlugins: WidgetDef[] = pluginWidgets.filter((w) => !w.contract).map((w) => ({
       type: `p:${w.plugin}.${w.id}`,
       label: t(w.label),
       description: w.description ? t(w.description) : '',
@@ -644,8 +783,8 @@ export function useWidgetCatalogue(): WidgetDef[] {
       fields: w.fields?.map((f) => ({ ...f, label: t(f.label) })),
       render: w.component,
     }))
-    return [...builtIn, ...fromPlugins]
-  }, [t, pluginWidgets])
+    return [...builtIn, ...fromContracts, ...fromPlugins]
+  }, [t, pluginWidgets, contractWidgets])
 }
 
 /** Whether this user may see *def* in this club. */
