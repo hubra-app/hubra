@@ -184,10 +184,23 @@ Moving to a broker means: write the transport, run a consumer that calls
 `outbox.deliver(uid)` (or reads the envelope straight from the message),
 and switch it on. Emitters and handlers don't change.
 
+## What Hubra's own modules offer
+
+| Contract | Kind | What it does |
+| --- | --- | --- |
+| `finance.billing_period` | query | `{on}` → `{start, end}`, the club's billing year around that day |
+| `finance.invoice.set_status` | action | `{invoice_id, status: Paid\|Open, actor_id?}`, with the mails and `invoice.updated`; needs `finance.invoices.update` |
+
+A plugin that adds a source to the fee basis (Finanzen › Beitragsgrundlage)
+offers a query named `<module>.fee_basis.<source>`: input `{on}`, output
+`{lines: [{category_id, name, color, amount, items}], period}` (shapes in
+`hubra/api/finance/contracts.py`). The Finances plugin offers
+`finance.books.fee_basis.recurring` and `.last_year` this way.
+
 ## Not covered yet
 
 - Club webhooks keep their own delivery and retries (`webhooks.md`).
-- Hubra's own modules still call each other directly; they may offer
-  contracts as features move into plugins.
+- Hubra's own modules still call each other directly; they offer
+  contracts as features move into plugins (below).
 - Frontend slots are declared in core (`SlotProps`); a plugin can't yet
   declare a slot of its own for others to fill.
