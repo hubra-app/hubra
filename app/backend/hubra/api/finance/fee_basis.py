@@ -164,6 +164,7 @@ def fee_basis(overrides: dict | None = None, today: date | None = None) -> dict:
                 for line in found.get("lines") or []
             ]
             period = found.get("period")
+            note = found.get("note")
         else:
             note = f"NO_{source.upper()}"
     elif source in _BASIS_SOURCES:

@@ -1,6 +1,9 @@
 """Events: club events, registrations and attendance."""
 
+from hubra.core.contracts import action_contract, query_contract
 from hubra.core.modules import Blueprint, Module, NavItem, Schedule, SettingField
+
+_C = "hubra.api.events.contracts"
 
 module = Module(
     code="events",
@@ -69,6 +72,41 @@ module = Module(
         "event_registrations",
         "event_attendance",
         "trial_signups",
+    ),
+    # What plugins use instead of the events services (docs/contracts.md).
+    provides=(
+        query_contract(
+            "events.event.get",
+            f"{_C}:get_event",
+            input=f"{_C}:EventRef",
+            output=f"{_C}:EventInfo",
+            perm="events.events.read",
+            description="An event's times and the places taken",
+        ),
+        action_contract(
+            "events.event.create",
+            f"{_C}:create_event",
+            input=f"{_C}:EventCreateIn",
+            output=f"{_C}:EventCreated",
+            perm="events.events.create",
+            description="Create an event",
+        ),
+        action_contract(
+            "events.registration.set",
+            f"{_C}:set_registration",
+            input=f"{_C}:RegistrationIn",
+            output=f"{_C}:Registration",
+            perm="events.events.register",
+            description="Sign a member up for an event, off, or as maybe",
+        ),
+        action_contract(
+            "events.attendance.set",
+            f"{_C}:set_attendance",
+            input=f"{_C}:AttendanceIn",
+            output=f"{_C}:Attendance",
+            perm="events.events.add_attendee",
+            description="Record one member's attendance at an event",
+        ),
     ),
     tasks=("hubra.core.tasks.reminder_tasks",),
     schedule=(

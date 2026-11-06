@@ -67,8 +67,15 @@ def _registry():
 def offers() -> dict[str, Offer]:
     """Every contract on offer here, by name."""
     reg = _registry()
-    key = tuple(id(m) for m in reg.all())
-    if _cache["key"] == key:
+    # The modules themselves, not their ids: a module dropped and another
+    # made in its place can get the same id (tests swap modules).
+    key = tuple(reg.all())
+    cached = _cache["key"]
+    if (
+        cached is not None
+        and len(cached) == len(key)
+        and all(a is b for a, b in zip(cached, key, strict=True))
+    ):
         return _cache["offers"]
     from .core_events import CORE_EVENTS
 
