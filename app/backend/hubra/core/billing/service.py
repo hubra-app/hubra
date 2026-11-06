@@ -9,8 +9,9 @@ Stripe subscription per club and keeps the two in step:
 * Stripe tells Hubra what happened by webhook (``handle_event``), and an
   hourly job (``reconcile``) reads every subscription again, so a missed
   webhook only delays the status;
-* when manage changes a club's terms, the subscription's items are replaced
-  from the next invoice on (``sync``, no proration).
+* when the club's terms change (manage, the club itself, the member count),
+  the changed items are updated with ``create_prorations``: the rest of the
+  period is charged or credited pro rata on the next invoice (``sync``).
 
 Stripe's side lives in ``tenant.settings["billing_stripe"]`` (customer,
 subscription, its status and period, the last failed payment); the club's
@@ -562,9 +563,57 @@ def handle_event(event: dict) -> str:
 # ── Keeping Stripe in step ──────────────────────────────────────────────────
 
 
+def _item_changes(current: list[dict], lines: list[dict]) -> list[dict]:
+    """The subscription item updates that turn *current* into *lines*: only
+    what differs. An unchanged line is left alone, so Stripe's prorations
+    show just the real change (a new member, an add-on), not a credit and a
+    new charge for every line."""
+    by_product: dict[str, dict] = {}
+    extra: list[dict] = []
+    for it in current:
+        price = it.get("price") or {}
+        product = price.get("product")
+        if isinstance(product, dict):
+            product = product.get("id")
+        if product and product not in by_product:
+            by_product[product] = it
+        else:
+            extra.append(it)
+    out: list[dict] = []
+    for line in lines:
+        it = by_product.pop(line["product"], None)
+        if it is None:
+            out.append({"price_data": _price_data(line), "quantity": line["quantity"]})
+            continue
+        price = it.get("price") or {}
+        same_price = (
+            price.get("unit_amount") == line["unit_amount"]
+            and ((price.get("recurring") or {}).get("interval"))
+            == _price_data(line)["recurring"]["interval"]
+        )
+        if not same_price:
+            out.append(
+                {
+                    "id": it["id"],
+                    "price_data": _price_data(line),
+                    "quantity": line["quantity"],
+                }
+            )
+        elif int(it.get("quantity") or 0) != line["quantity"]:
+            out.append({"id": it["id"], "quantity": line["quantity"]})
+    for it in [*by_product.values(), *extra]:
+        out.append({"id": it["id"], "deleted": True})
+    return out
+
+
 def sync(tenant: Tenant, force: bool = False) -> bool:
-    """Replace the subscription's items when the club's terms changed.  The
-    new amounts apply from the next invoice (no proration).  Does NOT commit.
+    """Bring the subscription's items in step with the club's terms.
+
+    Only lines that changed are touched, with ``create_prorations``: a
+    member who joins, an add-on taken or a plan change mid-period is charged
+    pro rata for the rest of the period on the next invoice (and a member
+    who leaves or an add-on dropped is credited there), besides the full
+    new amount for the next period (docs/billing.md). Does NOT commit.
     Returns True when Stripe was changed."""
     key = _key()
     s = state(tenant)
@@ -580,16 +629,16 @@ def sync(tenant: Tenant, force: bool = False) -> bool:
         return False
     _ensure_products(key, lines)
     sub = stripe_api.call(key, "GET", f"/v1/subscriptions/{s['subscription_id']}")
-    old = [
-        {"id": it["id"], "deleted": True}
-        for it in (sub.get("items") or {}).get("data") or []
-    ]
-    new = [{"price_data": _price_data(x), "quantity": x["quantity"]} for x in lines]
+    changes = _item_changes((sub.get("items") or {}).get("data") or [], lines)
+    if not changes:
+        _save_state(tenant, {"synced": signature})
+        return False
+    # Stripe doesn't prorate while a trial runs: nothing is charged yet.
     updated = stripe_api.call(
         key,
         "POST",
         f"/v1/subscriptions/{s['subscription_id']}",
-        {"items": old + new, "proration_behavior": "none"},
+        {"items": changes, "proration_behavior": "create_prorations"},
     )
     apply_subscription(tenant, updated)
     _save_state(tenant, {"synced": signature})

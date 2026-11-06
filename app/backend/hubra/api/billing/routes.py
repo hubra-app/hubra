@@ -6,6 +6,10 @@ Club app, ``/api/v1/app/billing`` (needs ``billing.billing.manage``):
 * ``POST /checkout``  a Stripe Checkout page that starts paying
 * ``POST /portal``    Stripe's customer portal (card, invoices, cancel)
 * ``GET  /invoices``  the last Stripe invoices
+* ``GET  /catalog``   plans and paid modules with prices (any member: the
+  modules page shows the prices)
+* ``PUT  /plan``      switch to another public plan
+* ``PUT  /addons/<code>``  take or drop a paid module, set its licences
 
 Sign-in area, ``/api/v1/global/billing`` (no sign-in, signed by Stripe):
 
@@ -24,7 +28,7 @@ from hubra.core.billing import service, stripe_api
 from hubra.core.billing.stripe_api import StripeError
 from hubra.core.errors import api_error
 from hubra.core.extensions import db
-from hubra.core.permissions import permission_required
+from hubra.core.permissions import permission_required, require_member
 from hubra.core.tenant.context import current_tenant
 
 logger = logging.getLogger(__name__)
@@ -140,6 +144,94 @@ def put_contact():
         return _stripe_failed(exc)
     db.session.commit()
     return jsonify(data), 200
+
+
+@billing_bp.get("/catalog")
+@require_member
+def get_catalog():
+    """Plans and paid modules with their prices. Prices are public
+    (``/api/v1/public/pricing``); every member may see them."""
+    from hubra.core.billing import self_service
+
+    return jsonify(self_service.catalog(current_tenant())), 200
+
+
+def _after_terms_change(tenant, action: str, details: dict):
+    """Audit, commit and push the new terms to a running subscription."""
+    from hubra.core.models.tenant import GlobalAuditEntry
+    from hubra.core.services import club_billing
+
+    member = get_current_member()
+    db.session.add(
+        GlobalAuditEntry(
+            tenant_id=tenant.id,
+            action=action,
+            target_type="Tenant",
+            target_id=str(tenant.id),
+            details={**details, "member_id": getattr(member, "id", None)},
+            ip_address=request.remote_addr,
+        )
+    )
+    db.session.commit()
+    stripe_error = None
+    try:
+        if service.sync(tenant):
+            db.session.commit()
+    except StripeError as exc:
+        db.session.rollback()
+        logger.warning("billing_sync_failed tenant=%s error=%s", tenant.id, exc)
+        stripe_error = exc.public_message()
+    summary = club_billing.summary(tenant)
+    return jsonify(
+        {
+            **{k: summary.get(k) for k in _CLUB_FIELDS},
+            "stripeError": stripe_error,
+        }
+    ), 200
+
+
+@billing_bp.put("/plan")
+@permission_required(*PERM)
+def put_plan():
+    """Switch to another public plan; the next invoice has the new price."""
+    from hubra.core.billing import self_service
+
+    tenant = current_tenant()
+    before = tenant.plan
+    key = (request.get_json(silent=True) or {}).get("plan")
+    if not self_service.choose_plan(tenant, key):
+        return get_billing()
+    return _after_terms_change(
+        tenant, "tenant.plan.self", {"before": before, "after": tenant.plan}
+    )
+
+
+@billing_bp.put("/addons/<string:code>")
+@permission_required(*PERM)
+def put_addon(code: str):
+    """``{"on": bool?, "licenses": int?}``: take or drop a paid module."""
+    from hubra.core.billing import self_service
+    from hubra.core.utils import log_audit
+
+    tenant = current_tenant()
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict) or not ({"on", "licenses"} & set(body)):
+        return api_error("VALIDATION_ERROR", "Send on and/or licenses", 400)
+    self_service.set_addon(tenant, code, body)
+    member = get_current_member()
+    if "on" in body:
+        log_audit(
+            getattr(member, "id", None),
+            "enable_module" if body["on"] else "disable_module",
+            "module",
+            None,
+            code,
+        )
+    return _after_terms_change(
+        tenant,
+        "tenant.addon.self",
+        {"code": code, **{k: body[k] for k in ("on", "licenses") if k in body}},
+    )
 
 
 @billing_bp.post("/portal")

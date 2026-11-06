@@ -215,24 +215,84 @@ def test_subscription_sets_the_clubs_status(stripe, club, db):
     assert service.public_state(club)["hasSubscription"] is False
 
 
-def test_sync_replaces_items_when_terms_change(stripe, club, db):
+def test_sync_updates_changed_items_pro_rata(stripe, club, db):
     service.apply_subscription(club, stripe.subscription)
     assert service.sync(club) is True
     update = stripe.made("POST", "/v1/subscriptions/sub_1")[-1]
-    assert update["items[0][id]"] == "si_old"
-    assert update["items[0][deleted]"] == "true"
-    assert update["items[1][price_data][unit_amount]"] == "3000"
-    assert update["proration_behavior"] == "none"
+    # An item Hubra doesn't know goes, the plan comes in.
+    assert update["items[0][price_data][unit_amount]"] == "3000"
+    assert update["items[1][id]"] == "si_old"
+    assert update["items[1][deleted]"] == "true"
+    assert update["proration_behavior"] == "create_prorations"
     # Nothing changed: no second update.
     assert service.sync(club) is False
+
+    # Stripe now holds the plan item; a price change touches only it.
+    stripe.subscription["items"] = {
+        "data": [
+            {
+                "id": "si_plan",
+                "quantity": 1,
+                "price": {
+                    "product": "hubra_plan_starter",
+                    "unit_amount": 3000,
+                    "recurring": {"interval": "month"},
+                },
+            }
+        ]
+    }
     club_billing.update(club, {"discount_percent": 0})
     assert service.sync(club) is True
-    assert (
-        stripe.made("POST", "/v1/subscriptions/sub_1")[-1][
-            "items[1][price_data][unit_amount]"
-        ]
-        == "4000"
+    update = stripe.made("POST", "/v1/subscriptions/sub_1")[-1]
+    assert update["items[0][id]"] == "si_plan"
+    assert update["items[0][price_data][unit_amount]"] == "4000"
+    assert "items[1][id]" not in update
+
+
+def test_a_new_member_changes_only_the_quantity(stripe, club, db, monkeypatch):
+    from hubra.core.services import quotas
+
+    club_billing.update(
+        club,
+        {
+            "addons": [
+                {"code": "polls", "label": "Polls", "price_chf": "1", "unit": "member"}
+            ]
+        },
     )
+    service.apply_subscription(club, stripe.subscription)
+    monkeypatch.setattr(quotas, "member_count", lambda t: 10)
+    stripe.subscription["items"] = {
+        "data": [
+            {
+                "id": "si_plan",
+                "quantity": 1,
+                "price": {
+                    "product": "hubra_plan_starter",
+                    "unit_amount": 3000,
+                    "recurring": {"interval": "month"},
+                },
+            },
+            {
+                "id": "si_polls",
+                "quantity": 10,
+                "price": {
+                    "product": {"id": "hubra_module_polls"},
+                    "unit_amount": 100,
+                    "recurring": {"interval": "month"},
+                },
+            },
+        ]
+    }
+    assert service.sync(club) is False  # already in step
+    monkeypatch.setattr(quotas, "member_count", lambda t: 11)
+    assert service.sync(club) is True
+    update = stripe.made("POST", "/v1/subscriptions/sub_1")[-1]
+    assert update == {
+        "items[0][id]": "si_polls",
+        "items[0][quantity]": "11",
+        "proration_behavior": "create_prorations",
+    }
 
 
 def _signed(body: dict, secret=WEBHOOK_SECRET, stamp=None):
@@ -435,3 +495,74 @@ def test_club_platform_fee_overrides_the_default(stripe, club, db, app):
         club_billing.update(club, {"payments_fee_percent": 11})
     with pytest.raises(ApiError):
         club_billing.update(club, {"payments_fee_percent": True})
+
+
+def test_club_changes_its_plan_and_add_ons(
+    client,
+    stripe,
+    club,
+    db,
+    auth_headers,
+    plain_member_token,
+    monkeypatch,  # noqa: F811
+):
+    from hubra.api.billing import routes
+    from hubra.core.services import quotas
+
+    monkeypatch.setattr(routes, "current_tenant", lambda: club)
+    monkeypatch.setattr(quotas, "member_count", lambda t: 12)
+    plans.update(plans.get("starter"), {"public": True})
+    plans.create(
+        {"key": "club", "name_de": "Club", "price_month_chf": "60", "public": True}
+    )
+    plans.create(
+        {"key": "tiny", "name_de": "Tiny", "public": True, "limit_members": 10}
+    )
+    plans.create({"key": "deal", "name_de": "Deal", "public": False})
+    plans.set_addon(
+        "polls", {"price_month_chf": "2", "price_unit": "member", "public": True}
+    )
+    plans.set_addon(
+        "groups", {"price_month_chf": "5", "price_unit": "license", "public": True}
+    )
+    club.plan = "starter"
+    db.session.commit()
+
+    # Any member sees the prices; changing needs the billing right.
+    _login_member(client, "admin@test.ch")
+    cat = client.get("/api/v1/app/billing/catalog").get_json()
+    assert [p["key"] for p in cat["plans"]] == ["starter", "club", "tiny"]
+    offered = {a["code"]: a for a in cat["addons"]}
+    assert offered["polls"]["source"] is None
+    assert offered["polls"]["price_month_chf"] == "2.00"
+
+    r = client.put("/api/v1/app/billing/plan", json={"plan": "deal"})
+    assert r.status_code == 400
+    r = client.put("/api/v1/app/billing/plan", json={"plan": "tiny"})
+    assert r.status_code == 409 and r.get_json()["error"] == "PLAN_TOO_SMALL"
+    r = client.put("/api/v1/app/billing/plan", json={"plan": "club"})
+    assert r.status_code == 200 and r.get_json()["plan"] == "club"
+    assert club.plan == "club"
+
+    r = client.put("/api/v1/app/billing/addons/polls", json={"on": True})
+    assert r.status_code == 200, r.get_json()
+    line = next(x for x in r.get_json()["module_lines"] if x["code"] == "polls")
+    assert line["quantity"] == 12 and line["total_chf"] == "24.00"
+    r = client.put(
+        "/api/v1/app/billing/addons/groups", json={"on": True, "licenses": 3}
+    )
+    line = next(x for x in r.get_json()["module_lines"] if x["code"] == "groups")
+    assert line["quantity"] == 3 and line["total_chf"] == "15.00"
+    bad = client.put("/api/v1/app/billing/addons/polls", json={"licenses": 3})
+    assert bad.status_code == 400
+    r = client.put("/api/v1/app/billing/addons/polls", json={"on": False})
+    assert all(x["code"] != "polls" for x in r.get_json()["module_lines"])
+    assert (
+        client.put("/api/v1/app/billing/addons/nope", json={"on": True}).status_code
+        == 404
+    )
+
+    _login_member(client, "plain@test.ch")
+    assert client.get("/api/v1/app/billing/catalog").status_code == 200
+    r = client.put("/api/v1/app/billing/plan", json={"plan": "starter"})
+    assert r.status_code == 403
