@@ -2,12 +2,23 @@
 Tests for VersionService and GET /api/v1/version, /api/v1/version/changelog
 """
 
+import re
+import tomllib
+from pathlib import Path
+
 from hubra.core.services.version import VersionService
+
+_PYPROJECT = Path(__file__).resolve().parents[2] / "pyproject.toml"
 
 
 def test_get_version_reads_pyproject_toml():
+    # Compared with the file, not a fixed number, so a version bump needs no
+    # test change (CI skips the tests on version-only pull requests).
+    with _PYPROJECT.open("rb") as f:
+        expected = tomllib.load(f)["project"]["version"]
     version = VersionService.get_version()
-    assert version == "0.2.0"
+    assert version == expected
+    assert re.fullmatch(r"\d+\.\d+\.\d+([-.+].+)?", version)
 
 
 def test_changelog_parses_sample_file(tmp_path, monkeypatch):
