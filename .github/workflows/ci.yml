@@ -49,6 +49,8 @@ jobs:
   #                      modules/, scripts/, app/deploy/
   #   backend tests      app/backend/, plugins/, settings.yaml
   #   connector tests    app/mcp/ (ruff + pytest, docs/mcp.md)
+  #   release check      release.yml, scripts/release_check.py, the version
+  #                      and the changelogs (even a version-only bump)
   #   frontend tests     app/*frontend/, packages/, plugins/
   #   browser tests      what the browser sees: app/*frontend/, packages/,
   #                      plugins/, the backend code that serves the API
@@ -83,6 +85,7 @@ jobs:
       lint_sso: ${{ steps.diff.outputs.lint_sso }}
       lint_support: ${{ steps.diff.outputs.lint_support }}
       lint_deploy: ${{ steps.diff.outputs.lint_deploy }}
+      release: ${{ steps.diff.outputs.release }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -95,12 +98,19 @@ jobs:
         run: |
           if [ "$FULL" = true ] || ! files=$(git diff --name-only "$BASE...$HEAD" 2>/dev/null); then
             # Full run, or unknown base (new branch, force push): run everything.
-            for o in backend mcp frontends browser lint lint_backend lint_frontend lint_admin lint_sso lint_support lint_deploy; do
+            for o in backend mcp frontends browser release lint lint_backend lint_frontend lint_admin lint_sso lint_support lint_deploy; do
               echo "$o=true" >> "$GITHUB_OUTPUT"
             done
             exit 0
           fi
           echo "$files"
+          # The release check reads the version and the changelog, so it runs
+          # before any text file or version-only line is left out below.
+          if echo "$files" | grep -qE '^(\.github/workflows/(release|ci)\.yml|scripts/(test_)?release_check\.py|app/backend/(pyproject\.toml|CHANGELOG(\.de)?\.md))$'; then
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          fi
           # A version bump (bnb bump) changes only the version line in
           # app/backend/pyproject.toml and adds a "## [x.y.z] - date" heading
           # to the changelogs. Such lines run nothing; release-checks.yml
@@ -452,11 +462,34 @@ jobs:
       - if: failure()
         run: docker compose ps -a && docker compose logs --tail=200
 
+  # The tag checks and release notes of release.yml (scripts/release_check.py)
+  # for the version pyproject.toml declares, plus their unit tests: a release
+  # bug shows up here, not after a v* tag that cannot be moved. Standard
+  # library only, no install.
+  release-check:
+    needs: changes
+    if: >-
+      !cancelled()
+      && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
+      && needs.changes.outputs.release != 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Unit tests
+        run: python -m unittest discover -s scripts -p 'test_release_check.py' -v
+      - name: Check and notes for this version
+        run: scripts/release-dry-run.sh
+
   # The one test check branch protection requires. It passes when every test
   # job passed or was skipped, and fails when any of them failed or was
   # cancelled. New test jobs go into its needs list.
   tests:
-    needs: [changes, backend-tests, backend-postgres, mcp-tests, frontend-tests, browser-tests]
+    needs: [changes, backend-tests, backend-postgres, mcp-tests, frontend-tests, browser-tests, release-check]
     if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
     runs-on: ubuntu-latest
     steps:

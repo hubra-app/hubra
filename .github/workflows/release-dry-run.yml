@@ -1,0 +1,50 @@
+# A try-out of a release, without a tag: Actions > Release dry run > Run
+# workflow (on main or a release/* branch). It runs what the check job of
+# release.yml runs for the version app/backend/pyproject.toml declares, writes
+# the release notes into the run summary, and says whether the tag or the
+# release already exists. Nothing is built, tagged or published.
+#
+# A pushed v* tag cannot be moved (tag ruleset), so a release that fails its
+# checks costs a version number; this is the place to find out first.
+name: Release dry run
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check and notes
+        run: scripts/release-dry-run.sh
+      - name: Branch, tag and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(python3 -c 'import tomllib; print(tomllib.load(open("app/backend/pyproject.toml", "rb"))["project"]["version"])')
+          tag="v$version"
+          fail=0
+          if ! git branch -r --contains "$GITHUB_SHA" | grep -qE '^\s*origin/(main|release/.+)$'; then
+            echo "::error::${GITHUB_SHA::7} is not on main or a release/* branch; release.yml would refuse it"
+            fail=1
+          fi
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "::error::tag $tag exists already (at $(git rev-parse --short "$tag^{commit}")); bump the version"
+            fail=1
+          fi
+          draft=$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json isDraft -q .isDraft 2>/dev/null || echo none)
+          if [ "$draft" = false ]; then
+            echo "::error::release $tag is already published; bump the version"
+            fail=1
+          fi
+          if [ "$fail" = 0 ]; then
+            echo "Ready: git tag $tag ${GITHUB_SHA::7} && git push origin $tag" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$fail"
