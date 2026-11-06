@@ -548,6 +548,11 @@ function PluginNotes({ p, reloading, followDeps }: { p: MarketplacePlugin; reloa
           {tr('Nicht geladen', 'Not loaded')}: {p.error}
         </Text>
       )}
+      {p.installed && !pending && (p.processErrors ?? []).length > 0 && (
+        <Text size="xs" c="dimmed" data-process-errors>
+          {tr('Betroffen', 'Affected')}: {(p.processErrors ?? []).map((e) => `${e.component} (${e.host})`).join(', ')}
+        </Text>
+      )}
       {!p.compatible && !p.installed && (
         <Text size="xs" c="orange">
           {p.incompatibleReason || tr('Braucht eine andere Hubra-Version', 'Needs another Hubra version')}

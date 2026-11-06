@@ -291,9 +291,10 @@ SPECS: tuple[Spec, ...] = (
     ),
     Spec(
         "payments.fee_percent",
-        "Platform fee",
-        "Share of each online payment that goes to the platform (%), on top "
-        "of Stripe's own fees, which the club pays. 0: none",
+        "Hubra fee",
+        "Share of each online payment that goes to Hubra (%), on top of "
+        "Stripe's own fees. The club pays both or passes them on to members "
+        "as a surcharge. 0: none",
         lambda cfg: "0",
         "fee_percent",
     ),
@@ -827,7 +828,26 @@ def stripe() -> StripePlatform | None:
         fee = float((get("payments.fee_percent") or "0").replace(",", "."))
     except ValueError:
         fee = 0.0
+    own = _club_fee_percent()
+    if own is not None:
+        fee = own
     return StripePlatform(secret_key=key, fee_percent=max(0.0, min(fee, 10.0)))
+
+
+def _club_fee_percent() -> float | None:
+    """The current club's own platform fee (manage › club › Billing), or
+    None outside a club request or when the club uses the default."""
+    from flask import g, has_app_context
+
+    if not has_app_context():
+        return None
+    tenant = getattr(g, "tenant", None)
+    if tenant is None:
+        return None
+    from hubra.core.services import club_billing
+
+    own = club_billing.stored(tenant).get("payments_fee_percent")
+    return None if own is None else float(own)
 
 
 _VAPID_LOCK_KEY = 0x6875627261766170  # "hubravap"

@@ -450,8 +450,8 @@ export function navSections(): NavSection[] {
           label: tr('Zahlungen', 'Payments'),
           icon: icon(IconCreditCard),
           desc: tr(
-            'Stripe: der Schlüssel des Plattform-Kontos, die Plattformgebühr für Online-Zahlungen der Vereine (Connect) und die Abrechnung der Vereine (Billing).',
-            "Stripe: the platform account's key, the platform fee for clubs' online payments (Connect) and billing clubs (Billing).",
+            'Stripe: der Schlüssel des Plattform-Kontos, die Hubra-Gebühr auf Online-Zahlungen der Vereine (Connect) und die Abrechnung der Vereine (Billing).',
+            "Stripe: the platform account's key, the Hubra fee on clubs' online payments (Connect) and billing clubs (Billing).",
           ),
           tabs: [
             {

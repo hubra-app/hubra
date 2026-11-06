@@ -1289,6 +1289,36 @@ def _add_parents(out: dict[str, dict]) -> None:
         e.pop("targetDepends", None)
 
 
+def _add_process_errors(out: dict[str, dict], rows: dict) -> None:
+    """Errors from the processes that import plugin code.
+
+    Manage runs in a backend that only reads manifests (``global`` or
+    ``platform``), so a plugin whose code fails to import in the club
+    backend looks fine here. Those processes report how each plugin loaded
+    (``build_info``); an error of the installed version shows as the
+    plugin's error, with where it happened in ``processErrors``.
+    """
+    from hubra.core.build_info import plugin_errors
+
+    try:
+        failed = plugin_errors()
+    except Exception:
+        _log.debug("Could not read the plugin reports", exc_info=True)
+        failed = {}
+    for e in out.values():
+        row = rows.get(e["id"])
+        found = [
+            f
+            for f in failed.get(e["id"], [])
+            # An older version's error goes away with the reload.
+            if row is None or not f["version"] or f["version"] == row.version
+        ]
+        e["processErrors"] = found
+        if found and not e.get("error") and not e.get("pendingReload"):
+            first = found[0]
+            e["error"] = f"{first['error']} ({first['component']})"
+
+
 def marketplace(fetch: bool = True) -> dict:
     """Everything that can be installed, one entry per plugin: what ships
     with Hubra, what is installed, and what the enabled repositories offer."""
@@ -1473,6 +1503,7 @@ def marketplace(fetch: bool = True) -> dict:
         e.setdefault("withdrawn", "")
         e.setdefault("officialSigned", False)
         e["autoinstalled"] = e["id"] in plugins.autoinstalled
+    _add_process_errors(out, rows)
     _add_parents(out)
     return {
         "plugins": sorted(out.values(), key=lambda e: str(e["name"]).lower()),
