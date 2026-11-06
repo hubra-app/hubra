@@ -259,14 +259,13 @@ def _generate_invoices(today: date | None = None) -> dict:
     from hubra.core.models.finance import Invoice
     from hubra.core.models.member import Member, MembershipTier
     from hubra.api.finance.services import billing_settings
-    from hubra.core.services.email import _get_base_url
+    from hubra.core.services.email import MY_INVOICES_PATH, club_app_url
 
     billing = billing_settings()
     today = today or date.today()
     created = 0
     skipped = 0
-    _base = _get_base_url()
-    portal_url = f"{_base}/invoices" if _base else "the member portal"
+    portal_url = club_app_url(MY_INVOICES_PATH) or "the member portal"
 
     active_members: list[Member] = db.session.scalars(  # type: ignore[assignment]
         select(Member)
@@ -431,15 +430,14 @@ def _send_overdue_reminders() -> dict:
     from hubra.core.models.invoice_reminder import InvoiceReminderHistory
     from hubra.core.models.member import Member
     from hubra.api.finance.services import billing_settings
-    from hubra.core.services.email import _get_base_url
+    from hubra.core.services.email import MY_INVOICES_PATH, club_app_url
 
     billing = billing_settings()
     if not billing["reminders_enabled"]:
         return {"overdue_7d": 0, "overdue_14d": 0, "skipped_no_email": 0}
 
     today = date.today()
-    _base = _get_base_url()
-    portal_url = f"{_base}/invoices" if _base else "the member portal"
+    portal_url = club_app_url(MY_INVOICES_PATH) or "the member portal"
     due_soon = _notify_due_soon(today)
     if due_soon:
         db.session.commit()

@@ -578,6 +578,7 @@
     "rangeOf": "{{start}}–{{end}} von {{total}}",
     "refresh": "Aktualisieren",
     "removed": "Entfernt",
+    "reportBrokenLink": "Problem melden",
     "required": "erforderlich",
     "retry": "Nochmals versuchen",
     "role": "Rolle",

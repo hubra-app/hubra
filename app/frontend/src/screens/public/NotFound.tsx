@@ -1,8 +1,9 @@
-import { Button, Stack, Text, Title } from '@mantine/core'
+import { Anchor, Button, Stack, Text, Title } from '@mantine/core'
 import { useNavigate } from 'react-router-dom'
 import { useT } from '@/locales/i18n'
-import { IconArrowLeft } from '@tabler/icons-react'
+import { IconArrowLeft, IconBug } from '@tabler/icons-react'
 import { hasTokens } from '@hubra/api-client'
+import { reportProblemUrl } from '@/constants'
 
 export function NotFoundScreen() {
   const { t } = useT()
@@ -35,6 +36,18 @@ export function NotFoundScreen() {
         <Button mt="md" leftSection={<IconArrowLeft size={16} />} onClick={() => navigate(target)}>
           {t('common.goHome', 'Zur Startseite')}
         </Button>
+        {/* Reached from a broken link: let people tell us where it was. */}
+        <Anchor
+          href={reportProblemUrl(window.location.href)}
+          target="_blank"
+          rel="noopener"
+          size="sm"
+          mt="xs"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+        >
+          <IconBug size={14} />
+          {t('common.reportBrokenLink', 'Problem melden')}
+        </Anchor>
       </Stack>
     </div>
   )
