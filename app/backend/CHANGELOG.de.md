@@ -13,13 +13,15 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 - **Changelogs auf Discord, für Hubra und für Plugin-Updates**: Jede neue Hubra-Version und jede neue Plugin-Version wird einmal angekündigt, mit ihrem Abschnitt aus dem Changelog. Vereine schalten das auf ihrem eigenen Discord-Server ein (Discord-Einstellungen › Ankündigungen: «Changelog: neue Hubra-Versionen» und «Changelog: Plugin-Updates», beide standardmässig aus) und wählen den Kanal, zum Beispiel einen Ankündigungs- oder einen eigenen Changelog-Kanal; Plugin-Updates erreichen nur Vereine, die das Plugin nutzen. Hubras eigener Server bekommt sie im neuen Changelog-Kanal (manage › Discord, Karte Plattform-Log). Sie laufen als die neuen Ereignisse `hubra.released` und `plugin.released` über die Outbox und werden nie doppelt gepostet. Siehe docs/discord.md, «Changelogs».
 
+### Changed
+
+- **Releases bringen ihr Changelog mit**: Das GitHub-Release einer Hubra-Version zeigt den Changelog-Abschnitt dieser Version als Beschreibung und hängt ihn als `CHANGELOG.md` an (auch in `SHA256SUMS`). Ein Release mit leerem Changelog-Abschnitt stoppt jetzt bei der ersten Prüfung, statt ohne Notizen zu erscheinen. Die Einträge von 0.2.2 standen unter 0.2.1 und haben jetzt ihren eigenen Abschnitt.
+
 ### Fixed
 
 - **Die Notizen eines Plugins behalten ihre Zwischentitel**: Die Update-Notizen im Plugin-Katalog hörten beim ersten `### Added` innerhalb einer Version auf; jetzt laufen sie bis zur nächsten Version.
 
 ## [0.2.2] - 2026-11-06
-
-## [0.2.1] - 2026-11-06
 
 ### Changed
 
@@ -27,6 +29,11 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 - **Hintergrund-Jobs sind sicherer gegen Abstürze und Hänger**: Jeder Job hat ein Zeitlimit (standardmässig 15 min, Backups 3 h, Gesundheitsprüfungen 1 min), ein Job gilt erst nach dem Lauf als erledigt, damit der Job eines beendeten Workers nochmals läuft, Worker nehmen einen Job aufs Mal und starten nach 500 Jobs oder 250 MB neu, und ein Job, den der Worker nicht kennt, zählt als fehlgeschlagen, statt zu verschwinden. Jobs, die mit einer Änderung eingereiht werden, werden mit ihr gespeichert und nach dem Speichern gesendet, ein Redis-Ausfall verliert sie also nicht mehr; Webhook-Wiederholungen werden alle 5 Minuten nachgeholt. Ein Ereignis ohne verbleibende Versuche löst eine Warnung aus. Redis speichert seine Daten auf der Festplatte (`appendonly`). Datenbankabfragen brechen nach 60 s in der API und 5 min in Workern ab, eine vergessene offene Transaktion nach 2 min. Jede Anfrage hat eine Kennung (`X-Request-ID`), die ihre Jobs und Logs mitführen und die ein Serverfehler anzeigt. Siehe docs/scaling.md, «Job defaults».
 - **Formularfehler zeigen auf das Feld**: Die API gibt bei ungültigen Eingaben `fields` mit einer Meldung pro Feld zurück, und die Apps zeigen sie auch auf Deutsch.
 - **manage öffnet schneller**: Jede Seite lädt ihren Code erst beim Öffnen, die erste Ansicht braucht etwa 214 KB Skript statt 380 KB.
+
+## [0.2.1] - 2026-11-06
+
+### Changed
+
 - **Probleme ohne Konto melden, aus jeder Mail**: Wer eine Mail für jemand anderen bekommen hat, keine Mails mehr möchte oder ein anderes Problem hat, kann es auf der Support-Seite ohne Anmeldung melden. Man gibt eine Mail-Adresse an; in manage steht beim Fall «Ohne Konto» mit dem Grund und der Mail, und Antworten gehen per Mail an diese Adresse. Das Formular nimmt höchstens 5 Meldungen pro Stunde von einer Verbindung an und hat eine versteckte Spam-Falle. Jede Mail (HTML und Text) endet jetzt mit zwei Links: «Diese Mail ist nicht für dich oder etwas stimmt nicht? Melde es uns» (mit der Mail) und «Mails abbestellen». Sie erscheinen, sobald `support.url` gesetzt ist und `flask seed` die Texte geladen hat.
 - **Problem melden von überall, und eine Support-Seite für «Das war ich nicht» und Abbestellen**: Die Seiten «Seite nicht gefunden» und die Fehlerseiten der Vereins-App sowie das Kontomenü in manage haben einen Knopf «Problem melden», der das Formular der Support-Seite mit der Adresse der Seite öffnet. Die Support-Seite hat eine neue Seite «Konto und Mails» (/konto): was tun nach einer Anmeldung, die man nicht kennt, wo man Mails von Hubra und vom Verein abstellt, und wie man ein Problem meldet.
 - **Plugins können Dashboard-Widgets aus ihrem Backend anbieten**: Ein Widget ist jetzt ein Vertrag (`widget_contract`: Name, Bezeichnung, Grösse, Einstellungen, das nötige Recht und ein Handler, der liest, was es zeigt). Mitglieder sehen nur Widgets, deren Modul im Verein eingeschaltet ist und deren Recht sie haben; die Daten werden als das betrachtende Mitglied gelesen. Eine Zahlenkachel (`stat`) oder eine Liste (`list`) braucht keinen Frontend-Code; ein Plugin kann weiterhin selbst zeichnen (`custom`). Neu: `GET /api/v1/app/dashboards/widgets` und `POST /api/v1/app/dashboards/widgets/<name>/data`. Siehe docs/dashboards.md.

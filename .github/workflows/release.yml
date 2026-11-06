@@ -5,7 +5,7 @@
 #     git tag v1.3.0 && git push origin v1.3.0      (or: hubra release hubra)
 #
 #   check     the tag matches pyproject.toml, CHANGELOG.md has a [1.3.0]
-#             section, the commit is on main or a release/* branch, and the
+#             section that is not empty, the commit is on main or a release/* branch, and the
 #             release is not published yet
 #   images    images.yml: the full release checks, then the images, pushed as
 #             sha-<commit> only (no version tag, no latest yet)
@@ -17,8 +17,10 @@
 #             the signature says "release.yml of hubra-app/hubra, run for tag
 #             v1.3.0, published this digest". No key to keep.
 #   release   the GitHub release, created with its files attached (works with
-#             immutable releases): images.yaml (the overlay block pinned by
-#             digest), images.txt (one image@digest per line) and SHA256SUMS
+#             immutable releases): CHANGELOG.md (this version's changelog
+#             section, which is also the release description), images.yaml
+#             (the overlay block pinned by digest), images.txt (one
+#             image@digest per line) and SHA256SUMS
 #   branch    release/1.3 at the tag commit, if missing (release-branch.yml)
 #   mirror    the tag to GitLab, now that the images carry its version
 #             (mirror-gitlab.yml)
@@ -76,8 +78,13 @@ jobs:
               raise SystemExit(f"::error::tag {tag}, but app/backend/pyproject.toml says version {declared}")
           pre = bool(m.group(4))
           log = open("app/backend/CHANGELOG.md").read()
-          if not pre and not re.search(rf"^##\s*\[{re.escape(version)}\]", log, re.M):
-              raise SystemExit(f"::error::app/backend/CHANGELOG.md has no [{version}] section; move [Unreleased] there first")
+          if not pre:
+              m = re.search(rf"^##\s*\[{re.escape(version)}\][^\n]*\n(.*?)(?=^##\s|\Z)", log, re.M | re.S)
+              if not m:
+                  raise SystemExit(f"::error::app/backend/CHANGELOG.md has no [{version}] section; move [Unreleased] there first")
+              # The section is the release description and its CHANGELOG.md file.
+              if not m.group(1).strip():
+                  raise SystemExit(f"::error::the [{version}] section of app/backend/CHANGELOG.md is empty; add what changed")
           with open(os.environ["GITHUB_OUTPUT"], "a") as out:
               out.write(f"version={version}\nprerelease={'true' if pre else 'false'}\nminor={m.group(1)}.{m.group(2)}\n")
           PY
@@ -230,7 +237,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          (cd out && sha256sum images.yaml images.txt > SHA256SUMS)
           # What a draft release made for this tag already says stays on top.
           BODY=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft,body \
                  -q 'select(.isDraft) | .body' 2>/dev/null || true)
@@ -239,12 +245,19 @@ jobs:
           import os, re
           v = os.environ["VERSION"]
           log = open("app/backend/CHANGELOG.md").read()
-          m = re.search(rf"^##\s*\[{re.escape(v)}\][^\n]*\n(.*?)(?=^##\s|\Z)", log, re.M | re.S)
-          section = m.group(1).strip() if m else ""
+          def section_of(name):
+              m = re.search(rf"^##\s*\[{re.escape(name)}\][^\n]*\n(.*?)(?=^##\s|\Z)", log, re.M | re.S)
+              return m.group(1).strip() if m else ""
+          # A release has its own [X.Y.Z] section (the check job insists); a
+          # pre-release may not yet, then it ships what [Unreleased] says.
+          section = section_of(v) or (section_of("Unreleased") if os.environ["PRERELEASE"] == "true" else "")
+          # The changelog for this version, as a file and in the description.
+          open("out/CHANGELOG.md", "w").write(
+              f"# Hubra {v}\n\n{section or 'No changelog entry for this version.'}\n")
           body = os.environ.get("BODY", "").strip()
           parts = [body] if body else []
           if section and section not in body:
-              parts.append(f"## Changes in {v}\n\n{section}" if body else section)
+              parts.append(f"## Changelog\n\n{section}")
           block = open("out/images.yaml").read().rstrip()
           repo = os.environ["GITHUB_REPOSITORY"]
           parts.append(
@@ -256,13 +269,14 @@ jobs:
           )
           open("notes.md", "w").write("\n\n".join(parts))
           PY
+          (cd out && sha256sum CHANGELOG.md images.yaml images.txt > SHA256SUMS)
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           # An immutable release takes no files once published, so it is
           # published complete: created with its files, or a draft filled first.
-          files=(out/images.yaml out/images.txt out/SHA256SUMS)
+          files=(out/CHANGELOG.md out/images.yaml out/images.txt out/SHA256SUMS)
           pre=(); if [ "$PRERELEASE" = true ]; then pre=(--prerelease); fi
           # The release's state: none, draft, published. Any other answer
           # (a 500, a timeout) stops here with GitHub's message instead of being
