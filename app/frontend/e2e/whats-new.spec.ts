@@ -14,8 +14,12 @@ test('what is new shows the latest release, older versions on demand and the roa
   // so the check does not depend on which entry is listed first.
   const showAll = dialog.getByRole('button', { name: /^Alle \d+ Änderungen zeigen$/ })
   if (await showAll.count()) await showAll.click()
-  // The notes follow the page language (German here, from CHANGELOG.de.md).
-  await expect(dialog.getByText('Wartungsmodus', { exact: true })).toBeVisible()
+  // The notes follow the page language (German here, from CHANGELOG.de.md):
+  // the newest release's sections carry German headings. Not a fixed entry,
+  // so the check holds whichever release is the newest.
+  await expect(
+    dialog.getByText(/^(Neu|Geändert|Behoben|Entfernt|Veraltet|Sicherheit)$/).first(),
+  ).toBeVisible()
   // Older versions are folded: a heading per version, its changes hidden until opened.
   const older = dialog.locator('.mantine-Accordion-item')
   expect(await older.count()).toBeGreaterThan(0)
