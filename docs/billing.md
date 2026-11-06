@@ -28,9 +28,10 @@ before.
   `trial_end` set to the trial's end, so nothing is charged before.
   **Manage payment** opens Stripe's customer portal (card, billing address,
   invoices, cancelling).
-- **Changes in manage reach Stripe.** Saving a club's terms in manage
-  (All clubs › club › Billing) replaces the subscription's items, with no
-  proration, so the new price applies from the next invoice. **Sync with
+- **Changes reach Stripe, pro rata.** Saving a club's terms in manage
+  (All clubs › club › Billing), a club changing its plan or add-ons, and
+  the hourly member count update only the subscription items that changed,
+  with `create_prorations` (see "Changes during the month"). **Sync with
   Stripe** does the same on demand and reads Stripe's state first. A running
   sponsorship has nothing to charge: the club can't start Checkout and the
   items aren't pushed.
@@ -121,45 +122,60 @@ Settings › Hubra subscription. The portal shows the club's card, billing
 address, the invoice history and the next payment date, and lets the club
 cancel (at the end of the period, depending on the portal's settings).
 
-## Add-ons added during the month
+## Changes during the month
 
 Stripe bills a subscription **in advance**: each invoice charges the
 coming period (month or year). The billing day is the day Checkout was
 completed, or the day the trial ended.
 
-When manage adds an add-on (or a module, or raises licences) in the middle
-of a period, Hubra replaces the subscription's items at once, with
-`proration_behavior: none`:
+When the terms change in the middle of a period (manage, the club on its
+subscription tab, or the member count), Hubra updates only the items that
+changed, with `proration_behavior: create_prorations` (Mike's choice,
+2026-11-06):
 
-- **Nothing is charged now.** There is no extra invoice and no prorated
-  line for the rest of the current period: the add-on runs free until the
-  next billing day.
-- **The next invoice has it in full.** On the next billing day the invoice
-  shows the add-on as its own line `Hubra <add-on>` at its full price for
-  the new period, next to the plan.
-- **Removing works the same way.** An add-on removed mid-period gives no
-  credit; it is gone from the next invoice.
+- **The rest of the period is charged pro rata on the next invoice.** An
+  add-on taken on day 10 of a 30-day month adds a line "Remaining time on
+  Hubra <add-on>" for 20/30 of its price, plus its full price for the new
+  period. Nothing is charged at once; no extra invoice.
+- **A removal or a lower count gives a pro-rata credit** on the next
+  invoice ("Unused time on …").
 - **Per-member prices follow the member count.** The hourly reconcile
-  reads every subscription again and pushes the quantities when they
-  changed, so the invoice uses the number of members that are not archived
-  at most an hour before the billing day. Joins and leaves in between are
-  not prorated either.
-- **During a trial** any change just sets what the first real invoice will
-  charge.
-- **Yearly billing** (`billing.yearly`): the same rule means an add-on
-  added in month two runs free for the rest of the year. If that matters,
-  charge yearly clubs by hand for the gap, or switch proration on (below).
+  pushes the new quantity when it changed: a member who joins mid-month
+  costs the rest of that month pro rata, a member who leaves is credited.
+  Only the quantity of that item changes, so the other lines show no
+  credit and recharge.
+- **A plan change** works the same way: the price difference for the rest
+  of the period goes on the next invoice.
+- **During a trial** Stripe doesn't prorate: changes just set what the
+  first real invoice charges.
+- **Yearly billing** (`billing.yearly`): the same, pro rata over the year.
 
-The club's subscription tab in Hubra shows the new amount at once (what is
-due); Stripe's subscription page in the dashboard shows it under
-**Upcoming invoice**.
+The club's subscription tab shows the new amount at once; Stripe's
+dashboard shows the prorations under **Upcoming invoice**. Charging at once
+instead is `always_invoice` in `sync()` (`hubra/core/billing/service.py`).
 
-Changing this is one parameter in `sync()` in
-`hubra/core/billing/service.py`: `create_prorations` puts a prorated
-charge for the rest of the period on the next invoice, `always_invoice`
-charges it at once. Because Hubra replaces all items on each change, both
-would also show a credit and a charge for the unchanged lines, so they
-would need a smarter item update first.
+## What a club changes itself
+
+Settings › Hubra subscription (permission `billing.billing.manage`):
+
+- **Breakdown:** plan, discount, each paid module with its quantity
+  ("84 members × 0.20", "3 licences × 5.00"), what the plan includes, and
+  the total per month.
+- **Plan:** the public plans (manage › Settings › Plans, *public*) and the
+  current one. A switch is refused (409 `PLAN_TOO_SMALL`) when the club has
+  more members than the plan allows. Private plans for one club's deal
+  stay manage's to give.
+- **Add-on modules:** modules with a public list price (manage › Plans ›
+  Add-ons) and those on the club's bill. Taking one switches the module
+  on, dropping it switches it off (data stays). Modules priced per licence
+  get a licence count. A price manage agreed with the club stays.
+- **Settings › Modules** shows each paid module's price; switching on a
+  module the club doesn't pay yet asks first and books it.
+
+**Licences** are a number per module that the price is multiplied by
+(`licenses[code]` in the terms). They are not tied to members yet: any
+member with the module's rights uses it, however many licences the club
+pays for.
 
 ## Hubra fee on online payments
 
@@ -283,6 +299,9 @@ Club app (`billing.billing.manage`):
 | POST | `/api/v1/app/billing/portal` | `{url}` of Stripe's customer portal (409 `NO_CUSTOMER`) |
 | POST | `/api/v1/app/billing/refresh` | Read the subscription from Stripe again (after Checkout) |
 | GET | `/api/v1/app/billing/invoices` | The last 12 Stripe invoices with PDF links |
+| GET | `/api/v1/app/billing/catalog` | Plans the club can pick and paid modules with prices; any member (the modules page shows prices) |
+| PUT | `/api/v1/app/billing/plan` | `{plan}`: switch to a public plan (400, 409 `PLAN_TOO_SMALL`) |
+| PUT | `/api/v1/app/billing/addons/<code>` | `{on?, licenses?}`: take or drop a paid module, set its licences (404 not offered, 409 `IN_PLAN`, 403 `MODULE_BLOCKED`) |
 
 Platform (manage):
 

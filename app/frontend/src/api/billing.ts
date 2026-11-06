@@ -118,3 +118,72 @@ export async function saveHubraBillingContact(
 ): Promise<HubraBillingContact> {
   return apiFetch('/app/billing/contact', { method: 'PUT', body: JSON.stringify(body) })
 }
+
+/** A plan the club can pick (public, or its current one). */
+export interface HubraPlanChoice {
+  key: string
+  name_de: string
+  name_en: string
+  description_de: string
+  description_en: string
+  price_month_chf: string | null
+  price_year_chf: string | null
+  features: { de: string; en: string }[]
+  modules: {
+    code: string
+    name_de: string
+    name_en: string
+    price_chf: string | null
+    unit: string
+    included: boolean
+  }[]
+  limits: { members: number | null; mail_month: number | null; storage_mb: number | null }
+  highlighted: boolean
+}
+
+/** A paid module: with the plan, taken by the club, or offered. */
+export interface HubraAddonOffer {
+  code: string
+  name_de: string
+  name_en: string
+  note_de: string
+  note_en: string
+  plugin: string | null
+  price_month_chf: string | null
+  unit: 'flat' | 'member' | 'license'
+  /** included: free with the plan; plan: the plan adds it at its price;
+   *  addon: the club took it; null: offered. */
+  source: 'included' | 'plan' | 'addon' | null
+  licenses: number | null
+}
+
+export interface HubraCatalog {
+  plan: string
+  members: number
+  plans: HubraPlanChoice[]
+  addons: HubraAddonOffer[]
+}
+
+/** Plans and paid modules with prices (every member may read it). */
+export async function getHubraCatalog(): Promise<HubraCatalog> {
+  return apiFetch('/app/billing/catalog')
+}
+
+export async function chooseHubraPlan(plan: string): Promise<HubraBilling> {
+  return apiFetch('/app/billing/plan', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ plan }),
+  })
+}
+
+export async function setHubraAddon(
+  code: string,
+  body: { on?: boolean; licenses?: number },
+): Promise<HubraBilling> {
+  return apiFetch(`/app/billing/addons/${encodeURIComponent(code)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}

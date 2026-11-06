@@ -9,11 +9,13 @@ section and position, or the apps show that version in English.
 
 ### Added
 
+- Hubra subscription: clubs see a full breakdown (quantities per member or licence, what the plan includes), switch to another public plan, and take or drop paid add-on modules with their licences under Settings › Hubra subscription. Settings › Modules shows the price of paid modules; switching one on asks first and books it.
 - Hubra fee (formerly platform fee) on online payments per club: manage › All clubs › club › Billing can set a club's own percentage instead of the default; the club sees it on its subscription tab.
 - Hubra subscription: clubs set the email and address for Hubra's invoices under Settings › Hubra subscription › Billing details; saving updates Stripe at once.
 
 ### Changed
 
+- Hubra subscription: changes during the month are billed pro rata on the next invoice (a member who joins, an add-on taken, a plan change; credits for the reverse). Only the subscription items that changed are updated in Stripe.
 - **Releases carry their changelog**: the GitHub release of a Hubra version shows that version's changelog section as its description and has it attached as `CHANGELOG.md` (also in `SHA256SUMS`). A release whose changelog section is empty now stops at the first check instead of going out without notes. The entries of 0.2.2 had landed under 0.2.1 and are now in their own section.
 
 ### Fixed

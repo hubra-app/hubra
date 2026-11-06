@@ -32,6 +32,7 @@ import { useToast } from '@/context/AppContext'
 import { qk } from '@/data/keys'
 import { formatCHF, formatDate } from '@/format'
 import { useT } from '@/locales/i18n'
+import { AddonsCard, PlanCard } from './SubscriptionChoices'
 
 const STATUS_COLOR: Record<HubraBillingStatus, string> = {
   none: 'gray',
@@ -352,10 +353,28 @@ export function SubscriptionTab() {
             {lines.map((l) => (
               <Row
                 key={`${l.source}-${l.code}`}
-                label={`+ ${l.label || l.code}${l.quantity > 1 ? ` (${l.quantity}×)` : ''}`}
+                label={`+ ${l.label || l.code}${
+                  l.unit === 'member'
+                    ? ` (${t('subscription.lineMembers', '{{n}} Mitglieder × {{price}}', { n: l.quantity, price: chf(l.unit_price_chf) })})`
+                    : l.unit === 'license'
+                      ? ` (${t('subscription.lineLicenses', '{{n}} Lizenzen × {{price}}', { n: l.quantity, price: chf(l.unit_price_chf) })})`
+                      : l.quantity > 1
+                        ? ` (${l.quantity}×)`
+                        : ''
+                }`}
                 value={chf(l.total_chf)}
               />
             ))}
+            {data.module_lines.some((l) => l.included) && (
+              <Text size="xs" c="dimmed">
+                {t('subscription.included', 'Im Tarif inklusive: {{list}}', {
+                  list: data.module_lines
+                    .filter((l) => l.included)
+                    .map((l) => l.label || l.code)
+                    .join(', '),
+                })}
+              </Text>
+            )}
             <Row
               label={t('subscription.due', 'Fällig pro Monat')}
               value={chf(data.due_chf)}
@@ -404,6 +423,9 @@ export function SubscriptionTab() {
           </Stack>
         </SimpleGrid>
       </Paper>
+
+      <PlanCard />
+      <AddonsCard />
 
       {data.enabled && <BillingContactCard />}
 

@@ -33,6 +33,8 @@ import {
 import { localizeModule } from '@/modules/labels'
 import { qk } from '@/data/keys'
 import { openReport } from '@/screens/private/support/reportStore'
+import type { HubraAddonOffer } from '@/api/billing'
+import { addonPrice, useAddonSwitch, useHubraCatalog } from './subscriptionHooks'
 
 type FormValue = string | number | boolean | null
 
@@ -77,6 +79,12 @@ export function ModulesTab() {
   const canWrite = hasPermission('modules.modules.write')
   const [editing, setEditing] = useState<ModuleInfo | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
+  // Paid modules: the price on the card, and switching one on books it.
+  const { data: catalog } = useHubraCatalog()
+  const offers: Record<string, HubraAddonOffer> = Object.fromEntries(
+    (catalog?.addons ?? []).map((a) => [a.code, a]),
+  )
+  const addonSwitch = useAddonSwitch()
 
   const { data: modules = [], isLoading } = useQuery({
     queryKey: qk.modules,
@@ -104,6 +112,11 @@ export function ModulesTab() {
     })
 
   const toggle = async (m: ModuleInfo, enabled: boolean) => {
+    const offer = offers[m.code]
+    if (offer && ((enabled && offer.source === null) || (!enabled && offer.source === 'addon'))) {
+      addonSwitch.ask(offer, enabled)
+      return
+    }
     setBusy(m.code)
     try {
       const updated = await setModuleEnabled(m.code, enabled)
@@ -130,7 +143,8 @@ export function ModulesTab() {
       m={m}
       byCode={byCode}
       canWrite={canWrite}
-      busy={busy === m.code}
+      busy={busy === m.code || addonSwitch.busy === m.code}
+      offer={offers[m.code]}
       onToggle={(on) => toggle(m, on)}
       onConfigure={() => setEditing(m)}
     />
@@ -173,6 +187,7 @@ export function ModulesTab() {
           })}
         </Text>
       )}
+      {addonSwitch.modal}
       {editing && (
         <ModuleSettingsModal
           module={editing}
@@ -208,6 +223,7 @@ function ModuleCard({
   byCode,
   canWrite,
   busy,
+  offer,
   onToggle,
   onConfigure,
 }: {
@@ -215,6 +231,7 @@ function ModuleCard({
   byCode: Record<string, ModuleInfo>
   canWrite: boolean
   busy: boolean
+  offer?: HubraAddonOffer
   onToggle: (on: boolean) => void
   onConfigure: () => void
 }) {
@@ -256,6 +273,15 @@ function ModuleCard({
           <Text fw={700} fz="md">
             {m.name}
           </Text>
+          {offer && (
+            <Text fz="xs" c={offer.source === 'included' ? 'green' : 'dimmed'} data-price={m.code}>
+              {offer.source === 'included'
+                ? t('settings.modules.inPlan', 'Im Tarif inklusive')
+                : offer.source === null
+                  ? t('settings.modules.extra', 'Aufpreis: {{price}}', { price: addonPrice(t, offer) })
+                  : addonPrice(t, offer)}
+            </Text>
+          )}
         </Stack>
         <Switch
           checked={on}
