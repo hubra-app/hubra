@@ -79,11 +79,12 @@ jobs:
           pre = bool(m.group(4))
           log = open("app/backend/CHANGELOG.md").read()
           if not pre:
-              m = re.search(rf"^##\s*\[{re.escape(version)}\][^\n]*\n(.*?)(?=^##\s|\Z)", log, re.M | re.S)
-              if not m:
+              # Own name: m still holds the tag match, read again for minor below.
+              sec = re.search(rf"^##\s*\[{re.escape(version)}\][^\n]*\n(.*?)(?=^##\s|\Z)", log, re.M | re.S)
+              if not sec:
                   raise SystemExit(f"::error::app/backend/CHANGELOG.md has no [{version}] section; move [Unreleased] there first")
               # The section is the release description and its CHANGELOG.md file.
-              if not m.group(1).strip():
+              if not sec.group(1).strip():
                   raise SystemExit(f"::error::the [{version}] section of app/backend/CHANGELOG.md is empty; add what changed")
           with open(os.environ["GITHUB_OUTPUT"], "a") as out:
               out.write(f"version={version}\nprerelease={'true' if pre else 'false'}\nminor={m.group(1)}.{m.group(2)}\n")
