@@ -9,6 +9,10 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ## [Unreleased]
 
+### Fixed
+
+- Hubra-Abo: Die Rechnungen von Stripe zeigen jetzt die Rechnungsadresse des Vereins. Checkout fragt danach (vorausgefüllt mit der Adresse aus den Vereinseinstellungen), und die Finanz-E-Mail des Vereins wird verwendet, falls gesetzt.
+
 ## [0.2.2] - 2026-11-06
 
 ## [0.2.1] - 2026-11-06

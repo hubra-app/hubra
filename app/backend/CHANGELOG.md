@@ -7,6 +7,10 @@ section and position, or the apps show that version in English.
 
 ## [Unreleased]
 
+### Fixed
+
+- Hubra subscription: Stripe invoices now show the club's billing address. Checkout asks for it (prefilled from the club's address in its settings) and the club's finance email is used when set.
+
 ## [0.2.2] - 2026-11-06
 
 ## [0.2.1] - 2026-11-06
