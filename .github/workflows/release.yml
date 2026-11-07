@@ -65,30 +65,9 @@ jobs:
           TAG: ${{ github.ref_name }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          python3 - <<'PY'
-          import os, re, tomllib
-          tag = os.environ["TAG"]
-          m = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)(-[0-9A-Za-z.-]+)?", tag)
-          if not m:
-              raise SystemExit(f"::error::{tag} is not vX.Y.Z or vX.Y.Z-rc.N")
-          version = tag[1:]
-          with open("app/backend/pyproject.toml", "rb") as f:
-              declared = tomllib.load(f)["project"]["version"]
-          if declared != version:
-              raise SystemExit(f"::error::tag {tag}, but app/backend/pyproject.toml says version {declared}")
-          pre = bool(m.group(4))
-          log = open("app/backend/CHANGELOG.md").read()
-          if not pre:
-              # Own name: m still holds the tag match, read again for minor below.
-              sec = re.search(rf"^##\s*\[{re.escape(version)}\][^\n]*\n(.*?)(?=^##\s|\Z)", log, re.M | re.S)
-              if not sec:
-                  raise SystemExit(f"::error::app/backend/CHANGELOG.md has no [{version}] section; move [Unreleased] there first")
-              # The section is the release description and its CHANGELOG.md file.
-              if not sec.group(1).strip():
-                  raise SystemExit(f"::error::the [{version}] section of app/backend/CHANGELOG.md is empty; add what changed")
-          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
-              out.write(f"version={version}\nprerelease={'true' if pre else 'false'}\nminor={m.group(1)}.{m.group(2)}\n")
-          PY
+          # scripts/release_check.py, also run on PRs (ci.yml) and by
+          # release-dry-run.yml, so a broken check shows up before a tag exists.
+          python3 scripts/release_check.py check "$TAG"
           # Only from main or a release branch, never from a feature branch.
           if ! git branch -r --contains "$GITHUB_SHA" | grep -qE '^\s*origin/(main|release/.+)$'; then
             echo "::error::${GITHUB_SHA::7} is not on main or a release/* branch"
@@ -227,7 +206,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          sparse-checkout: app/backend/CHANGELOG.md
+          sparse-checkout: |
+            app/backend/CHANGELOG.md
+            scripts/release_check.py
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -242,34 +223,7 @@ jobs:
           BODY=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft,body \
                  -q 'select(.isDraft) | .body' 2>/dev/null || true)
           export BODY
-          python3 - <<'PY'
-          import os, re
-          v = os.environ["VERSION"]
-          log = open("app/backend/CHANGELOG.md").read()
-          def section_of(name):
-              m = re.search(rf"^##\s*\[{re.escape(name)}\][^\n]*\n(.*?)(?=^##\s|\Z)", log, re.M | re.S)
-              return m.group(1).strip() if m else ""
-          # A release has its own [X.Y.Z] section (the check job insists); a
-          # pre-release may not yet, then it ships what [Unreleased] says.
-          section = section_of(v) or (section_of("Unreleased") if os.environ["PRERELEASE"] == "true" else "")
-          # The changelog for this version, as a file and in the description.
-          open("out/CHANGELOG.md", "w").write(
-              f"# Hubra {v}\n\n{section or 'No changelog entry for this version.'}\n")
-          body = os.environ.get("BODY", "").strip()
-          parts = [body] if body else []
-          if section and section not in body:
-              parts.append(f"## Changelog\n\n{section}")
-          block = open("out/images.yaml").read().rstrip()
-          repo = os.environ["GITHUB_REPOSITORY"]
-          parts.append(
-              "## Images\n\n"
-              "Pin them by digest (`images.yaml` is attached too):\n\n"
-              f"```yaml\n{block}\n```\n\n"
-              "Every image is signed (cosign, keyless) by this repository's release workflow "
-              f"and carries a build provenance attestation; see [docs/releases.md](https://github.com/{repo}/blob/{os.environ['TAG']}/docs/releases.md) to verify."
-          )
-          open("notes.md", "w").write("\n\n".join(parts))
-          PY
+          python3 scripts/release_check.py notes "$TAG" --images out/images.yaml --out out --notes notes.md
           (cd out && sha256sum CHANGELOG.md images.yaml images.txt > SHA256SUMS)
       - name: Publish the release
         env:
