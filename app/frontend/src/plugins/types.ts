@@ -24,7 +24,8 @@ export interface PluginTab extends Gated {
   component: ComponentType
   /**
    * The page tab this one sits under as a sub-tab, if the screen groups its
-   * tabs. On `finance`: `bookings`, `planning` or `setup`. Without it the
+   * tabs. On `finance`: `overview`, `invoices`,
+   * `bookings`, `planning`, `annual` or `setup`. Without it the
    * tab is a page tab of its own.
    */
   group?: string
