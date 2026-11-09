@@ -294,6 +294,7 @@ def _listing(m: dict) -> dict:
         "modules": m.get("modules") or [],
         "requires": m.get("requires") or [],
         "depends": m.get("depends") or {},
+        "replaces": m.get("replaces") or [],
         "uses": m.get("uses"),
     }
 

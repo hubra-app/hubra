@@ -12,6 +12,7 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 ### Added
 
 - **Eigene Kategorien in der Seitenleiste**: Unter «Seitenleiste anpassen» legst du eigene Kategorien an (Neue Kategorie), benennst jede Überschrift mit dem Stift um und entfernst deine Kategorien wieder; ihre Seiten kehren in ihre Bereiche zurück. Mit den Pfeilen verschiebst du Seiten hinein und hinaus. Gespeichert auf deinem Konto wie der Rest deiner Seitenleiste.
+- **Plugins können ein anderes Plugin übernehmen**: Ein Plugin, das ein anderes unter `replaces:` nennt, übernimmt es beim Installieren oder Aktualisieren, mit seinen Daten, Modul-Schaltern und Berechtigungen. Der Plugin-Katalog zeigt, was ein Update übernimmt, und blendet das übernommene Plugin aus. So wird Budgets ein Teil von Finances (docs/plugins.md).
 
 ### Changed
 

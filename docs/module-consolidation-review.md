@@ -58,6 +58,13 @@ understand, and does not touch core tables.
   Without M0 a merge means "uninstall, install, hope the tables survive",
   which is exactly the kind of step that lost Guides for a day on 2026-11-05.
 
+  **Status:** M0 is built in the same PR as this review
+  ([plugins.md, Taking over another plugin](plugins.md#taking-over-another-plugin-replaces)).
+  The design changed slightly: the clubs' module switches and the permission
+  keys carry over because the new plugin keeps the old module codes and
+  blueprint names, so core only has to retire the old plugin, keep it from
+  coming back, and show the takeover in the catalogue.
+
 ## What exists today
 
 ### Core modules (hubra)
