@@ -3801,7 +3801,7 @@
   "roles.perms.finance_accounts_update": "Kontenplan und Eröffnungsbilanz ändern",
   "roles.perms.finance_accounts_close": "Geschäftsjahr abschliessen und wieder öffnen",
   "shell.breadcrumbs.annualAccounts": "Jahresrechnung",
-  "settings.tabs.api": "API & Apps",
+  "settings.tabs.api": "API & Webhooks",
   "apiAccess.saved": "Gespeichert",
   "apiAccess.saveFailed": "Nicht gespeichert",
   "apiAccess.ended": "Zugang beendet",

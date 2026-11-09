@@ -3801,7 +3801,7 @@
   "roles.perms.finance_accounts_update": "Change the chart of accounts and opening balances",
   "roles.perms.finance_accounts_close": "Close and reopen a fiscal year",
   "shell.breadcrumbs.annualAccounts": "Annual accounts",
-  "settings.tabs.api": "API & apps",
+  "settings.tabs.api": "API & webhooks",
   "apiAccess.saved": "Saved",
   "apiAccess.saveFailed": "Not saved",
   "apiAccess.ended": "Access ended",
