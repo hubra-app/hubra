@@ -3350,7 +3350,9 @@
       "Owner": "Inhaber/in",
       "Admin": "Administration",
       "Treasurer": "Kassier/in",
-      "Member": "Mitglied"
+      "Member": "Mitglied",
+      "Board": "Vorstand",
+      "Secretary": "Aktuar/in"
     },
     "assignTo": "Mitgliedern die Rolle {{role}} geben",
     "searchMembers": "Mitglied suchen …",
@@ -3539,7 +3541,8 @@
       "federation_federation_read": "Mitgliedvereine des Verbands sehen",
       "federation_federation_manage": "Mitgliedvereine einladen und entfernen",
       "tiers_fee_adjustments_read": "Eigene Beiträge ansehen",
-      "tiers_fee_adjustments_update": "Eigene Beiträge festlegen"
+      "tiers_fee_adjustments_update": "Eigene Beiträge festlegen",
+      "moduleAccess": "Modul verwenden (sehen und öffnen)"
     },
     "areas": {
       "applications": "Anträge",
@@ -3595,7 +3598,9 @@
       "Owner": "Alle Rechte. Nur Inhaber/innen vergeben oder entziehen diese Rolle; ein Verein hat immer mindestens eine/n.",
       "Admin": "Alle Rechte im Verein, ausser die Inhaber-Rolle zu vergeben oder zu entziehen.",
       "Treasurer": "Verwaltet die Finanzen, sieht Mitglieder und das Protokoll.",
-      "Member": "Grundrechte jedes Mitglieds: Anlässe, Umfragen, Beiträge. Die Rechte lassen sich anpassen."
+      "Member": "Grundrechte jedes Mitglieds: Anlässe, Umfragen, Beiträge. Die Rechte lassen sich anpassen.",
+      "Board": "Der Vorstand: sieht Mitglieder, Finanzen und Mail, führt Anlässe, Umfragen, Beiträge und Gruppen.",
+      "Secretary": "Aktuar/in: führt Mitgliederverzeichnis, Anträge, Funktionen, Mail und das Archiv."
     },
     "systemNameHint": "Systemrollen behalten ihren Namen; die App zeigt ihn übersetzt.",
     "adminLocked": "Admin-Rollen haben alle Rechte; die einzelnen Berechtigungen gelten für sie nicht.",

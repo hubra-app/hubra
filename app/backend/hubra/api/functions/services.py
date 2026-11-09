@@ -44,6 +44,21 @@ def _granted_role(role_id):
     return role
 
 
+def _granted_roles(role_ids) -> list:
+    """The roles a function is to give its holders: a list of role ids, or
+    one id (the old ``grantsRoleId``); None or [] gives none."""
+    if role_ids in (None, ""):
+        return []
+    if not isinstance(role_ids, (list, tuple)):
+        role_ids = [role_ids]
+    roles = []
+    for rid in role_ids:
+        role = _granted_role(rid)
+        if role is not None and role not in roles:
+            roles.append(role)
+    return roles
+
+
 def _refresh_holders(fn: Function) -> None:
     from hubra.core.permissions import invalidate_member_permissions
 
@@ -63,6 +78,7 @@ class FunctionService:
                 select(Function)
                 .order_by(Function.name)
                 .options(
+                    selectinload(Function.roles),
                     selectinload(Function.holders)
                     .selectinload(FunctionHolder.member)
                     .selectinload(Member.user)
@@ -84,6 +100,8 @@ class FunctionService:
         max_holders: int = 1,
         grants_role_id=None,
         actor_id: int | None = None,
+        grants_role_ids=None,
+        key: str | None = None,
     ) -> Function:
         name = name.strip() if isinstance(name, str) else ""
         if not name:
@@ -94,17 +112,20 @@ class FunctionService:
         if existing is not None:
             raise_error(409, "CONFLICT", f"Function '{name}' already exists")
 
-        role = _granted_role(grants_role_id)
-        if role is not None:
+        roles = _granted_roles(
+            grants_role_ids if grants_role_ids is not None else grants_role_id
+        )
+        if roles:
             from hubra.core.permissions import check_grant
 
-            check_grant(_actor(actor_id), given=[role])
+            check_grant(_actor(actor_id), given=roles)
         fn = Function(
             name=name,
             description=description,
             max_holders=max_holders,
-            grants_tenant_role_id=role.id if role is not None else None,
+            key=key,
         )
+        fn.roles = roles
         db.session.add(fn)
         db.session.flush()
 
@@ -122,25 +143,22 @@ class FunctionService:
     def update(function_id: int, actor_id: int | None = None, **fields) -> Function:
         fn = FunctionService.get_by_id(function_id)
 
-        if "grants_role_id" in fields:
-            role = _granted_role(fields["grants_role_id"])
-            new_id = role.id if role is not None else None
-            if new_id != fn.grants_tenant_role_id:
+        if "grants_role_ids" in fields or "grants_role_id" in fields:
+            roles = _granted_roles(
+                fields["grants_role_ids"]
+                if "grants_role_ids" in fields
+                else fields["grants_role_id"]
+            )
+            old = list(fn.roles)
+            given = [r for r in roles if r not in old]
+            taken = [r for r in old if r not in roles]
+            if given or taken:
                 from hubra.core.permissions import check_grant
-                from hubra.core.models.role import Role
 
-                old = (
-                    db.session.get(Role, fn.grants_tenant_role_id)
-                    if fn.grants_tenant_role_id
-                    else None
-                )
                 # Linking a role gives it to every holder; unlinking takes it.
-                check_grant(
-                    _actor(actor_id),
-                    given=[role] if role is not None else [],
-                    taken=[old] if old is not None else [],
-                )
-                fn.grants_tenant_role_id = new_id
+                check_grant(_actor(actor_id), given=given, taken=taken)
+                fn.roles = roles
+                db.session.flush()
                 _refresh_holders(fn)
 
         allowed = {"name", "description", "max_holders"}
@@ -277,7 +295,11 @@ class FunctionService:
             "name": fn.name,
             "description": fn.description,
             "maxHolders": fn.max_holders,
-            "grantsRoleId": fn.grants_tenant_role_id,
+            "key": fn.key,
+            # Every role the function gives; grantsRoleId is the first one,
+            # for clients that only know one.
+            "grantsRoleIds": [r.id for r in fn.roles],
+            "grantsRoleId": fn.roles[0].id if fn.roles else None,
             "holders": [
                 {
                     "memberId": fh.member_id,
@@ -294,14 +316,12 @@ class FunctionService:
 def _check_role_change(fn: Function, actor_id: int | None, *, give: bool) -> None:
     """A holder of a function that gives a role gets or loses that role, so
     the actor needs the right to give or take it, as on the member."""
-    if fn.grants_tenant_role_id is None:
+    roles = list(fn.roles)
+    if not roles:
         return
     from hubra.core.permissions import check_grant
-    from hubra.core.models.role import Role
 
-    role = db.session.get(Role, fn.grants_tenant_role_id)
-    if role is not None:
-        check_grant(_actor(actor_id), given=[role] if give else [], taken=[] if give else [role])
+    check_grant(_actor(actor_id), given=roles if give else [], taken=[] if give else roles)
 
 
 def _trigger_mail_sync(function_id: int) -> None:

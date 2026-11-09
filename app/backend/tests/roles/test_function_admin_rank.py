@@ -19,7 +19,7 @@ def boss(app, db, seeded_db):
         select(Role).where(Role.is_admin.is_(True), Role.is_owner.is_(False))
     )
     member = _make_role_and_member(db, seeded_db["tier"], name="Boss", permission_keys=[])
-    fn = Function(name="Praesident", grants_tenant_role_id=admin_role.id, max_holders=1)
+    fn = Function(name="Praesident", roles=[admin_role], max_holders=1)
     db.session.add(fn)
     db.session.flush()
     db.session.add(FunctionHolder(function_id=fn.id, member_id=member.id))

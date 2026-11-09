@@ -4128,5 +4128,10 @@
   "mail.email.fee_adjustment_reminder.ask": "Trifft der Grund dafür noch zu? Dann bestätige es bitte in deinem Konto, damit der Vorstand ihn verlängern kann. Sonst zahlst du ab der nächsten Periode wieder den normalen Beitrag.",
   "mail.email.fee_adjustment_reminder.button": "Grund bestätigen",
   "mail.email.fee_adjustment_reminder.note": "Fragen dazu beantwortet dir der Vorstand.",
-  "mail.email.subject.fee_adjustment_reminder": "{{club_name}}: Trifft der Grund für deinen Beitrag noch zu?"
+  "mail.email.subject.fee_adjustment_reminder": "{{club_name}}: Trifft der Grund für deinen Beitrag noch zu?",
+  "roles.perms.moduleAccess": "Modul verwenden (sehen und öffnen)",
+  "roles.system.Board": "Vorstand",
+  "roles.system.Secretary": "Aktuar/in",
+  "roles.systemDesc.Board": "Der Vorstand: sieht Mitglieder, Finanzen und Mail, führt Anlässe, Umfragen, Beiträge und Gruppen.",
+  "roles.systemDesc.Secretary": "Aktuar/in: führt Mitgliederverzeichnis, Anträge, Funktionen, Mail und das Archiv."
 }

@@ -19,6 +19,11 @@ from .base import AppProvider, Module
 _log = logging.getLogger(__name__)
 
 
+# Standard roles a module may give access to, and the levels (docs/roles.md).
+ROLE_DEFAULT_KEYS = frozenset({"member", "board", "secretary", "treasurer"})
+ROLE_DEFAULT_LEVELS = frozenset({"view", "edit", "all"})
+
+
 class ModuleRegistryError(RuntimeError):
     pass
 
@@ -78,6 +83,12 @@ class ModuleRegistry:
 
     def validate(self) -> None:
         for m in self._modules.values():
+            for role_key, level in (m.role_defaults or {}).items():
+                if role_key not in ROLE_DEFAULT_KEYS or level not in ROLE_DEFAULT_LEVELS:
+                    raise ModuleRegistryError(
+                        f"Module {m.code!r}: role_defaults {role_key!r}: {level!r} "
+                        f"(roles {sorted(ROLE_DEFAULT_KEYS)}, levels {sorted(ROLE_DEFAULT_LEVELS)})"
+                    )
             for dep in m.depends_on:
                 if dep not in self._modules:
                     raise ModuleRegistryError(

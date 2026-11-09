@@ -133,12 +133,18 @@ class RoleService:
             )
 
         keys = [k for k in permission_keys if isinstance(k, str) and k.strip()]
+        # Any key of a module brings the module's access key with it
+        # (docs/roles.md): a role that may read the inventory sees it.
+        from hubra.core.module_access import implied_access_keys
+
+        keys = keys + sorted(implied_access_keys(keys) - set(keys))
         if not _internal:
             from hubra.core.models.member import Member
 
             # Adding a right gives it to every holder, removing takes it
             # away: either way only someone who holds it themselves.
             had = set(RoleService.get_permissions(role.id))
+            had |= implied_access_keys(had)  # held in effect already
             check_grant(
                 db.session.get(Member, actor_id) if actor_id else None,
                 keys=set(keys) ^ had,
@@ -157,6 +163,12 @@ class RoleService:
                     db.session.add(
                         RolePermission(role_id=role.id, permission_id=perm.id)
                     )
+            # An implied access key the catalog doesn't know isn't reported.
+            keys = [
+                k
+                for k in keys
+                if k in perm_map or not (k.startswith("module.") and k.endswith(".access"))
+            ]
 
         invalidate_role_permissions(role.id)
 
@@ -183,14 +195,17 @@ class RolesService:
         from sqlalchemy import func, union
 
         from hubra.core.permissions import _active_term
-        from hubra.core.models.function import Function, FunctionHolder
+        from hubra.core.models.function import FunctionHolder, function_roles
         from hubra.core.models.member import Member, member_roles
 
         holds = union(
             select(member_roles.c.role_id, member_roles.c.member_id),
-            select(Function.grants_tenant_role_id, FunctionHolder.member_id)
-            .join(Function, Function.id == FunctionHolder.function_id)
-            .where(Function.grants_tenant_role_id.is_not(None), *_active_term(date.today())),
+            select(function_roles.c.role_id, FunctionHolder.member_id)
+            .join(
+                function_roles,
+                function_roles.c.function_id == FunctionHolder.function_id,
+            )
+            .where(*_active_term(date.today())),
         ).subquery()
         rows = db.session.execute(
             select(holds.c[0], func.count())

@@ -398,7 +398,24 @@ def set_enabled(code: str, enabled: bool, tenant_id=CURRENT) -> ModuleState:
         _grant(tid, code).enabled = enabled
     db.session.flush()
     invalidate()
+    if enabled:
+        _first_enable(code, tid)
     return states(tid)[code]
+
+
+def _first_enable(code: str, tid) -> None:
+    """A club switching a module on for the first time gives the standard
+    roles the module's ``role_defaults`` (docs/roles.md). Only in the club's
+    own schema, and only once the club has the standard set."""
+    from hubra.core import module_access
+    from hubra.core.tenant.context import current_tenant
+
+    tenant = current_tenant()
+    if (tenant.id if tenant is not None else None) != tid:
+        return  # another club's switch (manage): its next `flask seed` applies them
+    if not module_access.enforced():
+        return
+    module_access.apply_role_defaults(code)
 
 
 def set_allowed(code: str, allowed: bool, tenant_id: int) -> ModuleState:

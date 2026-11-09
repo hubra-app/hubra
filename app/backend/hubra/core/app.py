@@ -392,6 +392,8 @@ def _register_cli(app: Flask) -> None:
 
         run_seeds(db)
         click.echo("Seed data inserted.")
+        # Every club gets the standard roles and module access (docs/roles.md).
+        app.extensions["hubra_standardise_clubs"](None)
 
     from hubra.core.plugins.cli import register as register_plugin_cli
 
@@ -418,6 +420,49 @@ def _register_cli(app: Flask) -> None:
         if tenant is None:
             raise click.ClickException(f"Tenant '{slug}' not found")
         return tenant.id
+
+    @app.cli.group("roles")
+    def roles_cli():
+        """Standard roles, functions and module access (docs/roles.md)."""
+
+    @roles_cli.command("standardise")
+    @click.option("--tenant", "slug", default=None, help="Only this club (slug).")
+    def roles_standardise(slug: str | None):
+        """Add the standard roles and functions a club is missing and switch
+        module access on. Never renames or removes what a club has. Runs on
+        every ``flask seed``."""
+        _standardise_clubs(slug)
+
+    def _standardise_clubs(slug: str | None) -> None:
+        from hubra.core.roles import loads_club_routes
+
+        if not loads_club_routes():
+            click.echo("Standard roles: left to the app backend.")
+            return
+        from hubra.core.models.tenant import Tenant
+        from hubra.core.services.standard_roles import standardise
+        from hubra.core.tenant.context import in_club
+
+        query = select(Tenant).where(Tenant.deleted_at.is_(None)).order_by(Tenant.id)
+        if slug is not None:
+            query = query.where(Tenant.id == _tenant_id(slug))
+        for tenant in db.session.scalars(query).all():
+            try:
+                with in_club(tenant):
+                    report = standardise()
+                    db.session.commit()
+            except Exception as exc:  # one broken club must not stop the rest
+                db.session.rollback()
+                click.echo(f"  {tenant.slug}: failed ({exc})")
+                continue
+            made = report["roles"] + report["functions"]
+            if made or report["first"]:
+                click.echo(
+                    f"  {tenant.slug}: added {', '.join(made) or 'nothing'}"
+                    + (f"; module access on, {report['backfilled']} roles kept their modules" if report["first"] else "")
+                )
+
+    app.extensions["hubra_standardise_clubs"] = _standardise_clubs
 
     @modules_cli.command("sync")
     def modules_sync():

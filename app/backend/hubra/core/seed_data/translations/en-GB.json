@@ -4128,5 +4128,10 @@
   "mail.email.fee_adjustment_reminder.ask": "Does the reason still apply? Then please confirm it in your account so the board can extend it. Otherwise you pay the standard fee again from the next period.",
   "mail.email.fee_adjustment_reminder.button": "Confirm the reason",
   "mail.email.fee_adjustment_reminder.note": "The board answers any questions about it.",
-  "mail.email.subject.fee_adjustment_reminder": "{{club_name}}: does the reason for your fee still apply?"
+  "mail.email.subject.fee_adjustment_reminder": "{{club_name}}: does the reason for your fee still apply?",
+  "roles.perms.moduleAccess": "Use the module (see and open it)",
+  "roles.system.Board": "Board",
+  "roles.system.Secretary": "Secretary",
+  "roles.systemDesc.Board": "The board: sees the club's members, finances and mail, runs events, polls, posts and groups.",
+  "roles.systemDesc.Secretary": "Secretary: keeps the member register, applications, functions, mail and the club's records."
 }

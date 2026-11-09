@@ -43,6 +43,10 @@ class Role(db.Model):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(db.String(255), unique=True, nullable=False)
+    # Stable name of a standard role ("member", "board", "secretary",
+    # "treasurer", "admin", "owner"): plugins' role_defaults and upgrades
+    # find the role by it, whatever the club calls it.
+    key: Mapped[str | None] = mapped_column(db.String(50), unique=True, index=True, nullable=True)
     # Seeded/default rows are protected from deletion
     is_default: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     is_admin: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)

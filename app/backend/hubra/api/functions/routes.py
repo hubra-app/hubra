@@ -37,6 +37,7 @@ def create_function():
         description=body.get("description"),
         max_holders=body.get("maxHolders", 1),
         grants_role_id=body.get("grantsRoleId"),
+        grants_role_ids=body.get("grantsRoleIds"),
         actor_id=get_current_member().id,
     )
     db.session.commit()
@@ -57,12 +58,16 @@ def create_function():
 @permission_required("functions", "update", "Update functions")
 def update_function(function_id: int):
     body = request.get_json(silent=True) or {}
-    field_map = {"maxHolders": "max_holders", "grantsRoleId": "grants_role_id"}
+    field_map = {
+        "maxHolders": "max_holders",
+        "grantsRoleId": "grants_role_id",
+        "grantsRoleIds": "grants_role_ids",
+    }
     mapped = {field_map.get(k, k): v for k, v in body.items()}
     fields = {
         k: v
         for k, v in mapped.items()
-        if k in ("name", "description", "max_holders", "grants_role_id")
+        if k in ("name", "description", "max_holders", "grants_role_id", "grants_role_ids")
     }
     fn = FunctionService.update(function_id, actor_id=get_current_member().id, **fields)
 

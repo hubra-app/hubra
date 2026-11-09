@@ -3350,7 +3350,9 @@
       "Owner": "Owner",
       "Admin": "Admin",
       "Treasurer": "Treasurer",
-      "Member": "Member"
+      "Member": "Member",
+      "Board": "Board",
+      "Secretary": "Secretary"
     },
     "assignTo": "Give members the role {{role}}",
     "searchMembers": "Search members …",
@@ -3539,7 +3541,8 @@
       "federation_federation_read": "See the association's member clubs",
       "federation_federation_manage": "Invite and remove member clubs",
       "tiers_fee_adjustments_read": "View members' own fees",
-      "tiers_fee_adjustments_update": "Set members' own fees"
+      "tiers_fee_adjustments_update": "Set members' own fees",
+      "moduleAccess": "Use the module (see and open it)"
     },
     "areas": {
       "applications": "Applications",
@@ -3595,7 +3598,9 @@
       "Owner": "Full access. Only owners give or take this role; a club always has at least one.",
       "Admin": "Full access to the club, except giving or taking the Owner role.",
       "Treasurer": "Manages the finances, sees members and the audit log.",
-      "Member": "What every member may do: events, polls, posts. The permissions can be changed."
+      "Member": "What every member may do: events, polls, posts. The permissions can be changed.",
+      "Board": "The board: sees the club's members, finances and mail, runs events, polls, posts and groups.",
+      "Secretary": "Secretary: keeps the member register, applications, functions, mail and the club's records."
     },
     "systemNameHint": "System roles keep their name; the app shows it translated.",
     "adminLocked": "Admin roles hold every permission; the single permissions don't apply to them.",

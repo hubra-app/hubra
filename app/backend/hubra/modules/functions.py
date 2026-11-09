@@ -25,5 +25,5 @@ module = Module(
             parent="/app/members",
         ),
     ),
-    tables=("functions", "function_holders"),
+    tables=("functions", "function_holders", "function_roles"),
 )

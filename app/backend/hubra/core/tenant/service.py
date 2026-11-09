@@ -458,51 +458,16 @@ def _validate_slug(slug: str) -> None:
         raise TenantProvisioningError(problem)
 
 
+def _default_role_permissions() -> dict[str, list[str]]:
+    from hubra.core.services.standard_roles import MEMBER_KEYS, TREASURER_KEYS
+
+    return {"Treasurer": list(TREASURER_KEYS), "Member": list(MEMBER_KEYS)}
+
+
 # What the system roles may do in a new club (Owner and Admin bypass checks).
-DEFAULT_ROLE_PERMISSIONS: dict[str, list[str]] = {
-    "Treasurer": [
-        "finance.transactions.read",
-        "finance.transactions.create",
-        "finance.transactions.update",
-        "finance.transactions.delete",
-        "finance.invoices.read",
-        "finance.invoices.create",
-        "finance.invoices.update",
-        "finance.invoices.delete",
-        "finance.invoices.remind",
-        "finance.invoices.read_reminders",
-        "finance.overview.read",
-        "finance.transaction_categories.read",
-        "finance.transaction_categories.create",
-        "finance.transaction_categories.update",
-        "finance.transaction_categories.delete",
-        "finance.external_parties.read",
-        "finance.external_parties.create",
-        "finance.external_parties.update",
-        "finance.external_parties.delete",
-        "members.members.read",
-        "tiers.tiers.read",
-        "tiers.tiers.calculate_cost",
-        "tiers.tiers.read_members",
-        "tiers.fee_adjustments.read",
-        "tiers.fee_adjustments.update",
-        "audit.audit.read",
-        "dashboard.dashboard.read",
-    ],
-    "Member": [
-        "members.members.read",
-        "groups.groups.read",
-        "events.events.read",
-        "events.events.register",
-        "polls.polls.read",
-        "polls.polls.vote",
-        "posts.posts.read",
-        "posts.posts.like",
-        "posts.posts.comment",
-        "dashboard.dashboard.read",
-        "notifications.notifications.read",
-    ],
-}
+# The full standard set (Vorstand, Aktuar/in, functions, module access) comes
+# from core/services/standard_roles.py.
+DEFAULT_ROLE_PERMISSIONS: dict[str, list[str]] = _default_role_permissions()
 
 
 def _seed_tenant(
@@ -533,6 +498,7 @@ def _seed_tenant(
         role_defs = [
             {
                 "name": "Owner",
+                "key": "owner",
                 "is_admin": True,
                 "is_default": False,
                 "is_system": True,
@@ -541,6 +507,7 @@ def _seed_tenant(
             },
             {
                 "name": "Admin",
+                "key": "admin",
                 "is_admin": True,
                 "is_default": False,
                 "is_system": True,
@@ -549,6 +516,7 @@ def _seed_tenant(
             },
             {
                 "name": "Treasurer",
+                "key": "treasurer",
                 "is_admin": False,
                 "is_default": False,
                 "is_system": True,
@@ -557,6 +525,7 @@ def _seed_tenant(
             },
             {
                 "name": "Member",
+                "key": "member",
                 "is_admin": False,
                 "is_default": True,
                 "is_system": True,
@@ -613,6 +582,12 @@ def _seed_tenant(
                 RoleService.set_permissions(
                     role, perm_keys, actor_id=None, _internal=True
                 )
+
+        # Vorstand, Aktuar/in, the board functions and module access
+        # (docs/roles.md).
+        from hubra.core.services.standard_roles import standardise
+
+        standardise(fresh=True, tenant_id=tenant_id)
 
         tier = MembershipTier(
             name="Standard",

@@ -1046,13 +1046,26 @@ def get_my_permissions():
         for group_id, keys in scoped_permission_keys(member).items()
         if keys
     }
+    # Module access (docs/roles.md): whether the club hides modules from
+    # people without their access key, and access keys held for one group
+    # count for the module as a whole (the sidebar entry).
+    from hubra.core.module_access import enforced as module_access_enforced
+
+    module_access = module_access_enforced()
+    access = {
+        k
+        for keys in scoped_permission_keys(member).values()
+        for k in keys
+        if k.startswith("module.") and k.endswith(".access")
+    }
     roles = held_roles(member)
     if not roles:
         return jsonify(
             {
                 "is_admin": False,
                 "is_superadmin": is_superadmin,
-                "permissions": [],
+                "permissions": sorted(access),
+                "module_access": module_access,
                 "scoped_permissions": scoped,
                 "impersonation": impersonation,
                 "global_permissions": global_perms,
@@ -1062,12 +1075,13 @@ def get_my_permissions():
                 "tenant_slug": claims.get("tenant_slug"),
             }
         ), 200
-    keys = _get_member_permission_keys(member)
+    keys = _get_member_permission_keys(member) | access
     return jsonify(
         {
             "is_admin": False,
             "is_superadmin": is_superadmin,
             "permissions": sorted(keys),
+            "module_access": module_access,
             "scoped_permissions": scoped,
             "impersonation": impersonation,
             "global_permissions": global_perms,
