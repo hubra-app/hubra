@@ -27,7 +27,7 @@ import { WhatsNewModal } from './WhatsNew'
 import { getBreadcrumb, initials, contrastColor } from './nav'
 import { qk } from '@/data/keys'
 import { useClubColors } from '@/branding'
-import { ClubMark } from './ClubMark'
+import { ClubSwitcher } from './ClubSwitcher'
 
 export function TopBar() {
   const { t } = useT()
@@ -102,7 +102,7 @@ export function TopBar() {
         <IconMenu2 size={20} />
       </ActionIcon>
 
-      <ClubMark nameFrom="xs" />
+      <ClubSwitcher />
 
       <ActionIcon
         variant="subtle"
@@ -114,9 +114,12 @@ export function TopBar() {
         <IconLayoutSidebarLeftCollapse size={20} />
       </ActionIcon>
 
+      {/* Phones: only a spacer; the page heading names the page and the
+          club switcher keeps the room. */}
       <Group
         gap={4}
         flex={1}
+        className="hubra-topbar-crumbs"
         style={{ minWidth: 0, overflow: 'hidden' }}
         wrap="nowrap"
       >

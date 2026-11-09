@@ -7,6 +7,10 @@ section and position, or the apps show that version in English.
 
 ## [Unreleased]
 
+### Changed
+
+- **Club switcher in the top bar**: the club name and logo at the top left now open a menu of all your clubs (with your role, the current one ticked) and a link to find another club. It replaces the club list in the account menu and works on phones too.
+
 ## [0.2.4] - 2026-11-06
 
 ### Added
