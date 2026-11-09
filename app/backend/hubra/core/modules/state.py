@@ -27,6 +27,7 @@ from typing import Any
 
 from flask import g, has_request_context, request
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
@@ -330,7 +331,19 @@ def _grant(tenant_id: int, code: str, create: bool = True):
             allowed=True,
             config={},
         )
-        db.session.add(grant)
+        # Written now, in a savepoint: two saves at once (a double click,
+        # two tabs) both found no row; the second insert hit
+        # uq_tenant_feature and failed the request. The loser uses the
+        # row the other one made.
+        try:
+            with db.session.begin_nested():
+                db.session.add(grant)
+        except IntegrityError:
+            grant = db.session.scalar(
+                select(TenantFeature)
+                .where(TenantFeature.tenant_id == tenant_id)
+                .where(TenantFeature.feature_code == code)
+            )
     return grant
 
 
