@@ -168,6 +168,11 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
               placeholder={tr('Support-Ticket #12345', 'Support ticket #12345')}
               value={reason}
               onChange={(e) => setReason(e.currentTarget.value)}
+              error={
+                email.includes('@') && !reason.trim()
+                  ? tr('Gib einen Grund an, dann kannst du hinzufügen.', 'Give a reason, then you can add.')
+                  : undefined
+              }
             />
           )}
           <Group align="flex-end" wrap="wrap">

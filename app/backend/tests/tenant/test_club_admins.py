@@ -202,3 +202,76 @@ def test_my_clubs_say_where_i_am_admin(client, seeded_db, db):
     clubs = client.get("/api/v1/account/my-tenants").get_json()["tenants"]
     mine = next(c for c in clubs if c["tenant_slug"] == "rowers-mine")
     assert mine["admin_level"] == "admin"
+
+
+def test_platform_staff_add_an_admin_to_a_club_with_its_own_schema(
+    client, seeded_db, db
+):
+    """The owners' notice goes into the club's schema; when it can't be
+    written (the insert hit public.notifications with the club's member id,
+    a foreign key error), the admin is still added instead of a 500."""
+    import pytest
+    from sqlalchemy import text
+
+    from hubra.core.tenant.schema_manager import drop_tenant_schema
+    from hubra.core.tenant.service import TenantService
+
+    if db.engine.dialect.name != "postgresql":
+        pytest.skip("club schemas need Postgres")
+    db.session.execute(
+        text(
+            "CREATE TABLE IF NOT EXISTS public.alembic_version"
+            " (version_num varchar(32) PRIMARY KEY)"
+        )
+    )
+    owner = _account(client, db, "clubowner@test.ch")
+    club = TenantService.provision_tenant(
+        name="Schema Club", slug="schema-club", admin_user_id=owner.id
+    )
+    db.session.commit()
+    try:
+        boss = _account(client, db, "boss2@test.ch")
+        boss.is_superadmin = True
+        db.session.commit()
+        _account(client, db, "newadmin@test.ch")
+
+        _login(client, "boss2@test.ch")
+        resp = client.post(
+            _url(club),
+            json={"email": "newadmin@test.ch", "level": "admin", "reason": "Ticket 8"},
+        )
+        assert resp.status_code == 201, resp.get_json()
+
+        notices = db.session.execute(
+            text(
+                f"SELECT n.title FROM tenant_{club.id}.notifications n "
+                f"JOIN tenant_{club.id}.members m ON m.id = n.member_id "
+                "WHERE m.user_id = :u"
+            ),
+            {"u": owner.id},
+        ).scalars().all()
+        assert "Platform staff named a club admin" in notices
+
+        # A club schema without its own notifications table (made before
+        # the table existed, not caught up yet) resolves it to public, whose
+        # members are not the club's: the notice can't be written, but the
+        # change still goes through.
+        db.session.execute(text(f"DROP TABLE tenant_{club.id}.notifications"))
+        db.session.commit()
+        _account(client, db, "second@test.ch")
+        _login(client, "boss2@test.ch")
+        second = client.post(
+            _url(club),
+            json={"email": "second@test.ch", "level": "admin", "reason": "Ticket 9"},
+        )
+        assert second.status_code == 201, second.get_json()
+
+        resp = client.delete(
+            _url(club, f"/{resp.get_json()['admin']['user_id']}"),
+            json={"reason": "Ticket 8"},
+        )
+        assert resp.status_code == 204, resp.get_json()
+    finally:
+        db.session.rollback()
+        drop_tenant_schema(club.id)
+        db.session.commit()
