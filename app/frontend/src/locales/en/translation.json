@@ -2588,7 +2588,7 @@
     },
     "customize": {
       "title": "Customise sidebar",
-      "intro": "Use the star to pin a page to the top under Favourites. The arrows change the order; past the end of a section a page moves into the next one. The eye moves it under More and back. The search (Ctrl+K) finds every page too.",
+      "intro": "Use the star to pin a page to the top under Favourites. The arrows change the order; past the end of a section a page moves into the next one. The eye moves it under More and back. The pencil renames a heading, and you can add categories of your own. The search (Ctrl+K) finds every page too.",
       "pin": "Pin to favourites",
       "unpin": "Unpin",
       "hide": "Move under More",
@@ -2596,7 +2596,13 @@
       "moveUp": "Move up",
       "moveDown": "Move down",
       "reset": "Reset",
-      "done": "Done"
+      "done": "Done",
+      "rename": "Rename",
+      "removeCategory": "Remove category",
+      "addCategory": "New category",
+      "newCategory": "New category",
+      "categoryName": "Category name",
+      "emptyCategory": "Empty. Use the arrows to move pages here."
     }
   },
   "system": {

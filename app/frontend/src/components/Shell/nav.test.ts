@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { ModuleInfo, ModuleNavItem } from '@/api/modules'
 import {
+  addNavCategory,
   buildNav,
   getParentPath,
   moveNavEntry,
   MORE_PATH,
+  removeNavCategory,
+  renameNavSection,
   toggleNavMore,
   type NavSection,
 } from './nav'
@@ -166,6 +169,46 @@ describe('buildNav', () => {
     // Moving back into its own section drops the override.
     prefs = moveNavEntry(prefs, built.groups, built.homes, '/app/groups', -1)
     expect(prefs.sections?.['/app/groups']).toBeUndefined()
+  })
+
+  it('has categories of the person\'s own and renamed headings', () => {
+    const all = [members, groups, codes]
+    let prefs = addNavCategory({ pinned: [], hidden: [] }, ' Kasse ')
+    const id = prefs.categories![0].id
+    expect(prefs.categories).toEqual([{ id, label: 'Kasse' }])
+    let built = buildNav(counts, t, all, () => true, prefs)
+    // Empty: only in the customise dialog, after the built-in areas.
+    expect(built.nav.map((s) => s.section)).toEqual(['workspace', 'operations', 'all'])
+    expect(built.groups.map((g) => [g.section, g.custom ?? false])).toEqual([
+      ['workspace', false],
+      ['operations', false],
+      [id, true],
+    ])
+
+    // Down past the end of Betrieb: into the new category.
+    prefs = moveNavEntry(prefs, built.groups, built.homes, '/app/operations/codes', 1)
+    expect(prefs.sections).toEqual({ '/app/operations/codes': id })
+    built = buildNav(counts, t, all, () => true, prefs)
+    expect(built.nav.map((s) => [s.section, s.label])).toEqual([
+      ['workspace', 'shell.sections.workspace'],
+      [id, 'Kasse'],
+      ['all', ''],
+    ])
+
+    // Renamed: a built-in heading and the category.
+    prefs = renameNavSection(prefs, 'workspace', 'Vorstand')
+    prefs = renameNavSection(prefs, id, 'Codes & Co')
+    built = buildNav(counts, t, all, () => true, prefs)
+    expect(built.nav.map((s) => s.label)).toEqual(['Vorstand', 'Codes & Co', ''])
+    // An empty name gives a built-in heading its own back.
+    expect(renameNavSection(prefs, 'workspace', ' ').labels).toEqual({})
+
+    // Removed: its pages go back to their own areas.
+    prefs = removeNavCategory(prefs, id)
+    expect(prefs.categories).toEqual([])
+    expect(prefs.sections).toEqual({})
+    built = buildNav(counts, t, all, () => true, prefs)
+    expect(paths(built.nav)).toContain('/app/operations/codes')
   })
 })
 

@@ -9,6 +9,10 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ## [Unreleased]
 
+### Added
+
+- **Eigene Kategorien in der Seitenleiste**: Unter «Seitenleiste anpassen» legst du eigene Kategorien an (Neue Kategorie), benennst jede Überschrift mit dem Stift um und entfernst deine Kategorien wieder; ihre Seiten kehren in ihre Bereiche zurück. Mit den Pfeilen verschiebst du Seiten hinein und hinaus. Gespeichert auf deinem Konto wie der Rest deiner Seitenleiste.
+
 ### Changed
 
 - **Weitere zeigt nur, was nicht in der Seitenleiste ist**: Die Seite Weitere in der Vereins-App listet nur noch die Seiten, die du aus der Seitenleiste genommen hast, nach Bereich gruppiert, statt jeden Eintrag der Seitenleiste zu wiederholen. Ist alles in der Seitenleiste, sagt sie das und verweist auf «Seitenleiste anpassen».

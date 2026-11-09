@@ -7,6 +7,10 @@ section and position, or the apps show that version in English.
 
 ## [Unreleased]
 
+### Added
+
+- **Your own sidebar categories**: in Customise sidebar you can add categories of your own (New category), rename any heading with the pencil, and remove your categories again; their pages go back to their own areas. The arrows move pages into and out of them. Saved on your account, like the rest of your sidebar.
+
 ### Changed
 
 - **More shows only what is not in the sidebar**: the More page in the club app now lists just the pages you moved out of the sidebar, grouped by area, instead of repeating every sidebar entry. With everything in the sidebar it says so and points to Customise sidebar.

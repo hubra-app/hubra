@@ -171,11 +171,17 @@ export interface NavPrefs {
   order?: string[];
   /** Entries moved to another sidebar section than their module's. */
   sections?: Record<string, string>;
+  /** The person's own categories (id `c…`), after the built-in areas. */
+  categories?: { id: string; label: string }[];
+  /** The person's own names for sidebar headings. */
+  labels?: Record<string, string>;
 }
 
 export async function getNavPrefs(): Promise<NavPrefs> {
   const body = await apiFetch<{ navPrefs?: NavPrefs }>("/global/account/profile");
-  return body.navPrefs ?? { pinned: [], hidden: [], order: [], sections: {} };
+  return (
+    body.navPrefs ?? { pinned: [], hidden: [], order: [], sections: {}, categories: [], labels: {} }
+  );
 }
 
 export async function saveNavPrefs(navPrefs: NavPrefs): Promise<NavPrefs> {

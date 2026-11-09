@@ -4986,7 +4986,8 @@
    ],
    "shell.customize.intro": [
     "Mit dem Stern heftest du eine Seite oben unter Favoriten an. Ausgeblendete Seiten findest du weiterhin unter Weitere und mit der Suche (Ctrl+K).",
-    "Mit dem Stern heftest du eine Seite oben unter Favoriten an, mit den Pfeilen änderst du die Reihenfolge. Ausgeblendete Seiten findest du weiterhin unter Weitere und mit der Suche (Ctrl+K)."
+    "Mit dem Stern heftest du eine Seite oben unter Favoriten an, mit den Pfeilen änderst du die Reihenfolge. Ausgeblendete Seiten findest du weiterhin unter Weitere und mit der Suche (Ctrl+K).",
+    "Mit dem Stern heftest du eine Seite oben unter Favoriten an. Mit den Pfeilen änderst du die Reihenfolge; über das Ende eines Bereichs hinaus wandert die Seite in den nächsten. Mit dem Auge verschiebst du sie unter Weitere und zurück. Alle Seiten findest du auch mit der Suche (Ctrl+K)."
    ],
    "shell.customize.hide": [
     "Ausblenden"
@@ -6501,7 +6502,8 @@
    ],
    "shell.customize.intro": [
     "Use the star to pin a page to the top under Favourites. Hidden pages are still under More and in the search (Ctrl+K).",
-    "Use the star to pin a page to the top under Favourites and the arrows to change the order. Hidden pages are still under More and in the search (Ctrl+K)."
+    "Use the star to pin a page to the top under Favourites and the arrows to change the order. Hidden pages are still under More and in the search (Ctrl+K).",
+    "Use the star to pin a page to the top under Favourites. The arrows change the order; past the end of a section a page moves into the next one. The eye moves it under More and back. The search (Ctrl+K) finds every page too."
    ],
    "shell.customize.hide": [
     "Hide"

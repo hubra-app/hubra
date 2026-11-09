@@ -2588,7 +2588,7 @@
     },
     "customize": {
       "title": "Seitenleiste anpassen",
-      "intro": "Mit dem Stern heftest du eine Seite oben unter Favoriten an. Mit den Pfeilen änderst du die Reihenfolge; über das Ende eines Bereichs hinaus wandert die Seite in den nächsten. Mit dem Auge verschiebst du sie unter Weitere und zurück. Alle Seiten findest du auch mit der Suche (Ctrl+K).",
+      "intro": "Mit dem Stern heftest du eine Seite oben unter Favoriten an. Mit den Pfeilen änderst du die Reihenfolge; über das Ende eines Bereichs hinaus wandert die Seite in den nächsten. Mit dem Auge verschiebst du sie unter Weitere und zurück. Mit dem Stift benennst du eine Überschrift um, und du kannst eigene Kategorien anlegen. Alle Seiten findest du auch mit der Suche (Ctrl+K).",
       "pin": "Als Favorit anheften",
       "unpin": "Nicht mehr anheften",
       "hide": "Unter Weitere verschieben",
@@ -2596,7 +2596,13 @@
       "moveUp": "Nach oben",
       "moveDown": "Nach unten",
       "reset": "Zurücksetzen",
-      "done": "Fertig"
+      "done": "Fertig",
+      "rename": "Umbenennen",
+      "removeCategory": "Kategorie entfernen",
+      "addCategory": "Neue Kategorie",
+      "newCategory": "Neue Kategorie",
+      "categoryName": "Name der Kategorie",
+      "emptyCategory": "Leer. Mit den Pfeilen verschiebst du Seiten hierher."
     }
   },
   "system": {

@@ -93,6 +93,43 @@ test.describe('own sidebar', () => {
     await expect(entry(page, '/app/finance')).toHaveCount(0)
   })
 
+  test('own categories and renamed headings', async ({ page }) => {
+    await page.goto(appUrl('dashboard'))
+    let dialog = await openCustomize(page)
+    // A new category starts empty with its name ready to type.
+    await dialog.getByRole('button', { name: 'Neue Kategorie' }).click()
+    const name = dialog.getByRole('textbox', { name: 'Name der Kategorie' })
+    await name.fill('Vorstand')
+    await name.press('Enter')
+    await expect(dialog.getByText('Leer. Mit den Pfeilen')).toBeVisible()
+    // Übersetzungen is the last entry above it: one step down moves it in.
+    await dialog.getByRole('button', { name: 'Nach unten: Übersetzungen' }).click()
+    // Rename a built-in heading.
+    await dialog.getByRole('button', { name: 'Umbenennen: Verein', exact: true }).click()
+    await name.fill('Mein Verein')
+    await name.press('Enter')
+    await dialog.getByRole('button', { name: 'Fertig' }).click()
+
+    const section = (heading: string) =>
+      sidebar(page).locator(`xpath=.//p[normalize-space()="${heading}"]/../..`)
+    await expect(section('Vorstand').locator('a.nav-item')).toHaveAttribute(
+      'href',
+      /\/app\/translations$/,
+    )
+    await expect(section('Mein Verein').locator('a.nav-item').first()).toHaveAttribute(
+      'href',
+      /\/app\/dashboard$/,
+    )
+
+    // Removing the category puts its page back where it came from.
+    await page.reload()
+    dialog = await openCustomize(page)
+    await dialog.getByRole('button', { name: 'Kategorie entfernen: Vorstand' }).click()
+    await dialog.getByRole('button', { name: 'Fertig' }).click()
+    await expect(sidebar(page).getByText('Vorstand', { exact: true })).toHaveCount(0)
+    await expect(entry(page, '/app/translations')).toHaveCount(1)
+  })
+
   test('the arrows move an entry into the next section', async ({ page }) => {
     await page.goto(appUrl('dashboard'))
     // The pencil next to the first heading opens the dialog.
