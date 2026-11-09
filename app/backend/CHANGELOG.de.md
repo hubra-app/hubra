@@ -17,6 +17,8 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 - **Weitere zeigt nur, was nicht in der Seitenleiste ist**: Die Seite Weitere in der Vereins-App listet nur noch die Seiten, die du aus der Seitenleiste genommen hast, nach Bereich gruppiert, statt jeden Eintrag der Seitenleiste zu wiederholen. Ist alles in der Seitenleiste, sagt sie das und verweist auf «Seitenleiste anpassen».
 - **Vereinswechsel in der oberen Leiste**: Name und Logo des Vereins oben links öffnen jetzt ein Menü mit all deinen Vereinen (mit deiner Rolle, der aktuelle abgehakt) und einem Link, um einen weiteren Verein zu finden. Es ersetzt die Vereinsliste im Kontomenü und funktioniert auch auf dem Handy.
+- **Hubra-Abo in Hubra kündigen**: Einstellungen › Hubra-Abo hat *Abo kündigen* (es läuft bis zum Ende der bezahlten Periode und endet dann) und *Kündigung zurücknehmen*, unabhängig davon, was das Stripe-Portal erlaubt. In manage beendet der Wechsel eines Vereins in die Sandbox oder zurück jetzt das laufende Abo im alten Stripe-Modus sofort; ein Verein, der live bezahlt hat, bekommt statt einer Ablehnung ein Sandbox-Abo mit denselben Posten.
+- **Tarife: «Für Vereine wählbar» getrennt von «Auf der Website»**: manage › Tarife hat zwei Schalter, so kann ein Tarif auf der Preisseite stehen, ohne dass Vereine ihn selbst wählen, oder umgekehrt. Bestehende öffentliche Tarife bleiben wählbar. Betrieb: `flask db upgrade` ausführen.
 
 ## [0.2.4] - 2026-11-06
 

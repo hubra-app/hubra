@@ -15,6 +15,8 @@ section and position, or the apps show that version in English.
 
 - **More shows only what is not in the sidebar**: the More page in the club app now lists just the pages you moved out of the sidebar, grouped by area, instead of repeating every sidebar entry. With everything in the sidebar it says so and points to Customise sidebar.
 - **Club switcher in the top bar**: the club name and logo at the top left now open a menu of all your clubs (with your role, the current one ticked) and a link to find another club. It replaces the club list in the account menu and works on phones too.
+- **Cancel the Hubra subscription in Hubra**: Settings › Hubra subscription has *Cancel subscription* (it runs to the end of the paid period, then ends) and *Take cancellation back*, whatever the Stripe portal allows. In manage, switching a club to or from sandbox now ends its running subscription in the old Stripe mode at once; a club that paid live gets a sandbox subscription with the same lines instead of a refusal.
+- **Plans: "Clubs can pick it" apart from "On the website"**: manage › Plans has two switches, so a plan can be on the pricing page without clubs picking it themselves, or the other way round. Existing public plans stay selectable. Operators: run `flask db upgrade`.
 
 ## [0.2.4] - 2026-11-06
 

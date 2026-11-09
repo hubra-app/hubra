@@ -124,8 +124,8 @@ export function PlatformPlans() {
         </Group>
         <Text size="xs" c="dimmed" mb={12}>
           {tr(
-            'Öffentliche Tarife zeigt die Website (über die öffentliche API). Nicht öffentliche Tarife kann ein Verein trotzdem bekommen, etwa für eine Sonderabmachung; als eigener Tarif für ausgewählte Vereine können diese ihn auch selbst wählen. Ein Tarif kann auf einem anderen aufbauen und enthält dann dessen Module mit. Eigener Preis, Rabatt und Sponsoring stehen beim Verein.',
-            'The website shows public plans (through the public API). A club can still be put on a plan that is not public, for a special deal; as a custom plan for chosen clubs, those clubs can also pick it themselves. A plan can build on another plan and then includes its modules too. Own price, discount and sponsor are set on the club.',
+            'Zwei Schalter pro Tarif: «Für Vereine wählbar» zeigt ihn jedem Verein zur Auswahl, «Auf der Website» zeigt ihn auf der Preisseite (über die öffentliche API). Jeden Tarif kann ein Verein trotzdem von Hand bekommen, etwa für eine Sonderabmachung; als eigener Tarif für ausgewählte Vereine können diese ihn auch selbst wählen. Ein Tarif kann auf einem anderen aufbauen und enthält dann dessen Module mit. Eigener Preis, Rabatt und Sponsoring stehen beim Verein.',
+            'Two switches per plan: «Clubs can pick it» puts it in every club’s plan picker, «On the website» shows it on the pricing page (through the public API). A club can still be put on any plan by hand, for a special deal; as a custom plan for chosen clubs, those clubs can also pick it themselves. A plan can build on another plan and then includes its modules too. Own price, discount and sponsor are set on the club.',
           )}
         </Text>
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
@@ -170,11 +170,20 @@ export function PlatformPlans() {
                     color="green"
                     leftSection={<IconWorld size={12} />}
                   >
-                    {tr('Öffentlich', 'Public')}
+                    {tr('Auf der Website', 'On the website')}
                   </Badge>
                 ) : (
                   <Badge size="sm" variant="light" color="gray">
-                    {tr('Nicht öffentlich', 'Not public')}
+                    {tr('Nicht auf der Website', 'Not on the website')}
+                  </Badge>
+                )}
+                {p.selectable ? (
+                  <Badge size="sm" variant="light" color="blue">
+                    {tr('Für Vereine wählbar', 'Clubs can pick it')}
+                  </Badge>
+                ) : (
+                  <Badge size="sm" variant="light" color="gray">
+                    {tr('Nicht wählbar', 'Not selectable')}
                   </Badge>
                 )}
                 {p.highlighted && (
@@ -187,7 +196,7 @@ export function PlatformPlans() {
                     {tr('Ausgeblendet', 'Hidden')}
                   </Badge>
                 )}
-                {!p.public && p.club_ids.length > 0 && (
+                {!p.selectable && p.club_ids.length > 0 && (
                   <Badge
                     size="sm"
                     variant="light"
@@ -473,6 +482,7 @@ function PlanModal({
     limit_mail_month: plan?.limits.mail_month ?? '',
     limit_storage_mb: plan?.limits.storage_mb ?? '',
     public: plan?.public ?? false,
+    selectable: plan?.selectable ?? false,
     highlighted: plan?.highlighted ?? false,
     hidden: plan?.hidden ?? false,
   }))
@@ -816,12 +826,21 @@ function PlanModal({
             </Button>
           </Group>
         </Stack>
-        <SimpleGrid cols={{ base: 1, sm: 3 }}>
+        <SimpleGrid cols={{ base: 1, sm: 2 }}>
           <Switch
-            label={tr('Öffentlich', 'Public')}
+            label={tr('Für Vereine wählbar', 'Clubs can pick it')}
             description={tr(
-              'Auf der Website und in der öffentlichen API',
-              'On the website and in the public API',
+              'Jeder Verein kann ihn unter Einstellungen › Hubra-Abo wählen',
+              'Any club can pick it in Settings › Hubra subscription',
+            )}
+            checked={v.selectable}
+            onChange={(e) => set('selectable', e.currentTarget.checked)}
+          />
+          <Switch
+            label={tr('Auf der Website', 'On the website')}
+            description={tr(
+              'Die Preisseite von hubra.club und die öffentliche API zeigen ihn',
+              'The hubra.club pricing page and the public API show it',
             )}
             checked={v.public}
             onChange={(e) => set('public', e.currentTarget.checked)}
@@ -848,10 +867,10 @@ function PlanModal({
         <MultiSelect
           label={tr('Eigener Tarif für diese Vereine', 'Custom plan for these clubs')}
           description={
-            v.public
+            v.selectable
               ? tr(
-                  'Öffentliche Tarife kann jeder Verein wählen; die Auswahl gilt erst, wenn der Tarif nicht öffentlich ist.',
-                  'Any club can pick a public plan; this list only matters when the plan is not public.',
+                  'Wählbare Tarife kann jeder Verein wählen; die Auswahl gilt erst, wenn der Tarif nicht für alle wählbar ist.',
+                  'Any club can pick a selectable plan; this list only matters when the plan is not selectable.',
                 )
               : tr(
                   'Diese Vereine sehen den Tarif unter Einstellungen › Hubra-Abo und können ihn selbst wählen. Andere sehen ihn nicht.',
@@ -908,6 +927,7 @@ function PlanModal({
                     builds_on: buildsOn,
                     club_ids: clubIds.map(Number),
                     public: v.public,
+                    selectable: v.selectable,
                     highlighted: v.highlighted,
                     hidden: v.hidden,
                   })

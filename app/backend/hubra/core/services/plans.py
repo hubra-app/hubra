@@ -4,10 +4,12 @@ Tarife), and the public pricing the website reads.
 * A **plan** (``PlatformPlan``) is what ``tenants.plan`` names: name and
   description in German and English, price per month and per year (empty:
   on request), a feature list, the limits ``services.quotas`` enforces, its
-  place in the list, and whether it is **public**.  Only public plans that
-  are not hidden appear in ``GET /api/v1/public/pricing``; any plan that
-  is not hidden can be given to a club, so a plan for one club's deal stays
-  private.  A plan clubs are on cannot be deleted, only hidden.
+  place in the list, whether it is **public** (on the website) and whether
+  it is **selectable** (every club can pick it itself).  The two are apart
+  (hubra#261): only public plans that are not hidden appear in ``GET
+  /api/v1/public/pricing``; only selectable ones in a club's plan picker.
+  Any plan that is not hidden can be given to a club by manage, so a plan
+  for one club's deal stays private.  A plan clubs are on cannot be deleted, only hidden.
 * A plan can **include modules**: each one either comes at no extra cost,
   or with its own price in that plan.
 * A plan can **build on** another plan (``builds_on``, optional): it then
@@ -16,7 +18,7 @@ Tarife), and the public pricing the website reads.
   a higher plan can include a module the lower one sells.  A plan others
   build on cannot be deleted.
 * A **custom plan** is offered to chosen clubs (``club_ids``): they can
-  pick it in Settings › Hubra subscription although it is not public.
+  pick it in Settings › Hubra subscription although it is not selectable.
 * An **add-on** (``PlatformAddon``) is a module, built in or from a plugin,
   with a default monthly price on top of the plan.  On a club, manage can
   set its own price for each add-on (``services.club_billing``).
@@ -309,6 +311,7 @@ _PLAN_FIELDS = {
     "limit_mail_month",
     "limit_storage_mb",
     "public",
+    "selectable",
     "highlighted",
     "sort",
     "hidden",
@@ -336,7 +339,7 @@ def _apply(plan: PlatformPlan, body: dict) -> None:
             plan.club_ids = _club_ids(value)
         elif key.startswith("limit_"):
             setattr(plan, key, _count(value, key))
-        elif key in ("public", "highlighted"):
+        elif key in ("public", "selectable", "highlighted"):
             if not isinstance(value, bool):
                 _bad(f"{key} is true or false")
             setattr(plan, key, value)
@@ -459,6 +462,7 @@ def plan_json(
     if with_usage:
         out.update(
             public=plan.public,
+            selectable=bool(plan.selectable),
             hidden=plan.archived_at is not None,
             clubs=clubs_on(plan.key),
             club_ids=list(plan.club_ids or []),

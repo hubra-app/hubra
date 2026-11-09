@@ -87,6 +87,16 @@ export async function openHubraPortal(): Promise<{ url: string }> {
   return apiFetch('/app/billing/portal', { method: 'POST' })
 }
 
+/** Cancel the subscription: it runs to the end of the paid period, then ends. */
+export async function cancelHubraSubscription(): Promise<HubraBilling> {
+  return apiFetch('/app/billing/cancel', { method: 'POST' })
+}
+
+/** Take a cancellation back before the period ends. */
+export async function resumeHubraSubscription(): Promise<HubraBilling> {
+  return apiFetch('/app/billing/resume', { method: 'POST' })
+}
+
 /** Read Stripe again, after coming back from Checkout. */
 export async function refreshHubraBilling(): Promise<{ stripe: HubraBilling['stripe'] }> {
   return apiFetch('/app/billing/refresh', { method: 'POST' })

@@ -1,7 +1,8 @@
 """What a club can change on its own subscription (Settings › Hubra subscription).
 
-* :func:`catalog`: the plans a club can pick (public, not hidden, plus its
-  current one and the custom plans manage offered to it) and the paid
+* :func:`catalog`: the plans a club can pick (selectable, not hidden, plus
+  its current one and the custom plans manage offered to it; whether a
+  plan is on the website, ``public``, plays no part) and the paid
   modules with their prices: those its plan includes, those it took as
   add-ons, and the public add-ons with a price.
 * :func:`choose_plan`: switch to another plan it can pick. Refused when the club
@@ -29,7 +30,7 @@ def _plan_choices(tenant: Tenant) -> list:
     return [
         p
         for p in plans.all_plans(include_hidden=False)
-        if p.public or p.key == tenant.plan or plans.offered_to(p, tenant.id)
+        if p.selectable or p.key == tenant.plan or plans.offered_to(p, tenant.id)
     ]
 
 
@@ -85,8 +86,8 @@ def catalog(tenant: Tenant) -> dict:
         "plans": [
             {
                 **plans.plan_json(p, names=names),
-                # Not public, offered to this club alone (or a few).
-                "custom": not p.public and plans.offered_to(p, tenant.id),
+                # Not selectable, offered to this club alone (or a few).
+                "custom": not p.selectable and plans.offered_to(p, tenant.id),
             }
             for p in _plan_choices(tenant)
         ],
