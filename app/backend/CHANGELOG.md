@@ -7,6 +7,14 @@ section and position, or the apps show that version in English.
 
 ## [Unreleased]
 
+### Added
+
+- manage › Translations › Settings: the DeepL key and address for machine translation of posts can now be set in manage (before they had no field).
+
+### Changed
+
+- **Settings in one place per page**: in manage, every page with platform settings ends with a "Settings" tab (All clubs, Alerts, Diagnostics, Backups, Mail, Discord, Translations, API tokens); Mail's Relay and System sender tabs and Discord's Setup and Channels tabs are now one Settings tab each. Old addresses redirect. In the club app, the Finance module's "Settings" button under Settings › Modules opens Finance › Settings instead of a second form for the same values, and `/app/settings/modules?module=<code>` opens a module's settings directly. See docs/settings/structure.md.
+
 ## [0.2.4] - 2026-11-06
 
 ### Added

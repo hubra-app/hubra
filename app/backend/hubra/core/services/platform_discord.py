@@ -548,7 +548,7 @@ def _area(entry: GlobalAuditEntry) -> tuple[str, str] | None:
     if a.startswith("platform.plan"):
         return "Tarife", "/app/tenants/plans"
     if a.startswith("platform.mail_relay"):
-        return "Mail-Relay", "/app/platform/mail/relay"
+        return "Mail-Relay", "/app/platform/mail/settings"
     # Other platform settings have no single page: the audit entry says
     # what changed.
     return None

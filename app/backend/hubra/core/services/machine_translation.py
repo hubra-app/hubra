@@ -1,6 +1,6 @@
 """Machine translation through DeepL, for posts in several languages.
 
-Off until the platform sets ``translate.deepl_key`` (manage › Settings).
+Off until the platform sets ``translate.deepl_key`` (manage › Übersetzungen › Einstellungen).
 The text goes to DeepL (an EU company, servers in the EU) only when a
 writer presses "Translate"; nothing is translated in the background.
 Markdown is kept: DeepL gets the text as it is and keeps the markup.

@@ -9,6 +9,14 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ## [Unreleased]
 
+### Added
+
+- manage › Übersetzungen › Einstellungen: Der DeepL-Schlüssel und die Adresse für die maschinelle Übersetzung von Beiträgen lassen sich jetzt in manage setzen (vorher gab es kein Feld dafür).
+
+### Changed
+
+- **Einstellungen an einem Ort pro Seite**: In manage endet jede Seite mit Plattform-Einstellungen mit dem Tab «Einstellungen» (Alle Vereine, Warnungen, Diagnose, Backups, Mail, Discord, Übersetzungen, API-Tokens); die Tabs Relay und Systemabsender bei Mail und Einrichtung und Kanäle bei Discord sind je ein Tab Einstellungen. Alte Adressen leiten weiter. In der Vereins-App öffnet der Knopf «Einstellungen» von Finanzen unter Einstellungen › Module jetzt Finanzen › Einstellungen statt eines zweiten Formulars für dieselben Werte, und `/app/settings/modules?module=<code>` öffnet die Einstellungen eines Moduls direkt. Siehe docs/settings/structure.md.
+
 ## [0.2.4] - 2026-11-06
 
 ### Added

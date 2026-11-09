@@ -20,16 +20,19 @@ test('manage groups the sidebar by task', async ({ page }) => {
 test('a page tab is its own URL', async ({ page }) => {
   await page.goto(`${MANAGE_URL}/app/platform/mail`)
   await expect(page.getByRole('heading', { level: 1, name: 'Mail' })).toBeVisible()
-  await page.getByRole('tab', { name: 'Relay' }).click()
-  await expect(page).toHaveURL(/\/app\/platform\/mail\/relay$/)
+  await page.getByRole('tab', { name: 'Einstellungen' }).click()
+  await expect(page).toHaveURL(/\/app\/platform\/mail\/settings$/)
   await expect(page.getByRole('heading', { name: 'Mail-Relay' })).toBeVisible()
 })
 
 test('old manage URLs redirect to where the page lives now', async ({ page }) => {
   const cases: [string, RegExp][] = [
-    ['/app/platform/settings', /\/app\/platform\/mail\/relay$/],
-    ['/app/platform/settings/limits', /\/app\/tenants\/plans$/],
-    ['/app/platform/settings/backups', /\/app\/platform\/backups\/storage$/],
+    ['/app/platform/settings', /\/app\/platform\/mail\/settings$/],
+    ['/app/platform/settings/limits', /\/app\/tenants\/settings$/],
+    ['/app/platform/settings/backups', /\/app\/platform\/backups\/settings$/],
+    ['/app/platform/mail/relay', /\/app\/platform\/mail\/settings$/],
+    ['/app/platform/discord/channels', /\/app\/platform\/discord\/settings$/],
+    ['/app/platform/backups/storage', /\/app\/platform\/backups\/settings$/],
     ['/app/platform/diagnostics/outbound-mail?level=error', /\/app\/platform\/mail\?level=error$/],
     ['/app/platform/diagnostics/permissions', /\/app\/roles\/api$/],
     ['/app/platform/alerts/performance', /\/app\/platform\/diagnostics\/performance$/],
