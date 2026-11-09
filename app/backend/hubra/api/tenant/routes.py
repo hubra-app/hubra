@@ -443,10 +443,17 @@ def _billing_view(tenant, stripe_error: str | None = None) -> dict:
 @require_global_permission("tenants.update")
 def set_tenant_sandbox(tenant_id: int):
     """``{"sandbox": bool}``: a sandbox club always uses the Stripe sandbox
-    keys (services/sandbox_clubs.py).  Refused while the club pays Hubra
-    with a live subscription: that would leave it running unseen."""
+    keys (services/sandbox_clubs.py).
+
+    When the switch changes the club's Stripe mode, its running
+    subscription in the old mode ends at once (no proration, no last
+    invoice), so it never runs on unseen (hubra#260).  A club that paid
+    live and becomes a sandbox club gets a sandbox subscription with the
+    same lines, billed by invoice (no card needed).  A sandbox club made
+    live again starts paying through Checkout, like a new club."""
     from hubra.core.billing import service
-    from hubra.core.services import sandbox_clubs
+    from hubra.core.billing.stripe_api import StripeError
+    from hubra.core.services import platform_settings, sandbox_clubs
 
     tenant = TenantService.get_by_id(tenant_id)
     if tenant is None:
@@ -456,16 +463,23 @@ def set_tenant_sandbox(tenant_id: int):
         raise_error(400, "VALIDATION_ERROR", "Send sandbox: true or false")
     on = body["sandbox"]
     before = sandbox_clubs.is_sandbox(tenant)
-    if on and not before:
-        live = service.state(tenant, live=True)
-        if live.get("subscription_id") and live.get("status") in service.RUNNING:
-            raise_error(
-                409,
-                "LIVE_SUBSCRIPTION",
-                "The club pays Hubra with a live Stripe subscription; cancel it first",
-            )
+    ended = started = False
     if on != before:
-        sandbox_clubs.set_sandbox(tenant, on)
+        old_mode = service.mode(tenant)
+        had = service.public_state(tenant)["hasSubscription"]
+        try:
+            sandbox_clubs.set_sandbox(tenant, on)
+            if service.mode(tenant) != old_mode:
+                ended = service.end_now(tenant, old_mode)
+                if (
+                    had
+                    and service.mode(tenant) == platform_settings.SANDBOX
+                    and service.enabled(tenant)
+                ):
+                    started = service.start_sandbox_subscription(tenant)
+        except StripeError as exc:
+            db.session.rollback()
+            raise_error(502, "STRIPE_ERROR", exc.public_message())
         db.session.add(
             GlobalAuditEntry(
                 tenant_id=tenant.id,
@@ -473,12 +487,22 @@ def set_tenant_sandbox(tenant_id: int):
                 action="tenant.sandbox",
                 target_type="Tenant",
                 target_id=str(tenant.id),
-                details={"sandbox": [before, on]},
+                details={
+                    "sandbox": [before, on],
+                    "subscription_ended": ended,
+                    "sandbox_subscription": started,
+                },
                 ip_address=request.remote_addr,
             )
         )
         db.session.commit()
-    return jsonify({"tenant": _tenant_to_dict(tenant)}), 200
+    return jsonify(
+        {
+            "tenant": _tenant_to_dict(tenant),
+            "subscriptionEnded": ended,
+            "sandboxSubscription": started,
+        }
+    ), 200
 
 
 @tenant_admin_bp.route("/tenants/<int:tenant_id>/billing/sync", methods=["POST"])
@@ -2858,6 +2882,7 @@ def list_plan_choices():
                     "name_de": p.name_de,
                     "name_en": p.name_en or p.name_de,
                     "public": p.public,
+                    "selectable": bool(p.selectable),
                     "hidden": p.archived_at is not None,
                     "price_month_chf": plans.month_price(p.key),
                     "modules": plans.effective_modules(p),

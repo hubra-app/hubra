@@ -16,7 +16,26 @@ export function TenantSandbox({ tenant }: { tenant: Tenant }) {
   const save = async (sandbox: boolean) => {
     setBusy(true)
     try {
-      await setTenantSandbox(tenant.id, sandbox)
+      const res = await setTenantSandbox(tenant.id, sandbox)
+      if (res.sandboxSubscription) {
+        notify(
+          'success',
+          tr('Abo in die Sandbox verschoben', 'Subscription moved to the sandbox'),
+          tr(
+            'Das Live-Abo ist beendet; ein Sandbox-Abo mit denselben Posten läuft (Rechnung statt Karte).',
+            'The live subscription has ended; a sandbox subscription with the same lines runs (invoice instead of card).',
+          ),
+        )
+      } else if (res.subscriptionEnded) {
+        notify(
+          'success',
+          tr('Abo beendet', 'Subscription ended'),
+          tr(
+            'Das bisherige Abo ist beendet. Der Verein startet ein neues unter Einstellungen › Hubra-Abo.',
+            'The previous subscription has ended. The club starts a new one in Settings › Hubra subscription.',
+          ),
+        )
+      }
       queryClient.invalidateQueries({ queryKey: ['tenant', tenant.id] })
       queryClient.invalidateQueries({ queryKey: ['tenants'] })
       queryClient.invalidateQueries({ queryKey: ['tenant-billing', tenant.id] })
@@ -49,6 +68,12 @@ export function TenantSandbox({ tenant }: { tenant: Tenant }) {
               'Der Verein folgt dem Stripe-Modus der Plattform (Einstellungen › Zahlungen). Einschalten für Demo- und Testvereine.',
               "The club follows the platform's Stripe mode (Settings › Payments). Turn on for demo and test clubs.",
             )}
+      </Text>
+      <Text size="xs" c="dimmed" mt={6}>
+        {tr(
+          'Wechselt der Stripe-Modus, endet ein laufendes Abo im alten Modus sofort (ohne Gutschrift). Ein Verein, der live bezahlt hat, bekommt dafür ein Sandbox-Abo mit denselben Posten.',
+          'If the Stripe mode changes, a running subscription in the old mode ends at once (no credit). A club that paid live gets a sandbox subscription with the same lines instead.',
+        )}
       </Text>
     </Paper>
   )

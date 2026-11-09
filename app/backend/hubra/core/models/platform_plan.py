@@ -1,10 +1,12 @@
 """PlatformPlan and PlatformAddon: the plans clubs are on and the paid
 add-ons, with their list prices, as the platform sets them in manage.
 
-Public schema only.  ``public`` decides what the public pricing API
-(``GET /api/v1/public/pricing``) and so the website show; a plan that is
-not public is still assignable, for individual deals, and ``club_ids``
-offers it to chosen clubs in their own subscription settings.  A plan can
+Public schema only.  Two switches say who sees a plan (hubra#261):
+``public`` decides what the public pricing API (``GET
+/api/v1/public/pricing``) and so the website show; ``selectable`` decides
+whether every club can pick it in its own subscription settings.  A plan
+that is neither is still assignable by manage, for individual deals, and
+``club_ids`` offers it to chosen clubs only.  A plan can
 **build on** another plan (``builds_on``): it then includes that plan's
 modules as well as its own.  A club's own price,
 discount, sponsor and add-on prices live on the club
@@ -16,7 +18,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import Boolean, DateTime, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, DateTime, Integer, Numeric, String, Text, false
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -66,7 +68,12 @@ class PlatformPlan(db.Model):
     limit_members: Mapped[int | None] = mapped_column(Integer, nullable=True)
     limit_mail_month: Mapped[int | None] = mapped_column(Integer, nullable=True)
     limit_storage_mb: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Shown on the website (public pricing).
     public: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Every club can pick it in Settings › Hubra subscription.
+    selectable: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
     highlighted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     sort: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     # Hidden: no new club gets it, clubs on it keep it.

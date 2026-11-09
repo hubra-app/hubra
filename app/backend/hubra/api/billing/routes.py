@@ -5,10 +5,12 @@ Club app, ``/api/v1/app/billing`` (needs ``billing.billing.manage``):
 * ``GET  /``          what the club pays, the status, Stripe's side
 * ``POST /checkout``  a Stripe Checkout page that starts paying
 * ``POST /portal``    Stripe's customer portal (card, invoices, cancel)
+* ``POST /cancel``    cancel: runs to the end of the paid period, then ends
+* ``POST /resume``    take the cancellation back before the period ends
 * ``GET  /invoices``  the last Stripe invoices
 * ``GET  /catalog``   plans and paid modules with prices (any member: the
   modules page shows the prices)
-* ``PUT  /plan``      switch to another public plan
+* ``PUT  /plan``      switch to another plan the club may pick
 * ``PUT  /addons/<code>``  take or drop a paid module, set its licences
 * ``PUT  /licenses/<code>``  give the module's licences to members
 
@@ -194,7 +196,7 @@ def _after_terms_change(tenant, action: str, details: dict):
 @billing_bp.put("/plan")
 @permission_required(*PERM)
 def put_plan():
-    """Switch to another public plan; the next invoice has the new price."""
+    """Switch to another plan the club may pick; the next invoice has the new price."""
     from hubra.core.billing import self_service
 
     tenant = current_tenant()
@@ -276,6 +278,45 @@ def open_portal():
     except StripeError as exc:
         return _stripe_failed(exc)
     return jsonify({"url": url}), 200
+
+
+def _change_subscription(action: str, change):
+    from hubra.core.models.tenant import GlobalAuditEntry
+
+    tenant = current_tenant()
+    member = get_current_member()
+    try:
+        change(tenant)
+    except StripeError as exc:
+        db.session.rollback()
+        return _stripe_failed(exc)
+    db.session.add(
+        GlobalAuditEntry(
+            tenant_id=tenant.id,
+            action=action,
+            target_type="Tenant",
+            target_id=str(tenant.id),
+            details={"member_id": getattr(member, "id", None)},
+            ip_address=request.remote_addr,
+        )
+    )
+    db.session.commit()
+    return get_billing()
+
+
+@billing_bp.post("/cancel")
+@permission_required(*PERM)
+def cancel_subscription():
+    """Cancel the club's subscription: it runs to the end of the period
+    already paid (or of the trial), then ends. Nothing more is charged."""
+    return _change_subscription("tenant.billing.cancel", service.cancel)
+
+
+@billing_bp.post("/resume")
+@permission_required(*PERM)
+def resume_subscription():
+    """Take a cancellation back while the period still runs."""
+    return _change_subscription("tenant.billing.resume", service.resume)
 
 
 @billing_bp.post("/refresh")

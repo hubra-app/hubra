@@ -58,7 +58,25 @@ class FakeStripe:
         if path == "/v1/billing_portal/sessions":
             return 200, b'{"url": "https://billing.stripe.test/p"}'
         if path == "/v1/subscriptions/sub_1":
+            if method == "POST" and "cancel_at_period_end" in form:
+                self.subscription["cancel_at_period_end"] = (
+                    form["cancel_at_period_end"] == "true"
+                )
+            if method == "DELETE":
+                return 200, json.dumps(
+                    {**self.subscription, "status": "canceled"}
+                ).encode()
             return 200, json.dumps(self.subscription).encode()
+        if path == "/v1/subscriptions" and method == "POST":
+            return 200, json.dumps(
+                {
+                    "id": "sub_sandbox",
+                    "customer": form.get("customer"),
+                    "status": "active",
+                    "current_period_end": 1798761600,
+                    "cancel_at_period_end": False,
+                }
+            ).encode()
         if path == "/v1/invoices":
             return 200, json.dumps(
                 {
@@ -654,9 +672,11 @@ def test_manage_marks_a_club_as_sandbox(client, stripe, club, db, staff_headers)
     assert resp.get_json()["tenant"]["sandbox"] is False
 
 
-def test_a_club_paying_live_cannot_become_sandbox(
+def test_a_club_paying_live_becomes_a_sandbox_subscription(
     client, stripe, club, db, staff_headers
 ):
+    """hubra#260: the live subscription ends at once and the club gets a
+    sandbox one with the same lines, billed by invoice."""
     platform_settings.set_many(
         {"stripe.mode": "live", "billing.stripe.secret_key": "rk_live_" + "b" * 24}
     )
@@ -667,8 +687,58 @@ def test_a_club_paying_live_cannot_become_sandbox(
         json={"sandbox": True},
         headers=staff_headers,
     )
-    assert resp.status_code == 409
-    assert resp.get_json()["error"] == "LIVE_SUBSCRIPTION"
+    assert resp.status_code == 200, resp.get_json()
+    body = resp.get_json()
+    assert body["subscriptionEnded"] is True and body["sandboxSubscription"] is True
+    assert stripe.made("DELETE", "/v1/subscriptions/sub_1") == [{}]
+    made = stripe.made("POST", "/v1/subscriptions")
+    assert len(made) == 1 and made[0]["collection_method"] == "send_invoice"
+    db.session.refresh(club)
+    assert service.state(club, live=True)["status"] == "canceled"
+    assert service.state(club)["subscription_id"] == "sub_sandbox"
+    assert service.public_state(club)["hasSubscription"] is True
+
+    # Back to live: the sandbox subscription ends, the club pays by Checkout.
+    resp = client.put(
+        f"/api/v1/system/tenants/{club.id}/sandbox",
+        json={"sandbox": False},
+        headers=staff_headers,
+    )
+    assert resp.status_code == 200, resp.get_json()
+    assert resp.get_json()["subscriptionEnded"] is True
+    assert resp.get_json()["sandboxSubscription"] is False
+    db.session.refresh(club)
+    assert service.public_state(club)["hasSubscription"] is False
+
+
+def test_club_cancels_and_resumes_its_subscription(
+    client, stripe, club, db, auth_headers, monkeypatch
+):
+    """hubra#260: the club cancels in Hubra; it runs to the period end."""
+    from hubra.api.billing import routes
+
+    monkeypatch.setattr(routes, "current_tenant", lambda: club)
+    _login_member(client, "admin@test.ch")
+    r = client.post("/api/v1/app/billing/cancel")
+    assert r.status_code == 409 and r.get_json()["error"] == "NO_SUBSCRIPTION"
+
+    service.apply_subscription(club, stripe.subscription)
+    db.session.commit()
+    r = client.post("/api/v1/app/billing/cancel")
+    assert r.status_code == 200, r.get_json()
+    assert r.get_json()["stripe"]["cancelAtPeriodEnd"] is True
+    assert stripe.made("POST", "/v1/subscriptions/sub_1")[-1] == {
+        "cancel_at_period_end": "true"
+    }
+    r = client.post("/api/v1/app/billing/resume")
+    assert r.status_code == 200
+    assert r.get_json()["stripe"]["cancelAtPeriodEnd"] is False
+
+    # Stripe ends it at the period end: the club's status follows.
+    service.apply_subscription(club, {**stripe.subscription, "status": "canceled"})
+    assert club_billing.stored(club)["status"] == "canceled"
+    r = client.post("/api/v1/app/billing/cancel")
+    assert r.status_code == 409
 
 
 def test_club_platform_fee_overrides_the_default(stripe, club, db, app):
@@ -705,14 +775,14 @@ def test_club_changes_its_plan_and_add_ons(
 
     monkeypatch.setattr(routes, "current_tenant", lambda: club)
     monkeypatch.setattr(quotas, "member_count", lambda t: 12)
-    plans.update(plans.get("starter"), {"public": True})
+    plans.update(plans.get("starter"), {"selectable": True})
     plans.create(
-        {"key": "club", "name_de": "Club", "price_month_chf": "60", "public": True}
+        {"key": "club", "name_de": "Club", "price_month_chf": "60", "selectable": True}
     )
     plans.create(
-        {"key": "tiny", "name_de": "Tiny", "public": True, "limit_members": 10}
+        {"key": "tiny", "name_de": "Tiny", "selectable": True, "limit_members": 10}
     )
-    plans.create({"key": "deal", "name_de": "Deal", "public": False})
+    plans.create({"key": "deal", "name_de": "Deal", "public": True})
     plans.set_addon(
         "polls", {"price_month_chf": "2", "price_unit": "member", "public": True}
     )
@@ -841,12 +911,12 @@ def test_club_picks_a_custom_plan_offered_to_it(
     other = Tenant(name="Club B", slug="club-b", status="active", settings={})
     db.session.add(other)
     db.session.flush()
-    plans.update(plans.get("starter"), {"public": True, "modules": ["polls"]})
+    plans.update(plans.get("starter"), {"selectable": True, "modules": ["polls"]})
     plans.create(
         {
             "key": "deal",
             "name_de": "Deal",
-            "public": False,
+            "selectable": False,
             "builds_on": "starter",
             "modules": ["groups"],
             "club_ids": [other.id],
@@ -874,3 +944,43 @@ def test_club_picks_a_custom_plan_offered_to_it(
     assert "club_ids" not in deal
     r = client.put("/api/v1/app/billing/plan", json={"plan": "deal"})
     assert r.status_code == 200 and club.plan == "deal"
+
+
+def test_website_and_club_picker_are_separate_switches(
+    client,
+    stripe,
+    club,
+    db,
+    auth_headers,
+    monkeypatch,
+):
+    """hubra#261: ``public`` puts a plan on the website, ``selectable`` in
+    every club's plan picker; neither implies the other."""
+    from hubra.api.billing import routes
+    from hubra.core.services import quotas
+
+    monkeypatch.setattr(routes, "current_tenant", lambda: club)
+    monkeypatch.setattr(quotas, "member_count", lambda t: 5)
+    plans.create({"key": "shown", "name_de": "Shown", "public": True})
+    plans.create({"key": "pickable", "name_de": "Pickable", "selectable": True})
+    club.plan = "starter"
+    db.session.commit()
+
+    website = [p["key"] for p in plans.public_pricing()["plans"]]
+    assert "shown" in website and "pickable" not in website
+
+    _login_member(client, "admin@test.ch")
+    cat = client.get("/api/v1/app/billing/catalog").get_json()
+    keys = [p["key"] for p in cat["plans"]]
+    assert "pickable" in keys and "shown" not in keys
+    assert (
+        client.put("/api/v1/app/billing/plan", json={"plan": "shown"}).status_code
+        == 400
+    )
+    r = client.put("/api/v1/app/billing/plan", json={"plan": "pickable"})
+    assert r.status_code == 200 and club.plan == "pickable"
+
+    row = plans.plan_json(plans.get("pickable"), with_usage=True)
+    assert row["selectable"] is True and row["public"] is False
+    with pytest.raises(ApiError):
+        plans.update(plans.get("pickable"), {"selectable": "yes"})
