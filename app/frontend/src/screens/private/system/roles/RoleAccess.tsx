@@ -141,7 +141,7 @@ export function RoleAccess({
                     >
                       {group.label}
                     </Text>
-                    {group.module && moduleLevel === 'none' && (
+                    {group.hides && moduleLevel === 'none' && (
                       <Badge size="xs" variant="light" color="gray">
                         {t('roles.moduleHidden', 'Ausgeblendet')}
                       </Badge>
@@ -205,7 +205,7 @@ export function RoleAccess({
                             {t('roles.level.custom', 'Angepasst')}
                           </Badge>
                         )}
-                        {single && group.module && level === 'none' && (
+                        {single && group.hides && level === 'none' && (
                           <Badge size="xs" variant="light" color="gray">
                             {t('roles.moduleHidden', 'Ausgeblendet')}
                           </Badge>

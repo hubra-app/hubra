@@ -1,6 +1,8 @@
 # Proposal: standard club roles and module access
 
-Status: **decisions taken 2026-11-09 (see §6), not built yet.** Asked by Mike on 2026-11-09:
+Status: **built** (decisions in §6). How it works now: [roles.md](roles.md).
+Built differently from this proposal: Präsident/in gets Admin, so there is no
+Präsidium role; an upgrade never adds Admin to a function a club already had. Asked by Mike on 2026-11-09:
 
 > define role / function standards for a club? members, Board (Aktuar / Archivar,
 > Finanzen / Kassier, Präsident / Vizepräsident). Also restrict access to entire

@@ -107,6 +107,8 @@ export interface ModuleGroup {
   /** The module code, or the blueprint for core keys without a module. */
   id: string
   module: string | null
+  /** The module has an access key: "Keine" hides it from the role. */
+  hides: boolean
   /** Every key of the group, the access key included. */
   perms: PermissionEntry[]
   /** Its areas, without the access key's own. */

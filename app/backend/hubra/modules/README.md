@@ -65,6 +65,10 @@ Then:
    `NAV_ICONS` in `components/Shell/nav.tsx`. The sidebar entry itself comes
    from the manifest.
 
+Give the standard roles access when a club first switches the module on
+with `role_defaults={"member": "view", "board": "edit"}`; without it only
+admins see the module until a role gets access (docs/roles.md).
+
 Permission keys follow the blueprint name:
 `polls_bp` + `@permission_required("polls", "read")` gives `polls.polls.read`.
 Run `flask sync-permissions` after adding routes.
