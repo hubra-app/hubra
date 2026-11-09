@@ -977,10 +977,12 @@ def change_error(group_id: int, action: str):
         group.status = "resolved"
         group.resolved_at = datetime.now(timezone.utc)
         group.resolved_by = g.system_user.id
+        group.resolved_build = error_tracker.current_build()
     else:
         group.status = "open"
         group.resolved_at = None
         group.resolved_by = None
+        group.resolved_build = None
     _audit(
         f"platform.error.{action}",
         "ErrorGroup",

@@ -89,6 +89,7 @@ const DISCORD_ROLES = ['discord.platform_roles']
 const DISCORD_SUPPORT = ['discord.support_channel_id', 'discord.support_add_reporters']
 // Defaults built into Hubra, not read from the environment.
 const PERF = ['perf.slow_request_ms', 'perf.slow_query_ms', 'perf.p95_warning_ms']
+const ERRORS = ['errors.auto_resolve']
 const LIMITS = ['limits.warn_percent']
 const MCP = ['mcp.url']
 const OAUTH = ['oauth.dynamic_clients', 'oauth.dynamic_redirect_hosts']
@@ -99,7 +100,7 @@ const BUILT_IN = [
   'domains.cluster_issuer',
   'domains.ingress_class',
   'domains.service',
-  'alerts.cooldown_minutes', 'alerts.retention_days', ...PERF, ...LIMITS, ...OAUTH, ...LEGAL]
+  'alerts.cooldown_minutes', 'alerts.retention_days', ...PERF, ...ERRORS, ...LIMITS, ...OAUTH, ...LEGAL]
 const ALERTS = ['alerts.cooldown_minutes', 'alerts.retention_days', 'alerts.manage_url']
 
 
@@ -142,7 +143,7 @@ const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
   'discord-app': DISCORD,
   'discord-channels': [...DISCORD_LOG, ...DISCORD_ROLES, ...DISCORD_SUPPORT],
   alerts: ALERTS,
-  performance: PERF,
+  performance: [...PERF, ...ERRORS],
   limits: LIMITS,
   mcp: MCP,
   oauth: OAUTH,
@@ -335,6 +336,10 @@ const FIELD_DE: Record<string, [string, string]> = {
   'perf.p95_warning_ms': [
     'Warnung bei langsamer API (ms)',
     'Offenes Problem unter Warnungen, wenn 95 % der Anfragen der letzten Stunde nicht schneller sind. 0: aus',
+  ],
+  'errors.auto_resolve': [
+    'Fehler beim Upgrade als behoben markieren',
+    'Wenn alle Prozesse eine neue Version laufen, gelten offene Fehler, die dort nicht aufgetreten sind, als behoben. Kommen sie wieder, sind sie wieder offen',
   ],
   'limits.warn_percent': [
     'Warnen ab (%)',
@@ -631,6 +636,33 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                 )}
               </Text>
               <Stack gap="sm">{PERF.map(field)}</Stack>
+            </Paper>
+          )}
+
+          {section === 'performance' && byKey['errors.auto_resolve'] && (
+            <Paper withBorder p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Fehler', 'Errors')}</Title>
+                {resetButton(ERRORS)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Für Diagnose › Fehler. Von Hand als behoben markieren geht dort immer.',
+                  'For Diagnostics › Errors. Marking an error fixed by hand always works there.',
+                )}
+              </Text>
+              <Switch
+                label={tr('Beim Upgrade als behoben markieren', 'Mark fixed on upgrade')}
+                description={tr(
+                  'Wenn alle Prozesse eine neue Version laufen, gelten offene Fehler, die dort nicht aufgetreten sind, als behoben. Kommen sie wieder, sind sie wieder offen.',
+                  'Once every process runs a new build, open errors that did not happen on it count as fixed. If they come back, they are open again.',
+                )}
+                checked={(draft['errors.auto_resolve'] ?? byKey['errors.auto_resolve'].value) === 'on'}
+                onChange={(e) => {
+                  const on = e.currentTarget.checked
+                  setDraft((d) => ({ ...d, 'errors.auto_resolve': on ? 'on' : 'off' }))
+                }}
+              />
             </Paper>
           )}
 
