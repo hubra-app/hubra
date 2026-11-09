@@ -126,6 +126,7 @@ my-plugin/
   plugin.yaml
   CHANGELOG.md            # "## 1.1.0" sections; shown before updating
   .releaseignore          # left out of releases (tests/, frontend/src/, …)
+  .mason.toml             # version, changelog and tag for Mason (never released)
   hubra_myplugin/         # the Python package; the name must start with hubra_
     __init__.py           # module = Module(...) or modules = [...]
     models.py             # SQLAlchemy models, imported on load

@@ -172,11 +172,13 @@ def test_sign_and_verify(tmp_path, key):
 def test_release_prunes_and_leaves_source_alone(tmp_path, key):
     pem, _pub = key
     d = make_plugin(tmp_path)
+    (d / ".mason.toml").write_text('[release]\nversion = "plugin.yaml"\n')
     blob = signed_zip(d, pem)
     names = zipfile.ZipFile(io.BytesIO(blob)).namelist()
     assert "hello/SIGNATURE.json" in names
     assert "hello/frontend/dist/plugin.js" in names
     assert not any("/tests/" in n for n in names)
+    assert "hello/.mason.toml" not in names
     assert not (d / "SIGNATURE.json").exists()
 
 
