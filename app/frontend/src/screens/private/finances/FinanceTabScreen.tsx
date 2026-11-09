@@ -40,7 +40,7 @@ export function FinanceTabScreen() {
   // The path may start with the club's slug: /<club>/app/finance/<tab>.
   const path = (location.pathname.split('/app/finance')[1] ?? '').replace('/', '')
 
-  const known = new Set(['overview', 'bookings', 'planning', 'annual', 'setup'])
+  const known = new Set(['overview', 'invoices', 'bookings', 'planning', 'annual', 'setup'])
   const groupOf = (pt: (typeof pluginTabs)[number]) => pt.group ?? PLUGIN_GROUPS[pt.id]
   const pluginPart = (pt: (typeof pluginTabs)[number]): Part => ({
     id: pt.id,
@@ -67,6 +67,8 @@ export function FinanceTabScreen() {
           allowed: hasPermission('finance.invoices.read'),
           render: () => <InvoicesTab />,
         },
+        // Such as settling the Kasse plugin's tab, which makes invoices.
+        ...pluginParts('invoices'),
       ],
     },
     {
