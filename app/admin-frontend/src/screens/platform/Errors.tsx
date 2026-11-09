@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocation } from 'react-router-dom'
 import {
+  ActionIcon,
   Badge,
   Button,
   Code,
@@ -13,6 +14,7 @@ import {
   Table,
   Text,
   Title,
+  Tooltip,
 } from '@mantine/core'
 import { IconCheck, IconRefresh, IconRotate } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
@@ -37,6 +39,35 @@ function failureText(err: unknown) {
   return err instanceof Error ? err.message : String(err)
 }
 
+/** Mark a group fixed, or open it again. */
+function useChangeStatus(group: ErrorGroupRow, onChanged: () => void) {
+  const { notify } = useAdmin()
+  const [busy, setBusy] = useState(false)
+  const change = async () => {
+    setBusy(true)
+    try {
+      await setErrorStatus(group.id, group.status === 'open' ? 'resolve' : 'reopen')
+      notify(
+        'success',
+        group.status === 'open'
+          ? tr('Als behoben markiert', 'Marked as fixed')
+          : tr('Wieder offen', 'Open again'),
+      )
+      onChanged()
+    } catch (err) {
+      notify('error', tr('Hat nicht geklappt', 'That did not work'), failureText(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return { busy, change }
+}
+
+/** Version without the commit: "0.2.4 (f79154a)" → "0.2.4". */
+function shortBuild(label: string) {
+  return label.split(' ')[0]
+}
+
 /** The traceback, the builds it happened on and the release that brought it. */
 function ErrorDetail({
   group,
@@ -47,29 +78,10 @@ function ErrorDetail({
   canChange: boolean
   onChanged: () => void
 }) {
-  const { notify } = useAdmin()
-  const [busy, setBusy] = useState(false)
+  const { busy, change } = useChangeStatus(group, onChanged)
   const query = useQuery({ queryKey: ['platform-error', group.id], queryFn: () => getError(group.id) })
   const detail = query.data?.error
   const builds = Object.entries(group.builds).reverse()
-
-  const change = async () => {
-    setBusy(true)
-    try {
-      await setErrorStatus(group.id, group.status === 'open' ? 'resolve' : 'reopen')
-      notify(
-        'success',
-        group.status === 'open'
-          ? tr('Als behoben markiert', 'Marked as resolved')
-          : tr('Wieder offen', 'Open again'),
-      )
-      onChanged()
-    } catch (err) {
-      notify('error', tr('Hat nicht geklappt', 'That did not work'), failureText(err))
-    } finally {
-      setBusy(false)
-    }
-  }
 
   return (
     <Stack gap={12} mt={10}>
@@ -130,6 +142,19 @@ function ErrorDetail({
           </Table.Tbody>
         </Table>
       </SimpleGrid>
+      {group.resolved_at && group.resolved_build && (
+        <Text size="xs" c="dimmed">
+          {group.resolved_auto
+            ? tr(
+                `Automatisch als behoben markiert mit dem Upgrade auf ${group.resolved_build}, ${formatDateTime(group.resolved_at)}, weil der Fehler dort nicht mehr auftrat.`,
+                `Marked fixed automatically by the upgrade to ${group.resolved_build}, ${formatDateTime(group.resolved_at)}, as it did not happen there.`,
+              )
+            : tr(
+                `Von Hand als behoben markiert in ${group.resolved_build}, ${formatDateTime(group.resolved_at)}.`,
+                `Marked fixed by hand in ${group.resolved_build}, ${formatDateTime(group.resolved_at)}.`,
+              )}
+        </Text>
+      )}
       {canChange && (
         <Group justify="flex-end">
           <Button
@@ -140,7 +165,7 @@ function ErrorDetail({
             onClick={change}
           >
             {group.status === 'open'
-              ? tr('Als behoben markieren', 'Mark as resolved')
+              ? tr('Als behoben markieren', 'Mark as fixed')
               : tr('Wieder öffnen', 'Reopen')}
           </Button>
         </Group>
@@ -159,6 +184,7 @@ function ErrorRow({
   onChanged: () => void
 }) {
   const [open, setOpen] = useState(false)
+  const { busy, change } = useChangeStatus(group, onChanged)
   return (
     <Table.Tr style={{ verticalAlign: 'top', cursor: 'pointer' }} onClick={() => setOpen(!open)}>
       <Table.Td>
@@ -173,7 +199,22 @@ function ErrorRow({
           )}
           {group.status === 'open' && group.reopened_at && (
             <Badge size="sm" variant="light" color="red">
-              {tr('Wieder aufgetreten', 'Came back')}
+              {group.resolved_build
+                ? tr(
+                    `Wieder aufgetreten nach ${shortBuild(group.resolved_build)}`,
+                    `Came back after ${shortBuild(group.resolved_build)}`,
+                  )
+                : tr('Wieder aufgetreten', 'Came back')}
+            </Badge>
+          )}
+          {group.status === 'resolved' && (
+            <Badge size="sm" variant="light" color="green">
+              {group.resolved_build
+                ? tr(
+                    `Behoben in ${shortBuild(group.resolved_build)}${group.resolved_auto ? ' · automatisch' : ''}`,
+                    `Fixed in ${shortBuild(group.resolved_build)}${group.resolved_auto ? ' · automatically' : ''}`,
+                  )
+                : tr('Behoben', 'Fixed')}
             </Badge>
           )}
         </Group>
@@ -203,6 +244,31 @@ function ErrorRow({
       <Table.Td fz="sm" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
         {formatDateTime(group.last_seen)}
       </Table.Td>
+      {canChange && (
+        <Table.Td onClick={(e) => e.stopPropagation()}>
+          <Tooltip
+            label={
+              group.status === 'open'
+                ? tr('Als behoben markieren', 'Mark as fixed')
+                : tr('Wieder öffnen', 'Reopen')
+            }
+          >
+            <ActionIcon
+              variant="subtle"
+              color={group.status === 'open' ? 'green' : 'gray'}
+              loading={busy}
+              onClick={change}
+              aria-label={
+                group.status === 'open'
+                  ? tr('Als behoben markieren', 'Mark as fixed')
+                  : tr('Wieder öffnen', 'Reopen')
+              }
+            >
+              {group.status === 'open' ? <IconCheck size={16} /> : <IconRotate size={16} />}
+            </ActionIcon>
+          </Tooltip>
+        </Table.Td>
+      )}
     </Table.Tr>
   )
 }
@@ -262,8 +328,8 @@ export function ErrorsPanel() {
       <Group justify="space-between" wrap="wrap" gap="sm">
         <Text c="dimmed" size="sm" maw={720}>
           {t(
-            `Fehler, die die API nicht abfangen konnte (Antwort 500). Gleicher Typ, gleiche Route und gleiche Stelle im Code sind eine Gruppe. Läuft gerade: ${data?.current_build ?? '…'}.`,
-            `Errors the API did not handle (answered 500). Same type, same route and same place in the code are one group. Running now: ${data?.current_build ?? '…'}.`,
+            `Fehler, die die API nicht abfangen konnte (Antwort 500). Gleicher Typ, gleiche Route und gleiche Stelle im Code sind eine Gruppe. Nach einem Upgrade gelten offene Fehler, die auf der neuen Version nicht auftreten, als behoben; kommen sie wieder, sind sie wieder offen. Läuft gerade: ${data?.current_build ?? '…'}.`,
+            `Errors the API did not handle (answered 500). Same type, same route and same place in the code are one group. After an upgrade, open errors that do not happen on the new build count as fixed; if they come back, they are open again. Running now: ${data?.current_build ?? '…'}.`,
           )}
         </Text>
         <Button
@@ -289,7 +355,7 @@ export function ErrorsPanel() {
             { value: 'open', label: t(`Offen (${data?.counts.open ?? 0})`, `Open (${data?.counts.open ?? 0})`) },
             {
               value: 'resolved',
-              label: t(`Behoben (${data?.counts.resolved ?? 0})`, `Resolved (${data?.counts.resolved ?? 0})`),
+              label: t(`Behoben (${data?.counts.resolved ?? 0})`, `Fixed (${data?.counts.resolved ?? 0})`),
             },
             { value: 'all', label: t('Alle', 'All') },
           ]}
@@ -357,6 +423,7 @@ export function ErrorsPanel() {
                     </Table.Th>
                     <Table.Th w={170}>{t('Zuerst in', 'First in')}</Table.Th>
                     <Table.Th w={150}>{t('Zuletzt', 'Last seen')}</Table.Th>
+                    {canChange && <Table.Th w={44} />}
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>

@@ -146,6 +146,16 @@ def _finish(old: dict, new: dict, started_at: datetime | None) -> None:
     lines = [f"Every backend process now runs {label(new)}."]
     if minutes is not None:
         lines.append(f"The roll-out took about {minutes} min.")
+    from hubra.core.services import error_tracker
+
+    fixed = error_tracker.resolve_after_upgrade(
+        error_tracker.build_label(new.get("version"), new.get("commit"))
+    )
+    if fixed:
+        lines.append(
+            f"{fixed} open error{'s' if fixed != 1 else ''} that did not happen "
+            "on the new build marked fixed."
+        )
     platform_monitor.alert(ALERT_TYPE, message, lines, level="info", throttle=False)
 
 

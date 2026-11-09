@@ -149,3 +149,51 @@ def test_bad_filters_and_missing_group(client, staff_headers):
 
 def test_club_admin_cannot_see_errors(client, auth_headers):
     assert client.get(BASE, headers=auth_headers).status_code == 403
+
+
+def test_manual_resolve_keeps_the_build_it_was_fixed_in(
+    client, db, staff_headers, build
+):
+    error_tracker.capture(_boom(), route="GET /api/v1/members")
+    (g,) = _groups(db)
+    body = client.post(f"{BASE}/{g.id}/resolve").get_json()["error"]
+    assert body["resolved_build"] == "1.4.0 (aaaaaaa)"
+    assert body["resolved_auto"] is False
+    body = client.post(f"{BASE}/{g.id}/reopen").get_json()["error"]
+    assert body["status"] == "open" and body["resolved_build"] is None
+
+
+def test_upgrade_marks_errors_not_seen_on_the_new_build_fixed(db, build):
+    error_tracker.capture(_boom(), route="GET /api/v1/members")
+    build("1.5.0", "b" * 40)
+    # Happened during the roll-out on the new build: stays open.
+    error_tracker.capture(_boom("scrub"), route="GET /api/v1/events")
+
+    assert error_tracker.resolve_after_upgrade("1.5.0 (bbbbbbb)") == 1
+    old, new = _groups(db)
+    assert old.status == "resolved" and old.resolved_build == "1.5.0 (bbbbbbb)"
+    assert old.resolved_by is None
+    assert error_tracker.group_json(old)["resolved_auto"] is True
+    assert new.status == "open"
+    events = db.session.query(PlatformEvent).filter_by(kind="error.auto_resolved").all()
+    assert len(events) == 1 and events[0].details["count"] == 1
+
+    # It comes back: open again, and the event says which build "fixed" it.
+    error_tracker.capture(_boom(), route="GET /api/v1/members")
+    old, _ = _groups(db)
+    assert old.status == "open" and old.reopened_at is not None
+    regressed = (
+        db.session.query(PlatformEvent).filter_by(kind="error.regressed").one()
+    )
+    assert regressed.details["fixed_in"] == "1.5.0 (bbbbbbb)"
+
+
+def test_auto_resolve_can_be_switched_off(db, build):
+    from hubra.core.services import platform_settings
+
+    error_tracker.capture(_boom(), route="GET /api/v1/members")
+    platform_settings.set_many({"errors.auto_resolve": "off"})
+    db.session.commit()
+    assert error_tracker.resolve_after_upgrade("9.9.9 (fffffff)") == 0
+    (g,) = _groups(db)
+    assert g.status == "open"
