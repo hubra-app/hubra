@@ -11,6 +11,7 @@ import { listTiers, deleteTier, calculateTierCost } from '@/api/tiers'
 import { qk } from '@/data/keys'
 import { TierFormModal } from './TierFormModal'
 import { costSummary } from './tierCost'
+import { FeeAdjustmentsList } from './FeeAdjustmentsList'
 
 /* -- Membership tiers -------------------------- */
 export function TiersTab() {
@@ -271,6 +272,8 @@ export function TiersTab() {
           </Paper>
         )}
       </div>
+
+      <FeeAdjustmentsList />
 
       {formTarget && (
         <TierFormModal

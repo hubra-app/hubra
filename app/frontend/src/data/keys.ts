@@ -36,6 +36,7 @@ export const qk = {
     mailSettings: ['account', 'mail-settings'] as const,
     navPrefs: ['account', 'nav-prefs'] as const,
     plan: ['my-plan'] as const,
+    fee: ['my-fee'] as const,
     leave: ['my-leave'] as const,
     directory: ['my-directory'] as const,
     privacy: ['my-privacy'] as const,
@@ -71,6 +72,7 @@ export const qk = {
     invites: ['members', 'invites'] as const,
     stats: (on: string, year: number) => ['members', 'stats', on, year] as const,
     consents: (id: string) => ['member-consents', id] as const,
+    fee: (id: string) => ['member-fee', id] as const,
   },
   applications: ['applications'] as const,
   leaveRequests: ['leave-requests'] as const,
@@ -85,6 +87,7 @@ export const qk = {
     all: ['tiers'] as const,
     members: (id: number | string) => ['tier-members', id] as const,
     costs: (tiers: unknown) => ['tier-costs', tiers] as const,
+    feeAdjustments: ['fee-adjustments'] as const,
     paymentPlans: (tierId: unknown) => ['payment-plans', tierId] as const,
   },
 

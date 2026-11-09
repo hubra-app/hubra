@@ -32,6 +32,7 @@ import { listFunctions } from '@/api/functions'
 import { listAuditLog } from '@/api/settings'
 import { MemberEditModal } from '@/components/MemberEditModal'
 import { MemberPrivacySection } from './MemberPrivacySection'
+import { MemberFeeSection } from './MemberFeeSection'
 import {
   ActivityList,
   DetailEmpty as Empty,
@@ -391,6 +392,8 @@ export function MemberDetailScreen({
               </DetailRow>
             )}
           </Section>
+
+          {id && <MemberFeeSection memberId={id} memberName={m.name} />}
 
           {hasContact && (
             <Section
