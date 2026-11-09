@@ -69,7 +69,9 @@ const SupportCases = lazyNamed(() => import('@/screens/platform/Support'), 'Supp
 //
 // Rule of thumb: a page is one job an operator does, and its tabs are parts
 // of that job. Settings live on the page they configure (the mail relay
-// under Mail, the backup storage under Backups), not on a settings page.
+// under Mail, the backup storage under Backups), not on a settings page,
+// and always in that page's last tab, "Einstellungen" (path …/settings).
+// A settings tab needs platform.settings.
 
 export interface PageTab {
   id: string
@@ -149,12 +151,7 @@ export function navSections(): NavSection[] {
                 'Tarife mit Preisen, Limits und Leistungen, und Listenpreise für Zusatzmodule. Was öffentlich ist, zeigt die Website. Eigenen Preis, Rabatt und Sponsor für einen Verein setzt du auf seiner Seite.',
                 'Plans with prices, limits and features, and list prices for add-ons. What is public shows on the website. A club’s own price, discount and sponsor are set on its page.',
               ),
-              render: () => (
-                <Stack gap="lg">
-                  <PlatformPlans />
-                  <SettingsSection section="limits" />
-                </Stack>
-              ),
+              render: () => <PlatformPlans />,
             },
             {
               id: 'early-access',
@@ -166,6 +163,13 @@ export function navSections(): NavSection[] {
                 'Switch new features on for chosen clubs first.',
               ),
               render: () => <EarlyAccess />,
+            },
+            {
+              id: 'settings',
+              path: '/app/tenants/settings',
+              label: tr('Einstellungen', 'Settings'),
+              perm: 'platform.settings',
+              render: () => <SettingsSection section="limits" />,
             },
           ],
         },
@@ -239,6 +243,13 @@ export function navSections(): NavSection[] {
               perm: 'platform.diagnostics',
               render: () => <MyAlertsCard />,
             },
+            {
+              id: 'settings',
+              path: '/app/platform/alerts/settings',
+              label: tr('Einstellungen', 'Settings'),
+              perm: 'platform.settings',
+              render: () => <SettingsSection section="alerts" />,
+            },
           ],
         },
         {
@@ -276,14 +287,7 @@ export function navSections(): NavSection[] {
               path: '/app/platform/diagnostics/performance',
               label: tr('Leistung', 'Performance'),
               perm: 'platform.diagnostics',
-              render: () => (
-                <>
-                  <PerformancePanel />
-                  <div style={{ marginTop: 20 }}>
-                    <SettingsSection section="performance" />
-                  </div>
-                </>
-              ),
+              render: () => <PerformancePanel />,
             },
             {
               id: 'jobs',
@@ -291,6 +295,13 @@ export function navSections(): NavSection[] {
               label: tr('Hintergrundjobs', 'Background jobs'),
               perm: 'platform.diagnostics',
               render: () => <JobsPanel />,
+            },
+            {
+              id: 'settings',
+              path: '/app/platform/diagnostics/settings',
+              label: tr('Einstellungen', 'Settings'),
+              perm: 'platform.settings',
+              render: () => <SettingsSection section="performance" />,
             },
           ],
         },
@@ -308,9 +319,9 @@ export function navSections(): NavSection[] {
               render: () => <Backups />,
             },
             {
-              id: 'storage',
-              path: '/app/platform/backups/storage',
-              label: tr('Speicher', 'Storage'),
+              id: 'settings',
+              path: '/app/platform/backups/settings',
+              label: tr('Einstellungen', 'Settings'),
               perm: 'platform.settings',
               desc: tr(
                 'Wohin die verschlüsselten Backups und die Dateien der Vereine gehen.',
@@ -366,25 +377,27 @@ export function navSections(): NavSection[] {
               render: () => <OutboundMailTab />,
             },
             {
-              id: 'relay',
-              path: '/app/platform/mail/relay',
-              label: tr('Relay', 'Relay'),
-              perm: 'platform.settings',
-              render: () => <SettingsSection section="relay" />,
-            },
-            {
-              id: 'sender',
-              path: '/app/platform/mail/sender',
-              label: tr('Systemabsender', 'System sender'),
-              perm: 'platform.settings',
-              render: () => <SettingsSection section="sender" />,
-            },
-            {
               id: 'server',
               path: '/app/platform/mail/server',
               label: tr('Mailserver', 'Mail server'),
               perm: 'platform.diagnostics',
               render: () => <MailServerPanel />,
+            },
+            {
+              id: 'settings',
+              path: '/app/platform/mail/settings',
+              label: tr('Einstellungen', 'Settings'),
+              perm: 'platform.settings',
+              desc: tr(
+                'Über welches Relay Hubra Mails verschickt und von welchem Absender.',
+                'Which relay Hubra sends mail through, and from which sender.',
+              ),
+              render: () => (
+                <Stack gap="lg">
+                  <SettingsSection section="relay" />
+                  <SettingsSection section="sender" />
+                </Stack>
+              ),
             },
           ],
         },
@@ -412,18 +425,20 @@ export function navSections(): NavSection[] {
               render: () => <DiscordClubsPanel />,
             },
             {
-              id: 'setup',
-              path: '/app/platform/discord/setup',
-              label: tr('Einrichtung', 'Setup'),
+              id: 'settings',
+              path: '/app/platform/discord/settings',
+              label: tr('Einstellungen', 'Settings'),
               perm: 'platform.settings',
-              render: () => <SettingsSection section="discord-app" />,
-            },
-            {
-              id: 'channels',
-              path: '/app/platform/discord/channels',
-              label: tr('Kanäle', 'Channels'),
-              perm: 'platform.settings',
-              render: () => <SettingsSection section="discord-channels" />,
+              desc: tr(
+                'Die Zugangsdaten der Hubra-App auf Discord und die Kanäle der Plattform.',
+                "The Hubra app's Discord credentials and the platform channels.",
+              ),
+              render: () => (
+                <Stack gap="lg">
+                  <SettingsSection section="discord-app" />
+                  <SettingsSection section="discord-channels" />
+                </Stack>
+              ),
             },
           ],
         },
@@ -481,9 +496,16 @@ export function navSections(): NavSection[] {
             {
               id: 'all',
               path: '/app/platform/translations',
-              label: '',
+              label: tr('Texte', 'Texts'),
               perm: 'platform.settings',
               render: () => <PlatformTranslations />,
+            },
+            {
+              id: 'settings',
+              path: '/app/platform/translations/settings',
+              label: tr('Einstellungen', 'Settings'),
+              perm: 'platform.settings',
+              render: () => <SettingsSection section="translate" />,
             },
           ],
         },
@@ -547,6 +569,18 @@ export function navSections(): NavSection[] {
               label: tr('Apps (OAuth)', 'Apps (OAuth)'),
               perm: 'platform.settings',
               render: () => <OAuthApps />,
+            },
+            {
+              id: 'settings',
+              path: '/app/api-tokens/settings',
+              label: tr('Einstellungen', 'Settings'),
+              perm: 'platform.settings',
+              render: () => (
+                <Stack gap="lg">
+                  <SettingsSection section="mcp" />
+                  <SettingsSection section="oauth" />
+                </Stack>
+              ),
             },
           ],
         },
@@ -654,13 +688,19 @@ export function navSections(): NavSection[] {
  */
 export const LEGACY_REDIRECTS: Record<string, string> = {
   // Settings moved to the page each one configures.
-  '/app/platform/settings': '/app/platform/mail/relay',
-  '/app/platform/settings/mail': '/app/platform/mail/relay',
-  '/app/platform/settings/sender': '/app/platform/mail/sender',
-  '/app/platform/settings/backups': '/app/platform/backups/storage',
-  '/app/platform/settings/discord': '/app/platform/discord/setup',
-  '/app/platform/settings/alerts': '/app/platform/alerts/rules',
-  '/app/platform/settings/limits': '/app/tenants/plans',
+  '/app/platform/settings': '/app/platform/mail/settings',
+  '/app/platform/settings/mail': '/app/platform/mail/settings',
+  '/app/platform/settings/sender': '/app/platform/mail/settings',
+  '/app/platform/settings/backups': '/app/platform/backups/settings',
+  '/app/platform/backups/storage': '/app/platform/backups/settings',
+  '/app/platform/settings/discord': '/app/platform/discord/settings',
+  '/app/platform/settings/alerts': '/app/platform/alerts/settings',
+  '/app/platform/settings/limits': '/app/tenants/settings',
+  // Each page's settings became its last tab, "Einstellungen" (2026-11).
+  '/app/platform/mail/relay': '/app/platform/mail/settings',
+  '/app/platform/mail/sender': '/app/platform/mail/settings',
+  '/app/platform/discord/setup': '/app/platform/discord/settings',
+  '/app/platform/discord/channels': '/app/platform/discord/settings',
   '/app/tenants/limits': '/app/tenants/plans',
   '/app/tenants/prices': '/app/tenants/plans',
   '/app/platform/settings/encryption': '/app/platform/encryption',
@@ -675,7 +715,6 @@ export const LEGACY_REDIRECTS: Record<string, string> = {
   // Alerts: performance went to Diagnostics, maintenance got its own page.
   '/app/platform/alerts/overview': '/app/platform/alerts',
   '/app/platform/alerts/performance': '/app/platform/diagnostics/performance',
-  '/app/platform/alerts/settings': '/app/platform/alerts/mine',
   '/app/whats-new/changelog': '/app/whats-new',
 }
 

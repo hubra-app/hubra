@@ -11,7 +11,10 @@ to this file; bigger ideas are in [ideas.md](ideas.md).
 | Club app › Settings › Verein | `Tenant.settings["branding"]` (public schema) | `hubra.core.tenant.club_settings.club_setting()` | club admins |
 | Club app › Settings › Module › *module* › Einstellungen | `TenantFeature.config` | `hubra.core.modules.get_config("<code>")` | club admins (`modules.modules.write`) |
 | Club app › Settings › Erweitert | `setting` table in the club schema (key/value) | `SettingService.get()` | per namespace permission |
-| Manage › Platform Settings | `platform_settings` table | `hubra.core.services.platform_settings` | superadmins |
+| Manage › *page* › Einstellungen (last tab of the page the setting configures) | `platform_settings` table | `hubra.core.services.platform_settings` | `platform.settings` |
+
+The full map of every settings place, and the agreed structure, is in
+[structure.md](structure.md).
 
 Rule of thumb for new settings: a setting that belongs to one module goes in
 that module's manifest (`settings=`), so it disappears with the module and

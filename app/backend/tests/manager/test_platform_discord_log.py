@@ -439,7 +439,7 @@ def test_a_problem_can_be_acknowledged_and_silenced(
     assert _buttons(body) == [
         ("Bestätigen", "p:al:ack:relay_down"),
         ("1 h stumm", "p:al:mute:relay_down"),
-        ("In manage öffnen", "https://manage.example.ch/app/platform/mail/relay"),
+        ("In manage öffnen", "https://manage.example.ch/app/platform/mail/settings"),
     ]
     track.assert_called_once()
 

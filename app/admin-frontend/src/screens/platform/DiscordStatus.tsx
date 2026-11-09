@@ -87,7 +87,7 @@ function BotCard({
           <Text size="sm">
             {tr('Fehlt: ', 'Missing: ')}
             {missing.join(', ')}{' '}
-            <Anchor size="sm" onClick={() => navigate('/app/platform/discord/setup')}>
+            <Anchor size="sm" onClick={() => navigate('/app/platform/discord/settings')}>
               {tr('Einstellungen öffnen', 'Open settings')}
             </Anchor>
           </Text>
@@ -192,7 +192,7 @@ function PlatformLogCard({ s }: { s: DiscordStatus }) {
     <Paper withBorder p="lg">
       <Group justify="space-between" mb={8} wrap="wrap">
         <Title order={3}>{tr('Plattform-Log', 'Platform log')}</Title>
-        <Anchor size="sm" onClick={() => navigate('/app/platform/discord/channels')}>
+        <Anchor size="sm" onClick={() => navigate('/app/platform/discord/settings')}>
           {tr('Einstellungen', 'Settings')}
         </Anchor>
       </Group>

@@ -95,12 +95,13 @@ const MCP = ['mcp.url']
 const OAUTH = ['oauth.dynamic_clients', 'oauth.dynamic_redirect_hosts']
 const SUPPORT = ['support.url']
 const LEGAL = ['legal.privacy_url', 'legal.terms_url', 'legal.imprint_url']
+const TRANSLATE = ['translate.deepl_key', 'translate.deepl_url']
 const BUILT_IN = [
   'domains.serving',
   'domains.cluster_issuer',
   'domains.ingress_class',
   'domains.service',
-  'alerts.cooldown_minutes', 'alerts.retention_days', ...PERF, ...ERRORS, ...LIMITS, ...OAUTH, ...LEGAL]
+  'alerts.cooldown_minutes', 'alerts.retention_days', 'translate.deepl_url', ...PERF, ...ERRORS, ...LIMITS, ...OAUTH, ...LEGAL]
 const ALERTS = ['alerts.cooldown_minutes', 'alerts.retention_days', 'alerts.manage_url']
 
 
@@ -131,6 +132,7 @@ export type SettingsSectionId =
   | 'oauth'
   | 'support'
   | 'legal'
+  | 'translate'
 /** The keys each section saves. */
 const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
   relay: [...RELAY, ...FALLBACK],
@@ -149,6 +151,7 @@ const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
   oauth: OAUTH,
   support: SUPPORT,
   legal: LEGAL,
+  translate: TRANSLATE,
 }
 
 function SourceBadge({ s }: { s: PlatformSetting }) {
@@ -319,6 +322,14 @@ const FIELD_DE: Record<string, [string, string]> = {
   'legal.terms_url': [
     'Nutzungsbedingungen',
     'Hubras Nutzungsbedingungen. Verlinkt bei der Registrierung, in den Fussleisten und im Stripe Checkout. Leer: kein Link',
+  ],
+  'translate.deepl_key': [
+    'DeepL-API-Schlüssel',
+    'Maschinelle Übersetzung für Beiträge in mehreren Sprachen. Leer: keine maschinelle Übersetzung, Vereine schreiben jede Sprache selbst. Wird verschlüsselt gespeichert',
+  ],
+  'translate.deepl_url': [
+    'DeepL-API-Adresse',
+    'https://api-free.deepl.com für einen kostenlosen Schlüssel, https://api.deepl.com für einen bezahlten',
   ],
   'legal.imprint_url': ['Impressum', 'Hubras Impressum, verlinkt in den Fussleisten. Leer: kein Link'],
   'alerts.manage_url': [
@@ -723,6 +734,22 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                 )}
               </Text>
               <Stack gap="sm">{SUPPORT.map(field)}</Stack>
+            </Paper>
+          )}
+
+          {section === 'translate' && (
+            <Paper withBorder p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Maschinelle Übersetzung', 'Machine translation')}</Title>
+                {resetButton(TRANSLATE)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Mit einem DeepL-Schlüssel können Vereine Beiträge in weitere Sprachen übersetzen lassen.',
+                  'With a DeepL key, clubs can have posts translated into more languages.',
+                )}
+              </Text>
+              <Stack gap="sm">{TRANSLATE.map(field)}</Stack>
             </Paper>
           )}
 

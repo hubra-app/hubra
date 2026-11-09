@@ -18,7 +18,7 @@ import {
   ThemeIcon,
 } from '@mantine/core'
 import { IconBulb, IconSettings } from '@tabler/icons-react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { moduleNavIcon } from '@/components/Shell/nav'
 import { useT } from '@/locales/i18n'
 import { useAuth, useToast } from '@/context/AppContext'
@@ -37,6 +37,13 @@ import type { HubraAddonOffer } from '@/api/billing'
 import { addonPrice, useAddonSwitch, useHubraCatalog } from './subscriptionHooks'
 
 type FormValue = string | number | boolean | null
+
+/**
+ * Modules whose settings have their own page in the module (more than the
+ * generic form can show). Their "Einstellungen" button goes there, so each
+ * setting is edited in one place only.
+ */
+const SETTINGS_PAGES: Record<string, string> = { finance: '/app/finance/settings' }
 
 /** "Fehlt ein Modul?": opens the idea form with the area "Modul" set. */
 function MissingModule() {
@@ -62,7 +69,10 @@ function MissingModule() {
           <Button component={Link} to="/app/feedback/roadmap" variant="default">
             {t('settings.modules.roadmap', 'Roadmap ansehen')}
           </Button>
-          <Button leftSection={<IconBulb size={16} />} onClick={() => openReport('feature', { area: 'modules' })}>
+          <Button
+            leftSection={<IconBulb size={16} />}
+            onClick={() => openReport('feature', { area: 'modules' })}
+          >
             {t('settings.modules.suggest', 'Modul vorschlagen')}
           </Button>
         </Group>
@@ -77,8 +87,10 @@ export function ModulesTab() {
   const { hasPermission } = useAuth()
   const queryClient = useQueryClient()
   const canWrite = hasPermission('modules.modules.write')
-  const [editing, setEditing] = useState<ModuleInfo | null>(null)
+  const [picked, setPicked] = useState<ModuleInfo | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
+  const navigate = useNavigate()
+  const [params, setParams] = useSearchParams()
   // Paid modules: the price on the card, and switching one on books it.
   const { data: catalog } = useHubraCatalog()
   const offers: Record<string, HubraAddonOffer> = Object.fromEntries(
@@ -92,6 +104,24 @@ export function ModulesTab() {
     select: (list) => list.map(localizeModule),
   })
   const byCode = Object.fromEntries(modules.map((m) => [m.code, m]))
+
+  // ?module=<code> opens that module's settings, so a module's own page can
+  // link straight to them (/app/settings/modules?module=messengers).
+  const wanted = byCode[params.get('module') ?? '']
+  const fromUrl = wanted && wanted.enabled && canWrite && wanted.settings.length > 0 ? wanted : null
+  const editing = picked ?? fromUrl
+  const setEditing = (m: ModuleInfo | null) => {
+    setPicked(m)
+    if (m === null && params.has('module')) {
+      const next = new URLSearchParams(params)
+      next.delete('module')
+      setParams(next, { replace: true })
+    }
+  }
+
+  const configure = (m: ModuleInfo) =>
+    SETTINGS_PAGES[m.code] ? navigate(SETTINGS_PAGES[m.code]) : setEditing(m)
+
   const optional = modules.filter((m) => !m.required)
   const required = modules.filter((m) => m.required)
   // One list for the club: whether a module ships with Hubra or as a plugin
@@ -146,9 +176,12 @@ export function ModulesTab() {
       busy={busy === m.code || addonSwitch.busy === m.code}
       offer={offers[m.code]}
       onToggle={(on) => toggle(m, on)}
-      onConfigure={() => setEditing(m)}
+      onConfigure={() => configure(m)}
     />
   )
+
+  if (fromUrl && SETTINGS_PAGES[fromUrl.code])
+    return <Navigate to={SETTINGS_PAGES[fromUrl.code]} replace />
 
   if (isLoading) {
     return (
@@ -278,7 +311,9 @@ function ModuleCard({
               {offer.source === 'included'
                 ? t('settings.modules.inPlan', 'Im Tarif inklusive')
                 : offer.source === null
-                  ? t('settings.modules.extra', 'Aufpreis: {{price}}', { price: addonPrice(t, offer) })
+                  ? t('settings.modules.extra', 'Aufpreis: {{price}}', {
+                      price: addonPrice(t, offer),
+                    })
                   : addonPrice(t, offer)}
             </Text>
           )}

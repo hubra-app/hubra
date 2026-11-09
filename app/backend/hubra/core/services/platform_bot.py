@@ -349,8 +349,8 @@ NOTICE_TYPES = frozenset(
 # Alert type → (German label, manage page).  The page is where the link
 # button goes; the label is in the footer.
 ALERT_PAGES: dict[str, tuple[str, str]] = {
-    "relay_down": ("Mail-Relay", "/app/platform/mail/relay"),
-    "fallback_used": ("Fallback-Relay", "/app/platform/mail/relay"),
+    "relay_down": ("Mail-Relay", "/app/platform/mail/settings"),
+    "fallback_used": ("Fallback-Relay", "/app/platform/mail/settings"),
     "delivery_failed": ("Mail-Zustellung", "/app/platform/mail"),
     "service_down": ("Dienst", "/app/platform/diagnostics"),
     "backup_failed": ("Backup", "/app/platform/backups"),

@@ -8,14 +8,12 @@ import {
   IconRefresh,
 } from '@tabler/icons-react'
 import { EmptyState, StatGrid, StatTile } from '@/components/ui'
-import { useAdmin } from '@/context/AdminContext'
 import { formatDateTime } from '@/format'
 import { tr } from '@/lang'
 import { getAlertsOverview, type EventCategory, type OpenProblem } from '@/api/platform'
 import { EventLogPanel } from './MailMonitor'
 import { AlertRulesPanel, MaintenanceCard } from './AlertControls'
 import { MaintenanceWindowsCard } from './MaintenanceWindows'
-import { SettingsSection } from './SettingsSection'
 import { LEVEL_COLOR, categoryLabel, eventText, levelLabel } from './eventLabels'
 
 // The server names problems in English; the known ones are told here.
@@ -345,15 +343,9 @@ export function EventsPanel() {
   )
 }
 
-/** Which alerts go out where, and how often (cooldown, retention, link). */
+/** Which alerts go out where. Cooldown, retention and the link are under Einstellungen. */
 export function RulesPanel() {
-  const { hasGlobalPermission } = useAdmin()
-  return (
-    <Stack gap={20}>
-      <AlertRulesPanel />
-      {hasGlobalPermission('platform.settings') && <SettingsSection section="alerts" />}
-    </Stack>
-  )
+  return <AlertRulesPanel />
 }
 
 /** Maintenance mode now and planned maintenance windows. */

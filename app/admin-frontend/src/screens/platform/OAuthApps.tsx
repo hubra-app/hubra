@@ -22,7 +22,6 @@ import { useLang, tr } from '@/lang'
 import { formatAgo } from '@/format'
 import { Modal } from '@/components/ui'
 import { useConfirm } from '@/components/useConfirm'
-import { SettingsSection } from '@/screens/platform/SettingsSection'
 import {
   createOAuthApp,
   deleteOAuthApp,
@@ -470,7 +469,6 @@ export function OAuthApps() {
         )}
       </Paper>
       <SigningKeys keys={data?.signingKeys ?? []} onRotated={refresh} />
-      <SettingsSection section="oauth" />
       {editing !== null && (
         <AppModal
           open

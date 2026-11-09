@@ -23,7 +23,6 @@ import { useLang, tr } from '@/lang'
 import { formatAgo, formatDate } from '@/format'
 import { Modal } from '@/components/ui'
 import { useConfirm } from '@/components/useConfirm'
-import { SettingsSection } from '@/screens/platform/SettingsSection'
 import {
   editPlatformToken,
   getAllApiTokens,
@@ -615,15 +614,9 @@ export function MyPlatformTokens() {
   )
 }
 
-/** My tokens, plus the connector address for those who may set it. */
+/** My tokens. The connector address is under API-Tokens › Einstellungen. */
 export function PlatformTokensPage() {
-  const { hasGlobalPermission } = useAdmin()
-  return (
-    <Stack gap={20}>
-      <MyPlatformTokens />
-      {hasGlobalPermission('platform.settings') && <SettingsSection section="mcp" />}
-    </Stack>
-  )
+  return <MyPlatformTokens />
 }
 
 const KIND_LABEL = (t: ApiToken) =>
