@@ -905,12 +905,15 @@ export interface Plan {
   modules: PlanModule[]
   /** Key of the plan whose modules this plan includes too; null: stands alone. */
   builds_on: string | null
-  /** A custom plan: these clubs can pick it themselves although it is not public. */
+  /** A custom plan: these clubs can pick it themselves although it is not selectable. */
   club_ids: number[]
   limits: { members: number | null; mail_month: number | null; storage_mb: number | null }
   highlighted: boolean
   sort: number
+  /** Shown on the website (public pricing API). */
   public: boolean
+  /** Every club can pick it in Settings › Hubra subscription. */
+  selectable: boolean
   hidden: boolean
   clubs: number
 }
@@ -949,6 +952,7 @@ export interface PlanInput {
   limit_mail_month?: number | null
   limit_storage_mb?: number | null
   public?: boolean
+  selectable?: boolean
   highlighted?: boolean
   sort?: number
   hidden?: boolean

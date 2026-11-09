@@ -117,3 +117,51 @@ def delete_all(user_id: int, read_only: bool = False) -> int:
             deleted += NotificationsService.delete_all(club["member_id"], read_only)
             db.session.commit()
     return deleted
+
+
+# ── What the person wants, per club (the settings on the account page) ───────
+
+
+def _member(club: dict):
+    from hubra.core.models.member import Member
+
+    member = db.session.get(Member, club["member_id"])
+    if member is None:
+        raise_error(404, "NOT_FOUND", "Club not found")
+    return member
+
+
+def _club_choices(club: dict, member) -> dict:
+    from hubra.core.notifications import choices
+
+    return {
+        "club": {
+            "slug": club["tenant_slug"],
+            "name": club["tenant_name"],
+            "logoVersion": club.get("logo_version"),
+        },
+        **choices.for_member(member),
+    }
+
+
+def settings_all(user_id: int) -> list[dict]:
+    """Per club the person is a member of: which topics come on which
+    channel (the same choices as the club's own account page)."""
+    out = []
+    for club in _clubs(user_id):
+        with _in(club):
+            out.append(_club_choices(club, _member(club)))
+    return out
+
+
+def set_settings(user_id: int, slug: str | None, body) -> dict:
+    """Store *body* (see ``choices.apply``) for the person's member in the
+    club *slug*; returns that club's choices."""
+    from hubra.core.notifications import choices
+
+    club = _club(user_id, slug)
+    with _in(club):
+        member = _member(club)
+        choices.apply(member, body)
+        db.session.commit()
+        return _club_choices(club, member)

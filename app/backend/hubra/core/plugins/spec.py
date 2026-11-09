@@ -147,6 +147,14 @@ def validate(m: dict, path: Path | None = None) -> str:
                 SpecifierSet(str(rng or ""))
             except InvalidSpecifier:
                 return f"depends: {dep}: '{rng}' isn't a version range like '>=2.0'"
+    reps = m.get("replaces")
+    if reps is not None:
+        if not isinstance(reps, list) or not all(
+            ID_RE.match(str(r)) and str(r) != str(m.get("id")) for r in reps
+        ):
+            return "replaces: a list of other plugins' ids, like [budgets]"
+        if set(map(str, reps)) & set(map(str, deps or {})):
+            return "replaces: a plugin can't replace one it depends on"
     if path is not None:
         if pkg and not (path / str(pkg) / "__init__.py").is_file():
             return f"package {pkg}: {pkg}/__init__.py not found"
@@ -277,6 +285,12 @@ class Spec:
         return {str(k): str(v or "") for k, v in val.items()}
 
     @property
+    def replaces(self) -> list[str]:
+        """Plugins this one took over: installing it retires them."""
+        val = self.manifest.get("replaces")
+        return [str(r) for r in val] if isinstance(val, list) else []
+
+    @property
     def migrations_dir(self) -> Path | None:
         mig = self.manifest.get("migrations")
         if not mig:
@@ -333,6 +347,7 @@ class Spec:
             "modules": self.module_codes,
             "requires": self.requires,
             "depends": self.depends,
+            "replaces": self.replaces,
             "uses": self.uses,
             "bundled": self.bundled,
             "trust": dict(self.trust),

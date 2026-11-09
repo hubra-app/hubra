@@ -81,6 +81,12 @@ class User(db.Model):
         JSONB().with_variant(JSON, "sqlite"), nullable=True
     )
 
+    # The person's member badge number ("HB-7K3M-Q9TX"): one per account,
+    # the same in every club. Given on first use (core/services/member_badge.py).
+    badge_code: Mapped[str | None] = mapped_column(
+        db.String(16), unique=True, nullable=True
+    )
+
     # Two-factor sign-in (hubra/core/auth/mfa.py).  Secrets are Fernet
     # encrypted; recovery codes are kept as SHA-256 hashes, used ones removed.
     totp_secret: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -97,6 +103,8 @@ class User(db.Model):
     phone: Mapped[str | None] = mapped_column(db.String(50), nullable=True)
     mobile: Mapped[str | None] = mapped_column(db.String(50), nullable=True)
     birthday: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # female | male | diverse; None until the person says.
+    gender: Mapped[str | None] = mapped_column(db.String(16), nullable=True)
 
     address_street: Mapped[str | None] = mapped_column(db.String(255), nullable=True)
     address_house_no: Mapped[str | None] = mapped_column(db.String(20), nullable=True)

@@ -503,6 +503,68 @@ def _check_dependants(pid: str, version: str) -> None:
             )
 
 
+def _replaces(manifest: dict) -> list[str]:
+    val = manifest.get("replaces")
+    return [str(r) for r in val] if isinstance(val, list) else []
+
+
+def _replaced_by(pid: str) -> str | None:
+    """The installed plugin that took *pid* over, if any."""
+    for row in installed_rows():
+        if row.id == pid:
+            continue
+        other = _installed_spec(row.id)
+        if other is not None and pid in other.replaces:
+            return other.name
+    return None
+
+
+def _check_replaces(manifest: dict) -> list:
+    """The installed rows *manifest* takes over; refuses when another
+    installed plugin still names one of them under ``depends:``, and when an
+    installed plugin already took *manifest*'s own plugin over."""
+    pid = str(manifest.get("id"))
+    name = manifest.get("name", pid)
+    by = _replaced_by(pid)
+    if by:
+        raise InstallError(f"{name} is part of {by} now; update {by} instead")
+    old = [r for r in (_installed_row(rid) for rid in _replaces(manifest)) if r]
+    gone = {r.id for r in old} | {pid}
+    for row in installed_rows():
+        if row.id in gone:
+            continue
+        other = _installed_spec(row.id)
+        for rid in sorted(set(other.depends) & {r.id for r in old}) if other else []:
+            raise InstallError(
+                f"{other.name} needs the plugin {_plugin_name(rid)}, which {name} "
+                f"replaces; update {other.name} first"
+            )
+    return old
+
+
+def _retire(old: list, pid: str) -> list[str]:
+    """Take the plugins *pid* replaces off the platform.
+
+    Like an uninstall that keeps the data: their tables stay (*pid*'s
+    migrations adopt them) and so do the clubs' module switches, which carry
+    over because *pid* provides the same module codes. Only the installed
+    row and the kept archives go.
+    """
+    from hubra.core.models.plugin import PluginArchive
+
+    out = []
+    for row in old:
+        _audit(
+            "replace_plugin", row.id, {"version": row.version, "replacedBy": pid}
+        )
+        db.session.execute(
+            PluginArchive.__table__.delete().where(PluginArchive.plugin_id == row.id)
+        )
+        db.session.delete(row)
+        out.append(row.id)
+    return out
+
+
 def _install_dependencies(manifest: dict, repository_id: int, depth: int = 0) -> list:
     """Install the missing ``depends:`` of *manifest* from the same repository,
     each before the plugin that needs it. Returns what was installed."""
@@ -603,6 +665,7 @@ def confirm(
         _check_depends(manifest)
         _check_dependants(pid, str(manifest.get("version", "")))
         _check_requires(manifest)
+        replaced = _check_replaces(manifest)
         spec = Spec(id=pid, path=pdir, manifest=manifest, trust=trust)
         # Migrations first: if they fail nothing is recorded as installed.
         try:
@@ -642,6 +705,7 @@ def confirm(
     row.archive_sha256 = token
     row.installed_by = _actor()
     row.error = ""
+    retired = _retire(replaced, pid)
     generation = bump_generation()
     _audit(
         "update_plugin" if before else "install_plugin",
@@ -655,6 +719,7 @@ def confirm(
         "previous": before,
         "generation": generation,
         "dependencies": deps_installed,
+        "replaced": retired,
     }
 
 
@@ -680,6 +745,7 @@ def install_bundled(pid: str) -> dict:
         raise InstallError(f"{spec.name} is installed already")
     _check_depends(spec.manifest)
     _check_requires(spec.manifest)
+    replaced = _check_replaces(spec.manifest)
     try:
         migrate.upgrade_everywhere(spec)
     except Exception as exc:
@@ -698,10 +764,16 @@ def install_bundled(pid: str) -> dict:
     row.archive_sha256 = None
     row.installed_by = _actor()
     row.error = ""
+    retired = _retire(replaced, pid)
     generation = bump_generation()
     _audit("install_plugin", pid, {"version": row.version, "trust": "bundled"})
     db.session.commit()
-    return {"id": pid, "version": row.version, "generation": generation}
+    return {
+        "id": pid,
+        "version": row.version,
+        "generation": generation,
+        "replaced": retired,
+    }
 
 
 def rollback(pid: str) -> dict:
@@ -1289,6 +1361,21 @@ def _add_parents(out: dict[str, dict]) -> None:
         e.pop("targetDepends", None)
 
 
+def _add_replaced(out: dict[str, dict]) -> None:
+    """Mark the entries another plugin took over (``replaces:``): the
+    catalogue offers the plugin that replaces them instead."""
+    for e in list(out.values()):
+        e["takesOver"] = []
+        for rid in e.get("replaces") or []:
+            old = out.get(str(rid))
+            if old is not None and old is not e:
+                old["replacedBy"] = e["id"]
+                old["replacedByName"] = e.get("name") or e["id"]
+                old["replacedByInstalled"] = bool(e.get("installed"))
+                if old.get("installed"):
+                    e["takesOver"].append(old.get("name") or old["id"])
+
+
 def _add_process_errors(out: dict[str, dict], rows: dict) -> None:
     """Errors from the processes that import plugin code.
 
@@ -1398,6 +1485,7 @@ def marketplace(fetch: bool = True) -> dict:
                 "modules": p.get("modules") or [],
                 "requires": p.get("requires") or [],
                 "depends": p.get("depends") or {},
+                "replaces": p.get("replaces") or [],
                 "uses": p.get("uses"),
                 "bundled": False,
                 "trust": {"status": "", "signer": "", "key_id": "", "detail": ""},
@@ -1462,6 +1550,9 @@ def marketplace(fetch: bool = True) -> dict:
                     "modules": entry.get("modules") or p.get("modules") or [],
                     "requires": entry.get("requires") or p.get("requires") or [],
                     "depends": entry.get("depends") or p.get("depends") or {},
+                    # The newest release says what it took over, also when
+                    # the installed version doesn't yet.
+                    "replaces": p.get("replaces") or entry.get("replaces") or [],
                     "update": bool(
                         installed
                         and have
@@ -1505,6 +1596,7 @@ def marketplace(fetch: bool = True) -> dict:
         e["autoinstalled"] = e["id"] in plugins.autoinstalled
     _add_process_errors(out, rows)
     _add_parents(out)
+    _add_replaced(out)
     return {
         "plugins": sorted(out.values(), key=lambda e: str(e["name"]).lower()),
         "errors": errors,

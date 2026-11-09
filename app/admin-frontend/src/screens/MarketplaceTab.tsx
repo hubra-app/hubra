@@ -258,6 +258,8 @@ function PluginsView() {
     return de ? { ...p, name: tr(de[0], p.name), description: tr(de[1], p.description) } : p
   })
   const matches = (p: MarketplacePlugin) => {
+    // A plugin another one took over is only listed while it's installed.
+    if (p.replacedBy && !p.installed) return false
     if (filter === 'installed' && !p.installed) return false
     if (filter === 'available' && p.installed) return false
     if (filter === 'updates' && !p.update && !p.withdrawn) return false
@@ -521,9 +523,11 @@ function blockers(p: MarketplacePlugin, followDeps: boolean) {
   // Installed plugins on the wrong version; missing ones always come along.
   const outdated = (p.unmet ?? []).filter((g) => g.installed !== null)
   const missing = (p.unmet ?? []).filter((g) => g.installed === null)
-  const updateBlocked = p.update && outdated.length > 0 && !followDeps
-  const installBlocked = !p.installed && (needsParent || (outdated.length > 0 && !followDeps))
-  return { needsParent, outdated, missing, updateBlocked, installBlocked }
+  // Taken over by another installed plugin: that one's update carries it.
+  const replaced = Boolean(p.replacedBy && p.replacedByInstalled)
+  const updateBlocked = p.update && (replaced || (outdated.length > 0 && !followDeps))
+  const installBlocked = !p.installed && (replaced || needsParent || (outdated.length > 0 && !followDeps))
+  return { needsParent, outdated, missing, replaced, updateBlocked, installBlocked }
 }
 
 function PluginNotes({ p, reloading, followDeps }: { p: MarketplacePlugin; reloading: boolean; followDeps: boolean }) {
@@ -558,17 +562,35 @@ function PluginNotes({ p, reloading, followDeps }: { p: MarketplacePlugin; reloa
           {p.incompatibleReason || tr('Braucht eine andere Hubra-Version', 'Needs another Hubra version')}
         </Text>
       )}
+      {p.replacedBy && p.installed && (
+        <Text size="xs" c="orange" data-replaced-by={p.replacedBy}>
+          {b.replaced
+            ? tr(
+                `Jetzt Teil von ${p.replacedByName}: aktualisiere ${p.replacedByName}, es übernimmt dieses Plugin mit seinen Daten`,
+                `Now part of ${p.replacedByName}: update ${p.replacedByName}, which takes this plugin over with its data`,
+              )
+            : tr(
+                `Jetzt Teil von ${p.replacedByName}: installiere ${p.replacedByName}, es übernimmt dieses Plugin mit seinen Daten`,
+                `Now part of ${p.replacedByName}: install ${p.replacedByName}, which takes this plugin over with its data`,
+              )}
+        </Text>
+      )}
       {b.needsParent && (
         <Text size="xs" c="orange" data-requires={p.parent}>
           {tr(`Braucht ${p.parentName}: installiere es zuerst`, `Requires ${p.parentName}: install it first`)}
         </Text>
       )}
-      {(b.updateBlocked || (!p.installed && b.outdated.length > 0 && !followDeps)) && (
+      {!b.replaced && (b.updateBlocked || (!p.installed && b.outdated.length > 0 && !followDeps)) && (
         <Text size="xs" c="orange">
           {tr(
             `Braucht ${gapText(b.outdated)}: aktualisiere es zuerst oder schalte „Benötigte Plugins mitaktualisieren“ ein`,
             `Needs ${gapText(b.outdated)}: update it first, or turn on “Also update required plugins”`,
           )}
+        </Text>
+      )}
+      {(p.update || !p.installed) && (p.takesOver ?? []).length > 0 && (
+        <Text size="xs" c="dimmed" data-takes-over>
+          {tr('Übernimmt mit seinen Daten', 'Takes over, with its data')}: {(p.takesOver ?? []).join(', ')}
         </Text>
       )}
       {(p.update || !p.installed) && b.missing.length > 0 && (

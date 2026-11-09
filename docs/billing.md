@@ -27,7 +27,11 @@ before.
   that ends at least two days ahead, the subscription starts with
   `trial_end` set to the trial's end, so nothing is charged before.
   **Manage payment** opens Stripe's customer portal (card, billing address,
-  invoices, cancelling).
+  invoices). **Cancel subscription** asks first, then sets
+  `cancel_at_period_end`: the subscription runs to the end of the period
+  already paid (or of the trial) and then ends, and the club's status
+  follows to *canceled*. Until then **Take cancellation back** undoes it.
+  This works whatever the portal's settings are (hubra#260).
 - **Changes reach Stripe, pro rata.** Saving a club's terms in manage
   (All clubs › club › Billing), a club changing its plan or add-ons, and
   the hourly member count update only the subscription items that changed,
@@ -119,8 +123,9 @@ completes:
 
 The club sees the same invoices (number, date, total, paid, PDF link) in
 Settings › Hubra subscription. The portal shows the club's card, billing
-address, the invoice history and the next payment date, and lets the club
-cancel (at the end of the period, depending on the portal's settings).
+address, the invoice history and the next payment date. Cancelling is in
+Hubra itself (*Cancel subscription*); the portal may offer it too,
+depending on its settings.
 
 ## Changes during the month
 
@@ -161,8 +166,12 @@ Settings › Hubra subscription (permission `billing.billing.manage`):
 - **Breakdown:** plan, discount, each paid module with its quantity
   ("84 members × 0.20", "3 licences × 5.00"), what the plan includes, and
   the total per month.
-- **Plan:** the public plans (manage › Settings › Plans, *public*), the
-  current one, and **custom plans** manage offered to this club. A switch
+- **Plan:** the plans every club can pick (manage › Settings › Plans,
+  *Clubs can pick it*, `selectable`), the current one, and **custom
+  plans** manage offered to this club. Whether a plan is on the website
+  (*On the website*, `public`) is a separate switch: a plan can be on the
+  pricing page but only given by hand, or selectable without being
+  advertised. A switch
   is refused (409 `PLAN_TOO_SMALL`) when the club has more members than
   the plan allows. Other private plans stay manage's to give.
 - **Add-on modules:** modules with a public list price (manage › Plans ›
@@ -203,7 +212,7 @@ club's plan picker ("Everything in Starter, plus …"), the breakdown,
 licences and the public price list all use the full module list; each
 inherited module says which plan it comes from (`inherited_from`).
 
-**Custom plans.** A plan that is not public can list clubs (`club_ids`,
+**Custom plans.** A plan that is not selectable can list clubs (`club_ids`,
 *Custom plan for these clubs* on the plan form). Those clubs see it in
 Settings › Hubra subscription, marked *For your club*, and can switch to
 it themselves; other clubs and the website never see it.
@@ -288,8 +297,14 @@ A **sandbox club** is a demo or test club: manage › club › Sandbox club (or
 "Sandbox club" when creating it; `PUT /api/v1/platform/system/tenants/<id>/sandbox`).
 It always uses the sandbox keys for Online payments and its Hubra
 subscription, and manage's revenue figures leave it out (counted as
-`sandboxClubs`). A club that pays with a running live subscription can't be
-made a sandbox club; cancel the subscription first.
+`sandboxClubs`). When the switch changes the club's Stripe mode, a running
+subscription in the old mode **ends at once** (no proration, no last
+invoice), so it never runs on unseen. A club that paid live and becomes a
+sandbox club gets a **sandbox subscription** with the same lines, billed by
+invoice (`collection_method=send_invoice`, no card needed). A sandbox club
+made live again has no subscription and starts paying through Checkout,
+like a new club (hubra#260). The answer says what happened
+(`subscriptionEnded`, `sandboxSubscription`), and the audit entry records it.
 
 Stripe's ids are kept per mode (`tenants.settings["billing_stripe"]` live,
 `["billing_stripe_sandbox"]` sandbox), so switching never mixes test and
@@ -371,10 +386,12 @@ Club app (`billing.billing.manage`):
 | GET | `/api/v1/app/billing/` | Terms the club may see, `enabled`, `testMode`, `yearly`, `canPay`, `stripe` (status, period end, cancel at period end, last failed payment) |
 | POST | `/api/v1/app/billing/checkout` | `{url}` of a Stripe Checkout page (409 `ALREADY_SUBSCRIBED`, 400 `NOTHING_TO_PAY`, 503 `BILLING_OFF`) |
 | POST | `/api/v1/app/billing/portal` | `{url}` of Stripe's customer portal (409 `NO_CUSTOMER`) |
+| POST | `/api/v1/app/billing/cancel` | Cancel: the subscription runs to the end of the paid period (or the trial), then ends; answers like `GET /` (409 `NO_SUBSCRIPTION`) |
+| POST | `/api/v1/app/billing/resume` | Take the cancellation back while the period runs (409 `NO_SUBSCRIPTION`) |
 | POST | `/api/v1/app/billing/refresh` | Read the subscription from Stripe again (after Checkout) |
 | GET | `/api/v1/app/billing/invoices` | The last 12 Stripe invoices with PDF links |
 | GET | `/api/v1/app/billing/catalog` | Plans the club can pick and paid modules with prices; any member (the modules page shows prices) |
-| PUT | `/api/v1/app/billing/plan` | `{plan}`: switch to a public plan (400, 409 `PLAN_TOO_SMALL`) |
+| PUT | `/api/v1/app/billing/plan` | `{plan}`: switch to a plan the club may pick (400, 409 `PLAN_TOO_SMALL`) |
 | PUT | `/api/v1/app/billing/licenses/<code>` | `{memberIds}`: the members who hold the module's licences (409 `TOO_MANY_HOLDERS`, 404 not licensed) |
 | PUT | `/api/v1/app/billing/addons/<code>` | `{on?, licenses?}`: take or drop a paid module, set its licences (404 not offered, 409 `IN_PLAN`, 403 `MODULE_BLOCKED`) |
 

@@ -177,3 +177,39 @@ An install or update whose range the installed parent misses stops with the
 version it needs. With **Also update required plugins** on (Plugin catalogue,
 off by default) it updates the parent first, from the same repository, to the
 newest version in the range, unless the parent is held at its version.
+
+### Taking over another plugin (`replaces:`)
+
+When two plugins become one, the plugin that stays names the other under
+`replaces:`:
+
+```yaml
+id: finances
+modules: [finance.books, finance.budgets]   # the old plugin's module codes too
+replaces: [budgets]
+migrations: migrations                       # adopts the old plugin's tables
+```
+
+Installing or updating it takes the old plugin off the platform, in the same
+step, like an uninstall that keeps the data:
+
+- the old plugin's installed row and kept archives go, with a
+  `replace_plugin` entry in the platform log;
+- its tables stay. The new plugin's migrations adopt them: create a table
+  only when it isn't there (`has_table`), add columns only when missing
+  (`columns`), and never drop what the old plugin made;
+- the clubs' module switches stay, because the new plugin offers the same
+  module codes. Keep the old plugin's permission keys too (same blueprint
+  names, or `perm_prefix`), so roles keep what they grant;
+- contracts the old plugin offered can be offered by the new one under the
+  same names.
+
+The install is refused while another installed plugin still names the old
+one under `depends:`, and the old plugin can't be installed again while the
+new one is there. The loader never loads both: with both installed (an
+older row, a development checkout) the old one shows "replaced by …". The
+catalogue hides the old plugin unless it is still installed, and then says
+which plugin to update; the new plugin's card lists what it takes over.
+
+A rollback of the new plugin to a version without `replaces:` doesn't bring
+the old plugin back: install it again (its data is still there).

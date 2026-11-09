@@ -72,3 +72,62 @@
     flex-basis: 190px;
   }
 }
+
+/* The member badge on the account page (components/MemberBadgeCard.tsx). */
+.member-badge {
+  overflow: hidden;
+  --member-badge-dim: color-mix(in srgb, white 78%, transparent);
+}
+
+.member-badge-head {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 20px;
+  color: white;
+  background: linear-gradient(
+    135deg,
+    var(--mantine-color-acc-7),
+    var(--mantine-color-acc-5)
+  );
+  border-bottom: 3px solid var(--mantine-color-gold-5, #d4a72c);
+}
+
+.member-badge-avatar {
+  flex: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, white 70%, transparent);
+}
+
+.member-badge-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  margin-top: 4px;
+  color: var(--member-badge-dim);
+}
+
+.member-badge-qr {
+  flex: none;
+  width: 96px;
+  height: 96px;
+  padding: 4px;
+  border-radius: 10px;
+  background: white;
+}
+
+@media (max-width: 30em) {
+  .member-badge-head {
+    flex-wrap: wrap;
+  }
+  /* The name and number fill the first row; the QR code gets its own. */
+  .member-badge-text {
+    flex: 1 1 180px !important;
+  }
+  .member-badge-qr {
+    margin-left: auto;
+    margin-right: auto;
+    width: 140px;
+    height: 140px;
+  }
+}

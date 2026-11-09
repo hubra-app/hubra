@@ -11,14 +11,20 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ### Added
 
+- **Mitgliederausweis in «Mein Konto»** (SSO › Mein Konto › Profil): ein Ausweis pro Person mit einer Ausweisnummer wie `HB-7K3M-Q9TX`, gleich in allen Vereinen, darunter jede Mitgliedschaft mit Stufe, Art (Ehren-, Passivmitglied) und «Mitglied seit». Die Nummer ist zufällig und wird beim ersten Anzeigen vergeben (neue Spalte `users.badge_code`; `flask db upgrade` ausführen).
+- **Persönliche Angaben in «Mein Konto»** (SSO › Mein Konto › Profil): Vor- und Nachname, Geschlecht (neue Spalte `users.gender`), Geburtstag, Telefon, Mobil und Adresse, von der Person selbst für alle ihre Vereine gepflegt. Der Mitgliederausweis zeigt die Ausweisnummer zusätzlich als QR-Code.
+- **Benachrichtigungs-Einstellungen in «Mein Konto»** (SSO › Mein Konto › Benachrichtigungen › Einstellungen): pro Verein und Thema Glocke, Push, E-Mail oder Discord wählen, wie auf der Kontoseite im Verein.
 - **Eigene Kategorien in der Seitenleiste**: Unter «Seitenleiste anpassen» legst du eigene Kategorien an (Neue Kategorie), benennst jede Überschrift mit dem Stift um und entfernst deine Kategorien wieder; ihre Seiten kehren in ihre Bereiche zurück. Mit den Pfeilen verschiebst du Seiten hinein und hinaus. Gespeichert auf deinem Konto wie der Rest deiner Seitenleiste.
 - manage › Übersetzungen › Einstellungen: Der DeepL-Schlüssel und die Adresse für die maschinelle Übersetzung von Beiträgen lassen sich jetzt in manage setzen (vorher gab es kein Feld dafür).
+- **Plugins können ein anderes Plugin übernehmen**: Ein Plugin, das ein anderes unter `replaces:` nennt, übernimmt es beim Installieren oder Aktualisieren, mit seinen Daten, Modul-Schaltern und Berechtigungen. Der Plugin-Katalog zeigt, was ein Update übernimmt, und blendet das übernommene Plugin aus. So wird Budgets ein Teil von Finances (docs/plugins.md).
 
 ### Changed
 
 - **Weitere zeigt nur, was nicht in der Seitenleiste ist**: Die Seite Weitere in der Vereins-App listet nur noch die Seiten, die du aus der Seitenleiste genommen hast, nach Bereich gruppiert, statt jeden Eintrag der Seitenleiste zu wiederholen. Ist alles in der Seitenleiste, sagt sie das und verweist auf «Seitenleiste anpassen».
 - **Vereinswechsel in der oberen Leiste**: Name und Logo des Vereins oben links öffnen jetzt ein Menü mit all deinen Vereinen (mit deiner Rolle, der aktuelle abgehakt) und einem Link, um einen weiteren Verein zu finden. Es ersetzt die Vereinsliste im Kontomenü und funktioniert auch auf dem Handy.
 - **Einstellungen an einem Ort pro Seite**: In manage endet jede Seite mit Plattform-Einstellungen mit dem Tab «Einstellungen» (Alle Vereine, Warnungen, Diagnose, Backups, Mail, Discord, Übersetzungen, API-Tokens); die Tabs Relay und Systemabsender bei Mail und Einrichtung und Kanäle bei Discord sind je ein Tab Einstellungen. Alte Adressen leiten weiter. In der Vereins-App öffnet der Knopf «Einstellungen» von Finanzen unter Einstellungen › Module jetzt Finanzen › Einstellungen statt eines zweiten Formulars für dieselben Werte, und `/app/settings/modules?module=<code>` öffnet die Einstellungen eines Moduls direkt. Siehe docs/settings/structure.md.
+- **Hubra-Abo in Hubra kündigen**: Einstellungen › Hubra-Abo hat *Abo kündigen* (es läuft bis zum Ende der bezahlten Periode und endet dann) und *Kündigung zurücknehmen*, unabhängig davon, was das Stripe-Portal erlaubt. In manage beendet der Wechsel eines Vereins in die Sandbox oder zurück jetzt das laufende Abo im alten Stripe-Modus sofort; ein Verein, der live bezahlt hat, bekommt statt einer Ablehnung ein Sandbox-Abo mit denselben Posten.
+- **Tarife: «Für Vereine wählbar» getrennt von «Auf der Website»**: manage › Tarife hat zwei Schalter, so kann ein Tarif auf der Preisseite stehen, ohne dass Vereine ihn selbst wählen, oder umgekehrt. Bestehende öffentliche Tarife bleiben wählbar. Betrieb: `flask db upgrade` ausführen.
 
 ## [0.2.4] - 2026-11-06
 

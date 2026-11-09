@@ -17,7 +17,9 @@ import {
   Title,
 } from '@mantine/core'
 import { IconCreditCard, IconExternalLink, IconInfoCircle } from '@tabler/icons-react'
+import { ConfirmModal } from '@/components/feedback'
 import {
+  cancelHubraSubscription,
   getHubraBilling,
   getHubraBillingContact,
   saveHubraBillingContact,
@@ -25,6 +27,7 @@ import {
   listHubraInvoices,
   openHubraPortal,
   refreshHubraBilling,
+  resumeHubraSubscription,
   startHubraCheckout,
   type HubraBillingStatus,
 } from '@/api/billing'
@@ -203,7 +206,8 @@ export function SubscriptionTab() {
   const { notify } = useToast()
   const queryClient = useQueryClient()
   const [params, setParams] = useSearchParams()
-  const [busy, setBusy] = useState<'pay' | 'portal' | null>(null)
+  const [busy, setBusy] = useState<'pay' | 'portal' | 'cancel' | 'resume' | null>(null)
+  const [confirmCancel, setConfirmCancel] = useState(false)
   const { data } = useQuery({ queryKey: qk.settings.subscription, queryFn: getHubraBilling })
   const { data: invoices } = useQuery({
     queryKey: qk.settings.subscriptionInvoices,
@@ -246,6 +250,30 @@ export function SubscriptionTab() {
     }
   }
 
+  const changeSubscription = async (kind: 'cancel' | 'resume') => {
+    setBusy(kind)
+    try {
+      const next =
+        kind === 'cancel' ? await cancelHubraSubscription() : await resumeHubraSubscription()
+      queryClient.setQueryData(qk.settings.subscription, next)
+      notify(
+        'success',
+        kind === 'cancel'
+          ? t('subscription.cancelDone', 'Das Abo ist gekündigt.')
+          : t('subscription.resumeDone', 'Die Kündigung ist zurückgenommen.'),
+      )
+    } catch (err) {
+      notify(
+        'error',
+        t('subscription.stripeFailed', 'Stripe ist gerade nicht erreichbar'),
+        err instanceof Error ? err.message : undefined,
+      )
+    } finally {
+      setBusy(null)
+      setConfirmCancel(false)
+    }
+  }
+
   if (!data) return null
 
   const statusLabel = t(`subscription.status.${data.status}`, STATUS_DE[data.status])
@@ -282,6 +310,27 @@ export function SubscriptionTab() {
                 {t('subscription.manage', 'Zahlung verwalten')}
               </Button>
             )}
+            {data.stripe.hasSubscription && !data.stripe.cancelAtPeriodEnd && (
+              <Button
+                size="xs"
+                variant="subtle"
+                color="red"
+                loading={busy === 'cancel'}
+                onClick={() => setConfirmCancel(true)}
+              >
+                {t('subscription.cancel', 'Abo kündigen')}
+              </Button>
+            )}
+            {data.stripe.hasSubscription && data.stripe.cancelAtPeriodEnd && (
+              <Button
+                size="xs"
+                variant="light"
+                loading={busy === 'resume'}
+                onClick={() => void changeSubscription('resume')}
+              >
+                {t('subscription.resume', 'Kündigung zurücknehmen')}
+              </Button>
+            )}
             {data.canPay && !data.stripe.hasSubscription && (
               <Button
                 size="xs"
@@ -298,7 +347,7 @@ export function SubscriptionTab() {
           {data.enabled
             ? t(
                 'subscription.hint',
-                'Was der Verein für Hubra bezahlt. Bezahlt wird über Stripe, zum Beispiel mit Karte; Karte und Kündigung verwaltet ihr im Stripe-Kundenportal.',
+                'Was der Verein für Hubra bezahlt. Bezahlt wird über Stripe, zum Beispiel mit Karte; Karte und Rechnungen verwaltet ihr im Stripe-Kundenportal.',
               )
             : t(
                 'subscription.hintOff',
@@ -423,6 +472,26 @@ export function SubscriptionTab() {
           </Stack>
         </SimpleGrid>
       </Paper>
+
+      <ConfirmModal
+        open={confirmCancel}
+        title={t('subscription.cancelTitle', 'Hubra-Abo kündigen?')}
+        body={
+          data.stripe.currentPeriodEnd
+            ? t(
+                'subscription.cancelBody',
+                'Das Abo läuft bis am {{date}} weiter und endet dann. Es wird nichts mehr belastet. Bis dahin könnt ihr die Kündigung zurücknehmen.',
+                { date: formatDate(data.stripe.currentPeriodEnd) },
+              )
+            : t(
+                'subscription.cancelBodyNoDate',
+                'Das Abo läuft bis zum Ende der bezahlten Periode weiter und endet dann. Es wird nichts mehr belastet.',
+              )
+        }
+        confirmLabel={t('subscription.cancel', 'Abo kündigen')}
+        onConfirm={() => void changeSubscription('cancel')}
+        onClose={() => setConfirmCancel(false)}
+      />
 
       <PlanCard />
       <AddonsCard />
