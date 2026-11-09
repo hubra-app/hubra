@@ -8,7 +8,7 @@ Public-schema only, so the revision is safe to run again per club
 (flask migrate-tenants).
 
 Revision ID: f6c2a8e4b0d7
-Revises: d8b2f4a6c1e3
+Revises: e9c4a1f7b3d5
 Create Date: 2026-11-09 10:00:00.000000
 
 """
@@ -19,7 +19,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "f6c2a8e4b0d7"
-down_revision = "d8b2f4a6c1e3"
+down_revision = "e9c4a1f7b3d5"
 branch_labels = None
 depends_on = None
 
