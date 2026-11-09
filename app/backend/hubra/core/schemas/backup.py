@@ -50,3 +50,5 @@ class BackupConfigSchema(ma.Schema):
     endpoint = fields.Str()
     bucket = fields.Str()
     region = fields.Str()
+    # Unix time of the S3 check (a beat task refreshes it every 5 minutes).
+    checked_at = fields.Float(allow_none=True)

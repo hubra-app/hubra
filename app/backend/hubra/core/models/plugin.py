@@ -137,7 +137,9 @@ class PluginArchive(db.Model):
     plugin_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     version: Mapped[str] = mapped_column(String(64), nullable=False)
     sha256: Mapped[str] = mapped_column(String(64), nullable=False)
-    data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    # Deferred: lists and checks only need the version and hash; the zip
+    # (up to a few MB each, every kept version) loads when read.
+    data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False, deferred=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False
     )

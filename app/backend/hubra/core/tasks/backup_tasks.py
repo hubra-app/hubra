@@ -126,3 +126,13 @@ def restore_club_backup_task(
     except RestoreError as exc:
         return {"id": record_id, "ok": False, "error": str(exc)}
     return {"id": record.id, "ok": True, "safety_schema": record.safety_schema}
+
+
+@celery_app.task(name="hubra.core.tasks.backup_tasks.check_backup_config")
+def check_backup_config_task() -> dict:
+    """Check S3 and encryption in the background, so manage's backups page
+    reads the cached answer instead of waiting seconds for S3."""
+    from hubra.core.services.backup import BackupService
+
+    status = BackupService.check_config_status()
+    return {"s3_reachable": status.get("s3_reachable")}

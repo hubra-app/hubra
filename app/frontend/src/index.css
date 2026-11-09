@@ -738,3 +738,41 @@ table[style*="min-width"] td::before {
   grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
   gap: 16px;
 }
+
+/* Club switcher in the top bar: the current club, and a menu of the others. */
+.hubra-club-switcher {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: 300px;
+  flex-shrink: 1;
+  height: 44px;
+  padding: 0 8px 0 6px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: background-color 120ms, border-color 120ms;
+}
+.hubra-club-switcher:hover,
+.hubra-club-switcher[aria-expanded='true'] {
+  background: var(--mantine-color-default-hover);
+  border-color: var(--hb-border);
+}
+.hubra-club-switcher:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
+}
+/* Phones: a shorter name, so the bar keeps room for search and bell. */
+@media (max-width: 35.99em) {
+  .hubra-club-switcher {
+    gap: 6px;
+    padding: 0 4px;
+  }
+  .hubra-topbar-crumbs > * {
+    display: none;
+  }
+  .hubra-club-switcher-name {
+    max-width: 42vw;
+    font-size: var(--mantine-font-size-sm);
+  }
+}

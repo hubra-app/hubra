@@ -263,6 +263,15 @@ def make_celery(app: Flask) -> Celery:
                 "task": "hubra.core.tasks.connected_app_tasks.push_all_role_connections",
                 "schedule": crontab(hour=4, minute=10),
             },
+            # Cached answers for manage's slow status pages (S3, Discord).
+            "check-backup-config-5min": {
+                "task": "hubra.core.tasks.backup_tasks.check_backup_config",
+                "schedule": 300.0,
+            },
+            "check-discord-bot-4min": {
+                "task": "hubra.core.tasks.platform_discord_tasks.check_discord_bot",
+                "schedule": 240.0,
+            },
             # A new build rolling out, and when every process runs it.
             "check-upgrades-every-minute": {
                 "task": "hubra.core.tasks.upgrade_tasks.check_upgrades",

@@ -518,6 +518,7 @@ def refresh_shipped_translations(session, seeds_dir) -> None:
     import pathlib as _pathlib
 
     from hubra.core.models.translation import Translation
+    from hubra.core.services import i18n as i18n_services
 
     path = _pathlib.Path(seeds_dir) / "superseded.json"
     if not path.exists():
@@ -565,4 +566,7 @@ def refresh_shipped_translations(session, seeds_dir) -> None:
     total = refresh_schema()
     session.flush()
     if total:
+        # New ETags, so the apps and the translation cache drop the old wording.
+        for locale in current:
+            i18n_services._bump_etag(locale)
         click.echo(f"  Updated {total} translations to the current wording.")

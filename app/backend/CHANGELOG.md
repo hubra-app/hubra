@@ -9,10 +9,13 @@ section and position, or the apps show that version in English.
 
 ### Added
 
+- **Your own sidebar categories**: in Customise sidebar you can add categories of your own (New category), rename any heading with the pencil, and remove your categories again; their pages go back to their own areas. The arrows move pages into and out of them. Saved on your account, like the rest of your sidebar.
 - manage › Translations › Settings: the DeepL key and address for machine translation of posts can now be set in manage (before they had no field).
 
 ### Changed
 
+- **More shows only what is not in the sidebar**: the More page in the club app now lists just the pages you moved out of the sidebar, grouped by area, instead of repeating every sidebar entry. With everything in the sidebar it says so and points to Customise sidebar.
+- **Club switcher in the top bar**: the club name and logo at the top left now open a menu of all your clubs (with your role, the current one ticked) and a link to find another club. It replaces the club list in the account menu and works on phones too.
 - **Settings in one place per page**: in manage, every page with platform settings ends with a "Settings" tab (All clubs, Alerts, Diagnostics, Backups, Mail, Discord, Translations, API tokens); Mail's Relay and System sender tabs and Discord's Setup and Channels tabs are now one Settings tab each. Old addresses redirect. In the club app, the Finance module's "Settings" button under Settings › Modules opens Finance › Settings instead of a second form for the same values, and `/app/settings/modules?module=<code>` opens a module's settings directly. See docs/settings/structure.md.
 
 ## [0.2.4] - 2026-11-06

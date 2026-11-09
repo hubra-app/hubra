@@ -38,6 +38,7 @@ import {
   type BackupRecord,
 } from '@/api/backups'
 import { listTenants } from '@/api/tenants'
+import { formatAgo } from '@/format'
 
 const TYPE_LABELS: Record<string, [string, string]> = {
   manual: ['Manuell', 'Manual'],
@@ -145,6 +146,7 @@ export function Backups() {
     queryFn: () => listTenants({ status: 'active', sort_by: 'name', per_page: 100 }),
   })
 
+  const [checkingS3, setCheckingS3] = useState(false)
   const configQuery = useQuery({
     queryKey: ['backup-config'],
     queryFn: () => getBackupConfig(),
@@ -405,6 +407,12 @@ export function Backups() {
                 {config.bucket}
               </span>
             )}
+            {config.s3_configured && config.checked_at && (
+              <Text size="xs" c="dimmed">
+                {tr('Geprüft', 'Checked')}{' '}
+                {formatAgo(new Date(config.checked_at * 1000).toISOString(), tr)}
+              </Text>
+            )}
 
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <Button
@@ -412,10 +420,15 @@ export function Backups() {
                 size="sm"
                 leftSection={<IconRefresh size={14} />}
                 onClick={() => {
-                  configQuery.refetch()
+                  // Checks S3 now instead of reading the cached check.
+                  setCheckingS3(true)
+                  getBackupConfig(true)
+                    .then((fresh) => queryClient.setQueryData(['backup-config'], fresh))
+                    .catch(() => configQuery.refetch())
+                    .finally(() => setCheckingS3(false))
                   backupsQuery.refetch()
                 }}
-                loading={configQuery.isFetching || backupsQuery.isFetching}
+                loading={checkingS3 || configQuery.isFetching || backupsQuery.isFetching}
               >
                 {tr('Aktualisieren', 'Refresh')}
               </Button>

@@ -2535,7 +2535,6 @@
       "account": "Mein Konto",
       "accountSettings": "Mein Vereinsprofil",
       "logout": "Abmelden",
-      "clubs": "Vereine",
       "appearance": "Darstellung",
       "light": "Hell",
       "dark": "Dunkel",
@@ -2570,16 +2569,15 @@
       "dismiss": "Hinweis ausblenden"
     },
     "more": {
-      "emptyTitle": "Hier ist noch nichts",
-      "emptyDesc": "Sobald dein Verein Module einschaltet, erscheinen sie hier.",
-      "desc": "Alle Module und Plugins deines Vereins. Eine Karte führt direkt zur Seite.",
+      "emptyTitle": "Alles ist in deiner Seitenleiste",
+      "emptyDesc": "Seiten, die du aus der Seitenleiste nimmst, erscheinen hier. Mit «Seitenleiste anpassen» wählst du, welche.",
+      "desc": "Die Seiten, die nicht in deiner Seitenleiste sind. Eine Karte führt direkt zur Seite.",
       "openApplications": "{{count}} offene Anträge",
       "noApplications": "Keine offenen Anträge",
       "groupCount": "{{count}} Gruppen",
       "needsSetup": "Noch einzurichten",
       "partOf": "Teil von {{module}}",
       "plugin": "Plugin",
-      "notInSidebar": "Nicht in der Seitenleiste",
       "about": {
         "dashboard": "Übersicht und eigene Widgets",
         "settings": "Verein, Module, Apps und Domains",
@@ -2589,7 +2587,7 @@
     },
     "customize": {
       "title": "Seitenleiste anpassen",
-      "intro": "Mit dem Stern heftest du eine Seite oben unter Favoriten an. Mit den Pfeilen änderst du die Reihenfolge; über das Ende eines Bereichs hinaus wandert die Seite in den nächsten. Mit dem Auge verschiebst du sie unter Weitere und zurück. Alle Seiten findest du auch mit der Suche (Ctrl+K).",
+      "intro": "Mit dem Stern heftest du eine Seite oben unter Favoriten an. Mit den Pfeilen änderst du die Reihenfolge; über das Ende eines Bereichs hinaus wandert die Seite in den nächsten. Mit dem Auge verschiebst du sie unter Weitere und zurück. Mit dem Stift benennst du eine Überschrift um, und du kannst eigene Kategorien anlegen. Alle Seiten findest du auch mit der Suche (Ctrl+K).",
       "pin": "Als Favorit anheften",
       "unpin": "Nicht mehr anheften",
       "hide": "Unter Weitere verschieben",
@@ -2597,7 +2595,22 @@
       "moveUp": "Nach oben",
       "moveDown": "Nach unten",
       "reset": "Zurücksetzen",
-      "done": "Fertig"
+      "done": "Fertig",
+      "rename": "Umbenennen",
+      "removeCategory": "Kategorie entfernen",
+      "addCategory": "Neue Kategorie",
+      "newCategory": "Neue Kategorie",
+      "categoryName": "Name der Kategorie",
+      "emptyCategory": "Leer. Mit den Pfeilen verschiebst du Seiten hierher."
+    },
+    "clubSwitcher": {
+      "label": "Verein wechseln, aktuell: {{name}}",
+      "yourClubs": "Deine Vereine",
+      "filter": "Verein suchen",
+      "noMatch": "Kein Verein gefunden",
+      "owner": "Inhaber",
+      "admin": "Admin",
+      "find": "Weiteren Verein finden"
     }
   },
   "system": {
