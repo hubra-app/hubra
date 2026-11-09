@@ -204,6 +204,9 @@ class Module:
     ``consumes`` maps the contracts of other modules it uses to the version
     range it accepts (``{"inventory.items.get": ">=1,<2"}``); a plugin may
     only call what it lists here (docs/contracts.md).
+    ``renamed_from`` lists the codes this module had before: a club that
+    switched the old code on or off, or configured it, keeps that under the
+    new code until it changes it.
     """
 
     code: str
@@ -234,6 +237,7 @@ class Module:
     events_in_transaction: tuple[str, ...] = ()
     provides: tuple = ()
     consumes: dict[str, str] = field(default_factory=dict)
+    renamed_from: tuple[str, ...] = ()
     plugin: str | None = None
 
     def setting(self, key: str) -> SettingField | None:

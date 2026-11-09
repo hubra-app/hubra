@@ -16,6 +16,7 @@ section and position, or the apps show that version in English.
 - manage › Translations › Settings: the DeepL key and address for machine translation of posts can now be set in manage (before they had no field).
 - **Plugins can take over another plugin**: a plugin that names another one under `replaces:` takes it over when it is installed or updated, with its data, module switches and permissions. The Plugin catalogue shows what an update takes over and hides the plugin it replaced. This is how Budgets becomes part of Finances (docs/plugins.md).
 - **Own membership fees for single members**: on a member's page the board can exempt them from the fee, set their own yearly fee, or reduce the standard fee by a percentage, always with a reason and optionally until a date. Before that date (30 days by default) the member is asked in the app and by mail to confirm that the reason still applies; they answer under Account › Membership and the board is notified. After the end date the standard fee applies again from the next billing period. Members › Tiers lists all own fees. New rights `tiers.fee_adjustments.read` / `.update` (Treasurer in new clubs). See docs/club-admin-guide.md, "Own fees".
+- **Modules can be renamed**: a module that names its old codes (`renamed_from`) keeps each club's switch and settings from the old code. This is how Guides becomes Qualifications without clubs switching it on again (docs/plugins.md).
 
 ### Changed
 
