@@ -13,8 +13,8 @@ class BackupsService:
         return BackupService.list_backups(tenant_id)
 
     @staticmethod
-    def config_status() -> dict:
-        return BackupService.get_config_status()
+    def config_status(refresh: bool = False) -> dict:
+        return BackupService.get_config_status(refresh=refresh)
 
 
 class BackupServiceAPI:

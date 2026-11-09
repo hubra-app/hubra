@@ -14,6 +14,9 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 - **Mitgliederausweis in «Mein Konto»** (SSO › Mein Konto › Profil): ein Ausweis pro Person mit einer Ausweisnummer wie `HB-7K3M-Q9TX`, gleich in allen Vereinen, darunter jede Mitgliedschaft mit Stufe, Art (Ehren-, Passivmitglied) und «Mitglied seit». Die Nummer ist zufällig und wird beim ersten Anzeigen vergeben (neue Spalte `users.badge_code`; `flask db upgrade` ausführen).
 - **Persönliche Angaben in «Mein Konto»** (SSO › Mein Konto › Profil): Vor- und Nachname, Geschlecht (neue Spalte `users.gender`), Geburtstag, Telefon, Mobil und Adresse, von der Person selbst für alle ihre Vereine gepflegt. Der Mitgliederausweis zeigt die Ausweisnummer zusätzlich als QR-Code.
 - **Benachrichtigungs-Einstellungen in «Mein Konto»** (SSO › Mein Konto › Benachrichtigungen › Einstellungen): pro Verein und Thema Glocke, Push, E-Mail oder Discord wählen, wie auf der Kontoseite im Verein.
+### Changed
+
+- **Vereinswechsel in der oberen Leiste**: Name und Logo des Vereins oben links öffnen jetzt ein Menü mit all deinen Vereinen (mit deiner Rolle, der aktuelle abgehakt) und einem Link, um einen weiteren Verein zu finden. Es ersetzt die Vereinsliste im Kontomenü und funktioniert auch auf dem Handy.
 
 ## [0.2.4] - 2026-11-06
 

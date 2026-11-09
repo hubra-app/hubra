@@ -120,3 +120,28 @@ def test_unreadable_redis_decides_nothing(db, alerts):
         assert upgrades.check()["state"] == "unknown"
     assert _kinds(db) == []
     assert alerts == []
+
+
+def test_finished_upgrade_marks_old_errors_fixed(db, reports, alerts):
+    from hubra.core.models.error_group import ErrorGroup
+
+    db.session.add(
+        ErrorGroup(
+            fingerprint="f" * 40,
+            exc_type="TypeError",
+            route="GET /x",
+            builds={"0.2.0 (aaa111)": 2},
+            status="open",
+        )
+    )
+    db.session.commit()
+    reports[:] = [_proc("api", "aaa111")]
+    upgrades.check()
+    reports[:] = [_proc("api", "bbb222", version="0.3.0")]
+    upgrades.check()  # started
+    reports[:] = [_proc("api", "bbb222", version="0.3.0")]
+    assert upgrades.check()["state"] in ("done", "steady")
+    db.session.expire_all()
+    group = db.session.query(ErrorGroup).one()
+    assert group.status == "resolved"
+    assert group.resolved_build == "0.3.0 (bbb222)"

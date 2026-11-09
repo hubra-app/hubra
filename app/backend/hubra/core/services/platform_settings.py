@@ -661,6 +661,15 @@ SPECS: tuple[Spec, ...] = (
         "milliseconds",
     ),
     Spec(
+        "errors.auto_resolve",
+        "Mark errors fixed on upgrade",
+        "on: when every backend process runs a new build, open errors that "
+        "have not happened on it are marked fixed in that build "
+        "(services.error_tracker). They open again if they come back",
+        lambda cfg: "on",
+        "on_off",
+    ),
+    Spec(
         "limits.warn_percent",
         "Limit warning",
         "Club owners and the platform are warned when a club reaches this "

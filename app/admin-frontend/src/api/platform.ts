@@ -816,6 +816,10 @@ export interface ErrorGroupRow {
   builds: Record<string, number>
   status: ErrorStatus
   resolved_at: string | null
+  /** The build it was marked fixed in (also kept after it came back). */
+  resolved_build: string | null
+  /** Marked fixed by an upgrade, not by a person. */
+  resolved_auto: boolean
   reopened_at: string | null
   last_tenant_id: number | null
   /** First seen on the build running now. */

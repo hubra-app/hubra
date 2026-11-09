@@ -12,6 +12,9 @@ section and position, or the apps show that version in English.
 - **Member badge on My Account** (sso › My account › Profile): one badge per person with a badge number such as `HB-7K3M-Q9TX`, the same in every club, and below it each membership with its tier, kind (honorary, passive) and member-since date. The number is random, given the first time the badge is shown (new column `users.badge_code`; run `flask db upgrade`).
 - **Personal details on My Account** (sso › My account › Profile): first and last name, gender (new column `users.gender`), birthday, phone, mobile and address, edited by the person for all their clubs. The member badge also shows the badge number as a QR code.
 - **Notification settings on My Account** (sso › My account › Notifications › Settings): per club and topic, choose bell, push, e-mail or Discord, the same choices as the club's own account page.
+### Changed
+
+- **Club switcher in the top bar**: the club name and logo at the top left now open a menu of all your clubs (with your role, the current one ticked) and a link to find another club. It replaces the club list in the account menu and works on phones too.
 
 ## [0.2.4] - 2026-11-06
 
