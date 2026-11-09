@@ -50,11 +50,14 @@ class ErrorGroup(db.Model):
     )
     last_tenant_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # open | resolved; a resolved group that happens again opens again.
+    # resolved_by is empty when an upgrade resolved it (error_tracker
+    # .resolve_after_upgrade); resolved_build is the build it was fixed in.
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="open")
     resolved_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
     resolved_by: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    resolved_build: Mapped[str | None] = mapped_column(String(80), nullable=True)
     reopened_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

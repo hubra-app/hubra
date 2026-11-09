@@ -2535,7 +2535,6 @@
       "account": "Mein Konto",
       "accountSettings": "Mein Vereinsprofil",
       "logout": "Abmelden",
-      "clubs": "Vereine",
       "appearance": "Darstellung",
       "light": "Hell",
       "dark": "Dunkel",
@@ -2603,6 +2602,15 @@
       "newCategory": "Neue Kategorie",
       "categoryName": "Name der Kategorie",
       "emptyCategory": "Leer. Mit den Pfeilen verschiebst du Seiten hierher."
+    },
+    "clubSwitcher": {
+      "label": "Verein wechseln, aktuell: {{name}}",
+      "yourClubs": "Deine Vereine",
+      "filter": "Verein suchen",
+      "noMatch": "Kein Verein gefunden",
+      "owner": "Inhaber",
+      "admin": "Admin",
+      "find": "Weiteren Verein finden"
     }
   },
   "system": {

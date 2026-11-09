@@ -112,6 +112,10 @@ export interface MyTenant {
   tenant_slug: string | null;
   tenant_name: string | null;
   member_id: number | null;
+  /** 'owner' or 'admin' when the member runs that club. */
+  admin_level?: 'owner' | 'admin' | null;
+  /** Set while the club has a logo; part of its URL. */
+  logo_version?: string | null;
 }
 
 export async function getMyTenants(

@@ -11,6 +11,12 @@ brought that build (``services/upgrades``).
 A new group, and a resolved one that happens again, also go to the
 platform event log (``system`` / ``error.new``, ``error.regressed``).
 
+A group is resolved by hand in manage, or by an upgrade: when every backend
+process runs a new build (``services/upgrades``), open groups that did not
+happen on that build are marked fixed in it (``resolve_after_upgrade``,
+platform setting ``errors.auto_resolve``).  Either way the group keeps the
+build it was fixed in, and opens again if it comes back.
+
 Recording never raises and never touches the failing request's session:
 it writes on its own connection (the session's on SQLite, as the platform
 event log does).
@@ -131,6 +137,7 @@ def _capture(exc, route, tenant_id) -> None:
     label = build_label(version, commit)
     now = _now()
     event = None
+    fixed_in = None
     with platform_monitor._connection() as conn:
         row = conn.execute(
             select(
@@ -138,6 +145,7 @@ def _capture(exc, route, tenant_id) -> None:
                 ErrorGroup.count,
                 ErrorGroup.builds,
                 ErrorGroup.status,
+                ErrorGroup.resolved_build,
             ).where(ErrorGroup.fingerprint == fp)
         ).first()
         if row is None:
@@ -176,6 +184,7 @@ def _capture(exc, route, tenant_id) -> None:
             }
             if row.status == "resolved":
                 values.update(status="open", reopened_at=now)
+                fixed_in = row.resolved_build
                 event = (
                     "error.regressed",
                     f"Resolved error is back: {info['exc_type']} in {route}",
@@ -195,9 +204,60 @@ def _capture(exc, route, tenant_id) -> None:
                 "route": route,
                 "location": info["location"],
                 "build": label,
+                **({"fixed_in": fixed_in} if fixed_in else {}),
             },
             tenant_id=tenant_id,
         )
+
+
+def resolve_after_upgrade(build: str) -> int:
+    """Mark open groups that did not happen on *build* as fixed in it.
+
+    Called once an upgrade is done (every process runs *build*).  A group
+    seen on *build* already (during the roll-out) stays open.  Returns how
+    many were marked; logs one ``error.auto_resolved`` event for them.
+    Never raises.
+    """
+    try:
+        return _resolve_after_upgrade(build)
+    except Exception:  # noqa: BLE001
+        logger.warning("error_auto_resolve_failed", exc_info=True)
+        return 0
+
+
+def _resolve_after_upgrade(build: str) -> int:
+    from hubra.core.services import platform_monitor, platform_settings
+
+    if platform_settings.get("errors.auto_resolve") == "off":
+        return 0
+    now = _now()
+    with platform_monitor._connection() as conn:
+        rows = conn.execute(
+            select(ErrorGroup.id, ErrorGroup.builds).where(
+                ErrorGroup.status == "open"
+            )
+        ).all()
+        ids = [r.id for r in rows if build not in (r.builds or {})]
+        if ids:
+            conn.execute(
+                update(ErrorGroup)
+                .where(ErrorGroup.id.in_(ids))
+                .values(
+                    status="resolved",
+                    resolved_at=now,
+                    resolved_by=None,
+                    resolved_build=build,
+                )
+            )
+    if ids:
+        n = len(ids)
+        platform_monitor.record(
+            "system",
+            "error.auto_resolved",
+            f"{n} error{'s' if n != 1 else ''} marked fixed in {build}",
+            details={"build": build, "ids": ids[:100], "count": n},
+        )
+    return len(ids)
 
 
 def install(app) -> None:
@@ -261,6 +321,9 @@ def group_json(
         "builds": g.builds or {},
         "status": g.status,
         "resolved_at": as_utc(g.resolved_at).isoformat() if g.resolved_at else None,
+        "resolved_build": g.resolved_build,
+        # Marked fixed by an upgrade, not by a person.
+        "resolved_auto": g.resolved_at is not None and g.resolved_by is None,
         "reopened_at": as_utc(g.reopened_at).isoformat() if g.reopened_at else None,
         "last_tenant_id": g.last_tenant_id,
         "new_in_current": current is not None and first == current,

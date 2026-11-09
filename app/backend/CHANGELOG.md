@@ -14,6 +14,7 @@ section and position, or the apps show that version in English.
 ### Changed
 
 - **More shows only what is not in the sidebar**: the More page in the club app now lists just the pages you moved out of the sidebar, grouped by area, instead of repeating every sidebar entry. With everything in the sidebar it says so and points to Customise sidebar.
+- **Club switcher in the top bar**: the club name and logo at the top left now open a menu of all your clubs (with your role, the current one ticked) and a link to find another club. It replaces the club list in the account menu and works on phones too.
 
 ## [0.2.4] - 2026-11-06
 

@@ -297,6 +297,24 @@ def test_long_answers_are_cut(client, fake):
     assert "cut after" in text
 
 
+def test_failed_jobs_are_grouped_so_counts_fit(client, fake):
+    failed = [
+        {"task": "a.sync", "error": "TaskNotRegistered: a.sync", "time": f"2026-11-0{1 + i % 5}T00:00:00", "traceback": "x" * 2000}
+        for i in range(200)
+    ]
+    fake.answer = lambda req: httpx.Response(
+        200, json={"tasks": [{"task": "a.sync", "avg_ms": 1200}], "failed": failed}
+    )
+    error, text = _call(client, "platform_jobs")
+    assert not error
+    body = json.loads(text)
+    assert body["tasks"][0]["avg_ms"] == 1200
+    assert body["failedTotal"] == 200
+    assert body["failedByTask"][0]["count"] == 200
+    assert body["failedByTask"][0]["last"] == "2026-11-05T00:00:00"
+    assert len(body["failed"]) == 10 and "traceback" not in body["failed"][0]
+
+
 def test_event_with_registrations_is_one_json(client, fake):
     error, text = _call(client, "club_event", {"event_id": 4, "registrations": True}, token=CLUB)
     assert not error

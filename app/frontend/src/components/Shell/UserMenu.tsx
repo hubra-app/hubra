@@ -1,7 +1,6 @@
-import { Group, Text, Avatar, Divider, Box, UnstyledButton, Stack, ScrollArea } from '@mantine/core'
+import { Group, Text, Avatar, Divider, Box, UnstyledButton, Stack } from '@mantine/core'
 import {
   IconLogout,
-  IconBuilding,
   IconUserCircle,
   IconSparkles,
   IconPalette,
@@ -11,9 +10,8 @@ import {
 } from '@tabler/icons-react'
 import { LegalFooter, ThemeSwitch } from '@hubra/ui'
 import { useT } from '@/locales/i18n'
-import { useAuth, useNav, useData } from '@/context/AppContext'
+import { useAuth, useNav } from '@/context/AppContext'
 import { useInstance } from '@/context/InstanceContext'
-import { useMyTenants } from '@/data/lists'
 import { initials, contrastColor } from './nav'
 import { setWhatsNewOpen } from './whatsNewStore'
 import { openReport } from '@/screens/private/support/reportStore'
@@ -37,8 +35,9 @@ const rowStyle = {
  * or below the top bar's avatar. `onClose` closes it; by default that is the
  * shared user-menu state.
  *
- * It holds only what the card and the sidebar don't: club switch, account,
- * news, appearance, sign-out. The user card already names who is signed in,
+ * It holds only what the card and the sidebar don't: account, news,
+ * support, appearance, sign-out. Switching clubs is the top bar's
+ * ClubSwitcher. The user card already names who is signed in,
  * so the name block only shows under the top bar's avatar (`withHeader`);
  * the club profile is a sidebar entry and the pencil there customises it.
  */
@@ -50,8 +49,6 @@ export function UserMenu({
   const { setPhase, currentUser } = useAuth()
   const { setUserMenuOpen } = useNav()
   const { ssoUrl } = useInstance()
-  const { switchTenant } = useData()
-  const myTenants = useMyTenants()
   const name = currentUser?.name ?? ''
   const email = currentUser?.publicEmail || currentUser?.email || ''
   const bg = currentUser?.avatarColor ?? '#ebe8f2'
@@ -99,43 +96,6 @@ export function UserMenu({
             </Text>
           </Box>
         </Group>
-      )}
-      {myTenants.length > 1 && (
-        <>
-          <Box px="md" pt="sm" pb={4}>
-            <Text fz="xs" fw={600} c="dimmed" tt="uppercase" lh={1}>
-              {t('shell.userMenu.clubs', 'Vereine')}
-            </Text>
-          </Box>
-          <ScrollArea.Autosize mah={160} offsetScrollbars>
-            <Stack gap={0} px={6}>
-              {myTenants.map((tenant) => (
-                <UnstyledButton
-                  key={tenant.tenant_slug}
-                  onClick={() => {
-                    if (tenant.tenant_slug) {
-                      switchTenant(tenant.tenant_slug)
-                      close()
-                    }
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    height: 32,
-                    padding: '0 10px',
-                    fontSize: 'var(--mantine-font-size-sm)',
-                    borderRadius: 8,
-                  }}
-                >
-                  <IconBuilding size={14} />
-                  {tenant.tenant_name ?? tenant.tenant_slug}
-                </UnstyledButton>
-              ))}
-            </Stack>
-          </ScrollArea.Autosize>
-          <Divider my={6} />
-        </>
       )}
       <Box p={6}>
         <Stack gap={0}>
