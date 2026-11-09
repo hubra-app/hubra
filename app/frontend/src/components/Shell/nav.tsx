@@ -132,7 +132,7 @@ export const SECTION_ORDER = [
   'me',
 ]
 
-/** "Weitere": a card for every module and plugin, sidebar or not. */
+/** "Weitere": a card for every page that is not in the sidebar. */
 export const MORE_PATH = '/app/more'
 
 /** Sections a person can move entries between (besides "Weitere"). */
@@ -228,9 +228,9 @@ function navEntries(
 /**
  * The sidebar a person sees: what they may open, their pinned entries on top
  * as "Favoriten", entries in the area they put them in, and one "Weitere" row
- * that leads to a card for every page. `more` lists the pages a person took
- * out of the sidebar, which only "Weitere" shows; `cards` is every page in
- * sidebar order, grouped by area, for the cards.
+ * that leads to the pages that are not in the sidebar. `more` lists the pages
+ * a person took out of the sidebar, which only "Weitere" shows; `cards` is the
+ * same pages in sidebar order, grouped by the area they came from.
  */
 export function buildNav(
   c: NavCounts,
@@ -302,11 +302,12 @@ export function buildNav(
     .sort((a, b) => rank(a.e.section) - rank(b.e.section) || a.i - b.i)
     .map(({ e }) => e)
   const customizable = ordered.map((e) => e.item)
-  // The cards follow the areas the pages came with, so a page someone took
-  // out of the sidebar still sits next to its neighbours.
+  // Only pages that are not in the sidebar get a card, grouped by the area
+  // they came with, so a page someone took out still sits next to its
+  // neighbours.
   const cards: NavSection[] = []
   const byHome = entries
-    .filter((e) => e.section !== 'me')
+    .filter((e) => more.includes(e.item))
     .map((e, i) => ({ e, i, home: homes[e.item.path] }))
     .sort((a, b) => rank(a.home) - rank(b.home) || a.i - b.i)
   for (const { e, home } of byHome) {

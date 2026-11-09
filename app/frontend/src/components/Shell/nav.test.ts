@@ -61,16 +61,19 @@ describe('buildNav', () => {
     expect(nav[nav.length - 1].label).toBe('')
   })
 
-  it('has a card for every page, also those out of the sidebar', () => {
-    const prefs = { pinned: ['/app/groups'], hidden: ['/app/inbox'] }
+  it('has a card only for the pages out of the sidebar', () => {
+    const prefs = { pinned: ['/app/groups'], hidden: ['/app/inbox', '/app/members'] }
     const { nav, cards } = buildNav(counts, t, [members, groups, inbox, account], () => true, prefs)
     expect(paths(nav)).not.toContain('/app/inbox')
-    // In the areas the pages came with; the personal pages have none.
+    // In the areas the pages came with; pages in the sidebar (pinned ones
+    // too) and the personal pages have none.
     expect(cards.map((s) => s.section)).toEqual(['workspace', 'plugins'])
-    expect(paths(cards)).toEqual(['/app/members', '/app/groups', '/app/inbox'])
+    expect(paths(cards)).toEqual(['/app/members', '/app/inbox'])
     expect(cards[0].items[0].module).toBe('members')
     // A card names the pages that sit on it as tabs.
     expect(cards[0].items[0].tabs).toEqual([{ label: '/app/members/tiers', perms: ['tiers.tiers.read'] }])
+    // With everything in the sidebar, there are no cards.
+    expect(buildNav(counts, t, [members, groups, inbox, account]).cards).toEqual([])
   })
 
   it('moves hidden entries to Weitere and pinned ones to the top', () => {

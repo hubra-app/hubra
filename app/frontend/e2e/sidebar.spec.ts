@@ -37,24 +37,18 @@ test.describe('settings tabs', () => {
 })
 
 test.describe('Weitere', () => {
-  test('shows a card for every page, each leading to it', async ({ page }) => {
+  test('lists only the pages that are not in the sidebar', async ({ page }) => {
     await page.goto(appUrl('dashboard'))
+    await resetSidebar(page)
     await expect(sidebar(page).getByTestId('nav-more')).toHaveCount(0)
     await entry(page, '/app/more').click()
     await expect(page.getByRole('heading', { level: 1, name: 'Weitere' })).toBeVisible()
     await expect(entry(page, '/app/more')).toHaveAttribute('data-active', 'true')
     // No tabs across unrelated pages any more.
     await expect(page.getByRole('tab')).toHaveCount(0)
-
-    const cards = page.getByTestId('module-card')
-    expect(await cards.count()).toBeGreaterThan(3)
-    await cards.filter({ hasText: 'Anträge' }).click()
-    await expect(page).toHaveURL(/\/app\/members\/applications$/)
-    await expect(entry(page, '/app/members/applications')).toHaveAttribute('data-active', 'true')
-
-    // Pages that belong together share one card, which names its tabs.
-    await entry(page, '/app/more').click()
-    await expect(cards.filter({ hasText: /^Mitglieder/ })).toContainText('Funktionen')
+    // Everything is in the sidebar, so nothing repeats here.
+    await expect(page.getByTestId('module-card')).toHaveCount(0)
+    await expect(page.getByText('Alles ist in deiner Seitenleiste')).toBeVisible()
   })
 })
 
@@ -77,10 +71,12 @@ test.describe('own sidebar', () => {
     )
     await expect(entry(page, '/app/finance')).toHaveCount(0)
 
-    // Weitere has its card, and the Weitere row stands for it in the sidebar.
+    // Weitere has its card and only that one, and the Weitere row stands for
+    // it in the sidebar.
     await entry(page, '/app/more').click()
-    const card = page.getByTestId('module-card').filter({ hasText: 'Finanzen' })
-    await expect(card).toContainText('Nicht in der Seitenleiste')
+    const cards = page.getByTestId('module-card')
+    await expect(cards).toHaveCount(1)
+    const card = cards.filter({ hasText: 'Finanzen' })
     await card.click()
     await expect(page).toHaveURL(/\/app\/finance$/)
     await expect(entry(page, '/app/more')).toHaveAttribute('data-active', 'true')

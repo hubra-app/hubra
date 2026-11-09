@@ -2570,16 +2570,15 @@
       "dismiss": "Hinweis ausblenden"
     },
     "more": {
-      "emptyTitle": "Hier ist noch nichts",
-      "emptyDesc": "Sobald dein Verein Module einschaltet, erscheinen sie hier.",
-      "desc": "Alle Module und Plugins deines Vereins. Eine Karte führt direkt zur Seite.",
+      "emptyTitle": "Alles ist in deiner Seitenleiste",
+      "emptyDesc": "Seiten, die du aus der Seitenleiste nimmst, erscheinen hier. Mit «Seitenleiste anpassen» wählst du, welche.",
+      "desc": "Die Seiten, die nicht in deiner Seitenleiste sind. Eine Karte führt direkt zur Seite.",
       "openApplications": "{{count}} offene Anträge",
       "noApplications": "Keine offenen Anträge",
       "groupCount": "{{count}} Gruppen",
       "needsSetup": "Noch einzurichten",
       "partOf": "Teil von {{module}}",
       "plugin": "Plugin",
-      "notInSidebar": "Nicht in der Seitenleiste",
       "about": {
         "dashboard": "Übersicht und eigene Widgets",
         "settings": "Verein, Module, Apps und Domains",

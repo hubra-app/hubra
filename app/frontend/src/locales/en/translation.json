@@ -2570,16 +2570,15 @@
       "dismiss": "Hide notice"
     },
     "more": {
-      "emptyTitle": "Nothing here yet",
-      "emptyDesc": "Modules appear here as soon as your club switches them on.",
-      "desc": "All of your club's modules and plugins. A card takes you straight to its page.",
+      "emptyTitle": "Everything is in your sidebar",
+      "emptyDesc": "Pages you move out of the sidebar show up here. Use Customise sidebar to choose which ones.",
+      "desc": "The pages that are not in your sidebar. A card takes you straight to its page.",
       "openApplications": "{{count}} open applications",
       "noApplications": "No open applications",
       "groupCount": "{{count}} groups",
       "needsSetup": "Needs setting up",
       "partOf": "Part of {{module}}",
       "plugin": "Plugin",
-      "notInSidebar": "Not in the sidebar",
       "about": {
         "dashboard": "Overview and your own widgets",
         "settings": "Club, modules, apps and domains",

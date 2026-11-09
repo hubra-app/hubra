@@ -22,16 +22,15 @@ const PAGE_INFO: Record<string, string> = {
 }
 
 /**
- * "Weitere": a card for every module and plugin page the person may open,
- * grouped by area like the sidebar. Each card leads straight to its page,
- * including the pages someone took out of the sidebar.
+ * "Weitere": a card for every page the person may open that is not in their
+ * sidebar, grouped by area like the sidebar. Pages already in the sidebar
+ * don't repeat here, so nothing is out of reach and nothing shows twice.
  */
 export function MoreScreen() {
   const { t } = useT()
   const { currentUser, hasPermission } = useAuth()
   const { moduleList } = useData()
-  const { cards, more } = useSidebarNav()
-  const hidden = new Set(more.map((item) => item.path))
+  const { cards } = useSidebarNav()
   const modules = new Map(moduleList.map((m) => [m.code, m]))
   // The first page of a module speaks for it; its other pages say whose they are.
   const firstOf = new Map<string, string>()
@@ -108,7 +107,6 @@ export function MoreScreen() {
                       tabs={(item.tabs ?? [])
                         .filter((tab) => !tab.perms.length || tab.perms.some(hasPermission))
                         .map((tab) => tab.label)}
-                      hidden={hidden.has(item.path)}
                     />
                   )
                 })}
@@ -130,13 +128,11 @@ function ModuleCard({
   item,
   status,
   plugin,
-  hidden,
   tabs,
 }: {
   item: NavItem
   status: Status | null
   plugin: boolean
-  hidden: boolean
   /** The pages that sit on this one as tabs. */
   tabs: string[]
 }) {
@@ -198,11 +194,6 @@ function ModuleCard({
           {tabs.length > 0 && (
             <Text fz="xs" c="dimmed" mt={4} truncate>
               {t('shell.more.withTabs', { pages: tabs.join(' · ') })}
-            </Text>
-          )}
-          {hidden && (
-            <Text fz="xs" c="dimmed" mt={4}>
-              {t('shell.more.notInSidebar')}
             </Text>
           )}
         </Box>
