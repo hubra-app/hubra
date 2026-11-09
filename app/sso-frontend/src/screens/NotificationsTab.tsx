@@ -41,6 +41,7 @@ import { DiscordDmCard } from '@/components/DiscordDmCard'
 import { getLang, tr } from '@/lang'
 import * as authApi from '@/api/auth'
 import type { AccountNotification } from '@/api/auth'
+import { NotifySettings } from './NotifySettings'
 
 type List = Awaited<ReturnType<typeof authApi.getNotifications>>
 
@@ -65,8 +66,27 @@ function when(iso: string): string {
   })
 }
 
-/** The person's notifications from all their clubs. */
+/** The notifications from all clubs, and per club what the person wants. */
 export function NotificationsTab() {
+  const [view, setView] = useState<'inbox' | 'settings'>('inbox')
+  return (
+    <Stack gap="md">
+      <SegmentedControl
+        value={view}
+        onChange={(v) => setView(v as 'inbox' | 'settings')}
+        data={[
+          { value: 'inbox', label: tr('Posteingang', 'Inbox') },
+          { value: 'settings', label: tr('Einstellungen', 'Settings') },
+        ]}
+        style={{ alignSelf: 'flex-start' }}
+      />
+      {view === 'inbox' ? <NotificationInbox /> : <NotifySettings />}
+    </Stack>
+  )
+}
+
+/** The person's notifications from all their clubs. */
+function NotificationInbox() {
   const { urls, notify } = useSso()
   const navigate = useNavigate()
   const queryClient = useQueryClient()

@@ -53,6 +53,7 @@ _ACCOUNT_FIELDS = (
     "phone",
     "mobile",
     "birthday",
+    "gender",
     "address_street",
     "address_house_no",
     "address_postal_code",
