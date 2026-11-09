@@ -24,6 +24,7 @@ from flask_jwt_extended import (
     set_refresh_cookies,
 )
 from sqlalchemy import func, select
+from sqlalchemy.exc import SQLAlchemyError
 
 from hubra.core.auth.account_token import require_step_up
 from hubra.core.permissions import (
@@ -1902,14 +1903,26 @@ def _platform_reason(access: str, body: dict) -> str | None:
 
 
 def _tell_owners(title: str, msg: str) -> None:
-    """In-app notice to the club's owners (search path already set)."""
+    """In-app notice to the club's owners (search path already set).
+
+    Written right here, in a savepoint. A club schema that lacks its own
+    notifications table (made before the table existed and not caught up by
+    ``flask sync-tenant-schemas``) resolves it to public, whose members are
+    not the club's: the insert fails with a foreign key error, which used to
+    fail the whole change (500). A notice that can't be written is logged;
+    it never stops the admin change itself.
+    """
     from hubra.core.notifications.services import notify_member
 
-    for m in db.session.scalars(
-        select(Member).where(Member.archived_at.is_(None))
-    ).all():
-        if _admin_level(m) == "owner":
-            notify_member(m.id, "warning", title, msg)
+    try:
+        with db.session.begin_nested():
+            for m in db.session.scalars(
+                select(Member).where(Member.archived_at.is_(None))
+            ).all():
+                if _admin_level(m) == "owner":
+                    notify_member(m.id, "warning", title, msg)
+    except SQLAlchemyError:
+        current_app.logger.warning("club_owner_notice_failed", exc_info=True)
 
 
 def _club_admin_access(tenant: Tenant, user: User) -> str:
