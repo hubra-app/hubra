@@ -96,7 +96,7 @@ the club first.
 2. `CORS_ORIGINS`: add `https://support.hubra.club` (secret `hubra-env`),
    then restart the backends. Without it the browser blocks every API call
    from the support site.
-3. Manage › Reports & ideas › Support site: set the address
+3. Manage › Platform › Support site: set the address
    (`support.url`, starts out as `SUPPORT_BASE_URL`). Answers to reports and
    the password-changed mail then link to the support site; empty keeps the
    old links to the club app.

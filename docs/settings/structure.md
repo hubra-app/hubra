@@ -16,7 +16,7 @@ belongs to no single page, and lists the rest.
 
 - **Club app**
   - *Einstellungen* (sidebar) holds what is about the whole club: Verein,
-    Mitgliedschaft, Module (switch on/off), Verbundene Apps, API, Domains,
+    Mitgliedschaft, Module (switch on/off), Verbundene Apps, API & Webhooks, Domains,
     Verschlüsselung, Hubra-Abo, Rollen, Protokoll, Erweitert.
   - A module's own settings are edited in one place only. When the module has
     a settings page of its own (Finanzen › Einstellungen), that is the place,
@@ -42,15 +42,15 @@ belongs to no single page, and lists the rest.
 | Einstellungen › Bank & QR-Rechnung | IBAN, creditor for QR bills | club `setting` table | moves to Finanzen › Bank & QR when Finance is on (redirect) |
 | Einstellungen › Module | switch modules on/off; per-module form in a dialog | `TenantFeature.config` | finance, events, posts, polls and plugin fields |
 | Einstellungen › Verbundene Apps | Discord and other connections; plugin slot `apps.connection` | plugin tables | |
-| Einstellungen › API & Apps | API access switches, sign-in apps, webhooks | core tables | name is close to "Verbundene Apps" (see questions) |
+| Einstellungen › API & Webhooks | API access switches, sign-in apps, webhooks | core tables | was "API & Apps" |
 | Einstellungen › Verschlüsselung | club backup key | | |
 | Einstellungen › Domains | own domains | | |
 | Einstellungen › Hubra-Abo | plan, add-ons, licences | | |
 | Einstellungen › Rollen / Protokoll | roles; audit log | | own URLs (/app/system, /app/audit-log) shown as tabs |
 | Einstellungen › Erweitert | raw key/value store | club `setting` table | |
 | Finanzen › Einstellungen | fee schedule, invoices and reminders, plugin cards (`finance.settings`, e.g. monthly statement), external parties, Bank & QR | `TenantFeature.config["finance"]` | **was also editable in the Module dialog** (fixed, below) |
-| Finanzen › Budget & Beiträge › Beitragsgrundlage | fee basis source, extra, manual value | `TenantFeature.config["finance"]` | finance setting on a planning tab |
-| Events, Posts, Polls | notify members, reminder hours, event types | `TenantFeature.config` | only in the Module dialog; the pages have no link |
+| Finanzen › Einstellungen › Beitragsgrundlage | fee basis source, extra, manual value | `TenantFeature.config["finance"]` | was under Budget & Beiträge |
+| Events, Posts, Polls | notify members, reminder hours, event types | `TenantFeature.config` | Module dialog, opened by the page's Einstellungen button |
 | Mail › Adressen › dialog | one address: forwarding, aliases, prefix | mail tables | per thing, stays |
 | Mein Konto › Einstellungen | personal: profile in the club, membership, notifications | user tables | personal, stays |
 
@@ -98,23 +98,23 @@ so links in old Discord messages and mails keep working.
 - Club app: `/app/settings/modules?module=<code>` opens a module's settings,
   so pages can link to their own settings.
 
-## Questions (not done: they change behaviour or need plugin releases)
+## Second round (Mike, 2026-11-09: "Sounds good")
 
-1. **Messengers and Assistant** link to `/app/settings/modules`. Point them at
-   `?module=messengers` / `?module=assistant` (plugin release each).
-2. **Events, Posts, Polls**: add an Einstellungen link or tab on their pages
-   that opens their module settings.
-3. **Posteingang (imap-inbox)**: move the mailbox dialog into a Posteingang ›
-   Einstellungen tab (plugin release).
-4. **Payments**: split `/app/payments` into the payment list and a Zahlungen ›
-   Einstellungen tab for the Stripe account and fees (plugin release).
-5. **Fee basis** sits under Finanzen › Budget & Beiträge › Beitragsgrundlage; move it to
-   Finanzen › Einstellungen?
-6. **Naming**: "API & Apps" next to "Verbundene Apps" is confusing; rename to
-   "API & Webhooks"?
-7. **Legal links** (privacy, terms, imprint) sit on Manage › Zahlungen, but
-   are used by sign-up and every footer. A small Manage page "Plattform"
-   (legal links, support site address) would fit better.
-8. **Plugin manifest**: let a plugin declare its own settings page
-   (`settings_page=`), so Einstellungen › Module links there the way it does
-   for Finance, without a list in core.
+All eight questions were answered yes:
+
+1. Messengers and Assistant link to `?module=messengers` / `?module=assistant`
+   (plugin PRs, release each).
+2. Events, Posts, Polls: an "Einstellungen" button in the page head opens
+   their module settings (admins with `modules.modules.write`).
+3. Posteingang: the mailbox dialog becomes a Posteingang › Einstellungen tab
+   (plugin PR).
+4. Payments: `/app/payments` splits into the payment list and a Zahlungen ›
+   Einstellungen tab (plugin PR).
+5. Beitragsgrundlage moved to Finanzen › Einstellungen (after Abrechnung).
+   `/app/finance/fee-basis` still opens it.
+6. "API & Apps" is now "API & Webhooks".
+7. Manage › Plattform (`/app/platform/general`) holds the legal links and the
+   support site address. Zahlungen and Meldungen & Ideen no longer show them.
+8. A module manifest may name `settings_page="/app/…"`. Einstellungen › Module
+   then opens that page (button and `?module=<code>`) instead of the form.
+   Finance uses it; plugins can too.

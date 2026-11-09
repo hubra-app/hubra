@@ -330,7 +330,7 @@ export function OAuthApps() {
             <Title order={3}>{tr('Apps', 'Apps')}</Title>
             <Text size="xs" c="dimmed" maw={720}>
               {tr(
-                'Apps, die mit der Erlaubnis einer Person für sie lesen (oder ändern) dürfen. Die Person wählt den Verein und wie lange, und beendet den Zugang unter Mein Konto › Apps; Vereinsadmins sehen ihn unter Einstellungen › API & Apps.',
+                'Apps, die mit der Erlaubnis einer Person für sie lesen (oder ändern) dürfen. Die Person wählt den Verein und wie lange, und beendet den Zugang unter Mein Konto › Apps; Vereinsadmins sehen ihn unter Einstellungen › API & Webhooks.',
                 'Apps that may read (or change) for a person with their consent. The person picks the club and for how long, and ends it under My account › Apps; club admins see it under Settings › API & apps.',
               )}
             </Text>

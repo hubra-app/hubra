@@ -87,6 +87,13 @@ never sent back to the browser, are stored encrypted (`enc:` + Fernet), and
 saving an empty secret keeps the stored one. The settings page renders a
 form from the schema.
 
+`settings_page=` names the module's own settings page in the club app
+(`/app/finance/settings`), for a module whose settings need more than the
+generic form. Einstellungen › Module then links there instead of opening the
+form. Put that page in the module's last tab, "Einstellungen"; any page can
+also open the generic form with `/app/settings/modules?module=<code>`
+(docs/settings/structure.md).
+
 ## Connected apps
 
 `apps=` lists outside services a club can connect through the module

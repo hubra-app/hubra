@@ -57,7 +57,7 @@ token; without one, Hubra answers `403 API_TOKEN_SCOPE` and Claude says so.
 ## Club data needs the club's consent
 
 A club's data only reaches the connector when a club admin switches on
-**AI assistants** (Einstellungen › API & Apps in the club app, or
+**AI assistants** (Einstellungen › API & Webhooks in the club app, or
 `PUT /api/v1/app/api-tokens/settings {"aiAllowed": true}`; off by default). The connector sends
 `X-Hubra-Client: mcp` on every call, and the backend refuses a club or
 personal token with that header while the switch is off

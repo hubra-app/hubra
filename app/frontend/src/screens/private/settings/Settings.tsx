@@ -47,7 +47,7 @@ const TABS = [
     label: 'Verbundene Apps',
     Component: AppsTab,
   },
-  { id: 'api', labelKey: 'settings.tabs.api', label: 'API & Apps', Component: ApiAccessTab },
+  { id: 'api', labelKey: 'settings.tabs.api', label: 'API & Webhooks', Component: ApiAccessTab },
   {
     id: 'encryption',
     labelKey: 'settings.tabs.encryption',

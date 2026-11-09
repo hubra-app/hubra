@@ -97,7 +97,7 @@ sign-in. A person has at most 20 app sign-ins.
 
 * **SSO › Mein Konto › Apps**: the person's apps, per club, with last use;
   "Beenden" ends one.
-* **Club app › Einstellungen › API & Apps** (admins): every token and app
+* **Club app › Einstellungen › API & Webhooks** (admins): every token and app
   sign-in of the club, each can be ended; the switches for members' own
   access and for AI assistants.
 * **manage › API-Tokens**: "Alle Tokens" lists app sign-ins too (kind
