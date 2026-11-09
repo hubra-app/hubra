@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { ModuleInfo, ModuleNavItem } from '@/api/modules'
 import {
+  addNavCategory,
   buildNav,
   getParentPath,
   moveNavEntry,
   MORE_PATH,
+  removeNavCategory,
+  renameNavSection,
   toggleNavMore,
   type NavSection,
 } from './nav'
@@ -61,16 +64,19 @@ describe('buildNav', () => {
     expect(nav[nav.length - 1].label).toBe('')
   })
 
-  it('has a card for every page, also those out of the sidebar', () => {
-    const prefs = { pinned: ['/app/groups'], hidden: ['/app/inbox'] }
+  it('has a card only for the pages out of the sidebar', () => {
+    const prefs = { pinned: ['/app/groups'], hidden: ['/app/inbox', '/app/members'] }
     const { nav, cards } = buildNav(counts, t, [members, groups, inbox, account], () => true, prefs)
     expect(paths(nav)).not.toContain('/app/inbox')
-    // In the areas the pages came with; the personal pages have none.
+    // In the areas the pages came with; pages in the sidebar (pinned ones
+    // too) and the personal pages have none.
     expect(cards.map((s) => s.section)).toEqual(['workspace', 'plugins'])
-    expect(paths(cards)).toEqual(['/app/members', '/app/groups', '/app/inbox'])
+    expect(paths(cards)).toEqual(['/app/members', '/app/inbox'])
     expect(cards[0].items[0].module).toBe('members')
     // A card names the pages that sit on it as tabs.
     expect(cards[0].items[0].tabs).toEqual([{ label: '/app/members/tiers', perms: ['tiers.tiers.read'] }])
+    // With everything in the sidebar, there are no cards.
+    expect(buildNav(counts, t, [members, groups, inbox, account]).cards).toEqual([])
   })
 
   it('moves hidden entries to Weitere and pinned ones to the top', () => {
@@ -163,6 +169,46 @@ describe('buildNav', () => {
     // Moving back into its own section drops the override.
     prefs = moveNavEntry(prefs, built.groups, built.homes, '/app/groups', -1)
     expect(prefs.sections?.['/app/groups']).toBeUndefined()
+  })
+
+  it('has categories of the person\'s own and renamed headings', () => {
+    const all = [members, groups, codes]
+    let prefs = addNavCategory({ pinned: [], hidden: [] }, ' Kasse ')
+    const id = prefs.categories![0].id
+    expect(prefs.categories).toEqual([{ id, label: 'Kasse' }])
+    let built = buildNav(counts, t, all, () => true, prefs)
+    // Empty: only in the customise dialog, after the built-in areas.
+    expect(built.nav.map((s) => s.section)).toEqual(['workspace', 'operations', 'all'])
+    expect(built.groups.map((g) => [g.section, g.custom ?? false])).toEqual([
+      ['workspace', false],
+      ['operations', false],
+      [id, true],
+    ])
+
+    // Down past the end of Betrieb: into the new category.
+    prefs = moveNavEntry(prefs, built.groups, built.homes, '/app/operations/codes', 1)
+    expect(prefs.sections).toEqual({ '/app/operations/codes': id })
+    built = buildNav(counts, t, all, () => true, prefs)
+    expect(built.nav.map((s) => [s.section, s.label])).toEqual([
+      ['workspace', 'shell.sections.workspace'],
+      [id, 'Kasse'],
+      ['all', ''],
+    ])
+
+    // Renamed: a built-in heading and the category.
+    prefs = renameNavSection(prefs, 'workspace', 'Vorstand')
+    prefs = renameNavSection(prefs, id, 'Codes & Co')
+    built = buildNav(counts, t, all, () => true, prefs)
+    expect(built.nav.map((s) => s.label)).toEqual(['Vorstand', 'Codes & Co', ''])
+    // An empty name gives a built-in heading its own back.
+    expect(renameNavSection(prefs, 'workspace', ' ').labels).toEqual({})
+
+    // Removed: its pages go back to their own areas.
+    prefs = removeNavCategory(prefs, id)
+    expect(prefs.categories).toEqual([])
+    expect(prefs.sections).toEqual({})
+    built = buildNav(counts, t, all, () => true, prefs)
+    expect(paths(built.nav)).toContain('/app/operations/codes')
   })
 })
 

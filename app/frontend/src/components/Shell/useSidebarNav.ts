@@ -6,7 +6,7 @@ import { usePlugins } from '@/plugins/store'
 import { useNavCounts } from '@/data/lists'
 import { qk } from '@/data/keys'
 import { getNavPrefs, saveNavPrefs } from '@/api/auth'
-import { buildNav, getParentPath, MORE_PATH, navPaths, type NavPrefs } from './nav'
+import { buildNav, getParentPath, MORE_PATH, NO_PREFS, navPaths, type NavPrefs } from './nav'
 
 /** The person's pinned, hidden and reordered sidebar entries, saved on their account. */
 export function useNavPrefs() {
@@ -26,7 +26,7 @@ export function useNavPrefs() {
     },
   })
   return {
-    prefs: data ?? { pinned: [], hidden: [], order: [], sections: {} },
+    prefs: data ?? NO_PREFS,
     save: save.mutate,
   }
 }

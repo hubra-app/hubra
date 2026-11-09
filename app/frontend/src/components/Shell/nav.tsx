@@ -132,27 +132,53 @@ export const SECTION_ORDER = [
   'me',
 ]
 
-/** "Weitere": a card for every module and plugin, sidebar or not. */
+/** "Weitere": a card for every page that is not in the sidebar. */
 export const MORE_PATH = '/app/more'
 
 /** Sections a person can move entries between (besides "Weitere"). */
 const MOVABLE_SECTIONS = ['workspace', 'activities', 'operations', 'plugins', 'system']
 
+/** Headings a person may rename; their own categories they may rename too. */
+const RENAMABLE_SECTIONS = ['favourites', ...MOVABLE_SECTIONS]
+
+/** A category the person made for their sidebar (id `c…`). */
+export type NavCategory = { id: string; label: string }
+
 /**
  * The person's own sidebar: entries pinned to the top (in this order), entries
- * put under "Weitere" (`hidden`), the order of entries, and entries moved to
- * another section than their module's.
+ * put under "Weitere" (`hidden`), the order of entries, entries moved to
+ * another section than their module's (a built-in area or one of their own
+ * `categories`), and their own names for the headings (`labels`).
  */
 export type NavPrefs = {
   pinned: string[]
   hidden: string[]
   order?: string[]
   sections?: Record<string, string>
+  categories?: NavCategory[]
+  labels?: Record<string, string>
 }
-const NO_PREFS: NavPrefs = { pinned: [], hidden: [], order: [], sections: {} }
+export const NO_PREFS: NavPrefs = {
+  pinned: [],
+  hidden: [],
+  order: [],
+  sections: {},
+  categories: [],
+  labels: {},
+}
 
-/** One group of entries in the customise dialog, as the sidebar shows them. */
-export type NavGroup = { section: string; label: string; items: NavItem[] }
+/**
+ * One group of entries in the customise dialog, as the sidebar shows them.
+ * `renamable` headings can get the person's own name; `custom` ones are
+ * categories the person made and can remove.
+ */
+export type NavGroup = {
+  section: string
+  label: string
+  items: NavItem[]
+  renamable?: boolean
+  custom?: boolean
+}
 
 /** Where each entry sits by default, before the person moved it. */
 export type NavHomes = Record<string, string>
@@ -228,9 +254,9 @@ function navEntries(
 /**
  * The sidebar a person sees: what they may open, their pinned entries on top
  * as "Favoriten", entries in the area they put them in, and one "Weitere" row
- * that leads to a card for every page. `more` lists the pages a person took
- * out of the sidebar, which only "Weitere" shows; `cards` is every page in
- * sidebar order, grouped by area, for the cards.
+ * that leads to the pages that are not in the sidebar. `more` lists the pages
+ * a person took out of the sidebar, which only "Weitere" shows; `cards` is the
+ * same pages in sidebar order, grouped by the area they came from.
  */
 export function buildNav(
   c: NavCounts,
@@ -258,13 +284,20 @@ export function buildNav(
   }
   const hidden = new Set(prefs.hidden)
   const moved = prefs.sections ?? {}
+  const categories = prefs.categories ?? []
+  const own = new Set(categories.map((c) => c.id))
+  const label = (section: string) =>
+    prefs.labels?.[section] ??
+    categories.find((c) => c.id === section)?.label ??
+    t(`shell.sections.${section}`)
   const homes: NavHomes = {}
   const placed = visible.map(({ item, section }, i) => {
     homes[item.path] = section
     let where = section
     if (section !== 'me') {
       if (hidden.has(item.path)) where = 'more'
-      else if (MOVABLE_SECTIONS.includes(moved[item.path])) where = moved[item.path]
+      else if (MOVABLE_SECTIONS.includes(moved[item.path]) || own.has(moved[item.path]))
+        where = moved[item.path]
     }
     return { item, section: where, i }
   })
@@ -287,12 +320,18 @@ export function buildNav(
   if (entries.some((e) => e.section !== 'me')) {
     add('all', { path: MORE_PATH, label: t('shell.nav.more'), icon: <IconDots size={24} /> })
   }
-  const rank = (section: string) => SECTION_ORDER.indexOf(section) + 1 || 99
+  // The person's own categories come after the built-in areas, in the order
+  // they made them.
+  const rank = (section: string) => {
+    const i = categories.findIndex((c) => c.id === section)
+    if (i >= 0) return SECTION_ORDER.indexOf('system') + 1 + (i + 1) / (categories.length + 1)
+    return SECTION_ORDER.indexOf(section) + 1 || 99
+  }
   const nav = [...sections.entries()]
     .sort(([a], [b]) => rank(a) - rank(b))
     .map(([section, list]) => ({
       section,
-      label: section === 'all' ? '' : t(`shell.sections.${section}`),
+      label: section === 'all' ? '' : label(section),
       items: list,
     }))
   // In sidebar order, with the "Weitere" pages last.
@@ -302,35 +341,42 @@ export function buildNav(
     .sort((a, b) => rank(a.e.section) - rank(b.e.section) || a.i - b.i)
     .map(({ e }) => e)
   const customizable = ordered.map((e) => e.item)
-  // The cards follow the areas the pages came with, so a page someone took
-  // out of the sidebar still sits next to its neighbours.
+  // Only pages that are not in the sidebar get a card, grouped by the area
+  // they came with, so a page someone took out still sits next to its
+  // neighbours.
   const cards: NavSection[] = []
   const byHome = entries
-    .filter((e) => e.section !== 'me')
+    .filter((e) => more.includes(e.item))
     .map((e, i) => ({ e, i, home: homes[e.item.path] }))
     .sort((a, b) => rank(a.home) - rank(b.home) || a.i - b.i)
   for (const { e, home } of byHome) {
     const last = cards[cards.length - 1]
     if (last?.section === home) last.items.push(e.item)
-    else cards.push({ section: home, label: t(`shell.sections.${home}`), items: [e.item] })
+    else cards.push({ section: home, label: label(home), items: [e.item] })
   }
   // The customise dialog shows the sidebar as it is: favourites, each
-  // section, then "Weitere".
+  // section, the person's own categories (empty ones too, so entries can be
+  // moved into them), then "Weitere".
   const groups: NavGroup[] = []
+  const group = (section: string, items: NavItem[]): NavGroup => ({
+    section,
+    label: section === 'more' ? t('shell.nav.more') : label(section),
+    items,
+    renamable: RENAMABLE_SECTIONS.includes(section) || own.has(section),
+    custom: own.has(section),
+  })
   const pinnedItems = pinned.map((path) => entries.find((e) => e.item.path === path)!.item)
-  if (pinnedItems.length) {
-    groups.push({ section: 'favourites', label: t('shell.sections.favourites'), items: pinnedItems })
-  }
+  if (pinnedItems.length) groups.push(group('favourites', pinnedItems))
   for (const e of ordered) {
     if (pinned.includes(e.item.path)) continue
     const last = groups[groups.length - 1]
     if (last?.section === e.section) last.items.push(e.item)
-    else
-      groups.push({
-        section: e.section,
-        label: e.section === 'more' ? t('shell.nav.more') : t(`shell.sections.${e.section}`),
-        items: [e.item],
-      })
+    else groups.push(group(e.section, [e.item]))
+  }
+  for (const c of categories) {
+    if (groups.some((g) => g.section === c.id)) continue
+    const at = groups.findIndex((g) => g.section !== 'favourites' && rank(g.section) > rank(c.id))
+    groups.splice(at < 0 ? groups.length : at, 0, group(c.id, []))
   }
   return { nav, more, cards, customizable, groups, homes }
 }
@@ -346,6 +392,47 @@ function placeIn(prefs: NavPrefs, homes: NavHomes, path: string, section: string
   if (homes[path] === section) delete sections[path]
   else sections[path] = section
   return { ...prefs, hidden, sections }
+}
+
+/** Prefs with a new, empty category of the person's own at the end. */
+export function addNavCategory(prefs: NavPrefs, label: string): NavPrefs {
+  const taken = new Set((prefs.categories ?? []).map((c) => c.id))
+  let id = `c${Date.now().toString(36)}`
+  while (taken.has(id)) id = `c${Math.random().toString(36).slice(2, 10)}`
+  return { ...prefs, categories: [...(prefs.categories ?? []), { id, label: label.trim() }] }
+}
+
+/**
+ * Prefs with `section` (a built-in heading or one of the person's own
+ * categories) renamed. An empty name gives a built-in heading its own name
+ * back.
+ */
+export function renameNavSection(prefs: NavPrefs, section: string, label: string): NavPrefs {
+  const name = label.trim()
+  const categories = prefs.categories ?? []
+  if (categories.some((c) => c.id === section)) {
+    if (!name) return prefs
+    return {
+      ...prefs,
+      categories: categories.map((c) => (c.id === section ? { ...c, label: name } : c)),
+    }
+  }
+  const labels = { ...(prefs.labels ?? {}) }
+  if (name) labels[section] = name
+  else delete labels[section]
+  return { ...prefs, labels }
+}
+
+/** Prefs without the category `id`; its entries go back to their own areas. */
+export function removeNavCategory(prefs: NavPrefs, id: string): NavPrefs {
+  const sections = Object.fromEntries(
+    Object.entries(prefs.sections ?? {}).filter(([, section]) => section !== id),
+  )
+  return {
+    ...prefs,
+    sections,
+    categories: (prefs.categories ?? []).filter((c) => c.id !== id),
+  }
 }
 
 /** Prefs that keep `paths` in this order, in front of everything else. */

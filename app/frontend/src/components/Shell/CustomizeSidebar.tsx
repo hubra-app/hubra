@@ -1,17 +1,28 @@
-import { useSyncExternalStore } from 'react'
-import { ActionIcon, Box, Button, Group, Modal, Stack, Text, Tooltip } from '@mantine/core'
+import { useState, useSyncExternalStore } from 'react'
+import { ActionIcon, Box, Button, Group, Modal, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import {
   IconArrowDown,
   IconArrowUp,
   IconEye,
   IconEyeOff,
+  IconPencil,
+  IconPlus,
   IconStar,
   IconStarFilled,
+  IconTrash,
 } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { useNavPrefs, useSidebarNav } from './useSidebarNav'
-import { moveNavEntry, toggleNavMore } from './nav'
+import {
+  addNavCategory,
+  moveNavEntry,
+  NO_PREFS,
+  removeNavCategory,
+  renameNavSection,
+  toggleNavMore,
+  type NavGroup,
+} from './nav'
 import {
   customizeSidebarOpen,
   setCustomizeSidebarOpen,
@@ -21,6 +32,7 @@ import {
 /**
  * Pin entries to the top of the sidebar, move them up and down (past the
  * end of a section into the next one), or put them under "Weitere" and back.
+ * Headings can be renamed, and the person can add categories of their own.
  * Changes are saved on the account at once. Arrow buttons rather than drag
  * and drop, so it works the same with a finger on a phone.
  */
@@ -31,6 +43,21 @@ export function CustomizeSidebarModal() {
   const { groups, homes } = useSidebarNav()
   const { prefs, save } = useNavPrefs()
   const iconSize = phone ? 'lg' : 'md'
+  // The heading being renamed, and the name typed so far.
+  const [editing, setEditing] = useState<{ section: string; label: string } | null>(null)
+
+  const finishRename = () => {
+    if (editing) save(renameNavSection(prefs, editing.section, editing.label))
+    setEditing(null)
+  }
+
+  const addCategory = () => {
+    const label = t('shell.customize.newCategory')
+    const next = addNavCategory(prefs, label)
+    save(next)
+    const added = next.categories![next.categories!.length - 1]
+    setEditing({ section: added.id, label })
+  }
 
   const togglePin = (path: string) => {
     // A pinned entry is shown under Favoriten, so it leaves Weitere.
@@ -52,7 +79,9 @@ export function CustomizeSidebarModal() {
     prefs.pinned.length +
       prefs.hidden.length +
       (prefs.order?.length ?? 0) +
-      Object.keys(prefs.sections ?? {}).length >
+      Object.keys(prefs.sections ?? {}).length +
+      (prefs.categories?.length ?? 0) +
+      Object.keys(prefs.labels ?? {}).length >
     0
 
   return (
@@ -69,17 +98,22 @@ export function CustomizeSidebarModal() {
       <Stack gap="md">
         {groups.map((group, g) => (
           <Box key={group.section} data-testid="customize-group">
-            <Text
-              fz={13}
-              fw={700}
-              c="gray.6"
-              tt="uppercase"
-              px={8}
-              mb={4}
-              style={{ letterSpacing: '0.08em' }}
-            >
-              {group.label}
-            </Text>
+            <GroupHeading
+              group={group}
+              editing={editing?.section === group.section ? editing.label : null}
+              iconSize={iconSize}
+              phone={!!phone}
+              onEdit={() => setEditing({ section: group.section, label: group.label })}
+              onChange={(label) => setEditing({ section: group.section, label })}
+              onDone={finishRename}
+              onCancel={() => setEditing(null)}
+              onRemove={() => save(removeNavCategory(prefs, group.section))}
+            />
+            {group.items.length === 0 && (
+              <Text size="sm" c="dimmed" px={8} py={4}>
+                {t('shell.customize.emptyCategory')}
+              </Text>
+            )}
             <Stack gap={2}>
               {group.items.map((item, index) => {
                 const pinned = prefs.pinned.includes(item.path)
@@ -176,17 +210,120 @@ export function CustomizeSidebarModal() {
           </Box>
         ))}
       </Stack>
+      <Button
+        variant="default"
+        leftSection={<IconPlus size={16} />}
+        mt="md"
+        onClick={addCategory}
+      >
+        {t('shell.customize.addCategory')}
+      </Button>
       <Group justify="space-between" mt="lg">
         <Button
           variant="subtle"
           color="gray"
           disabled={!touched}
-          onClick={() => save({ pinned: [], hidden: [], order: [], sections: {} })}
+          onClick={() => {
+            setEditing(null)
+            save(NO_PREFS)
+          }}
         >
           {t('shell.customize.reset')}
         </Button>
         <Button onClick={() => setCustomizeSidebarOpen(false)}>{t('shell.customize.done')}</Button>
       </Group>
     </Modal>
+  )
+}
+
+/** A section heading, with rename (and remove for the person's own categories). */
+function GroupHeading({
+  group,
+  editing,
+  iconSize,
+  phone,
+  onEdit,
+  onChange,
+  onDone,
+  onCancel,
+  onRemove,
+}: {
+  group: NavGroup
+  /** The name typed so far while renaming, else null. */
+  editing: string | null
+  iconSize: 'md' | 'lg'
+  phone: boolean
+  onEdit: () => void
+  onChange: (label: string) => void
+  onDone: () => void
+  onCancel: () => void
+  onRemove: () => void
+}) {
+  const { t } = useT()
+  if (editing !== null) {
+    return (
+      <TextInput
+        size="xs"
+        px={8}
+        mb={4}
+        autoFocus
+        maxLength={40}
+        value={editing}
+        aria-label={t('shell.customize.categoryName')}
+        onChange={(e) => onChange(e.currentTarget.value)}
+        onBlur={onDone}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') onDone()
+          if (e.key === 'Escape') {
+            e.stopPropagation()
+            onCancel()
+          }
+        }}
+      />
+    )
+  }
+  const renameLabel = t('shell.customize.rename')
+  const removeLabel = t('shell.customize.removeCategory')
+  return (
+    <Group justify="space-between" wrap="nowrap" px={8} mb={4} gap={4}>
+      <Text
+        fz={13}
+        fw={700}
+        c="gray.6"
+        tt="uppercase"
+        truncate
+        style={{ letterSpacing: '0.08em' }}
+      >
+        {group.label}
+      </Text>
+      <Group gap={2} wrap="nowrap">
+        {group.renamable && (
+          <Tooltip label={renameLabel} disabled={phone}>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size={iconSize}
+              aria-label={`${renameLabel}: ${group.label}`}
+              onClick={onEdit}
+            >
+              <IconPencil size={16} />
+            </ActionIcon>
+          </Tooltip>
+        )}
+        {group.custom && (
+          <Tooltip label={removeLabel} disabled={phone}>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size={iconSize}
+              aria-label={`${removeLabel}: ${group.label}`}
+              onClick={onRemove}
+            >
+              <IconTrash size={16} />
+            </ActionIcon>
+          </Tooltip>
+        )}
+      </Group>
+    </Group>
   )
 }
