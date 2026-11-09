@@ -811,3 +811,91 @@ class TestScopedBackupAPI:
             f"{self.URL}{record.id}/restore", json={"confirm": club.slug}, headers=auth_headers
         )
         assert resp.status_code == 403
+
+
+class _FakeRedis:
+    def __init__(self):
+        self.data = {}
+
+    def get(self, key):
+        return self.data.get(key)
+
+    def set(self, key, value, ex=None):
+        self.data[key] = value
+
+    def delete(self, key):
+        self.data.pop(key, None)
+
+
+class TestBackupConfigCache:
+    """The backups page reads the S3 check the beat task cached."""
+
+    @pytest.fixture(autouse=True)
+    def _restore_config(self, app, monkeypatch):
+        for key in ("ENDPOINT", "BUCKET", "ACCESS_KEY", "SECRET_KEY"):
+            monkeypatch.setitem(app.config, f"BACKUP_S3_{key}", "")
+
+    def _configure(self, app, bucket="test-bucket"):
+        app.config["BACKUP_S3_ENDPOINT"] = "https://s3.test.example.com"
+        app.config["BACKUP_S3_BUCKET"] = bucket
+        app.config["BACKUP_S3_ACCESS_KEY"] = "test-key"
+        app.config["BACKUP_S3_SECRET_KEY"] = "test-secret"
+
+    def test_page_reads_the_cached_check(self, app, db, mock_s3_client):
+        from hubra.core.services.backup import BackupService
+        from hubra.core.tasks.backup_tasks import check_backup_config_task
+
+        self._configure(app)
+        fake = _FakeRedis()
+        with (
+            patch("hubra.core.redis_client.get_redis_client", return_value=fake),
+            patch(
+                "hubra.core.services.backup._get_s3_client",
+                return_value=mock_s3_client,
+            ) as client,
+        ):
+            assert check_backup_config_task.run() == {"s3_reachable": True}
+            assert client.call_count == 1
+            status = BackupService.get_config_status()
+            assert status["s3_reachable"] is True and status["checked_at"]
+            assert "s3_fingerprint" not in status
+            assert client.call_count == 1  # no S3 call for the page
+
+            BackupService.get_config_status(refresh=True)
+            assert client.call_count == 2
+
+            # Other S3 settings: the cached answer is not theirs.
+            self._configure(app, bucket="other-bucket")
+            BackupService.get_config_status()
+            assert client.call_count == 3
+
+    def test_stale_cache_is_checked_live(self, app, db, mock_s3_client):
+        import json
+        import time
+
+        from hubra.core.services import backup
+
+        self._configure(app)
+        fake = _FakeRedis()
+        fake.data[backup._CONFIG_STATUS_KEY] = json.dumps(
+            {
+                "s3_reachable": False,
+                "checked_at": time.time() - backup.CONFIG_STATUS_MAX_AGE - 5,
+            }
+        )
+        with (
+            patch("hubra.core.redis_client.get_redis_client", return_value=fake),
+            patch(
+                "hubra.core.services.backup._get_s3_client",
+                return_value=mock_s3_client,
+            ),
+        ):
+            assert backup.BackupService.get_config_status()["s3_reachable"] is True
+
+
+def test_discord_bot_check_task_skips_without_token(app, db):
+    from hubra.core.tasks.platform_discord_tasks import check_discord_bot_task
+
+    with patch("hubra.core.services.discord_status.run_check") as run:
+        assert check_discord_bot_task.run() == {"skipped": "no bot token"}
+        run.assert_not_called()

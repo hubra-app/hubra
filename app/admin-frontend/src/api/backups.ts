@@ -45,6 +45,8 @@ export interface BackupConfigStatus {
   /** False when the server is newer than every pg_dump in the image. */
   pg_client_ok: boolean
   pg_client_error: string | null
+  /** Unix time of the S3 check. */
+  checked_at?: number | null
   endpoint: string
   bucket: string
   region: string
@@ -82,8 +84,10 @@ export async function restoreBackup(
   )
 }
 
-export async function getBackupConfig(): Promise<BackupConfigStatus> {
-  return apiFetch<BackupConfigStatus>(`${B}/config`)
+/** The cached S3 check (a background task renews it every 5 minutes);
+ * `refresh` checks S3 now. */
+export async function getBackupConfig(refresh = false): Promise<BackupConfigStatus> {
+  return apiFetch<BackupConfigStatus>(`${B}/config${refresh ? '?refresh=1' : ''}`)
 }
 
 /** Without `privateKey`, a backup that needs one is only checked for being intact. */

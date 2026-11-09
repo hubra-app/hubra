@@ -223,8 +223,48 @@ async def platform_error(ctx: Context, error_id: Annotated[int, Field(ge=1)]) ->
 
 @_tool(PLATFORM, "Background jobs")
 async def platform_jobs(ctx: Context, hours: Hours = 24) -> str:
-    """Celery workers and beat: last runs, failures and durations per job."""
-    return await _read(ctx, PLATFORM, "/api/v1/platform/jobs", hours=hours)
+    """Celery workers and beat: last runs, failures and durations per job.
+
+    Failed jobs come as counts per task and error plus the newest few
+    (without tracebacks); read one in manage › Diagnostics › Background jobs."""
+    token = bearer(ctx.headers)
+    if token_kind(token) != "platform":
+        return await _read(ctx, PLATFORM, "/api/v1/platform/jobs", hours=hours)
+    body = await api().get(token, "/api/v1/platform/jobs", {"hours": hours}, client_ip=_forwarded_for(ctx))
+    if isinstance(body, dict) and isinstance(body.get("failed"), list):
+        body = {**body, **_failed_summary(body["failed"])}
+    return as_text(body)
+
+
+_FAILED_SHOWN = 10
+
+
+def _failed_summary(failed: list) -> dict:
+    """A week of failed jobs can be hundreds of rows with tracebacks, which
+    pushed the counts and durations out of the answer: group them instead."""
+    groups: dict[tuple[str, str], dict] = {}
+    for f in failed:
+        if not isinstance(f, dict):
+            continue
+        error = str(f.get("error") or "")[:200]
+        key = (str(f.get("task") or ""), error)
+        g = groups.setdefault(
+            key, {"task": key[0], "error": error, "count": 0, "first": f.get("time"), "last": f.get("time")}
+        )
+        g["count"] += 1
+        t = f.get("time")
+        if t and (not g["first"] or t < g["first"]):
+            g["first"] = t
+        if t and (not g["last"] or t > g["last"]):
+            g["last"] = t
+    newest = sorted(
+        (f for f in failed if isinstance(f, dict)), key=lambda f: str(f.get("time") or ""), reverse=True
+    )[:_FAILED_SHOWN]
+    return {
+        "failed": [{k: v for k, v in f.items() if k != "traceback"} for f in newest],
+        "failedTotal": len(failed),
+        "failedByTask": sorted(groups.values(), key=lambda g: -g["count"]),
+    }
 
 
 @_tool(PLATFORM, "Platform events")

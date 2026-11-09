@@ -36,7 +36,7 @@ import zipfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from hubra.core.errors import error_message
 from hubra.core.extensions import db
@@ -267,15 +267,15 @@ def cleanup_archives() -> int:
     keep = set()
     for row in db.session.scalars(select(InstalledPlugin)):
         keep.update(s for s in (row.archive_sha256, row.previous_sha256) if s)
-    old = db.session.scalars(
-        select(PluginArchive).where(PluginArchive.created_at < _now() - STAGE_TTL)
+    old = db.session.execute(
+        select(PluginArchive.id, PluginArchive.sha256).where(
+            PluginArchive.created_at < _now() - STAGE_TTL
+        )
     ).all()
-    gone = 0
-    for a in old:
-        if a.sha256 not in keep:
-            db.session.delete(a)
-            gone += 1
-    return gone
+    ids = [a.id for a in old if a.sha256 not in keep]
+    if ids:
+        db.session.execute(delete(PluginArchive).where(PluginArchive.id.in_(ids)))
+    return len(ids)
 
 
 # ── Staging ──────────────────────────────────────────────────────────────────
