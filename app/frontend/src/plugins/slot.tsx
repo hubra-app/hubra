@@ -11,7 +11,7 @@ export function PluginSlot<K extends keyof SlotProps>({
   name: K
   props?: SlotProps[K]
 }) {
-  const entries = useVisible<PluginSlotEntry>((p) => p.slots).filter((s) => s.slot === name)
+  const entries = useVisible<PluginSlotEntry>((p) => p.slots, { ownData: true }).filter((s) => s.slot === name)
   return (
     <>
       {entries.map((e, i) => {

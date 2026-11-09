@@ -8,15 +8,23 @@ type Gated = { module: string; perm?: string; order?: number }
 /** An entry together with the id of the plugin that registered it. */
 export type FromPlugin<T> = T & { plugin: string }
 
+/**
+ * Entries whose module is on and whose permission is held. Tabs, widgets and
+ * search also need the person's roles to include the module; slots (cards on
+ * the profile and other pages) show the person's own data from it, so they
+ * only need the module on (docs/roles.md).
+ */
 export function useVisible<T extends Gated>(
   pick: (p: ReturnType<typeof usePlugins>[number]) => T[] | undefined,
+  { ownData = false }: { ownData?: boolean } = {},
 ): FromPlugin<T>[] {
   const plugins = usePlugins()
   const modules = useModules()
   const { hasPermission } = useAuth()
+  const usable = ownData ? modules.has : modules.canUse
   return plugins
     .flatMap((p) => (pick(p) ?? []).map((e) => ({ ...e, plugin: p.id })))
-    .filter((e) => modules.canUse(e.module) && (!e.perm || hasPermission(e.perm)))
+    .filter((e) => usable(e.module) && (!e.perm || hasPermission(e.perm)))
     .sort((a, b) => (a.order ?? 100) - (b.order ?? 100))
 }
 
@@ -46,5 +54,5 @@ export function usePluginWidgets(): FromPlugin<PluginWidget>[] {
 
 /** Whether any plugin put something into slot `name` for this club and user. */
 export function useSlotFilled(name: string): boolean {
-  return useVisible((p) => p.slots).some((s) => s.slot === name)
+  return useVisible((p) => p.slots, { ownData: true }).some((s) => s.slot === name)
 }
