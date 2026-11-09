@@ -536,3 +536,29 @@ def test_two_saves_at_once_share_one_grant_row(db, seeded_db):
     db.session.commit()
     rows = db.session.query(TenantFeature).filter_by(tenant_id=tenant.id, feature_code="events").all()
     assert len(rows) == 1
+
+
+def test_a_renamed_module_keeps_the_clubs_switch(db, tenant, monkeypatch):
+    renamed = Module(code="newcode", name="New", renamed_from=("oldcode",))
+    monkeypatch.setitem(modules.registry._modules, "newcode", renamed)
+    db.session.add(Feature(code="oldcode", name="Old", default_enabled=True))
+    db.session.commit()
+    _grant(db, tenant, "oldcode", enabled=True, config={"x": 1})
+
+    # Read from the old code until the club changes something.
+    assert modules.states(tenant.id)["newcode"].enabled is True
+    # The catalog row for the new code keeps the old default.
+    modules.sync_catalog()
+    assert db.session.get(Feature, "newcode").default_enabled is True
+
+    # The first change starts from the old switch and settings.
+    modules.set_enabled("newcode", False, tenant.id)
+    db.session.commit()
+    grant = (
+        db.session.query(TenantFeature)
+        .filter_by(tenant_id=tenant.id, feature_code="newcode")
+        .one()
+    )
+    assert grant.enabled is False and grant.config == {"x": 1}
+    invalidate()
+    assert modules.states(tenant.id)["newcode"].enabled is False

@@ -446,6 +446,14 @@ def load(registry, app=None) -> PluginSet:
                 trial = dict(taken)
                 modules = [check(m, spec, trial, core_tables) for m in declared]
                 _offered_elsewhere(registry, modules)
+                for m in modules:
+                    # A former code that is still a module would take its switch.
+                    taken_code = sorted(set(m.renamed_from) & known)
+                    if taken_code:
+                        raise LimitError(
+                            f"module {m.code} can't be renamed from"
+                            f" {', '.join(taken_code)}, a module that is loaded"
+                        )
                 if not code:
                     # Checked as declared, registered without code to load.
                     modules = [
