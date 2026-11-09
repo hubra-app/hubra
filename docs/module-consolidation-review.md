@@ -14,7 +14,8 @@ Skills vs Teams) and does not repeat its verdicts.
 
 1. **Merge Codes into Keys and rename it "Access" (Zutritt).** Two plugins
    keep secrets that open doors; Keys already pushes keypad codes to Nuki
-   locks. One small table moves. See [A1](#a1-codes-into-keys-access).
+   locks. Already being built in keys#14 + codes#6 through a contract
+   takeover. See [A1](#a1-codes-into-keys-access).
 2. **Merge Budgets into Finances, and make Bank import an add-on of
    Finances.** Both only make sense next to the books, both are already tabs
    under Finanzen, and today neither is linked to the Finances plugin at all.
@@ -120,6 +121,13 @@ Inventory is the natural base. Keys is already becoming an inventory type
 (inventory#10 + keys#14, in review).
 
 #### A1. Codes into Keys ("Access")
+
+> **Update 2026-11-09:** this is already being built in keys#14 +
+> codes#6. There a code is a key of kind "code" (encrypted, reveal audited),
+> and Codes 2.1.0 exports its rows through a query contract that Keys takes
+> over once. After that, Codes can be uninstalled. This path needs no M0. What
+> is left from A1 is the rename to "Access" and removing Codes from the index
+> once clubs have moved over.
 
 - **What:** merge Codes into Keys; rename Keys to **Access / Zutritt**:
   keys, cards, door codes and smart locks in one place.
@@ -288,7 +296,7 @@ gateway process and ten times the code; Messengers is one log table.
 |---|---|---|---|---|
 | 1 | B2 Bank import as add-on of Finances | – | very low | manifest + release |
 | 2 | M0 `replaces:` in core (adopt tables, carry module switch and permissions) | – | medium (core) | 1–2 days with tests |
-| 3 | A1 Codes into Keys / Access | M0, keys#14 merged | low | 1 day |
+| 3 | A1 Codes into Keys / Access (in progress: keys#14, codes#6, no M0 needed) | keys#14 merged | low | rename only |
 | 4 | B1 Budgets into Finances | M0 | low | 1 day |
 | 5 | A2 Guides into Inventory | M0, inventory#10 merged | medium | 2 days |
 | 6 | A3 Member cards and check-in into core | hubra#266 merged | medium | 2 days |
