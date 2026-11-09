@@ -120,8 +120,10 @@ def create_backup():
 @platform_backups_bp.get("/config")
 @require_global_permission(_PERM)
 def get_config():
-    """S3 connection and encryption status."""
-    status = BackupsService.config_status()
+    """S3 connection and encryption status, from the last background check
+    (``?refresh=1`` checks S3 now)."""
+    refresh = request.args.get("refresh") in ("1", "true")
+    status = BackupsService.config_status(refresh=refresh)
     return jsonify(_config_schema.dump(status)), 200
 
 

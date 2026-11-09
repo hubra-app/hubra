@@ -36,3 +36,16 @@ def post_platform_audit_entry(entry_id: int) -> bool:
     except Exception as exc:
         _log.warning("platform audit mail: entry %s not sent: %s", entry_id, exc)
     return posted
+
+
+@celery_app.task(name="hubra.core.tasks.platform_discord_tasks.check_discord_bot")
+def check_discord_bot_task() -> dict:
+    """Ask Discord about the bot in the background (every 4 minutes, under
+    discord_status.CHECK_TTL), so manage's Discord page reads the stored
+    check instead of waiting seconds for Discord."""
+    from hubra.core.services import discord_status, platform_settings
+
+    if not platform_settings.discord().bot_token:
+        return {"skipped": "no bot token"}
+    result = discord_status.run_check()
+    return {"botOk": result.get("botOk")}

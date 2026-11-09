@@ -39,10 +39,12 @@ encryption keys only ever come from env.
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import os
 import subprocess
 import tempfile
+import time
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
@@ -213,6 +215,62 @@ def _pg_client_status() -> dict:
     }
 
 
+_CONFIG_STATUS_KEY = "hubra:backup:config_status"
+# The beat task refreshes it every 5 minutes; older means the task is not
+# running, and the page checks live instead of showing a stale answer.
+CONFIG_STATUS_MAX_AGE = 15 * 60
+
+
+def _cached_config_status() -> dict | None:
+    from hubra.core.redis_client import get_redis_client
+
+    client = get_redis_client()
+    if client is None:
+        return None
+    try:
+        raw = client.get(_CONFIG_STATUS_KEY)
+        status = json.loads(raw) if raw else None
+    except Exception:  # noqa: BLE001 - a cache miss, not an error
+        return None
+    if not isinstance(status, dict):
+        return None
+    if time.time() - float(status.get("checked_at") or 0) > CONFIG_STATUS_MAX_AGE:
+        return None
+    # The S3 settings changed since: check the new ones live.
+    if status.pop("s3_fingerprint", None) != _s3_fingerprint():
+        return None
+    # Cheap and local: always as it is now.
+    mode = backup_crypto.mode()
+    status.update(
+        encryption_configured=mode is not None,
+        encryption_mode=mode,
+        private_key_on_server=bool(backup_crypto.server_private_key()),
+    )
+    return status
+
+
+def _s3_fingerprint() -> str:
+    cfg = _get_s3_config()
+    parts = [str(cfg.get(k) or "") for k in ("endpoint", "bucket", "region", "access_key", "secret_key")]
+    return hashlib.sha256("\0".join(parts).encode()).hexdigest()
+
+
+def _cache_config_status(status: dict) -> None:
+    from hubra.core.redis_client import get_redis_client
+
+    client = get_redis_client()
+    if client is None:
+        return
+    try:
+        client.set(
+            _CONFIG_STATUS_KEY,
+            json.dumps({**status, "s3_fingerprint": _s3_fingerprint()}),
+            ex=CONFIG_STATUS_MAX_AGE,
+        )
+    except Exception:  # noqa: BLE001
+        logger.debug("backup config status not cached", exc_info=True)
+
+
 class RestoreError(RuntimeError):
     """A club restore failed; the club's data was put back as it was."""
 
@@ -221,8 +279,30 @@ class BackupService:
     """Backup operations — create, verify, restore, list, delete, retention."""
 
     @staticmethod
-    def get_config_status() -> dict:
-        """Check whether S3 + encryption are configured and S3 is reachable."""
+    def get_config_status(refresh: bool = False) -> dict:
+        """S3 + encryption status, from the cache the beat task
+        ``check_backup_config`` keeps fresh (every 5 minutes).
+
+        The live check (boto3, an S3 round trip, pg_dump version probes)
+        took several seconds, so the backups page no longer waits for it.
+        Run live on *refresh*, or when there is no recent cached result.
+        """
+        if not refresh:
+            cached = _cached_config_status()
+            if cached is not None:
+                return cached
+        return BackupService.check_config_status()
+
+    @staticmethod
+    def check_config_status() -> dict:
+        """Check live whether S3 + encryption are configured and S3 is
+        reachable, and cache the result."""
+        status = BackupService._live_config_status()
+        _cache_config_status(status)
+        return status
+
+    @staticmethod
+    def _live_config_status() -> dict:
         cfg = _get_s3_config()
         s3_configured = all(
             [cfg["endpoint"], cfg["bucket"], cfg["access_key"], cfg["secret_key"]]
@@ -251,6 +331,7 @@ class BackupService:
             "endpoint": cfg["endpoint"],
             "bucket": cfg["bucket"],
             "region": cfg["region"],
+            "checked_at": time.time(),
         }
 
     @staticmethod
