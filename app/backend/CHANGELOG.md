@@ -7,6 +7,10 @@ section and position, or the apps show that version in English.
 
 ## [Unreleased]
 
+### Changed
+
+- **More shows only what is not in the sidebar**: the More page in the club app now lists just the pages you moved out of the sidebar, grouped by area, instead of repeating every sidebar entry. With everything in the sidebar it says so and points to Customise sidebar.
+
 ## [0.2.4] - 2026-11-06
 
 ### Added

@@ -9,6 +9,10 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ## [Unreleased]
 
+### Changed
+
+- **Weitere zeigt nur, was nicht in der Seitenleiste ist**: Die Seite Weitere in der Vereins-App listet nur noch die Seiten, die du aus der Seitenleiste genommen hast, nach Bereich gruppiert, statt jeden Eintrag der Seitenleiste zu wiederholen. Ist alles in der Seitenleiste, sagt sie das und verweist auf «Seitenleiste anpassen».
+
 ## [0.2.4] - 2026-11-06
 
 ### Added

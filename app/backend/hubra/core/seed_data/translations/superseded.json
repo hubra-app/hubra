@@ -44,7 +44,8 @@
   "support.roadmap.open",
   "support.roadmap.done",
   "finance.settings.bankHint",
-  "finance.settings.openBank"
+  "finance.settings.openBank",
+  "shell.more.notInSidebar"
  ],
  "values": {
   "de-CH": {
@@ -5001,7 +5002,8 @@
    ],
    "shell.more.emptyDesc": [
     "Seiten, die du in der Seitenleiste ausblendest, und Seiten von Plugins erscheinen hier.",
-    "Seiten, die du in der Seitenleiste ausblendest, und Seiten weiterer Module erscheinen hier."
+    "Seiten, die du in der Seitenleiste ausblendest, und Seiten weiterer Module erscheinen hier.",
+    "Sobald dein Verein Module einschaltet, erscheinen sie hier."
    ],
    "finance.feeBasis.source.budgetHint": [
     "Die Ausgaben im genehmigten Budget des laufenden Jahres (Plugin Budgets)."
@@ -5038,6 +5040,12 @@
    ],
    "mail.email.new_device_login.not_you": [
     "Falls du das nicht warst, beende diese Anmeldung unter «Sitzungen» und ändere sofort dein Passwort."
+   ],
+   "shell.more.emptyTitle": [
+    "Hier ist noch nichts"
+   ],
+   "shell.more.desc": [
+    "Alle Module und Plugins deines Vereins. Eine Karte führt direkt zur Seite."
    ]
   },
   "en-GB": {
@@ -6509,7 +6517,8 @@
    ],
    "shell.more.emptyDesc": [
     "Pages you hide in the sidebar and pages from plugins appear here.",
-    "Pages you hide in the sidebar and pages of further modules appear here."
+    "Pages you hide in the sidebar and pages of further modules appear here.",
+    "Modules appear here as soon as your club switches them on."
    ],
    "finance.feeBasis.source.budgetHint": [
     "The expenses in this year's approved budget (Budgets plugin)."
@@ -6549,6 +6558,12 @@
    ],
    "mail.email.new_device_login.not_you": [
     "If this wasn't you, end this sign-in under Sessions and change your password straight away."
+   ],
+   "shell.more.emptyTitle": [
+    "Nothing here yet"
+   ],
+   "shell.more.desc": [
+    "All of your club's modules and plugins. A card takes you straight to its page."
    ]
   }
  }
