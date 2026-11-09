@@ -236,7 +236,7 @@ Settings › Hubra subscription when it is above 0.
 
 By default the club pays both fees: the member pays the invoice amount and
 Stripe's fee and the Hubra fee come off what the club receives. In the
-plugin (Weitere › Online-Zahlungen › *Wer zahlt die Gebühren*, payments
+plugin (Weitere › Online-Zahlungen › Einstellungen › *Wer zahlt die Gebühren*, payments
 1.1.0) the club can pass them on: it enters its Stripe rate and members pay
 a surcharge sized so the club still receives the full invoice amount,
 `(invoice + fixed) / (1 − Stripe % − Hubra %)`, rounded up.
