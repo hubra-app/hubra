@@ -129,7 +129,7 @@ assistants), `API_TOKEN_LIMIT` (409, too many active tokens),
 
 ## Not built yet
 
-Making club and personal tokens in the club app (Einstellungen › API & Apps
+Making club and personal tokens in the club app (Einstellungen › API & Webhooks
 lists and ends them, with the two switches; manage has the platform tokens),
 mails for new and ended tokens, pausing a club token and mailing the club's
 admins when its admin leaves (today it just stops working), opt-in for

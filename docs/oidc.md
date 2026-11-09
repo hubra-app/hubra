@@ -14,7 +14,7 @@ OAuth rules in `hubra/core/auth/oauth.py`, the endpoints in
 
 ## Setting it up for a club
 
-Club app › Einstellungen › API & Apps › **Anmelden mit Hubra** (club
+Club app › Einstellungen › API & Webhooks › **Anmelden mit Hubra** (club
 admins):
 
 1. "Neue Anmelde-App": a name members will see ("Vereinswebsite"), the

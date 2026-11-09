@@ -207,6 +207,10 @@ class Module:
     ``renamed_from`` lists the codes this module had before: a club that
     switched the old code on or off, or configured it, keeps that under the
     new code until it changes it.
+    ``settings_page`` is the club-app path of the module's own settings
+    page (``/app/finance/settings``), when it has one: Settings › Modules
+    links there instead of showing the generic form, so each setting is
+    edited in one place (docs/settings/structure.md).
     """
 
     code: str
@@ -218,6 +222,7 @@ class Module:
     blueprints: tuple[Blueprint, ...] = ()
     nav: tuple[NavItem, ...] = ()
     settings: tuple[SettingField, ...] = ()
+    settings_page: str | None = None
     events: dict[str, str] = field(default_factory=dict)
     public_endpoints: tuple[str, ...] = ()
     tables: tuple[str, ...] = ()
@@ -278,4 +283,5 @@ class Module:
                 for n in self.nav
             ],
             "settings": [s.to_dict() for s in self.settings],
+            "settingsPage": self.settings_page,
         }

@@ -206,7 +206,7 @@ function Deliveries({ hook }: { hook: Webhook }) {
 }
 
 /**
- * Einstellungen › API & Apps › Webhooks (docs/webhooks.md): the club's own
+ * Einstellungen › API & Webhooks › Webhooks (docs/webhooks.md): the club's own
  * tools hear about changes, signed with a secret.
  */
 export function WebhooksSection() {

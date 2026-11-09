@@ -59,9 +59,13 @@ test('plugin finance tabs join the page tab they belong to', async ({ page }) =>
 
   await page.goto(appUrl('finance/budgets'))
   await expect(page.getByText('E2E-Budgetliste')).toBeVisible()
-  await selected('Budget & Beiträge')
+  // Alone in "Budget & Beiträge", the plugin tab is the page tab itself.
   await selected('E2E Budgets')
-  await expect(page.getByRole('tab', { name: 'Beitragsgrundlage' })).toBeVisible()
+
+  // The fee basis is a finance setting, next to the plugin's set-up tab.
+  await page.goto(appUrl('finance/fee-basis'))
+  await selected('Einstellungen')
+  await selected('Beitragsgrundlage')
 
   await page.goto(appUrl('finance/e2e-setup'))
   await expect(page.getByText('E2E-Einrichtung')).toBeVisible()

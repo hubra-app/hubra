@@ -22,6 +22,8 @@ module = Module(
             "/api/v1/app/finance",
         ),
     ),
+    # Finanzen › Einstellungen shows these with the fee schedule and plugin cards.
+    settings_page="/app/finance/settings",
     settings=(
         SettingField(
             "payment_term_days",
