@@ -99,6 +99,7 @@ from hubra.core.models.backup import BackupRecord
 from hubra.core.models.data_key import DataKey
 from hubra.core.models.qrr_reference import QrrReference
 from hubra.core.models.payment_plan import PaymentPlan
+from hubra.core.models.fee_adjustment import MemberFeeAdjustment
 from hubra.core.models.club_invite import ClubInvite
 from hubra.core.models.federation import FederationLink
 from hubra.core.models.plugin import (
@@ -210,6 +211,7 @@ __all__ = [
     "BackupRecord",
     "QrrReference",
     "PaymentPlan",
+    "MemberFeeAdjustment",
     "ClubInvite",
     "FederationLink",
 ]

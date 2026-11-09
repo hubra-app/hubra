@@ -613,7 +613,7 @@ class InvoicesService:
 
         member_q = (
             select(Member)
-            .options(selectinload(Member.tier))
+            .options(selectinload(Member.tier), selectinload(Member.fee_adjustment))
             .where(Member.archived_at.is_(None))
             .where(Member.status == "active")
         )
@@ -635,11 +635,13 @@ class InvoicesService:
             tier = member.tier
             if not tier:
                 continue
-            amount = calculate_invoice_amount(member, tier, deducted_for(tier))
             # The period that contains the issue date, reduced as the daily
             # run does for a member who joined during it.
             start, end = membership_period(
                 member, issued_date, billing_cycle_for(member, tier), billing
+            )
+            amount = calculate_invoice_amount(
+                member, tier, deducted_for(tier), on=start
             )
             share = first_fee_share(member, start, end, billing)
             if share is not None:

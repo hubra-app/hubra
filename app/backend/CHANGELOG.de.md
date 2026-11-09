@@ -9,6 +9,10 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ## [Unreleased]
 
+### Added
+
+- **Eigene Mitgliederbeiträge für einzelne Mitglieder**: Auf der Seite eines Mitglieds kann der Vorstand es vom Beitrag befreien, einen eigenen Jahresbeitrag festlegen oder den normalen Beitrag um einen Prozentsatz ermässigen, immer mit Grund und auf Wunsch bis zu einem Datum. Vor diesem Datum (standardmässig 30 Tage) wird das Mitglied in der App und per Mail gebeten zu bestätigen, dass der Grund noch zutrifft; es antwortet unter Konto › Mitgliedschaft, und der Vorstand wird benachrichtigt. Nach dem Enddatum gilt ab der nächsten Periode wieder der normale Beitrag. Mitglieder › Stufen listet alle eigenen Beiträge. Neue Rechte `tiers.fee_adjustments.read` / `.update` (in neuen Vereinen für Kassier). Siehe docs/club-admin-guide.md, «Own fees».
+
 ### Changed
 
 - **Vereinswechsel in der oberen Leiste**: Name und Logo des Vereins oben links öffnen jetzt ein Menü mit all deinen Vereinen (mit deiner Rolle, der aktuelle abgehakt) und einem Link, um einen weiteren Verein zu finden. Es ersetzt die Vereinsliste im Kontomenü und funktioniert auch auf dem Handy.

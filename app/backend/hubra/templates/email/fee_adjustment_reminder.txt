@@ -1,0 +1,8 @@
+{{ t('mail.email.fee_adjustment_reminder.body', valid_until=valid_until) }}
+
+{{ t('mail.email.fee_adjustment_reminder.ask') }}
+{% if portal_url %}
+{{ t('mail.email.fee_adjustment_reminder.button') }}: {{ portal_url }}
+{% endif %}
+
+{{ t('mail.email.fee_adjustment_reminder.note') }}

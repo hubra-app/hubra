@@ -256,6 +256,7 @@ def _generate_invoices(today: date | None = None) -> dict:
     Returns a summary dict with counts for created/skipped invoices.
     """
     from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
     from hubra.core.models.finance import Invoice
     from hubra.core.models.member import Member, MembershipTier
     from hubra.api.finance.services import billing_settings
@@ -269,6 +270,7 @@ def _generate_invoices(today: date | None = None) -> dict:
 
     active_members: list[Member] = db.session.scalars(  # type: ignore[assignment]
         select(Member)
+        .options(selectinload(Member.fee_adjustment))
         .where(Member.status == "active")
         .where(Member.archived_at.is_(None))
         .where(Member.tier_id.isnot(None))
@@ -310,7 +312,9 @@ def _generate_invoices(today: date | None = None) -> dict:
             skipped += 1
             continue
 
-        amount = calculate_invoice_amount(member, tier, deducted_for(tier))
+        amount = calculate_invoice_amount(
+            member, tier, deducted_for(tier), on=period_start
+        )
         billed_from = period_start
         share = first_fee_share(member, period_start, period_end, billing)
         if share is not None:
@@ -561,3 +565,137 @@ def _send_overdue_reminders() -> dict:
         "overdue_14d": overdue_14d,
         "skipped_no_email": skipped_no_email,
     }
+
+
+# ── Members' own fees: ask before the end date, tell when it ended ───────────
+
+
+@celery_app.task(
+    name="hubra.core.tasks.finance_tasks.fee_adjustment_reminders_task",
+    bind=True,
+    acks_late=True,
+    reject_on_worker_lost=True,
+)
+def fee_adjustment_reminders_task(self) -> dict:
+    """Fee arrangement reminders in every club with finance on."""
+    return _fee_adjustment_reminders()
+
+
+def _render_fee_adjustment_reminder(
+    name: str, valid_until: date, portal_url: str, *, lang: str = DEFAULT_LANG
+) -> tuple[str, str, str]:
+    from hubra.core.services.email import club_display_name
+
+    body_html, body_text, subject = render_mail_template(
+        "fee_adjustment_reminder",
+        locale=lang,
+        name=name,
+        club_name=club_display_name(),
+        valid_until=mail_date(valid_until, lang),
+        portal_url=portal_url,
+    )
+    return subject, body_html, body_text
+
+
+@per_tenant_job("finance")
+def _fee_adjustment_reminders(today: date | None = None) -> dict:
+    """Members with their own fee and an end date:
+
+    - ``remind_days`` before the end date (30 unless the board changed it;
+      0 asks nothing) the member is asked, in the bell and by mail, to
+      confirm that the reason still applies. Once per end date.
+    - The day after the end date the member and the board hear that it
+      ended; from the next billing period the member pays the tier's fee.
+
+    A new end date set by the board starts both again.
+    """
+    from datetime import datetime, timezone
+
+    from sqlalchemy import select
+    from hubra.core.models.fee_adjustment import (
+        MY_FEE_LINK,
+        MemberFeeAdjustment,
+        member_link,
+    )
+    from hubra.core.models.member import Member
+    from hubra.core.notifications.services import notify_member
+    from hubra.core.notifications.staff import notify_permitted
+    from hubra.core.services.email import club_app_url
+    from hubra.core.tasks.after_commit import delay_after_commit
+    from hubra.core.tasks.email_tasks import send_email_task
+
+    today = today or date.today()
+    now = datetime.now(timezone.utc)
+    reminded = ended = 0
+    rows = db.session.execute(
+        select(MemberFeeAdjustment, Member)
+        .join(Member, Member.id == MemberFeeAdjustment.member_id)
+        .where(MemberFeeAdjustment.valid_until.is_not(None))
+        .where(Member.archived_at.is_(None))
+        .where(
+            MemberFeeAdjustment.reminder_sent_at.is_(None)
+            | MemberFeeAdjustment.ended_notice_at.is_(None)
+        )
+    ).all()
+    for adj, member in rows:
+        until = adj.valid_until
+        if until is None:
+            continue
+        if until < today:
+            if adj.ended_notice_at is None:
+                adj.ended_notice_at = now
+                # Asked and never answered, or too late: no question any more.
+                adj.reminder_sent_at = adj.reminder_sent_at or now
+                notify_member(
+                    member.id,
+                    "info",
+                    "Fee arrangement ended",
+                    f"{until:%d.%m.%Y}",
+                    link=MY_FEE_LINK,
+                    topic="membership",
+                )
+                notify_permitted(
+                    "tiers.fee_adjustments.update",
+                    "info",
+                    "A member fee arrangement ended",
+                    f"{member.name} · {until:%d.%m.%Y}",
+                    skip_member_id=member.id,
+                    link=member_link(member.id),
+                )
+                ended += 1
+            continue
+        if (
+            adj.reminder_sent_at is not None
+            or adj.remind_days <= 0
+            or (until - today).days > adj.remind_days
+        ):
+            continue
+        adj.reminder_sent_at = now
+        notify_member(
+            member.id,
+            "warning",
+            "Fee arrangement ends soon",
+            f"{until:%d.%m.%Y}",
+            link=MY_FEE_LINK,
+            topic="membership",
+        )
+        if member.email:
+            subject, body_html, body_text = _render_fee_adjustment_reminder(
+                member.name,
+                until,
+                club_app_url(MY_FEE_LINK),
+                lang=getattr(member, "language", DEFAULT_LANG) or DEFAULT_LANG,
+            )
+            delay_after_commit(
+                send_email_task,
+                to_email=member.email,
+                to_name=member.name,
+                subject=subject,
+                body_html=body_html,
+                body_text=body_text,
+            )
+        reminded += 1
+
+    db.session.commit()
+    logger.info("fee_adjustment_reminders reminded=%s ended=%s", reminded, ended)
+    return {"reminded": reminded, "ended": ended}

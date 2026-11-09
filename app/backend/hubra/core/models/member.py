@@ -232,6 +232,13 @@ class Member(db.Model):
     payment_plan: Mapped["PaymentPlan | None"] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "PaymentPlan"
     )
+    # Their own fee (exempt, a yearly amount or a reduction), if any.
+    fee_adjustment: Mapped["MemberFeeAdjustment | None"] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        "MemberFeeAdjustment",
+        foreign_keys="MemberFeeAdjustment.member_id",
+        uselist=False,
+        viewonly=True,
+    )
     roles: Mapped[list["Role"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "Role",
         secondary=member_roles,

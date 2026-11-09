@@ -7,6 +7,10 @@ section and position, or the apps show that version in English.
 
 ## [Unreleased]
 
+### Added
+
+- **Own membership fees for single members**: on a member's page the board can exempt them from the fee, set their own yearly fee, or reduce the standard fee by a percentage, always with a reason and optionally until a date. Before that date (30 days by default) the member is asked in the app and by mail to confirm that the reason still applies; they answer under Account › Membership and the board is notified. After the end date the standard fee applies again from the next billing period. Members › Tiers lists all own fees. New rights `tiers.fee_adjustments.read` / `.update` (Treasurer in new clubs). See docs/club-admin-guide.md, "Own fees".
+
 ### Changed
 
 - **Club switcher in the top bar**: the club name and logo at the top left now open a menu of all your clubs (with your role, the current one ticked) and a link to find another club. It replaces the club list in the account menu and works on phones too.
