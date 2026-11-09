@@ -1,6 +1,8 @@
-"""users.badge_code: the member badge number, one per account
+"""users.badge_code and users.gender
 
-Given the first time the account page shows the badge, so no backfill.
+``badge_code`` is the member badge number, one per account, given the first
+time the account page shows the badge (so no backfill). ``gender`` is
+female, male, diverse or empty, set by the person on the account page.
 
 Public-schema only, so the revision is safe to run again per club
 (flask migrate-tenants).
@@ -43,11 +45,17 @@ def upgrade():
         op.create_index(
             "uq_users_badge_code", "users", ["badge_code"], unique=True, schema=schema
         )
+    if have is not None and "gender" not in have:
+        op.add_column(
+            "users", sa.Column("gender", sa.String(length=16), nullable=True), schema=schema
+        )
 
 
 def downgrade():
     schema = _public_schema()
     have = _columns("users", schema)
+    if have is not None and "gender" in have:
+        op.drop_column("users", "gender", schema=schema)
     if have is not None and "badge_code" in have:
         op.drop_index("uq_users_badge_code", table_name="users", schema=schema)
         op.drop_column("users", "badge_code", schema=schema)

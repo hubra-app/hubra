@@ -361,6 +361,20 @@ export interface Profile {
   lastName: string
   avatarColor: string
   profileNote: string | null
+  /** female, male, diverse, or null when not given. */
+  gender: 'female' | 'male' | 'diverse' | null
+  /** YYYY-MM-DD */
+  birthday: string | null
+  phone: string | null
+  mobile: string | null
+  address: {
+    street: string | null
+    houseNo: string | null
+    postalCode: string | null
+    city: string | null
+    /** Two-letter code, e.g. CH. */
+    country: string
+  }
   language: string
   /** light, dark or auto (like the device). */
   theme: 'light' | 'dark' | 'auto'
@@ -369,7 +383,19 @@ export interface Profile {
 }
 
 export type ProfileUpdate = Partial<
-  Pick<Profile, 'name' | 'avatarColor' | 'profileNote' | 'language'>
+  Pick<
+    Profile,
+    | 'name'
+    | 'firstName'
+    | 'lastName'
+    | 'avatarColor'
+    | 'profileNote'
+    | 'language'
+    | 'gender'
+    | 'birthday'
+    | 'phone'
+    | 'mobile'
+  > & { address: Partial<Profile['address']> }
 >
 
 export async function getProfile(): Promise<Profile> {
@@ -745,6 +771,8 @@ export interface BadgeMembership {
 /** One badge per person: the number is the same in every club. */
 export interface MemberBadge {
   code: string
+  /** The badge number as a QR code (SVG markup). */
+  qrSvg: string
   name: string
   avatarColor: string
   since: string | null

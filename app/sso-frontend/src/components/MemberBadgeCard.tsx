@@ -107,7 +107,7 @@ export function MemberBadgeCard() {
         <Avatar size={64} radius="xl" color={b.avatarColor} variant="filled" className="member-badge-avatar">
           {initials(b.name)}
         </Avatar>
-        <div style={{ minWidth: 0, flex: 1 }}>
+        <div className="member-badge-text" style={{ minWidth: 0, flex: 1 }}>
           <Group gap={6} c="var(--member-badge-dim)">
             <IconId size={14} />
             <Text size="xs" fw={600} tt="uppercase" style={{ letterSpacing: '0.08em' }}>
@@ -121,6 +121,13 @@ export function MemberBadgeCard() {
             {b.code}
           </Text>
         </div>
+        <img
+          className="member-badge-qr"
+          src={`data:image/svg+xml;utf8,${encodeURIComponent(b.qrSvg)}`}
+          alt={tr(`QR-Code der Ausweisnummer ${b.code}`, `QR code of badge number ${b.code}`)}
+          width={96}
+          height={96}
+        />
       </div>
       <Stack gap="sm" p="md">
         {b.memberships.length === 0 ? (

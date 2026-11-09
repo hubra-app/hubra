@@ -103,6 +103,8 @@ class User(db.Model):
     phone: Mapped[str | None] = mapped_column(db.String(50), nullable=True)
     mobile: Mapped[str | None] = mapped_column(db.String(50), nullable=True)
     birthday: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # female | male | diverse; None until the person says.
+    gender: Mapped[str | None] = mapped_column(db.String(16), nullable=True)
 
     address_street: Mapped[str | None] = mapped_column(db.String(255), nullable=True)
     address_house_no: Mapped[str | None] = mapped_column(db.String(20), nullable=True)

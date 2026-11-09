@@ -248,3 +248,8 @@ def test_account_badge_is_one_number_per_person(client, auth_headers, db, seeded
 
 def test_account_badge_needs_a_sign_in(app):
     assert app.test_client().get("/api/v1/account/badge").status_code == 401
+
+
+def test_account_badge_has_a_qr_code(client, auth_headers):
+    badge = client.get("/api/v1/account/badge").get_json()
+    assert badge["qrSvg"].startswith("<?xml") or "<svg" in badge["qrSvg"]

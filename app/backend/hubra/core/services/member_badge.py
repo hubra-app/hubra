@@ -81,8 +81,12 @@ def badge_for(user: User) -> dict:
     code = ensure_code(user)
     clubs = [c for c in AuthService.find_user_tenants(user.id) if c.get("member_id")]
     memberships = [m for m in (_membership(c) for c in clubs) if m]
+    from hubra.core.auth.mfa import qr_svg
+
     return {
         "code": code,
+        # The badge number as a QR code, for a check-in or a scan at the door.
+        "qrSvg": qr_svg(code),
         "name": f"{user.first_name} {user.last_name}".strip(),
         "avatarColor": user.avatar_color,
         "since": user.created_at.date().isoformat() if user.created_at else None,

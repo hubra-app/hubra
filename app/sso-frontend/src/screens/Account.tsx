@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import {
   Alert,
   Badge,
@@ -10,6 +10,8 @@ import {
   Paper,
   PasswordInput,
   SegmentedControl,
+  Select,
+  SimpleGrid,
   Stack,
   Tabs,
   Text,
@@ -174,11 +176,50 @@ function useSaveProfile(success: string) {
   })
 }
 
+const COUNTRIES = ['CH', 'LI', 'DE', 'AT', 'FR', 'IT']
+
+function countryName(code: string): string {
+  try {
+    return (
+      new Intl.DisplayNames([getLang() === 'en' ? 'en-GB' : 'de-CH'], { type: 'region' }).of(code) ??
+      code
+    )
+  } catch {
+    return code
+  }
+}
+
+function SectionTitle({ children }: { children: string }) {
+  return (
+    <Text fw={700} fz="sm" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.06em' }}>
+      {children}
+    </Text>
+  )
+}
+
 function ProfileTab({ profile }: { profile: authApi.Profile }) {
-  const [name, setName] = useState(profile.name)
+  const [firstName, setFirstName] = useState(profile.firstName)
+  const [lastName, setLastName] = useState(profile.lastName)
+  const [gender, setGender] = useState<string>(profile.gender ?? '')
+  const [birthday, setBirthday] = useState(profile.birthday ?? '')
+  const [phone, setPhone] = useState(profile.phone ?? '')
+  const [mobile, setMobile] = useState(profile.mobile ?? '')
+  const [address, setAddress] = useState({
+    street: profile.address.street ?? '',
+    houseNo: profile.address.houseNo ?? '',
+    postalCode: profile.address.postalCode ?? '',
+    city: profile.address.city ?? '',
+    country: profile.address.country || 'CH',
+  })
   const [color, setColor] = useState(profile.avatarColor)
   const [note, setNote] = useState(profile.profileNote ?? '')
   const save = useSaveProfile(tr('Profil gespeichert', 'Profile saved'))
+  const setAddr = (key: keyof typeof address) => (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.currentTarget.value
+    setAddress((a) => ({ ...a, [key]: value }))
+  }
+  const countries = COUNTRIES.includes(address.country) ? COUNTRIES : [...COUNTRIES, address.country]
+  const today = new Date().toISOString().slice(0, 10)
 
   return (
     <Stack gap="md">
@@ -187,16 +228,125 @@ function ProfileTab({ profile }: { profile: authApi.Profile }) {
         <form
           onSubmit={(e) => {
             e.preventDefault()
-            save.mutate({ name, avatarColor: color, profileNote: note || null })
+            save.mutate({
+              firstName,
+              lastName,
+              gender: (gender || null) as authApi.Profile['gender'],
+              birthday: birthday || null,
+              phone: phone || null,
+              mobile: mobile || null,
+              address,
+              avatarColor: color,
+              profileNote: note || null,
+            })
           }}
         >
           <Stack gap="md">
-            <TextInput
-              label={tr('Name', 'Name')}
-              required
-              value={name}
-              onChange={(e) => setName(e.currentTarget.value)}
+            <SectionTitle>{tr('Person', 'Person')}</SectionTitle>
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+              <TextInput
+                label={tr('Vorname', 'First name')}
+                required
+                maxLength={255}
+                autoComplete="given-name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.currentTarget.value)}
+              />
+              <TextInput
+                label={tr('Nachname', 'Last name')}
+                maxLength={255}
+                autoComplete="family-name"
+                value={lastName}
+                onChange={(e) => setLastName(e.currentTarget.value)}
+              />
+              <Select
+                label={tr('Geschlecht', 'Gender')}
+                value={gender}
+                onChange={(v) => setGender(v ?? '')}
+                allowDeselect={false}
+                data={[
+                  { value: '', label: tr('Keine Angabe', 'Not given') },
+                  { value: 'female', label: tr('Weiblich', 'Female') },
+                  { value: 'male', label: tr('Männlich', 'Male') },
+                  { value: 'diverse', label: tr('Divers', 'Diverse') },
+                ]}
+              />
+              <TextInput
+                type="date"
+                label={tr('Geburtstag', 'Birthday')}
+                autoComplete="bday"
+                max={today}
+                min="1900-01-01"
+                value={birthday}
+                onChange={(e) => setBirthday(e.currentTarget.value)}
+              />
+            </SimpleGrid>
+
+            <SectionTitle>{tr('Kontakt', 'Contact')}</SectionTitle>
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+              <TextInput
+                type="tel"
+                label={tr('Telefon', 'Phone')}
+                maxLength={50}
+                autoComplete="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.currentTarget.value)}
+              />
+              <TextInput
+                type="tel"
+                label={tr('Mobil', 'Mobile')}
+                maxLength={50}
+                autoComplete="tel"
+                value={mobile}
+                onChange={(e) => setMobile(e.currentTarget.value)}
+              />
+            </SimpleGrid>
+
+            <SectionTitle>{tr('Adresse', 'Address')}</SectionTitle>
+            <Group gap="md" align="flex-start" wrap="nowrap">
+              <TextInput
+                label={tr('Strasse', 'Street')}
+                maxLength={255}
+                autoComplete="address-line1"
+                value={address.street}
+                onChange={setAddr('street')}
+                style={{ flex: 1, minWidth: 0 }}
+              />
+              <TextInput
+                label={tr('Nr.', 'No.')}
+                maxLength={20}
+                value={address.houseNo}
+                onChange={setAddr('houseNo')}
+                w={88}
+              />
+            </Group>
+            <Group gap="md" align="flex-start" wrap="nowrap">
+              <TextInput
+                label={tr('PLZ', 'Postcode')}
+                maxLength={20}
+                autoComplete="postal-code"
+                value={address.postalCode}
+                onChange={setAddr('postalCode')}
+                w={110}
+              />
+              <TextInput
+                label={tr('Ort', 'City')}
+                maxLength={255}
+                autoComplete="address-level2"
+                value={address.city}
+                onChange={setAddr('city')}
+                style={{ flex: 1, minWidth: 0 }}
+              />
+            </Group>
+            <Select
+              label={tr('Land', 'Country')}
+              value={address.country}
+              onChange={(v) => v && setAddress((a) => ({ ...a, country: v }))}
+              allowDeselect={false}
+              data={countries.map((c) => ({ value: c, label: countryName(c) }))}
             />
+
+            <SectionTitle>{tr('Profil', 'Profile')}</SectionTitle>
             <ColorInput
               label={tr('Avatar-Farbe', 'Avatar colour')}
               format="hex"
@@ -218,6 +368,12 @@ function ProfileTab({ profile }: { profile: authApi.Profile }) {
               value={note}
               onChange={(e) => setNote(e.currentTarget.value)}
             />
+            <Text size="xs" c="dimmed">
+              {tr(
+                'Deine Vereine sehen deine Angaben. Was andere Mitglieder davon sehen, wählst du in jedem Verein unter «Im Mitgliederverzeichnis zeigen».',
+                'Your clubs see these details. What other members see, you choose in each club under “Show in the member directory”.',
+              )}
+            </Text>
             <Group justify="flex-end">
               <Button type="submit" loading={save.isPending}>
                 {tr('Speichern', 'Save')}
