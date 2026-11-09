@@ -20,13 +20,15 @@ test('finance without the Finances plugin: invoices, fee basis and the set-up', 
   await expect(page).toHaveURL(/\/app\/finance$/)
   const names = await tabNames(page, 'Finanzen')
   expect(names[0]).toBe('Rechnungen')
-  expect(['Budget & Beiträge', 'Beitragsgrundlage']).toContain(names[1])
+  // The fee basis is a setting now, so it is no longer a page tab.
+  expect(names).not.toContain('Beitragsgrundlage')
   expect(names.at(-1)).toBe('Einstellungen')
 
   await page.getByRole('tab', { name: 'Einstellungen' }).click()
   await expect(page).toHaveURL(/\/app\/finance\/settings$/)
   expect(await tabNames(page, 'Einstellungen')).toEqual([
     'Abrechnung',
+    'Beitragsgrundlage',
     'Externe Parteien',
     'Bank & QR-Rechnung',
   ])

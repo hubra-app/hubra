@@ -30,7 +30,7 @@ const OWN_CARD_KEYS = new Set([
   'prorate_first_fee',
   'statement_enabled',
   'statement_email',
-  // Edited on Finanzen › Beitragsgrundlage
+  // Edited on Finanzen › Einstellungen › Beitragsgrundlage
   'fee_basis_source',
   'fee_basis_extra',
   'fee_basis_manual',

@@ -77,15 +77,7 @@ export function FinanceTabScreen() {
     {
       id: 'planning',
       label: t('finance.groups.planning', 'Budget & Beiträge'),
-      parts: [
-        ...pluginParts('planning'),
-        {
-          id: 'fee-basis',
-          label: t('shell.nav.feeBasis', 'Beitragsgrundlage'),
-          allowed: hasPermission('finance.overview.read'),
-          render: () => <FeeBasisTab />,
-        },
-      ],
+      parts: pluginParts('planning'),
     },
     // Plugin tabs that name no group (or one this screen doesn't have).
     ...pluginTabs
@@ -107,6 +99,14 @@ export function FinanceTabScreen() {
           // The billing rules are the finance module's settings.
           allowed: hasPermission('modules.modules.write'),
           render: () => <FinanceSettingsTab />,
+        },
+        // How the yearly expenses the percentage tiers share come together:
+        // a rule set once, so it sits with the other finance settings.
+        {
+          id: 'fee-basis',
+          label: t('shell.nav.feeBasis', 'Beitragsgrundlage'),
+          allowed: hasPermission('finance.overview.read'),
+          render: () => <FeeBasisTab />,
         },
         {
           id: 'external-parties',
@@ -137,7 +137,7 @@ export function FinanceTabScreen() {
       <PageHead title={t('shell.nav.finance', 'Finanzen')} />
       <Tabs
         // A page tab with a single part is named after it, such as
-        // "Beitragsgrundlage" when no budgets plugin is on.
+        // "Budgets" when only the budgets plugin fills "Budget & Beiträge".
         tabs={groups.map((g) => ({
           id: g.id,
           label: g.parts.length === 1 && g.id !== 'setup' ? g.parts[0].label : g.label,

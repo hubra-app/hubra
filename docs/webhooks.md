@@ -5,7 +5,7 @@ about a new member, a spreadsheet hears that an invoice was paid, Zapier or
 n8n start a flow when an event is published. Hubra sends each change as a
 signed `POST` to an https address the club chooses.
 
-Club admins set them up under **Settings › API & Apps › Webhooks**. A club has
+Club admins set them up under **Settings › API & Webhooks › Webhooks**. A club has
 at most 10 webhooks. API tokens can't read or change webhooks: a token must
 not be able to send the club's data to an address of its choosing.
 

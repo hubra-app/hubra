@@ -236,7 +236,7 @@ Settings › Hubra subscription when it is above 0.
 
 By default the club pays both fees: the member pays the invoice amount and
 Stripe's fee and the Hubra fee come off what the club receives. In the
-plugin (Weitere › Online-Zahlungen › *Wer zahlt die Gebühren*, payments
+plugin (Weitere › Online-Zahlungen › Einstellungen › *Wer zahlt die Gebühren*, payments
 1.1.0) the club can pass them on: it enters its Stripe rate and members pay
 a surcharge sized so the club still receives the full invoice amount,
 `(invoice + fixed) / (1 − Stripe % − Hubra %)`, rounded up.
@@ -323,7 +323,7 @@ there were two keeps working as the sandbox key, and is never used live.
 Stripe asks for Hubra's privacy policy and terms of service URLs (dashboard:
 Settings › Public details, and Connect › Platform profile for the Connect
 platform). Use the same addresses as the platform settings `legal.privacy_url`
-and `legal.terms_url` (manage › Payments › Legal pages; defaults
+and `legal.terms_url` (manage › Platform › Legal pages; defaults
 https://hubra.club/datenschutz/ and https://hubra.club/nutzungsbedingungen/).
 Hubra links them itself on sign-up, in the footers (`GET /api/v1/instance`
 returns them as `legal`) and above the pay button of Stripe Checkout.

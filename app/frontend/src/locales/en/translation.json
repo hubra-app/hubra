@@ -2319,7 +2319,7 @@
       "bank": "Bank & QR invoice",
       "apps": "Connected apps",
       "encryption": "Encryption",
-      "api": "API & apps",
+      "api": "API & webhooks",
       "subscription": "Hubra subscription"
     },
     "title": "Settings",

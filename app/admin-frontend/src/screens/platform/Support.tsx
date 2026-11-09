@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Anchor,
-  Box,
   Badge,
   Button,
   Checkbox,
@@ -44,7 +43,6 @@ import { useAdmin } from '@/context/AdminContext'
 import { formatDate, formatDateTime } from '@/format'
 import { getLang, tr } from '@/lang'
 import { getRoadmap } from '@/api/platform'
-import { SettingsSection } from './SettingsSection'
 import {
   addPeople,
   commentOnCase,
@@ -172,7 +170,6 @@ export function SupportCases() {
 
 function CaseList() {
   const navigate = useNavigate()
-  const { hasGlobalPermission } = useAdmin()
   const [kind, setKind] = useState<KindTab>('bug')
   const [status, setStatus] = useState<CaseStatus | 'active' | ''>('active')
   const [area, setArea] = useState('')
@@ -351,11 +348,6 @@ function CaseList() {
             setPage(1)
           }}
         />
-      )}
-      {hasGlobalPermission('platform.settings') && (
-        <Box mt="xl">
-          <SettingsSection section="support" />
-        </Box>
       )}
     </div>
   )
