@@ -35,6 +35,7 @@ import { useSso } from '@/context/SsoContext'
 import { SignedInFrame } from '@/components/SignedInFrame'
 import { ThemeSwitch } from '@hubra/ui'
 import { LoadFailed } from '@/components/LoadFailed'
+import { MemberBadgeCard } from '@/components/MemberBadgeCard'
 import { getLang, setLang, themeLabels, tr, useLang } from '@/lang'
 import * as authApi from '@/api/auth'
 import { TwoFactorTab } from './TwoFactor'
@@ -180,49 +181,52 @@ function ProfileTab({ profile }: { profile: authApi.Profile }) {
   const save = useSaveProfile(tr('Profil gespeichert', 'Profile saved'))
 
   return (
-    <Paper withBorder p="lg">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          save.mutate({ name, avatarColor: color, profileNote: note || null })
-        }}
-      >
-        <Stack gap="md">
-          <TextInput
-            label={tr('Name', 'Name')}
-            required
-            value={name}
-            onChange={(e) => setName(e.currentTarget.value)}
-          />
-          <ColorInput
-            label={tr('Avatar-Farbe', 'Avatar colour')}
-            format="hex"
-            value={color}
-            onChange={setColor}
-            eyeDropperButtonProps={{
-              'aria-label': tr('Farbe vom Bildschirm wählen', 'Pick a colour from the screen'),
-            }}
-          />
-          <Textarea
-            label={tr('Über mich', 'About me')}
-            description={tr(
-              'Sichtbar für die Mitglieder deiner Vereine',
-              'Visible to the members of your clubs',
-            )}
-            autosize
-            minRows={3}
-            maxLength={5000}
-            value={note}
-            onChange={(e) => setNote(e.currentTarget.value)}
-          />
-          <Group justify="flex-end">
-            <Button type="submit" loading={save.isPending}>
-              {tr('Speichern', 'Save')}
-            </Button>
-          </Group>
-        </Stack>
-      </form>
-    </Paper>
+    <Stack gap="md">
+      <MemberBadgeCard />
+      <Paper withBorder p="lg">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            save.mutate({ name, avatarColor: color, profileNote: note || null })
+          }}
+        >
+          <Stack gap="md">
+            <TextInput
+              label={tr('Name', 'Name')}
+              required
+              value={name}
+              onChange={(e) => setName(e.currentTarget.value)}
+            />
+            <ColorInput
+              label={tr('Avatar-Farbe', 'Avatar colour')}
+              format="hex"
+              value={color}
+              onChange={setColor}
+              eyeDropperButtonProps={{
+                'aria-label': tr('Farbe vom Bildschirm wählen', 'Pick a colour from the screen'),
+              }}
+            />
+            <Textarea
+              label={tr('Über mich', 'About me')}
+              description={tr(
+                'Sichtbar für die Mitglieder deiner Vereine',
+                'Visible to the members of your clubs',
+              )}
+              autosize
+              minRows={3}
+              maxLength={5000}
+              value={note}
+              onChange={(e) => setNote(e.currentTarget.value)}
+            />
+            <Group justify="flex-end">
+              <Button type="submit" loading={save.isPending}>
+                {tr('Speichern', 'Save')}
+              </Button>
+            </Group>
+          </Stack>
+        </form>
+      </Paper>
+    </Stack>
   )
 }
 

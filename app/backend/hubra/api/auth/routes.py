@@ -1509,6 +1509,19 @@ def set_account_dms():
     return jsonify(account_dm.prefs_for(user)), 200
 
 
+# ── /account/badge (the person's member badge) ───────────────────────────────
+
+
+@account_bp.get("/badge")
+@jwt_required()
+def get_account_badge():
+    """The member badge: one number per person, the same in every club, and
+    the person's memberships (tier, kind, since when)."""
+    from hubra.core.services import member_badge
+
+    return jsonify(member_badge.badge_for(_signed_in_user())), 200
+
+
 # ── /account/notifications (every club's, for the account page) ───────────────
 
 
@@ -1544,6 +1557,24 @@ def delete_account_notifications():
 def _slug(club: str) -> str | None:
     # "-" stands for the club of a test setup without tenants.
     return None if club == "-" else club
+
+
+@account_bp.get("/notifications/settings")
+@jwt_required()
+def get_account_notification_settings():
+    """Per club, which notifications come on which channel."""
+    return jsonify({"data": account_notifications.settings_all(_account_user_id())}), 200
+
+
+@account_bp.put("/notifications/settings/<club>")
+@jwt_required()
+def set_account_notification_settings(club: str):
+    """Body as ``PUT /members/me/notifications``, for one club."""
+    refuse_during_impersonation()
+    result = account_notifications.set_settings(
+        _account_user_id(), _slug(club), request.get_json(silent=True)
+    )
+    return jsonify(result), 200
 
 
 @account_bp.patch("/notifications/<club>/<int:notification_id>/read")

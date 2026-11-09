@@ -7,6 +7,11 @@ section and position, or the apps show that version in English.
 
 ## [Unreleased]
 
+### Added
+
+- **Member badge on My Account** (sso › My account › Profile): one badge per person with a badge number such as `HB-7K3M-Q9TX`, the same in every club, and below it each membership with its tier, kind (honorary, passive) and member-since date. The number is random, given the first time the badge is shown (new column `users.badge_code`; run `flask db upgrade`).
+- **Notification settings on My Account** (sso › My account › Notifications › Settings): per club and topic, choose bell, push, e-mail or Discord, the same choices as the club's own account page.
+
 ## [0.2.4] - 2026-11-06
 
 ### Added

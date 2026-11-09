@@ -9,6 +9,11 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ## [Unreleased]
 
+### Added
+
+- **Mitgliederausweis in «Mein Konto»** (SSO › Mein Konto › Profil): ein Ausweis pro Person mit einer Ausweisnummer wie `HB-7K3M-Q9TX`, gleich in allen Vereinen, darunter jede Mitgliedschaft mit Stufe, Art (Ehren-, Passivmitglied) und «Mitglied seit». Die Nummer ist zufällig und wird beim ersten Anzeigen vergeben (neue Spalte `users.badge_code`; `flask db upgrade` ausführen).
+- **Benachrichtigungs-Einstellungen in «Mein Konto»** (SSO › Mein Konto › Benachrichtigungen › Einstellungen): pro Verein und Thema Glocke, Push, E-Mail oder Discord wählen, wie auf der Kontoseite im Verein.
+
 ## [0.2.4] - 2026-11-06
 
 ### Added

@@ -189,3 +189,62 @@ def test_account_lists_and_clears_my_notifications(
 
 def test_account_notifications_need_a_sign_in(client):
     assert client.get("/api/v1/account/notifications").status_code == 401
+
+
+# ── The account page: what I want to be notified about, per club ─────────────
+
+
+def test_account_shows_and_changes_my_settings_per_club(client, auth_headers, db, seeded_db):
+    body = client.get("/api/v1/account/notifications/settings").get_json()
+    assert len(body["data"]) == 1
+    club = body["data"][0]
+    assert club["topics"]["posts"] == {"bell": True, "push": True}
+    assert club["topics"]["event_reminders"]["mail"] is True
+
+    slug = club["club"]["slug"] or "-"
+    changed = client.put(
+        f"/api/v1/account/notifications/settings/{slug}",
+        json={"posts": {"push": False}, "event_reminders": {"mail": False}},
+    )
+    assert changed.status_code == 200
+    assert changed.get_json()["topics"]["posts"] == {"bell": True, "push": False}
+
+    # the club's own account page sees the same choice
+    admin = seeded_db["admin"]
+    db.session.refresh(admin)
+    assert admin.notify_prefs == {"posts": {"push": False}}
+    assert admin.event_reminder_mail is False
+
+
+def test_account_settings_refuse_bad_input_and_other_clubs(client, auth_headers):
+    assert (
+        client.put("/api/v1/account/notifications/settings/-", json={"nope": {"bell": False}})
+        .status_code
+        == 422
+    )
+    assert (
+        client.put(
+            "/api/v1/account/notifications/settings/not-my-club", json={"posts": {"bell": False}}
+        ).status_code
+        == 404
+    )
+
+
+# ── The account page: the member badge ───────────────────────────────────────
+
+
+def test_account_badge_is_one_number_per_person(client, auth_headers, db, seeded_db):
+    first = client.get("/api/v1/account/badge")
+    assert first.status_code == 200
+    badge = first.get_json()
+    assert badge["code"].startswith("HB-") and len(badge["code"]) == 12
+    assert len(badge["memberships"]) == 1
+    assert {"club", "tier", "membershipType", "status", "joined"} <= set(
+        badge["memberships"][0]
+    )
+    # the number stays
+    assert client.get("/api/v1/account/badge").get_json()["code"] == badge["code"]
+
+
+def test_account_badge_needs_a_sign_in(app):
+    assert app.test_client().get("/api/v1/account/badge").status_code == 401
