@@ -1,0 +1,13 @@
+# Mason (the `mason` command and the web app) reads this file for bump, release
+# and New tag. Only the [release] table counts; checks live in the defaults.
+#
+#   mason bump hubra minor     PR that sets the version and adds the changelog sections
+#   mason release tag hubra    pushes v<version>; release.yml checks, builds and
+#                              publishes after approval (docs/releases.md)
+#
+# Releases are immutable and made by the workflow, so push only the tag.
+# CHANGELOG.de.md is the German copy: keep its entries in step with CHANGELOG.md.
+[release]
+version = "app/backend/pyproject.toml"
+changelog = ["app/backend/CHANGELOG.md", "app/backend/CHANGELOG.de.md"]
+tag = "v{version}"
