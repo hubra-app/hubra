@@ -285,10 +285,12 @@ def test_create_group_alias(client, db, seeded_db, auth_headers):
         kind="group",
     )
 
+    # A real id: a bare MagicMock's .get("id") is a MagicMock, which the
+    # alias sync then tries to write to wildduck_id (fails on Postgres).
+    mock_wd = MagicMock()
+    mock_wd.create_forwarding_alias.return_value = {"id": "wd-group-alias-001"}
     with patch_mail_domain("club.ch"):
-        with patch(
-            "hubra.core.services.wildduck.try_get_client", return_value=MagicMock()
-        ):
+        with patch("hubra.core.services.wildduck.try_get_client", return_value=mock_wd):
             resp = client.post(
                 f"/api/v1/mail/groups/{group.id}/aliases",
                 json={"prefix": "extra"},
