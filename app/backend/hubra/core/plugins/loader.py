@@ -385,6 +385,23 @@ def _bad_dependency(spec: Spec, found: PluginSet, matches) -> str:
     return ""
 
 
+def _drop_replaced(found: PluginSet) -> None:
+    """Keep a plugin that another wanted one took over (``replaces:``) out:
+    both would offer the same modules. The installer retires it, but a
+    development checkout or an older row can still bring both here."""
+    for spec in found.specs.values():
+        if spec.id not in found.wanted or spec.error:
+            continue
+        for other in found.specs.values():
+            if (
+                other.id in found.wanted
+                and not other.error
+                and spec.id in other.replaces
+            ):
+                spec.error = f"replaced by {other.name}"
+                break
+
+
 def load(registry, app=None) -> PluginSet:
     """Discover plugins and add the installed ones to *registry*."""
     global _current
@@ -401,6 +418,7 @@ def load(registry, app=None) -> PluginSet:
     want = found.wanted
     known = set(registry.codes()) if hasattr(registry, "codes") else set()
     taken, core_tables = _taken(registry)
+    _drop_replaced(found)
     # Load in dependency order: a plugin whose required modules or plugins
     # come from another plugin waits for it.
     pending = [found.specs[p] for p in sorted(want) if p in found.specs]

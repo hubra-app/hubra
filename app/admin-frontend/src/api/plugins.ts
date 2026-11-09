@@ -75,6 +75,14 @@ export interface MarketplacePlugin {
   /** Plugins under depends: that the installed ones don't meet (for the
    *  version on offer when there is an update). */
   unmet?: DependencyGap[]
+  /** Plugins this one took over (replaces: in its plugin.yaml). */
+  replaces?: string[]
+  /** The plugin that took this one over, with its data. */
+  replacedBy?: string
+  replacedByName?: string
+  replacedByInstalled?: boolean
+  /** Installed plugins its install or update takes over and removes. */
+  takesOver?: string[]
 }
 
 export interface DependencyGap {
