@@ -2485,7 +2485,11 @@
         "invoiceOverdue": "Rechnung überfällig",
         "membershipRenewal": "Mitgliederbeitrag für die neue Periode",
         "qualificationEnds": "Qualifikation läuft bald ab",
-        "weeklyDigest": "Deine Woche im Verein"
+        "weeklyDigest": "Deine Woche im Verein",
+        "feeEndsSoon": "Dein eigener Beitrag läuft bald ab",
+        "feeEnded": "Dein eigener Beitrag ist abgelaufen",
+        "feeConfirmed": "Grund für eigenen Beitrag bestätigt",
+        "memberFeeEnded": "Eigener Beitrag eines Mitglieds abgelaufen"
       }
     },
     "notifPanel": {
@@ -3533,7 +3537,9 @@
       "dashboards_home_update": "Startseite des Vereins anpassen",
       "billing_billing_manage": "Hubra-Abo des Vereins bezahlen und verwalten",
       "federation_federation_read": "Mitgliedvereine des Verbands sehen",
-      "federation_federation_manage": "Mitgliedvereine einladen und entfernen"
+      "federation_federation_manage": "Mitgliedvereine einladen und entfernen",
+      "tiers_fee_adjustments_read": "Eigene Beiträge ansehen",
+      "tiers_fee_adjustments_update": "Eigene Beiträge festlegen"
     },
     "areas": {
       "applications": "Anträge",
@@ -4430,5 +4436,64 @@
     "title": "Vom Verband",
     "less": "Weniger anzeigen",
     "more": "Alle {{count}} anzeigen"
+  },
+  "fees": {
+    "title": "Mitgliederbeitrag",
+    "adjust": "Anpassen",
+    "standard": "Normaler Beitrag",
+    "own": "Eigener Beitrag",
+    "pays": "Bezahlt",
+    "until": "Gültig bis",
+    "noEnd": "Unbefristet",
+    "reason": "Grund",
+    "memberNote": "Antwort des Mitglieds",
+    "none": "Keiner, zahlt den normalen Beitrag",
+    "removed": "Zahlt wieder den normalen Beitrag",
+    "removeTitle": "Eigenen Beitrag entfernen?",
+    "removeBody": "{{name}} zahlt ab der nächsten Rechnung wieder den normalen Beitrag.",
+    "remove": "Entfernen",
+    "removeShort": "Zurück zum normalen Beitrag",
+    "saved": "Beitrag gespeichert",
+    "reasonRequired": "Bitte gib einen Grund an",
+    "amountRequired": "Bitte gib einen Betrag an",
+    "percentRange": "Zwischen 0 und 100",
+    "modalTitle": "Eigener Mitgliederbeitrag",
+    "kindLabel": "Art",
+    "kind": {
+      "exempt": "Befreit",
+      "amount": "Eigener Betrag",
+      "percent": "Ermässigung",
+      "exemptShort": "Vom Beitrag befreit",
+      "amountShort": "CHF {{amount}} pro Jahr",
+      "percentShort": "{{percent}} % weniger"
+    },
+    "amountLabel": "Beitrag pro Jahr (CHF)",
+    "amountHint": "Wird wie der normale Beitrag auf die Rechnungsperioden verteilt.",
+    "percentLabel": "Ermässigung in %",
+    "reasonHint": "Das Mitglied sieht den Grund in seinem Konto.",
+    "untilLabel": "Gültig bis (optional)",
+    "untilHint": "Danach gilt ab der nächsten Periode wieder der normale Beitrag.",
+    "remindLabel": "Erinnerung (Tage vorher)",
+    "remindHint": "Das Mitglied bestätigt dann, dass der Grund noch zutrifft. 0: keine Erinnerung.",
+    "status": {
+      "ended": "Abgelaufen",
+      "confirmed": "Bestätigt am {{date}}",
+      "asked": "Bestätigung angefragt",
+      "running": "Läuft"
+    },
+    "listTitle": "Eigene Beiträge",
+    "listHint": "Befreiungen und Ermässigungen, auf der Seite des Mitglieds anpassen",
+    "my": {
+      "title": "Dein Mitgliederbeitrag",
+      "sent": "Danke, der Vorstand wurde informiert",
+      "ended": "Dein eigener Beitrag ist am {{date}} abgelaufen. Ab der nächsten Periode zahlst du wieder den normalen Beitrag. Trifft der Grund noch zu, melde dich beim Vorstand.",
+      "instead": "CHF {{amount}} statt CHF {{standard}} {{per}}",
+      "until": "bis {{date}}",
+      "confirmedOn": "Du hast am {{date}} bestätigt, dass der Grund noch zutrifft.",
+      "asked": "Bitte bestätige bis {{date}}, dass der Grund für deinen Beitrag noch zutrifft, zum Beispiel mit einem kurzen Hinweis auf einen aktuellen Nachweis.",
+      "notePlaceholder": "z. B. «Studium bis Sommer 2027, Legi sende ich per Mail»",
+      "noteLabel": "Deine Bestätigung",
+      "confirm": "Grund trifft noch zu"
+    }
   }
 }

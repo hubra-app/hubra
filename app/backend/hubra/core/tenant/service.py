@@ -484,6 +484,8 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, list[str]] = {
         "tiers.tiers.read",
         "tiers.tiers.calculate_cost",
         "tiers.tiers.read_members",
+        "tiers.fee_adjustments.read",
+        "tiers.fee_adjustments.update",
         "audit.audit.read",
         "dashboard.dashboard.read",
     ],

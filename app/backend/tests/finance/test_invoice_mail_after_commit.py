@@ -25,10 +25,10 @@ def test_no_mail_for_a_rolled_back_invoice(app, billable_tier_db, db):  # noqa: 
     first = billable_tier_db["member_billed"]
     real = finance_tasks.calculate_invoice_amount
 
-    def fails_for_second(member, tier, day):
+    def fails_for_second(member, tier, day, **kwargs):
         if member.id == second.id:
             raise RuntimeError("boom")
-        return real(member, tier, day)
+        return real(member, tier, day, **kwargs)
 
     with patch("hubra.core.tasks.email_tasks.send_email_task.delay") as delay:
         with patch.object(finance_tasks, "calculate_invoice_amount", fails_for_second):

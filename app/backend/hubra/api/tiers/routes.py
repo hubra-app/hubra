@@ -5,10 +5,14 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, request
 from hubra.core.auth.helpers import get_current_member
 
-from hubra.core.permissions import permission_required, require_member
+from hubra.core.permissions import (
+    permission_required,
+    refuse_during_impersonation,
+    require_member,
+)
 from hubra.core.utils import id_from_body, log_audit
 from marshmallow import ValidationError
-from hubra.core.errors import api_error, validation_error
+from hubra.core.errors import api_error, raise_error, validation_error
 from hubra.core.extensions import db
 from hubra.core.pricing import calculate_preview_cost
 from hubra.core.schemas.member import (
@@ -16,6 +20,7 @@ from hubra.core.schemas.member import (
     MembershipTierCreateSchema,
     MembershipTierSchema,
 )
+from hubra.api.tiers.fee_adjustments import FeeAdjustmentService
 from hubra.api.tiers.plans import PaymentPlanService, plan_to_dict
 from hubra.api.tiers.services import TierService, TiersService
 from hubra.core.models.member import Member
@@ -193,3 +198,60 @@ def choose_my_plan():
     PaymentPlanService.assign(member, _body().get("plan_id"), member.id, own=True)
     db.session.commit()
     return jsonify(PaymentPlanService.options_for(member)), 200
+
+
+# ── A member's own fee (exempt, own amount, reduction) ───────────────────────
+
+
+def _member_or_404(member_id: int) -> Member:
+    member = db.session.get(Member, member_id)
+    if member is None or member.archived_at is not None:
+        raise_error(404, "NOT_FOUND", "Member not found")
+    return member
+
+
+@tiers_bp.get("/fee-adjustments")
+@permission_required("fee_adjustments", "read", "View members' own fees")
+def list_fee_adjustments():
+    return jsonify(FeeAdjustmentService.list_all()), 200
+
+
+@tiers_bp.get("/members/<int:member_id>/fee")
+@permission_required("fee_adjustments", "read", "View members' own fees")
+def get_member_fee(member_id: int):
+    return jsonify(FeeAdjustmentService.get_for(_member_or_404(member_id))), 200
+
+
+@tiers_bp.put("/members/<int:member_id>/fee")
+@permission_required("fee_adjustments", "update", "Set members' own fees")
+def set_member_fee(member_id: int):
+    member = _member_or_404(member_id)
+    FeeAdjustmentService.set(member, _body(), get_current_member().id)
+    db.session.commit()
+    return jsonify(FeeAdjustmentService.get_for(member)), 200
+
+
+@tiers_bp.delete("/members/<int:member_id>/fee")
+@permission_required("fee_adjustments", "update", "Set members' own fees")
+def remove_member_fee(member_id: int):
+    member = _member_or_404(member_id)
+    FeeAdjustmentService.remove(member, get_current_member().id)
+    db.session.commit()
+    return jsonify(FeeAdjustmentService.get_for(member)), 200
+
+
+@tiers_bp.get("/my-fee")
+@require_member
+def my_fee():
+    return jsonify(FeeAdjustmentService.get_for(get_current_member())), 200
+
+
+@tiers_bp.post("/my-fee/confirm")
+@require_member
+def confirm_my_fee():
+    # Only the member can say that their reason still applies.
+    refuse_during_impersonation()
+    member = get_current_member()
+    FeeAdjustmentService.confirm(member, _body())
+    db.session.commit()
+    return jsonify(FeeAdjustmentService.get_for(member)), 200

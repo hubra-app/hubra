@@ -84,6 +84,30 @@ other clubs stay.
 - Settings › Club › **Member directory visible to all members** decides
   whether ordinary members see the directory.
 
+### Own fees: exemptions and reductions
+
+Some members pay less than their tier, or nothing: a student, someone out of
+work, a family member. On the member's page, the **Mitgliederbeitrag** card
+shows the standard fee; **Anpassen** sets the member's own fee:
+
+- **Befreit**: no membership fee; the invoice run skips them.
+- **Eigener Betrag**: their own yearly fee, split into their billing periods.
+- **Ermässigung**: the standard fee less a percentage (rounded to 5 Rappen).
+
+A **reason** is required; the member sees it under Konto › Mitgliedschaft.
+It stays out of the audit log, which only records what kind of fee was set.
+An **end date** is optional. A set number of days before it (30 by default,
+0 for none) the member gets a notification and a mail asking them to confirm
+that the reason still applies; their answer appears on the member page and
+everyone who may set own fees is notified. To keep the fee, set a new end
+date (that asks again before it). After the end date the member pays the
+standard fee from the first billing period that starts after it, and both
+the member and the board are told. Members › Tiers lists every own fee,
+ending soonest first.
+
+Rights: `tiers.fee_adjustments.read` and `tiers.fee_adjustments.update`
+(new clubs give both to the Treasurer role; admins always have them).
+
 ## Roles and permissions
 
 Permissions (Berechtigungen) lists the club's roles. Each role grants

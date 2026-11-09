@@ -142,17 +142,52 @@ def annual_fee_for_member(member, tier) -> Decimal:
     return Decimal(0)
 
 
-def calculate_invoice_amount(member, tier, deducted_annual_fees: Decimal) -> Decimal:
+def calculate_invoice_amount(
+    member, tier, deducted_annual_fees: Decimal, on: date | None = None
+) -> Decimal:
     """Return the invoice amount for one billing period for the given member.
 
     With a payment plan, the tier's yearly fee is split into the plan's
-    periods, plus the plan's surcharge, rounded to 5 Rappen.
+    periods, plus the plan's surcharge, rounded to 5 Rappen. A member with
+    their own fee (``fee_adjustment``) that still applies to the period
+    starting *on* (today by default) pays that instead.
     """
     amount = tier_period_amount(member, tier, deducted_annual_fees)
     amount = apply_plan(amount, tier, _plan_for(member, tier))
+    amount = apply_fee_adjustment(member, tier, amount, on or date.today())
     # An invoice is in whole Rappen: a percentage tier gives e.g. 27.7500 or
     # 8.3333..., which the QR bill refuses (it needs ###.##).
     return amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def fee_adjustment_for(member, on: date):
+    """The member's own fee arrangement if it applies to a period starting *on*."""
+    adjustment = getattr(member, "fee_adjustment", None)
+    if adjustment is None or not adjustment.active_on(on):
+        return None
+    return adjustment
+
+
+def apply_fee_adjustment(member, tier, amount: Decimal, on: date) -> Decimal:
+    """*amount* (one of the member's billing periods) after their own fee
+    arrangement: nothing when exempt, their yearly amount split into their
+    periods, or reduced by a percentage; rounded to 5 Rappen."""
+    adjustment = fee_adjustment_for(member, on)
+    if adjustment is None:
+        return amount
+    if adjustment.kind == "exempt":
+        return Decimal(0)
+    if adjustment.kind == "amount":
+        yearly = Decimal(str(adjustment.amount_chf or 0))
+        value = yearly / periods_per_year(billing_cycle_for(member, tier))
+    elif adjustment.kind == "percent":
+        pct = Decimal(str(adjustment.percent or 0))
+        value = Decimal(amount) * (Decimal(100) - pct) / Decimal(100)
+    else:
+        return amount
+    return max(
+        (value * 20).quantize(Decimal(1), rounding=ROUND_HALF_UP) / 20, Decimal(0)
+    )
 
 
 def apply_plan(tier_amount: Decimal, tier, plan) -> Decimal:

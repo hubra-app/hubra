@@ -172,6 +172,10 @@ def make_celery(app: Flask) -> Celery:
                 "task": "hubra.core.tasks.finance_tasks.send_overdue_reminders_task",
                 "schedule": crontab(hour=9, minute=0),
             },
+            "fee-adjustment-reminders-daily": {
+                "task": "hubra.core.tasks.finance_tasks.fee_adjustment_reminders_task",
+                "schedule": crontab(hour=9, minute=10),
+            },
             "retention-cleanup-daily": {
                 "task": "hubra.core.tasks.mail_tasks.retention_cleanup",
                 "schedule": crontab(hour=2, minute=0),
