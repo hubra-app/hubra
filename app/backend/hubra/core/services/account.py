@@ -8,6 +8,7 @@ in the club app.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator
 from contextlib import contextmanager
 
@@ -27,6 +28,11 @@ NAV_PREF_KEYS = ("pinned", "hidden", "order")
 NAV_PREF_MAX = 100
 # Sidebar sections a person may move an entry into ("more" is `hidden`).
 NAV_SECTIONS = ("workspace", "activities", "operations", "plugins", "system")
+# Sidebar headings a person may rename (besides their own categories).
+NAV_RENAMABLE = ("favourites", *NAV_SECTIONS)
+NAV_CATEGORY_MAX = 20
+NAV_LABEL_MAX = 40
+_NAV_CATEGORY_ID = re.compile(r"^c[0-9a-z]{1,16}$")
 
 
 def memberships(user_id: int) -> Iterator[tuple[Tenant, Member]]:
@@ -95,6 +101,10 @@ def _nav_prefs(value) -> dict:
     prefs = {key: list(value.get(key) or []) for key in NAV_PREF_KEYS}
     sections = value.get("sections")
     prefs["sections"] = dict(sections) if isinstance(sections, dict) else {}
+    categories = value.get("categories")
+    prefs["categories"] = list(categories) if isinstance(categories, list) else []
+    labels = value.get("labels")
+    prefs["labels"] = dict(labels) if isinstance(labels, dict) else {}
     return prefs
 
 
@@ -104,7 +114,8 @@ def _valid_nav_path(path) -> bool:
 
 def _clean_nav_prefs(value) -> dict:
     """Sidebar paths the person pinned, hid, reordered or moved to another
-    section; the app checks permissions."""
+    section, their own categories and renamed headings; the app checks
+    permissions."""
     if not isinstance(value, dict):
         raise_error(400, "VALIDATION_ERROR", "navPrefs must be an object")
     clean = {}
@@ -116,14 +127,42 @@ def _clean_nav_prefs(value) -> dict:
             if not _valid_nav_path(path):
                 raise_error(400, "VALIDATION_ERROR", f"navPrefs.{key} holds an invalid path")
         clean[key] = list(dict.fromkeys(paths))
+    categories = value.get("categories") or []
+    if not isinstance(categories, list) or len(categories) > NAV_CATEGORY_MAX:
+        raise_error(400, "VALIDATION_ERROR", "navPrefs.categories must be a short list")
+    clean_categories = []
+    for category in categories:
+        if (
+            not isinstance(category, dict)
+            or not isinstance(category.get("id"), str)
+            or not _NAV_CATEGORY_ID.match(category["id"])
+            or not _valid_nav_label(category.get("label"))
+        ):
+            raise_error(400, "VALIDATION_ERROR", "navPrefs.categories holds an invalid entry")
+        if any(c["id"] == category["id"] for c in clean_categories):
+            raise_error(400, "VALIDATION_ERROR", "navPrefs.categories holds an id twice")
+        clean_categories.append({"id": category["id"], "label": category["label"].strip()})
+    clean["categories"] = clean_categories
+    own = {c["id"] for c in clean_categories}
     sections = value.get("sections") or {}
     if not isinstance(sections, dict) or len(sections) > NAV_PREF_MAX:
         raise_error(400, "VALIDATION_ERROR", "navPrefs.sections must be a short object")
     for path, section in sections.items():
-        if not _valid_nav_path(path) or section not in NAV_SECTIONS:
+        if not _valid_nav_path(path) or (section not in NAV_SECTIONS and section not in own):
             raise_error(400, "VALIDATION_ERROR", "navPrefs.sections holds an invalid entry")
     clean["sections"] = dict(sections)
+    labels = value.get("labels") or {}
+    if not isinstance(labels, dict):
+        raise_error(400, "VALIDATION_ERROR", "navPrefs.labels must be an object")
+    for section, label in labels.items():
+        if section not in NAV_RENAMABLE or not _valid_nav_label(label):
+            raise_error(400, "VALIDATION_ERROR", "navPrefs.labels holds an invalid entry")
+    clean["labels"] = {section: label.strip() for section, label in labels.items()}
     return clean
+
+
+def _valid_nav_label(label) -> bool:
+    return isinstance(label, str) and 0 < len(label.strip()) <= NAV_LABEL_MAX
 
 
 def update_profile(user: User, updates: dict) -> None:

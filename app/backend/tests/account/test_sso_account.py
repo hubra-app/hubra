@@ -89,7 +89,14 @@ def test_sidebar_prefs_follow_the_account(client, db):
     user = _user_without_club(db)
     _login(client, "solo@test.ch")
     prefs = client.get("/api/v1/account/profile").get_json()["navPrefs"]
-    assert prefs == {"pinned": [], "hidden": [], "order": [], "sections": {}}
+    assert prefs == {
+        "pinned": [],
+        "hidden": [],
+        "order": [],
+        "sections": {},
+        "categories": [],
+        "labels": {},
+    }
 
     resp = client.patch(
         "/api/v1/account/profile",
@@ -98,7 +105,9 @@ def test_sidebar_prefs_follow_the_account(client, db):
                 "pinned": ["/app/finance", "/app/finance"],
                 "hidden": ["/app/groups"],
                 "order": ["/app/groups", "/app/members"],
-                "sections": {"/app/operations/codes": "operations"},
+                "sections": {"/app/operations/codes": "operations", "/app/finance": "c1"},
+                "categories": [{"id": "c1", "label": " Kasse "}],
+                "labels": {"workspace": "Vorstand"},
             }
         },
     )
@@ -107,7 +116,9 @@ def test_sidebar_prefs_follow_the_account(client, db):
         "pinned": ["/app/finance"],
         "hidden": ["/app/groups"],
         "order": ["/app/groups", "/app/members"],
-        "sections": {"/app/operations/codes": "operations"},
+        "sections": {"/app/operations/codes": "operations", "/app/finance": "c1"},
+        "categories": [{"id": "c1", "label": "Kasse"}],
+        "labels": {"workspace": "Vorstand"},
     }
     db.session.refresh(user)
     assert user.nav_prefs["hidden"] == ["/app/groups"]
@@ -122,6 +133,14 @@ def test_sidebar_prefs_follow_the_account(client, db):
         {"sections": ["/app/groups"]},
         {"sections": {"/app/groups": "more"}},
         {"sections": {"/elsewhere": "system"}},
+        {"sections": {"/app/groups": "c9"}},
+        {"categories": [{"id": "x", "label": "A"}]},
+        {"categories": [{"id": "c1", "label": "  "}]},
+        {"categories": [{"id": "c1", "label": "a" * 41}]},
+        {"categories": [{"id": "c1", "label": "A"}, {"id": "c1", "label": "B"}]},
+        {"categories": [{"id": f"c{i}", "label": "A"} for i in range(21)]},
+        {"labels": {"more": "Anderes"}},
+        {"labels": {"workspace": ""}},
     ):
         resp = client.patch("/api/v1/account/profile", json={"navPrefs": bad})
         assert resp.status_code == 400, bad
