@@ -54,6 +54,10 @@ const TITLES: Record<string, [string, string, string]> = {
   'Invoice overdue': ['shell.notif.text.invoiceOverdue', 'Rechnung überfällig', 'Invoice overdue'],
   'Membership fee for the new period': ['shell.notif.text.membershipRenewal', 'Mitgliederbeitrag für die neue Periode', 'Membership fee for the new period'],
   'Qualification ends soon': ['shell.notif.text.qualificationEnds', 'Qualifikation läuft bald ab', 'Qualification ends soon'],
+  'Fee arrangement ends soon': ['shell.notif.text.feeEndsSoon', 'Dein eigener Beitrag läuft bald ab', 'Your own fee ends soon'],
+  'Fee arrangement ended': ['shell.notif.text.feeEnded', 'Dein eigener Beitrag ist abgelaufen', 'Your own fee has ended'],
+  'Fee reason confirmed': ['shell.notif.text.feeConfirmed', 'Grund für eigenen Beitrag bestätigt', 'Reason for an own fee confirmed'],
+  'A member fee arrangement ended': ['shell.notif.text.memberFeeEnded', 'Eigener Beitrag eines Mitglieds abgelaufen', "A member's own fee has ended"],
   'Your week': ['shell.notif.text.weeklyDigest', 'Deine Woche im Verein', 'Your week at the club'],
 }
 

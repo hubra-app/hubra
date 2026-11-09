@@ -56,6 +56,7 @@ module = Module(
         "member_roles",
         "membership_tiers",
         "payment_plans",
+        "member_fee_adjustments",
         "applications",
     ),
     tasks=("hubra.core.tasks.digest_tasks", "hubra.core.tasks.privacy_tasks"),

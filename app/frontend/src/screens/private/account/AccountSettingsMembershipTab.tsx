@@ -7,6 +7,7 @@ import { LastSeenBadge } from '@/components/ui'
 import { useT } from '@/locales/i18n'
 import { formatDate } from '@/format'
 import { PaymentPlanCard } from './PaymentPlanCard'
+import { MyFeeCard } from './MyFeeCard'
 import { LeaveClubCard } from './LeaveClubCard'
 import { DirectoryCard } from './DirectoryCard'
 import { MyMailAddressesCard } from './MyMailAddressesCard'
@@ -183,6 +184,8 @@ export function AccountSettingsMembershipTab() {
           </div>
         </div>
       </Paper>
+
+      <MyFeeCard />
 
       <PaymentPlanCard />
 
