@@ -506,3 +506,33 @@ def test_provisioning_gives_the_standard_tier_a_price_type(db):
         _seed_tenant(new.id, None, None)
     tier = db.session.query(MembershipTier).filter_by(name="Standard").one()
     assert tier.price_type == "fixed"
+
+
+def test_two_saves_at_once_share_one_grant_row(db, seeded_db):
+    """Both requests found no row for the club and module; the second
+    insert hit uq_tenant_feature (IntegrityError, a 500)."""
+    from unittest.mock import patch
+
+    from hubra.core.modules import state
+
+    tenant = Tenant(name="Race", slug="race-club", status="active")
+    db.session.add(tenant)
+    db.session.commit()
+    modules.sync_catalog()
+    # The other request's row, already committed.
+    db.session.add(TenantFeature(tenant_id=tenant.id, feature_code="events", enabled=True, allowed=True, config={}))
+    db.session.commit()
+
+    real = db.session.scalar
+    calls = {"n": 0}
+
+    def first_lookup_misses(stmt, *a, **kw):
+        calls["n"] += 1
+        return None if calls["n"] == 1 else real(stmt, *a, **kw)
+
+    with patch.object(db.session, "scalar", side_effect=first_lookup_misses):
+        grant = state._grant(tenant.id, "events")
+    assert grant is not None and grant.enabled is True
+    db.session.commit()
+    rows = db.session.query(TenantFeature).filter_by(tenant_id=tenant.id, feature_code="events").all()
+    assert len(rows) == 1
