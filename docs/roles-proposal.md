@@ -1,6 +1,6 @@
 # Proposal: standard club roles and module access
 
-Status: **proposal, nothing built yet.** Asked by Mike on 2026-11-09:
+Status: **decisions taken 2026-11-09 (see §6), not built yet.** Asked by Mike on 2026-11-09:
 
 > define role / function standards for a club? members, Board (Aktuar / Archivar,
 > Finanzen / Kassier, Präsident / Vizepräsident). Also restrict access to entire
@@ -182,20 +182,17 @@ Plugins never depend on each other; nothing here changes that.
 Rough size: core 1 PR (migration + gate + seed + UI), template 1 PR, plugins
 one small PR each.
 
-## 6. Open decisions for Mike
+## 6. Decisions (Mike, 2026-11-09)
 
-- **D1 Präsidium = Admin?** (a) Präsident/Vize get the Admin role (full
-  access incl. settings) — recommended, simplest; (b) a separate Präsidium role
-  without settings/modules.
-- **D2 Board as its own role?** (a) Vorstand role + office role per function
-  (functions grant several roles) — recommended; (b) one role per office that
-  already includes the board rights (no migration for multi-role, more
-  duplication).
-- **D3 Existing clubs:** (a) run `flask roles standardise` on deploy, adds
-  the standard set next to what the club has — recommended; (b) only new
-  clubs get it, existing ones click "Standardrollen hinzufügen" in Rollen.
-- **D4 Own data without module access:** should a member without access to
-  e.g. Inventar still see items they own on their profile? Recommended yes.
-- **D5 Names:** German labels as above (Mitglied, Vorstand, Aktuar/in,
-  Kassier/in, Präsidium), translated per locale; keys stay English. Is
-  "Aktuar/in" right for the secretary/archive role, or split Archivar/in?
+- **D1 Präsidium = Admin: yes.** Präsident/in and Vizepräsident/in get the
+  Admin role (full access incl. settings) through their functions; there is
+  no separate Präsidium role. Read the "Präsidium" column in §2 as Admin.
+- **D2 Vorstand as its own role: yes.** Every board function grants Vorstand
+  plus its office role, so functions grant several roles (`function_roles`).
+- **D3 Existing clubs: yes.** `flask roles standardise` runs on deploy and
+  adds the standard set next to what the club already has.
+- **D4 Own data without module access: yes.** A member without access to a
+  module still sees their own items (invoices, expense claims, items) on
+  their profile; only the module's own pages hide.
+- **D5 Names: as proposed.** Mitglied, Vorstand, Aktuar/in (covers the
+  archive), Kassier/in, Präsident/in, Vizepräsident/in; keys stay English.
