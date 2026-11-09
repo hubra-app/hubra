@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Button, Select, SimpleGrid, Textarea, TextInput } from '@mantine/core'
+import { Button, MultiSelect, SimpleGrid, Textarea, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
@@ -17,7 +17,7 @@ const functionSchema = z.object({
   name: z.string().min(1, zmsg('common.nameRequired', 'Name ist erforderlich')),
   description: z.string(),
   maxHolders: z.number().min(1),
-  grantsRoleId: z.string(),
+  grantsRoleIds: z.array(z.string()),
 })
 type FunctionForm = z.infer<typeof functionSchema>
 
@@ -41,9 +41,9 @@ export function FunctionFormModal({
           name: fn.name,
           description: fn.description ?? '',
           maxHolders: fn.maxHolders,
-          grantsRoleId: fn.grantsRoleId != null ? String(fn.grantsRoleId) : '',
+          grantsRoleIds: fn.grantsRoleIds.map(String),
         }
-      : { name: '', description: '', maxHolders: 1, grantsRoleId: '' },
+      : { name: '', description: '', maxHolders: 1, grantsRoleIds: [] },
   })
   const { data: lookups } = useQuery(lookupsQuery)
   // Owners are named one by one, never through a function.
@@ -62,7 +62,7 @@ export function FunctionFormModal({
       name: data.name,
       description: data.description || undefined,
       maxHolders: data.maxHolders,
-      grantsRoleId: data.grantsRoleId ? Number(data.grantsRoleId) : null,
+      grantsRoleIds: data.grantsRoleIds.map(Number),
     }
     try {
       if (fn) await updateFunction(fn.id, body)
@@ -124,15 +124,19 @@ export function FunctionFormModal({
           />
         </Field>
         <Field
-          label={t('functions.grantsRole', 'Gibt die Rolle')}
-          hint={t('functions.grantsRoleHint', 'Wer die Funktion innehat, hat diese Rolle, bis die Funktion endet.')}
+          label={t('functions.grantsRoles', 'Gibt die Rollen')}
+          hint={t(
+            'functions.grantsRolesHint',
+            'Wer die Funktion innehat, hat diese Rollen, bis die Funktion endet (zum Beispiel Vorstand und Kassier/in).',
+          )}
         >
-          <Select
+          <MultiSelect
             data={roleOptions}
-            value={form.values.grantsRoleId || null}
-            onChange={(v) => form.setFieldValue('grantsRoleId', v ?? '')}
-            placeholder={t('functions.noRole', 'Keine Rolle')}
+            value={form.values.grantsRoleIds}
+            onChange={(v) => form.setFieldValue('grantsRoleIds', v)}
+            placeholder={form.values.grantsRoleIds.length ? undefined : t('functions.noRole', 'Keine Rolle')}
             clearable
+            searchable
           />
         </Field>
       </div>

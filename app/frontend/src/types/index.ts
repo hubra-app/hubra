@@ -67,8 +67,11 @@ export interface ClubFunction {
   name: string;
   description: string | null;
   maxHolders: number;
-  /** The role the function gives its holders (Kassier gives Treasurer). */
+  /** The first role the function gives (for older callers). */
   grantsRoleId: number | null;
+  /** Every role the function gives its holders (Kassier/in gives Vorstand
+   *  and Kassier/in). */
+  grantsRoleIds: number[];
   holders: {
     memberId: number;
     memberName: string;

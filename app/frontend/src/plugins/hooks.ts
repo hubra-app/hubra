@@ -16,7 +16,7 @@ export function useVisible<T extends Gated>(
   const { hasPermission } = useAuth()
   return plugins
     .flatMap((p) => (pick(p) ?? []).map((e) => ({ ...e, plugin: p.id })))
-    .filter((e) => modules.has(e.module) && (!e.perm || hasPermission(e.perm)))
+    .filter((e) => modules.canUse(e.module) && (!e.perm || hasPermission(e.perm)))
     .sort((a, b) => (a.order ?? 100) - (b.order ?? 100))
 }
 

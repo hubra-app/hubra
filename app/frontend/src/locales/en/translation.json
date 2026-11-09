@@ -1364,7 +1364,10 @@
     "notFound": "This function does not exist (any more).",
     "detail": {
       "about": "Function"
-    }
+    },
+    "grantsRoles": "Gives the roles",
+    "grantsRolesHint": "Whoever holds the function has these roles until the function ends (for example Board and Treasurer).",
+    "givesRoles": "Gives the roles {{roles}}"
   },
   "groups": {
     "addGroup": "Add Group",
@@ -3624,7 +3627,7 @@
       "custom": "Custom"
     },
     "adminAll": "This is an admin role and may do everything in the club.",
-    "levelHint": "View: see and take part (sign up, vote, comment). Edit: also create and change. All: also delete and export.",
+    "levelHint": "None: the module is hidden for this role (own data stays on the profile). View: see and take part (sign up, vote, comment). Edit: also create and change. All: also delete and export.",
     "hideSingle": "Hide single permissions",
     "showSingle": "Show single permissions",
     "backToList": "Back to the roles",
@@ -3632,7 +3635,8 @@
     "delete": "Delete role",
     "mayDo": "May do",
     "pageRoles": "Roles",
-    "pageCompare": "Compare"
+    "pageCompare": "Compare",
+    "moduleHidden": "Hidden"
   },
   "modules": {
     "functions": {

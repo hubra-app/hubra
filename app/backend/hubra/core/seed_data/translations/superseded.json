@@ -5047,6 +5047,9 @@
    ],
    "shell.more.desc": [
     "Alle Module und Plugins deines Vereins. Eine Karte führt direkt zur Seite."
+   ],
+   "roles.levelHint": [
+    "Ansehen: sehen und mitmachen (anmelden, abstimmen, kommentieren). Bearbeiten: auch erstellen und ändern. Alles: auch löschen und exportieren."
    ]
   },
   "en-GB": {
@@ -6566,6 +6569,9 @@
    ],
    "shell.more.desc": [
     "All of your club's modules and plugins. A card takes you straight to its page."
+   ],
+   "roles.levelHint": [
+    "View: see and take part (sign up, vote, comment). Edit: also create and change. All: also delete and export."
    ]
   }
  }

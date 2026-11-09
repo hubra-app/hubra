@@ -40,6 +40,13 @@ export interface ModuleInfo {
   /** False when the module is priced per licence and the signed-in member
    *  holds none: hidden in their navigation, its API answers 403. */
   licensed?: boolean
+  /** False when the member's roles don't include the module (docs/roles.md):
+   *  hidden in their navigation, its pages say "Kein Zugriff". Their own
+   *  data from it (invoices, claims, items) stays on their profile. */
+  access?: boolean
+  /** The permission that opens the module, null when everyone with the
+   *  right keys uses it. */
+  accessKey?: string | null
   nav: ModuleNavItem[]
   settings: ModuleSettingField[]
   config: Record<string, string | number | boolean | null>

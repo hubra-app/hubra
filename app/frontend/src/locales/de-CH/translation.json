@@ -1364,7 +1364,10 @@
     "notFound": "Diese Funktion gibt es nicht (mehr).",
     "detail": {
       "about": "Funktion"
-    }
+    },
+    "grantsRoles": "Gibt die Rollen",
+    "grantsRolesHint": "Wer die Funktion innehat, hat diese Rollen, bis die Funktion endet (zum Beispiel Vorstand und Kassier/in).",
+    "givesRoles": "Gibt die Rollen {{roles}}"
   },
   "groups": {
     "addGroup": "Gruppe hinzufügen",
@@ -3624,7 +3627,7 @@
       "custom": "Angepasst"
     },
     "adminAll": "Diese Rolle ist eine Admin-Rolle und darf im Verein alles.",
-    "levelHint": "Ansehen: sehen und mitmachen (anmelden, abstimmen, kommentieren). Bearbeiten: auch erstellen und ändern. Alles: auch löschen und exportieren.",
+    "levelHint": "Keine: das Modul ist für diese Rolle ausgeblendet (eigene Daten bleiben im Profil). Ansehen: sehen und mitmachen (anmelden, abstimmen, kommentieren). Bearbeiten: auch erstellen und ändern. Alles: auch löschen und exportieren.",
     "hideSingle": "Einzelne Rechte ausblenden",
     "showSingle": "Einzelne Rechte zeigen",
     "backToList": "Zurück zu den Rollen",
@@ -3632,7 +3635,8 @@
     "delete": "Rolle löschen",
     "mayDo": "Darf",
     "pageRoles": "Rollen",
-    "pageCompare": "Vergleichen"
+    "pageCompare": "Vergleichen",
+    "moduleHidden": "Ausgeblendet"
   },
   "modules": {
     "backups": {

@@ -2,7 +2,7 @@ import i18n from 'i18next'
 
 // Every club starts with these system roles. Their names stay English in the
 // database because the backend looks them up by name; show them translated.
-export const SYSTEM_ROLES = ['Owner', 'Admin', 'Treasurer', 'Member']
+export const SYSTEM_ROLES = ['Owner', 'Admin', 'Treasurer', 'Member', 'Board', 'Secretary']
 
 export function roleLabel(name: string): string {
   return SYSTEM_ROLES.includes(name) ? i18n.t(`roles.system.${name}`, name) : name
@@ -30,6 +30,12 @@ const SHIPPED_DESCRIPTIONS: Record<string, string[]> = {
   Member: [
     'Basic member access — read-only on public resources',
     'What every member may do: events, polls, posts. The permissions can be changed.',
+  ],
+  Board: [
+    'The board (Vorstand): sees the club\'s members, finances and mail, runs events, polls, posts and groups.',
+  ],
+  Secretary: [
+    'Aktuar/in: keeps the member register, applications, functions, mail and the club\'s records.',
   ],
 }
 

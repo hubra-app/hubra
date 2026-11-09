@@ -12,15 +12,26 @@ import {
 import { IconChevronRight, IconShieldCheck } from '@tabler/icons-react'
 import type { Role } from '@/api/settings'
 import type { PermissionEntry } from '@/api/system'
+import { useData } from '@/context/AppContext'
 import { useT } from '@/locales/i18n'
+import { localizeModule } from '@/modules/labels'
 import { PermCheckbox } from './PermissionControls'
 import { blueprintLabel, permLabel, resourceLabel } from './labels'
-import { currentLevel, levelKeys, offeredLevels, toAreas, type Area, type Level } from './levels'
+import {
+  currentLevel,
+  isAccessKey,
+  levelKeys,
+  offeredLevels,
+  toModuleGroups,
+  type Level,
+} from './levels'
 
 /**
- * What one role may do, one line per area with the levels Keine, Ansehen,
- * Bearbeiten and Alles. "Einzeln" opens the single permissions for a mix
- * the levels don't cover.
+ * What one role may do, with the levels Keine, Ansehen, Bearbeiten and
+ * Alles: one picker per module (Keine hides the module from the role's
+ * holders, docs/roles.md), and one line per area inside a module with
+ * several. The arrow opens the single permissions for a mix the levels
+ * don't cover.
  */
 export function RoleAccess({
   role,
@@ -38,17 +49,18 @@ export function RoleAccess({
   onSetKeys: (role: Role, area: PermissionEntry[], keys: string[]) => void
 }) {
   const { t } = useT()
-  const areas = useMemo(() => toAreas(allPerms), [allPerms])
+  const { moduleList } = useData()
   const [open, setOpen] = useState<Set<string>>(new Set())
-  const byBlueprint = useMemo(() => {
-    const out = new Map<string, Area[]>()
-    for (const area of areas) {
-      const list = out.get(area.blueprint) ?? []
-      list.push(area)
-      out.set(area.blueprint, list)
-    }
-    return [...out.entries()].sort(([a], [b]) => blueprintLabel(a).localeCompare(blueprintLabel(b)))
-  }, [areas])
+  const groups = useMemo(() => {
+    const names: Record<string, string> = {}
+    for (const m of moduleList) names[m.code] = localizeModule(m).name
+    return toModuleGroups(allPerms)
+      .map((g) => ({
+        ...g,
+        label: g.module ? (names[g.module] ?? blueprintLabel(g.id)) : blueprintLabel(g.id),
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+  }, [allPerms, moduleList])
 
   const levelLabel: Record<Level, string> = {
     none: t('roles.level.none', 'Keine'),
@@ -79,125 +91,167 @@ export function RoleAccess({
       <Text size="sm" c="dimmed">
         {t(
           'roles.levelHint',
-          'Ansehen: sehen und mitmachen (anmelden, abstimmen, kommentieren). Bearbeiten: auch erstellen und ändern. Alles: auch löschen und exportieren.',
+          'Keine: das Modul ist für diese Rolle ausgeblendet (eigene Daten bleiben im Profil). Ansehen: sehen und mitmachen (anmelden, abstimmen, kommentieren). Bearbeiten: auch erstellen und ändern. Alles: auch löschen und exportieren.',
         )}
       </Text>
       <Paper withBorder p={0} style={{ overflow: 'hidden' }}>
-        {byBlueprint.map(([bp, list], bpIndex) => (
-          <Fragment key={bp}>
-            {/* An area with several parts (Finanzen) gets a heading over them. */}
-            {list.length > 1 && (
-              <Text
-                size="xs"
-                fw={700}
-                c="dimmed"
-                tt="uppercase"
-                px="md"
-                pt={12}
-                pb={6}
-                style={{
-                  letterSpacing: '0.06em',
-                  background: 'var(--hb-surface-2)',
-                  borderTop: bpIndex > 0 ? '1px solid var(--hb-border)' : undefined,
-                }}
-              >
-                {blueprintLabel(bp)}
-              </Text>
-            )}
-            {list.map((area, index) => {
-              const offered = offeredLevels(area.perms)
-              const level = currentLevel(area.perms, roleSet)
-              const isOpen = open.has(area.key)
-              const name =
-                area.resource === bp.replace(/_bp$/, '') || list.length === 1
-                  ? blueprintLabel(bp)
-                  : resourceLabel(area.resource)
-              return (
-                <Fragment key={area.key}>
-                  <Group
-                    justify="space-between"
-                    wrap="wrap"
-                    gap={8}
-                    pr="md"
-                    py={8}
-                    pl={list.length > 1 ? 'xl' : 'md'}
-                    style={{
-                      borderTop:
-                        bpIndex === 0 && index === 0 && list.length === 1
-                          ? undefined
-                          : '1px solid var(--hb-border)',
-                    }}
-                  >
-                    <UnstyledButton
-                      onClick={() => toggleOpen(area.key)}
-                      aria-expanded={isOpen}
-                      title={
-                        isOpen
-                          ? t('roles.hideSingle', 'Einzelne Rechte ausblenden')
-                          : t('roles.showSingle', 'Einzelne Rechte zeigen')
-                      }
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}
-                    >
-                      <IconChevronRight
-                        size={14}
-                        style={{
-                          color: 'var(--hb-text-3)',
-                          transform: isOpen ? 'rotate(90deg)' : 'none',
-                          transition: 'transform .15s',
-                          flexShrink: 0,
-                        }}
-                      />
-                      <Text fw={600} size="sm">
-                        {name}
-                      </Text>
-                      {level === null && (
-                        <Badge size="xs" variant="light" color="orange">
-                          {t('roles.level.custom', 'Angepasst')}
-                        </Badge>
-                      )}
-                    </UnstyledButton>
-                    <SegmentedControl
+        {groups.map((group, groupIndex) => {
+          const areas = group.areas
+          // A module with one area is one line; its picker covers the module.
+          const single = areas.length === 1
+          const moduleLevel = currentLevel(group.perms, roleSet)
+          const moduleOffered = offeredLevels(group.perms)
+          const picker = (
+            perms: typeof group.perms,
+            level: Level | null,
+            offered: Level[],
+            label: string,
+          ) => (
+            <SegmentedControl
+              size="xs"
+              radius="md"
+              aria-label={label}
+              value={level ?? ''}
+              disabled={disabled}
+              onChange={(v) => onSetKeys(role, perms, levelKeys(perms, v as Level))}
+              data={offered.map((l) => ({ value: l, label: levelLabel[l] }))}
+            />
+          )
+          return (
+            <Fragment key={group.id}>
+              {!single && (
+                <Group
+                  justify="space-between"
+                  wrap="wrap"
+                  gap={8}
+                  px="md"
+                  py={8}
+                  style={{
+                    background: 'var(--hb-surface-2)',
+                    borderTop: groupIndex > 0 ? '1px solid var(--hb-border)' : undefined,
+                  }}
+                >
+                  <Group gap={6}>
+                    <Text
                       size="xs"
-                      radius="md"
-                      value={level ?? ''}
-                      disabled={disabled}
-                      onChange={(v) =>
-                        onSetKeys(role, area.perms, levelKeys(area.perms, v as Level))
-                      }
-                      data={offered.map((l) => ({ value: l, label: levelLabel[l] }))}
-                    />
+                      fw={700}
+                      c="dimmed"
+                      tt="uppercase"
+                      style={{ letterSpacing: '0.06em' }}
+                    >
+                      {group.label}
+                    </Text>
+                    {group.module && moduleLevel === 'none' && (
+                      <Badge size="xs" variant="light" color="gray">
+                        {t('roles.moduleHidden', 'Ausgeblendet')}
+                      </Badge>
+                    )}
                   </Group>
-                  {isOpen && (
-                    <Stack gap={6} pr="md" pb={10} pl={list.length > 1 ? 52 : 36}>
-                      {area.perms.map((perm) => (
-                        <label
-                          key={perm.key}
+                  {/* Modules get one picker for all their areas; core areas
+                      without a module keep only their own lines. */}
+                  {group.module && picker(group.perms, moduleLevel, moduleOffered, group.label)}
+                </Group>
+              )}
+              {areas.map((area, index) => {
+                const perms = single ? group.perms : area.perms
+                const offered = offeredLevels(perms)
+                const level = currentLevel(perms, roleSet)
+                const isOpen = open.has(area.key)
+                const name = single
+                  ? group.label
+                  : area.resource === area.blueprint.replace(/_bp$/, '')
+                    ? blueprintLabel(area.blueprint)
+                    : resourceLabel(area.resource)
+                return (
+                  <Fragment key={area.key}>
+                    <Group
+                      justify="space-between"
+                      wrap="wrap"
+                      gap={8}
+                      pr="md"
+                      py={8}
+                      pl={single ? 'md' : 'xl'}
+                      style={{
+                        borderTop:
+                          groupIndex === 0 && index === 0 && single
+                            ? undefined
+                            : '1px solid var(--hb-border)',
+                      }}
+                    >
+                      <UnstyledButton
+                        onClick={() => toggleOpen(area.key)}
+                        aria-expanded={isOpen}
+                        title={
+                          isOpen
+                            ? t('roles.hideSingle', 'Einzelne Rechte ausblenden')
+                            : t('roles.showSingle', 'Einzelne Rechte zeigen')
+                        }
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}
+                      >
+                        <IconChevronRight
+                          size={14}
                           style={{
-                            display: 'flex',
-                            gap: 8,
-                            alignItems: 'flex-start',
-                            cursor: disabled ? 'default' : 'pointer',
+                            color: 'var(--hb-text-3)',
+                            transform: isOpen ? 'rotate(90deg)' : 'none',
+                            transition: 'transform .15s',
+                            flexShrink: 0,
                           }}
-                          title={perm.key}
-                        >
-                          <PermCheckbox
-                            role={role}
-                            permKey={perm.key}
-                            roleSet={roleSet}
-                            onToggle={onToggle}
-                            canSetPermissions={canSetPermissions}
-                            size={15}
-                          />
-                          <Text size="sm">{permLabel(perm)}</Text>
-                        </label>
-                      ))}
-                    </Stack>
-                  )}
-                </Fragment>
-              )
-            })}
-          </Fragment>
-        ))}
+                        />
+                        <Text fw={600} size="sm">
+                          {name}
+                        </Text>
+                        {level === null && (
+                          <Badge size="xs" variant="light" color="orange">
+                            {t('roles.level.custom', 'Angepasst')}
+                          </Badge>
+                        )}
+                        {single && group.module && level === 'none' && (
+                          <Badge size="xs" variant="light" color="gray">
+                            {t('roles.moduleHidden', 'Ausgeblendet')}
+                          </Badge>
+                        )}
+                      </UnstyledButton>
+                      {picker(perms, level, offered, name)}
+                    </Group>
+                    {isOpen && (
+                      <Stack gap={6} pr="md" pb={10} pl={single ? 36 : 52}>
+                        {perms.map((perm) => (
+                          <label
+                            key={perm.key}
+                            style={{
+                              display: 'flex',
+                              gap: 8,
+                              alignItems: 'flex-start',
+                              cursor: disabled ? 'default' : 'pointer',
+                            }}
+                            title={perm.key}
+                          >
+                            <PermCheckbox
+                              role={role}
+                              permKey={perm.key}
+                              roleSet={roleSet}
+                              onToggle={onToggle}
+                              canSetPermissions={canSetPermissions}
+                              size={15}
+                            />
+                            <Text size="sm">
+                              {isAccessKey(perm.key)
+                                ? t(
+                                    'roles.perms.moduleAccess',
+                                    'Modul verwenden (sehen und öffnen)',
+                                  )
+                                : permLabel(perm)}
+                            </Text>
+                          </label>
+                        ))}
+                      </Stack>
+                    )}
+                  </Fragment>
+                )
+              })}
+            </Fragment>
+          )
+        })}
       </Paper>
     </Stack>
   )

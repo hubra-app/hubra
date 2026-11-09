@@ -11,6 +11,8 @@ export interface PermissionEntry {
   resource: string;
   action: string;
   blueprint: string;
+  /** The module the key belongs to (docs/roles.md); null for core keys. */
+  module?: string | null;
 }
 
 export async function getSystemPermissions(): Promise<PermissionEntry[]> {

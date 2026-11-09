@@ -3054,7 +3054,7 @@
   "roles.level.all": "All",
   "roles.level.custom": "Custom",
   "roles.adminAll": "This is an admin role and may do everything in the club.",
-  "roles.levelHint": "View: see and take part (sign up, vote, comment). Edit: also create and change. All: also delete and export.",
+  "roles.levelHint": "None: the module is hidden for this role (own data stays on the profile). View: see and take part (sign up, vote, comment). Edit: also create and change. All: also delete and export.",
   "roles.hideSingle": "Hide single permissions",
   "roles.showSingle": "Show single permissions",
   "roles.backToList": "Back to the roles",
@@ -4133,5 +4133,9 @@
   "roles.system.Board": "Board",
   "roles.system.Secretary": "Secretary",
   "roles.systemDesc.Board": "The board: sees the club's members, finances and mail, runs events, polls, posts and groups.",
-  "roles.systemDesc.Secretary": "Secretary: keeps the member register, applications, functions, mail and the club's records."
+  "roles.systemDesc.Secretary": "Secretary: keeps the member register, applications, functions, mail and the club's records.",
+  "functions.grantsRoles": "Gives the roles",
+  "functions.grantsRolesHint": "Whoever holds the function has these roles until the function ends (for example Board and Treasurer).",
+  "functions.givesRoles": "Gives the roles {{roles}}",
+  "roles.moduleHidden": "Hidden"
 }

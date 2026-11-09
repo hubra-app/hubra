@@ -27,6 +27,10 @@ export function RequireModule({ code, children }: { code: string; children: Reac
     )
   if (!modules[code]) return <Navigate to="/app/dashboard" replace />
   const isDetail = /\/\d+(\/|$)/.test(pathname)
+  // Roles without the module (docs/roles.md) get "Kein Zugriff" on its
+  // list screens; detail pages stay with their own checks (own data).
+  const info = moduleList.find((m) => m.code === code)
+  if (!isDetail && info?.access === false) return <AccessDeniedScreen />
   const perms = moduleList.find((m) => m.code === code)?.nav.flatMap((n) => n.perms) ?? []
   if (!isDetail && perms.length > 0 && !perms.some(hasPermission)) return <AccessDeniedScreen />
   return <>{children}</>

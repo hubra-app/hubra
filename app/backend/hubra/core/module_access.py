@@ -167,12 +167,15 @@ def module_keys() -> dict[str, set[str]]:
 
 
 def module_of_key(key: str) -> str | None:
+    """The module a permission key belongs to, None for core keys no module
+    owns (dashboard, notifications, settings)."""
     if key.startswith("module.") and key.endswith(".access"):
         return key[len("module.") : -len(".access")]
-    for code, keys in module_keys().items():
-        if key in keys:
-            return code
-    return None
+    by_key = current_app.extensions.get("hubra_key_modules")
+    if by_key is None:
+        by_key = {k: code for code, ks in module_keys().items() for k in ks}
+        current_app.extensions["hubra_key_modules"] = by_key
+    return by_key.get(key)
 
 
 def implied_access_keys(keys) -> set[str]:
@@ -180,9 +183,8 @@ def implied_access_keys(keys) -> set[str]:
     from hubra.core.modules import registry
 
     out = set()
-    by_key = {k: code for code, ks in module_keys().items() for k in ks}
     for key in keys:
-        code = by_key.get(key)
+        code = module_of_key(key)
         if code is None:
             continue
         module = registry.get(code)
