@@ -189,6 +189,7 @@ Marketplace README and the hubra.club Modules page stay current.
 | CI, releases, GitLab                   | [docs/ci.md](docs/ci.md), [docs/release-guidelines.md](docs/release-guidelines.md), [docs/gitlab.md](docs/gitlab.md) |
 | Changelog (English, German)            | [app/backend/CHANGELOG.md](app/backend/CHANGELOG.md), [app/backend/CHANGELOG.de.md](app/backend/CHANGELOG.de.md) |
 | Roadmap data (What's new)              | [app/backend/ROADMAP.yaml](app/backend/ROADMAP.yaml)     |
+| Feature ideas and roadmap (Nov 2026)   | [docs/ideas-roadmap-2026-11.md](docs/ideas-roadmap-2026-11.md) |
 | Accessibility statement                | [docs/accessibility.md](docs/accessibility.md)           |
 
 Proposals, kept for reference:

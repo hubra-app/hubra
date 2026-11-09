@@ -450,6 +450,120 @@ def portal(tenant: Tenant, return_url: str) -> str:
     return session["url"]
 
 
+def _running_sub(tenant: Tenant) -> str:
+    s = state(tenant)
+    if not s.get("subscription_id") or s.get("status") not in RUNNING:
+        raise ApiError(409, "NO_SUBSCRIPTION", "The club has no running subscription")
+    return s["subscription_id"]
+
+
+def cancel(tenant: Tenant) -> None:
+    """The club cancels its subscription (hubra#260): it runs to the end of
+    the period already paid and then ends; nothing more is charged.  During
+    a trial it ends with the trial.  Does NOT commit."""
+    key = _need_key(tenant)
+    sub_id = _running_sub(tenant)
+    apply_subscription(
+        tenant,
+        stripe_api.call(
+            key,
+            "POST",
+            f"/v1/subscriptions/{sub_id}",
+            {"cancel_at_period_end": True},
+        ),
+    )
+
+
+def resume(tenant: Tenant) -> None:
+    """Take a cancellation back while the period still runs.  Does NOT
+    commit."""
+    key = _need_key(tenant)
+    sub_id = _running_sub(tenant)
+    apply_subscription(
+        tenant,
+        stripe_api.call(
+            key,
+            "POST",
+            f"/v1/subscriptions/{sub_id}",
+            {"cancel_at_period_end": False},
+        ),
+    )
+
+
+def end_now(tenant: Tenant, mode_: str) -> bool:
+    """End the club's running subscription in *mode_* (``live`` or
+    ``sandbox``) at once, without proration or a last invoice.  For manage
+    when a club moves between live and sandbox.  Returns True when one was
+    ended.  Does NOT commit."""
+    from hubra.core.services import platform_settings
+
+    key_name = SANDBOX_STATE_KEY if mode_ == platform_settings.SANDBOX else STATE_KEY
+    s = dict((tenant.settings or {}).get(key_name) or {})
+    if not s.get("subscription_id") or s.get("status") not in RUNNING:
+        return False
+    key = platform_settings.billing_stripe_key(mode_)
+    if not key:
+        raise ApiError(
+            409,
+            "BILLING_OFF",
+            f"No {mode_} Stripe key is set, so the subscription cannot be ended",
+        )
+    try:
+        # Stripe's defaults: no proration, no last invoice.
+        stripe_api.call(key, "DELETE", f"/v1/subscriptions/{s['subscription_id']}")
+    except StripeError as exc:
+        if exc.status != 404:
+            raise
+    settings = dict(tenant.settings or {})
+    settings[key_name] = {
+        **s,
+        "status": "canceled",
+        "cancel_at_period_end": False,
+        "synced": None,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    tenant.settings = settings
+    flag_modified(tenant, "settings")
+    return True
+
+
+def start_sandbox_subscription(tenant: Tenant) -> bool:
+    """A sandbox subscription with the club's current lines, billed by
+    invoice so no card is needed: what a club that paid live gets when
+    manage turns it into a sandbox club (hubra#260).  The club must already
+    be in sandbox mode.  Returns False when there is nothing to charge or
+    one already runs.  Does NOT commit (but the customer id is saved)."""
+    from hubra.core.services import platform_settings
+
+    if mode(tenant) != platform_settings.SANDBOX:
+        raise ApiError(409, "NOT_SANDBOX", "The club is not a sandbox club")
+    key = _need_key(tenant)
+    if public_state(tenant)["hasSubscription"]:
+        return False
+    lines = items(tenant)
+    if not lines:
+        return False
+    _ensure_products(key, lines)
+    customer = _ensure_customer(key, tenant, None)
+    sub = stripe_api.call(
+        key,
+        "POST",
+        "/v1/subscriptions",
+        {
+            "customer": customer,
+            "items": [
+                {"price_data": _price_data(x), "quantity": x["quantity"]} for x in lines
+            ],
+            "collection_method": "send_invoice",
+            "days_until_due": 30,
+            "metadata": {"tenant_id": tenant.id},
+        },
+    )
+    apply_subscription(tenant, sub)
+    _save_state(tenant, {"synced": _signature(lines)})
+    return True
+
+
 def invoices(tenant: Tenant, limit: int = 12) -> list[dict]:
     key = _key(tenant)
     customer = state(tenant).get("customer_id")

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from flask import Response, current_app, jsonify, url_for
+from flask import Response, current_app, jsonify, request
 from sqlalchemy import func, select
 
 from hubra.api.events.routes import _public_events, events_bp, public_event
@@ -70,6 +70,19 @@ def _trials_open(today: date) -> bool:
     return bool(count)
 
 
+def _public_calendar_url(slug: str) -> str:
+    """The club's public .ics feed (events_bp.public_calendar).
+
+    Built by hand: this page is served by the global backend, which does
+    not register the club routes, so url_for raised BuildError there and
+    the whole page answered 500. The feed itself is a club (app) route on
+    the same API host.
+    """
+    from urllib.parse import quote
+
+    return f"{request.url_root.rstrip('/')}/api/v1/app/events/public/{quote(slug)}.ics"
+
+
 def _public_url(value) -> str | None:
     if isinstance(value, str) and value.startswith(("https://", "http://")):
         return value[:500]
@@ -104,7 +117,7 @@ def club_public_page(slug: str):
                 {**public_event(e, None), "url": None} for e in events
             ],
             "calendar": (
-                url_for("events_bp.public_calendar", slug=tenant.slug, _external=True)
+                _public_calendar_url(tenant.slug)
                 if events_on
                 else None
             ),

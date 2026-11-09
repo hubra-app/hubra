@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterator
+from datetime import date
 from contextlib import contextmanager
 
 from sqlalchemy import select
@@ -88,6 +89,17 @@ def profile(user: User) -> dict:
         "lastName": user.last_name,
         "avatarColor": user.avatar_color,
         "profileNote": user.profile_note,
+        "gender": user.gender,
+        "birthday": user.birthday.isoformat() if user.birthday else None,
+        "phone": user.phone,
+        "mobile": user.mobile,
+        "address": {
+            "street": user.address_street,
+            "houseNo": user.address_house_no,
+            "postalCode": user.address_postal_code,
+            "city": user.address_city,
+            "country": user.address_country,
+        },
         "language": user.language,
         "theme": user.theme,
         "navPrefs": _nav_prefs(user.nav_prefs),
@@ -193,6 +205,17 @@ def update_profile(user: User, updates: dict) -> None:
         if note is not None and len(str(note)) > 5000:
             raise_error(400, "VALIDATION_ERROR", "Profile note exceeds 5000 characters")
         user.profile_note = note
+    if "gender" in updates:
+        if updates["gender"] not in GENDERS:
+            raise_error(400, "VALIDATION_ERROR", "gender: female, male, diverse or null")
+        user.gender = updates["gender"]
+    if "birthday" in updates:
+        user.birthday = _birthday(updates["birthday"])
+    for key in ("phone", "mobile"):
+        if key in updates:
+            setattr(user, key, _text(updates[key], key, 50))
+    if "address" in updates:
+        _set_address(user, updates["address"])
     if "language" in updates:
         if updates["language"] not in LANGUAGES:
             raise_error(400, "VALIDATION_ERROR", "Unknown language")
@@ -203,6 +226,54 @@ def update_profile(user: User, updates: dict) -> None:
         user.theme = updates["theme"]
     if "navPrefs" in updates:
         user.nav_prefs = _clean_nav_prefs(updates["navPrefs"])
+
+
+GENDERS = (None, "female", "male", "diverse")
+# Address keys on the account page and the User columns they set, with
+# their longest value.
+ADDRESS_FIELDS = {
+    "street": ("address_street", 255),
+    "houseNo": ("address_house_no", 20),
+    "postalCode": ("address_postal_code", 20),
+    "city": ("address_city", 255),
+}
+
+
+def _text(value, key: str, limit: int) -> str | None:
+    """A trimmed string or None (empty clears it)."""
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise_error(400, "VALIDATION_ERROR", f"{key} must be text")
+    value = value.strip()
+    if len(value) > limit:
+        raise_error(400, "VALIDATION_ERROR", f"{key} exceeds {limit} characters")
+    return value or None
+
+
+def _birthday(value) -> date | None:
+    if value in (None, ""):
+        return None
+    try:
+        day = date.fromisoformat(value) if isinstance(value, str) else None
+    except ValueError:
+        day = None
+    if day is None or day > date.today() or day.year < 1900:
+        raise_error(400, "VALIDATION_ERROR", "birthday must be a past date (YYYY-MM-DD)")
+    return day
+
+
+def _set_address(user: User, value) -> None:
+    if not isinstance(value, dict):
+        raise_error(400, "VALIDATION_ERROR", "address must be an object")
+    for key, (attr, limit) in ADDRESS_FIELDS.items():
+        if key in value:
+            setattr(user, attr, _text(value[key], f"address.{key}", limit))
+    if "country" in value:
+        country = (value["country"] or "").strip().upper()
+        if len(country) != 2 or not country.isalpha():
+            raise_error(400, "VALIDATION_ERROR", "address.country must be a 2-letter code")
+        user.address_country = country
 
 
 def change_password(user: User, current_password: str, new_password: str) -> None:

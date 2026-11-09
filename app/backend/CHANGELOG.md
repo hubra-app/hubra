@@ -9,13 +9,19 @@ section and position, or the apps show that version in English.
 
 ### Added
 
+- **Member badge on My Account** (sso › My account › Profile): one badge per person with a badge number such as `HB-7K3M-Q9TX`, the same in every club, and below it each membership with its tier, kind (honorary, passive) and member-since date. The number is random, given the first time the badge is shown (new column `users.badge_code`; run `flask db upgrade`).
+- **Personal details on My Account** (sso › My account › Profile): first and last name, gender (new column `users.gender`), birthday, phone, mobile and address, edited by the person for all their clubs. The member badge also shows the badge number as a QR code.
+- **Notification settings on My Account** (sso › My account › Notifications › Settings): per club and topic, choose bell, push, e-mail or Discord, the same choices as the club's own account page.
 - **Your own sidebar categories**: in Customise sidebar you can add categories of your own (New category), rename any heading with the pencil, and remove your categories again; their pages go back to their own areas. The arrows move pages into and out of them. Saved on your account, like the rest of your sidebar.
+- **Plugins can take over another plugin**: a plugin that names another one under `replaces:` takes it over when it is installed or updated, with its data, module switches and permissions. The Plugin catalogue shows what an update takes over and hides the plugin it replaced. This is how Budgets becomes part of Finances (docs/plugins.md).
 - **Own membership fees for single members**: on a member's page the board can exempt them from the fee, set their own yearly fee, or reduce the standard fee by a percentage, always with a reason and optionally until a date. Before that date (30 days by default) the member is asked in the app and by mail to confirm that the reason still applies; they answer under Account › Membership and the board is notified. After the end date the standard fee applies again from the next billing period. Members › Tiers lists all own fees. New rights `tiers.fee_adjustments.read` / `.update` (Treasurer in new clubs). See docs/club-admin-guide.md, "Own fees".
 
 ### Changed
 
 - **More shows only what is not in the sidebar**: the More page in the club app now lists just the pages you moved out of the sidebar, grouped by area, instead of repeating every sidebar entry. With everything in the sidebar it says so and points to Customise sidebar.
 - **Club switcher in the top bar**: the club name and logo at the top left now open a menu of all your clubs (with your role, the current one ticked) and a link to find another club. It replaces the club list in the account menu and works on phones too.
+- **Cancel the Hubra subscription in Hubra**: Settings › Hubra subscription has *Cancel subscription* (it runs to the end of the paid period, then ends) and *Take cancellation back*, whatever the Stripe portal allows. In manage, switching a club to or from sandbox now ends its running subscription in the old Stripe mode at once; a club that paid live gets a sandbox subscription with the same lines instead of a refusal.
+- **Plans: "Clubs can pick it" apart from "On the website"**: manage › Plans has two switches, so a plan can be on the pricing page without clubs picking it themselves, or the other way round. Existing public plans stay selectable. Operators: run `flask db upgrade`.
 
 ## [0.2.4] - 2026-11-06
 

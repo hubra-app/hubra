@@ -35,6 +35,7 @@ ALWAYS_LEFT_OUT = (
     ".gitattributes",
     ".gitignore",
     RELEASEIGNORE,
+    ".mason.toml",  # release settings for Mason (bump, tag), not part of the plugin
     "__pycache__",
     "*.pyc",
     "*.zip",
@@ -294,6 +295,7 @@ def _listing(m: dict) -> dict:
         "modules": m.get("modules") or [],
         "requires": m.get("requires") or [],
         "depends": m.get("depends") or {},
+        "replaces": m.get("replaces") or [],
         "uses": m.get("uses"),
     }
 

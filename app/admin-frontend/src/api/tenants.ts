@@ -853,9 +853,19 @@ export async function closeDataRequest(id: number, status: 'done' | 'rejected', 
   })
 }
 
-/** Make the club a sandbox club (Stripe sandbox keys only) or a normal one. */
-export async function setTenantSandbox(tenantId: number, sandbox: boolean): Promise<{ tenant: Tenant }> {
-  return apiFetch<{ tenant: Tenant }>(`/platform/system/tenants/${tenantId}/sandbox`, {
+/** Make the club a sandbox club (Stripe sandbox keys only) or a normal one.
+ * A running subscription in the old Stripe mode ends at once; a club that
+ * paid live gets a sandbox subscription with the same lines. */
+export interface SandboxSwitchResult {
+  tenant: Tenant
+  /** The subscription in the old mode was ended. */
+  subscriptionEnded: boolean
+  /** A sandbox subscription was started in its place. */
+  sandboxSubscription: boolean
+}
+
+export async function setTenantSandbox(tenantId: number, sandbox: boolean): Promise<SandboxSwitchResult> {
+  return apiFetch<SandboxSwitchResult>(`/platform/system/tenants/${tenantId}/sandbox`, {
     method: 'PUT',
     body: JSON.stringify({ sandbox }),
   })

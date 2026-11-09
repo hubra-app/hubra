@@ -93,3 +93,18 @@ def test_widget_script_is_served_for_any_site(client, club):
     assert resp.headers["Access-Control-Allow-Origin"] == "*"
     js = resp.get_data(as_text=True)
     assert "attachShadow" in js and "innerHTML" not in js
+
+
+def test_calendar_link_without_the_club_routes(app, client, db, club):
+    """The global backend serves this page but not the events routes; the
+    feed link must not need them (url_for raised BuildError: a 500)."""
+    from unittest.mock import patch
+
+    from flask import url_for
+
+    _set(db, club, public_page=True)
+    with patch("flask.url_for", side_effect=AssertionError("no url_for")):
+        body = client.get(_url(club)).get_json()
+    with app.test_request_context():
+        expected = url_for("events_bp.public_calendar", slug=club.slug, _external=True)
+    assert body["calendar"] == expected

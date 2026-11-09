@@ -227,3 +227,61 @@ def test_sign_out_everywhere(client, tenant_pair):
     resp = client.post("/api/v1/account/all-sessions/revoke-all")
     assert resp.status_code == 200
     assert resp.get_json()["ok"] is True
+
+
+def test_profile_personal_details(client, db):
+    user = _user_without_club(db)
+    _login(client, "solo@test.ch")
+    resp = client.patch(
+        "/api/v1/account/profile",
+        json={
+            "firstName": "Anna",
+            "lastName": "Muster",
+            "gender": "female",
+            "birthday": "1990-04-12",
+            "phone": " 044 123 45 67 ",
+            "mobile": "",
+            "address": {
+                "street": "Bahnhofstrasse",
+                "houseNo": "1",
+                "postalCode": "8001",
+                "city": "Zürich",
+                "country": "ch",
+            },
+        },
+    )
+    assert resp.status_code == 200, resp.get_json()
+    body = resp.get_json()
+    assert body["name"] == "Anna Muster"
+    assert body["gender"] == "female"
+    assert body["birthday"] == "1990-04-12"
+    assert body["phone"] == "044 123 45 67" and body["mobile"] is None
+    assert body["address"] == {
+        "street": "Bahnhofstrasse",
+        "houseNo": "1",
+        "postalCode": "8001",
+        "city": "Zürich",
+        "country": "CH",
+    }
+    db.session.refresh(user)
+    assert user.address_city == "Zürich"
+
+    # cleared again
+    body = client.patch(
+        "/api/v1/account/profile", json={"gender": None, "birthday": None}
+    ).get_json()
+    assert body["gender"] is None and body["birthday"] is None
+
+
+def test_profile_personal_details_are_checked(client, db):
+    _user_without_club(db)
+    _login(client, "solo@test.ch")
+    for bad in (
+        {"gender": "x"},
+        {"birthday": "2999-01-01"},
+        {"birthday": "12.04.1990"},
+        {"phone": "1" * 51},
+        {"address": {"country": "Schweiz"}},
+        {"address": "Bahnhofstrasse 1"},
+    ):
+        assert client.patch("/api/v1/account/profile", json=bad).status_code == 400, bad

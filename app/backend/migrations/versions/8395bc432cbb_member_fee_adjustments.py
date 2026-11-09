@@ -2,7 +2,7 @@
 reduction), with reason, end date and the member's confirmation
 
 Revision ID: 8395bc432cbb
-Revises: e9c4a1f7b3d5
+Revises: b3f9d1a7e5c2, f6c2a8e4b0d7
 Create Date: 2026-11-09 09:46:53.624168
 
 """
@@ -13,7 +13,8 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "8395bc432cbb"
-down_revision = "e9c4a1f7b3d5"
+# Also joins main's two heads (plan selectable, users badge code).
+down_revision = ("b3f9d1a7e5c2", "f6c2a8e4b0d7")
 branch_labels = None
 depends_on = None
 

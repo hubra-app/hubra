@@ -361,6 +361,20 @@ export interface Profile {
   lastName: string
   avatarColor: string
   profileNote: string | null
+  /** female, male, diverse, or null when not given. */
+  gender: 'female' | 'male' | 'diverse' | null
+  /** YYYY-MM-DD */
+  birthday: string | null
+  phone: string | null
+  mobile: string | null
+  address: {
+    street: string | null
+    houseNo: string | null
+    postalCode: string | null
+    city: string | null
+    /** Two-letter code, e.g. CH. */
+    country: string
+  }
   language: string
   /** light, dark or auto (like the device). */
   theme: 'light' | 'dark' | 'auto'
@@ -369,7 +383,19 @@ export interface Profile {
 }
 
 export type ProfileUpdate = Partial<
-  Pick<Profile, 'name' | 'avatarColor' | 'profileNote' | 'language'>
+  Pick<
+    Profile,
+    | 'name'
+    | 'firstName'
+    | 'lastName'
+    | 'avatarColor'
+    | 'profileNote'
+    | 'language'
+    | 'gender'
+    | 'birthday'
+    | 'phone'
+    | 'mobile'
+  > & { address: Partial<Profile['address']> }
 >
 
 export async function getProfile(): Promise<Profile> {
@@ -680,4 +706,79 @@ export async function notMe(token: string): Promise<{ ok: boolean; ended: number
     method: 'POST',
     body: JSON.stringify({ token }),
   })
+}
+
+// ── What the person wants to be notified about, per club ────────────────────
+
+export type NotifyTopic =
+  | 'posts'
+  | 'events'
+  | 'polls'
+  | 'event_reminders'
+  | 'poll_reminders'
+  | 'my_events'
+  | 'bookings'
+  | 'waitlist'
+  | 'my_polls'
+  | 'tasks'
+  | 'requests'
+  | 'payments'
+  | 'membership'
+  | 'qualifications'
+  | 'digest'
+
+/** bell, push, mail, or a connected app's key (e.g. discord). */
+export type NotifyChannel = string
+
+export interface ClubNotifySettings {
+  club: { slug: string | null; name: string | null; logoVersion?: string | null }
+  /** Per topic and channel; a channel the topic does not have is missing. */
+  topics: Partial<Record<NotifyTopic, Record<NotifyChannel, boolean>>>
+  /** Connected apps that deliver notifications in this club. */
+  apps: { key: string; name: string }[]
+  digest: boolean
+  /** The account's "mute all direct messages" (every club). */
+  muted: boolean
+}
+
+export async function getNotifySettings(): Promise<{ data: ClubNotifySettings[] }> {
+  return apiFetch('/global/account/notifications/settings')
+}
+
+export async function setNotifySettings(
+  slug: string | null,
+  change: Partial<Record<NotifyTopic, Record<NotifyChannel, boolean>>> | { muted: boolean },
+): Promise<ClubNotifySettings> {
+  return apiFetch(`/global/account/notifications/settings/${encodeURIComponent(slug ?? '-')}`, {
+    method: 'PUT',
+    body: JSON.stringify(change),
+  })
+}
+
+// ── The member badge ─────────────────────────────────────────────────────────
+
+export interface BadgeMembership {
+  club: { slug: string; name: string; logoVersion?: string | null }
+  tier: { name: string; color: string | null } | null
+  /** regular, honorary, passive or trial. */
+  membershipType: string
+  /** active, trial, inactive or suspended. */
+  status: string
+  joined: string | null
+  until: string | null
+}
+
+/** One badge per person: the number is the same in every club. */
+export interface MemberBadge {
+  code: string
+  /** The badge number as a QR code (SVG markup). */
+  qrSvg: string
+  name: string
+  avatarColor: string
+  since: string | null
+  memberships: BadgeMembership[]
+}
+
+export async function getBadge(): Promise<MemberBadge> {
+  return apiFetch<MemberBadge>('/global/account/badge')
 }
