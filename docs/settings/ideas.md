@@ -4,6 +4,9 @@ Ideas that came out of the settings review (October 2026) and are too big
 for an overnight change. Rough size: S = a day, M = a few days, L = a week
 or more. Nothing here is decided.
 
+The wider list of 85 feature ideas with a phased roadmap (November 2026)
+is in [../ideas-roadmap-2026-11.md](../ideas-roadmap-2026-11.md).
+
 ## Make the existing club settings work
 
 | Idea | Size | Notes |
