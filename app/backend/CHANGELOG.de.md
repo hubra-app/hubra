@@ -9,6 +9,10 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ## [Unreleased]
 
+### Changed
+
+- **Vereinswechsel in der oberen Leiste**: Name und Logo des Vereins oben links öffnen jetzt ein Menü mit all deinen Vereinen (mit deiner Rolle, der aktuelle abgehakt) und einem Link, um einen weiteren Verein zu finden. Es ersetzt die Vereinsliste im Kontomenü und funktioniert auch auf dem Handy.
+
 ## [0.2.4] - 2026-11-06
 
 ### Added

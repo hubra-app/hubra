@@ -2535,7 +2535,6 @@
       "account": "My Account",
       "accountSettings": "My club profile",
       "logout": "Sign out",
-      "clubs": "Clubs",
       "appearance": "Appearance",
       "light": "Light",
       "dark": "Dark",
@@ -2598,6 +2597,15 @@
       "moveDown": "Move down",
       "reset": "Reset",
       "done": "Done"
+    },
+    "clubSwitcher": {
+      "label": "Switch club, current: {{name}}",
+      "yourClubs": "Your clubs",
+      "filter": "Search clubs",
+      "noMatch": "No club found",
+      "owner": "Owner",
+      "admin": "Admin",
+      "find": "Find another club"
     }
   },
   "system": {
