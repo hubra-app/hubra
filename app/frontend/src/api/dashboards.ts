@@ -20,6 +20,8 @@ export interface Dashboard {
   name: string
   /** Shared with the club: every member sees it (each only the widgets they may). */
   shared: boolean
+  /** Shared with these groups only; empty: the whole club (when shared). */
+  groups?: { id: number; name: string }[]
   widgets: DashboardWidget[]
   owner: { id: number; name: string | null }
   mine: boolean
@@ -51,10 +53,15 @@ export function updateDashboard(
   return apiFetch<Dashboard>(`${BASE}/${id}`, { method: 'PATCH', body: JSON.stringify(change) })
 }
 
-export function shareDashboard(id: number, shared: boolean): Promise<Dashboard> {
+/** Share with the club (no groupIds), with chosen groups, or stop sharing. */
+export function shareDashboard(
+  id: number,
+  shared: boolean,
+  groupIds: number[] = [],
+): Promise<Dashboard> {
   return apiFetch<Dashboard>(`${BASE}/${id}/sharing`, {
     method: 'PUT',
-    body: JSON.stringify({ shared }),
+    body: JSON.stringify({ shared, groupIds }),
   })
 }
 

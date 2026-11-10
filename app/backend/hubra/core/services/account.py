@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterator
-from datetime import date
 from contextlib import contextmanager
+from datetime import date
 
 from sqlalchemy import select
 
@@ -28,7 +28,7 @@ THEMES = ("light", "dark", "auto")
 NAV_PREF_KEYS = ("pinned", "hidden", "order")
 NAV_PREF_MAX = 100
 # Sidebar sections a person may move an entry into ("more" is `hidden`).
-NAV_SECTIONS = ("workspace", "activities", "operations", "plugins", "system")
+NAV_SECTIONS = ("workspace", "activities", "operations", "communication", "plugins", "system")
 # Sidebar headings a person may rename (besides their own categories).
 NAV_RENAMABLE = ("favourites", *NAV_SECTIONS)
 NAV_CATEGORY_MAX = 20

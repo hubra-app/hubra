@@ -220,3 +220,57 @@ def test_club_start_page_needs_the_right(
     _as(client, ADMIN)
     assert client.delete(f"{HOME}/club").status_code == 200
     assert client.get(HOME).get_json()["club"]["widgets"] is None
+
+
+def _member_by_email(email):
+    from hubra.core.models.member import Member
+    from hubra.core.models.user import User
+
+    return db.session.scalar(
+        db.select(Member).join(User, Member.user_id == User.id).where(User.email == email)
+    )
+
+
+def test_sharing_with_groups(
+    client,
+    auth_headers,
+    plain_member_token,  # noqa: F811
+    permissioned_member_factory,  # noqa: F811
+):
+    from hubra.core.models.group import Group, GroupMembership
+
+    permissioned_member_factory(["dashboards.dashboards.share"], email=SHARER)
+    team = Group(name="Trainer")
+    other = Group(name="Kasse")
+    db.session.add_all([team, other])
+    db.session.flush()
+    db.session.add(GroupMembership(group_id=team.id, member_id=_member_by_email(SHARER).id))
+    db.session.commit()
+
+    _as(client, SHARER)
+    did = _create(client, {}, widgets=WIDGETS).get_json()["id"]
+    # A group that doesn't exist is refused.
+    resp = client.put(f"{URL}{did}/sharing", json={"shared": True, "groupIds": [99999]})
+    assert resp.status_code == 400
+    resp = client.put(f"{URL}{did}/sharing", json={"shared": True, "groupIds": [other.id]})
+    assert resp.status_code == 200
+    assert resp.get_json()["groups"] == [{"id": other.id, "name": "Kasse"}]
+
+    # Not in the group: neither listed nor found.
+    _as(client, PLAIN)
+    assert did not in [d["id"] for d in client.get(URL).get_json()["items"]]
+    assert client.get(f"{URL}{did}").status_code == 404
+
+    # Join the group: now it shows.
+    db.session.add(GroupMembership(group_id=other.id, member_id=_member_by_email(PLAIN).id))
+    db.session.commit()
+    assert did in [d["id"] for d in client.get(URL).get_json()["items"]]
+    assert client.get(f"{URL}{did}").status_code == 200
+
+    # Shared with the club again: groups are dropped.
+    _as(client, SHARER)
+    resp = client.put(f"{URL}{did}/sharing", json={"shared": True, "groupIds": []})
+    assert resp.get_json()["groups"] == []
+    # Stop sharing: groups go too.
+    resp = client.put(f"{URL}{did}/sharing", json={"shared": False, "groupIds": [team.id]})
+    assert resp.get_json()["shared"] is False and resp.get_json()["groups"] == []

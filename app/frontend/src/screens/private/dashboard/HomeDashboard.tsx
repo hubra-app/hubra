@@ -15,7 +15,7 @@ import {
   type HomePage,
 } from '@/api/dashboards'
 import { WidgetBoard } from './WidgetBoard'
-import { CLUB_HOME, MY_HOME } from './widgets'
+import { CLUB_HOME, MY_HOME, useDefaultHome } from './widgets'
 import { ClubActions } from './homeCards'
 
 /**
@@ -34,7 +34,8 @@ export function HomeDashboard({ kind }: { kind: HomeKind }) {
   const [busy, setBusy] = useState(false)
   const page = data?.[kind]
   const custom = page?.widgets != null
-  const widgets: DashboardWidget[] = page?.widgets ?? (kind === 'club' ? CLUB_HOME : MY_HOME)
+  const builtIn = useDefaultHome(kind === 'club' ? CLUB_HOME : MY_HOME)
+  const widgets: DashboardWidget[] = page?.widgets ?? builtIn
   const canEdit = page?.canEdit ?? false
 
   const store = (next: Omit<HomePage, 'canEdit'>) =>

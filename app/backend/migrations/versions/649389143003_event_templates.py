@@ -1,7 +1,7 @@
 """Event templates: saved events to start new ones from
 
 Revision ID: 649389143003
-Revises: 449652170fd4
+Revises: c4e8a2f6d1b3
 Create Date: 2026-11-10 08:53:01.023934
 
 """
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "649389143003"
-down_revision = "449652170fd4"
+down_revision = "c4e8a2f6d1b3"
 branch_labels = None
 depends_on = None
 

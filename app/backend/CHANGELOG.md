@@ -17,11 +17,14 @@ section and position, or the apps show that version in English.
 - **Fee run preview**: Finanzen › Rechnungen › **Vorschau Beitragslauf** shows what the daily invoice run would bill on a chosen day, before it does: count, total, due date, a total per tier, every member with period and amount (pro rata, payment plan, no email address flagged), why members are skipped, and the last twelve months for comparison. Nothing is created.
 - **Call an event off with a reason**: Anlässe › **Absagen** cancels an event with a reason (one tap on a common one, or your own). It stays in the calendar, marked and struck through; sign-ups close, no reminder goes out, and everyone signed up or waiting plus the event's group hear it with the reason (bell, push, messengers; a mail to those signed up). `event.changed` carries `cancelled` and `reason` for plugins and webhooks. **Doch durchführen** undoes it. Needs `flask db upgrade` (runs by itself after the deploy).
 - **Event templates**: save an event (place, time, places, settings, description) as a template from its row in Anlässe, and start new events from **Aus Vorlage**: the form opens filled in, only the date is left. Needs `flask db upgrade` (runs by itself after the deploy).
+- **Share a dashboard with groups**: the form to create a dashboard and ⋯ › Name und Sichtbarkeit set who sees it: Privat, Ganzer Verein or chosen Gruppen. A dashboard shared with groups shows only for their members. Needs `flask db upgrade` (new column `dashboards.group_ids`, runs by itself after the deploy).
 
 ### Changed
 
 - **Dashboards as a grid**: dashboards and start pages are a grid of 12 columns: drag a widget's grip to move it, drag its corner to change width and height (or use the arrow keys), and "Höhe nach Inhalt" goes back to the content's height. Older dashboards keep their layout.
 - **German texts reviewed**: German API errors that showed in English (dashboards, trial training, licences and modules, sign-in, connected apps and more) are now German; menu paths in hints point at today's pages (API & Webhooks, Mein Konto › Zwei-Faktor, Discord › Einstellungen, Alle Vereine › Tarife & Preise, Konto › Mitgliedschaft › Benachrichtigungen); one word per thing: Zahlungserinnerung (not Mahnung), Einweisung (not Einführung), Schnuppertraining, Gesperrt, Mobil, Inhaber/in, «» quotes. The German glossary for translators describes Standard German instead of the old dialect.
+- **Vor Ort on the start page**: Dashboard › Persönlich shows "Heute vor Ort" (who is in which room today) while the Booking plugin is on, until the member changes the page. Clubs without Booking see the page as before.
+- **Kommunikation in the sidebar**: a new sidebar area Kommunikation holds Mail and the plugins that reach members (Letters, Messengers, Inbox). Each person can still move entries or rename the area.
 
 ### Fixed
 

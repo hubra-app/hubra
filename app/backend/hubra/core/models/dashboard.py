@@ -17,8 +17,9 @@ def _now() -> datetime:
 class Dashboard(db.Model):
     """A member's own dashboard: a name and a list of widgets.
 
-    Private until shared; a shared one shows in everyone's dashboard tabs,
-    and each viewer sees only the widgets their permissions allow. A row with
+    Private until shared; a shared one shows in the dashboard tabs of the
+    whole club, or only of the members of ``group_ids`` when set, and each
+    viewer sees only the widgets their permissions allow. A row with
     ``home`` set holds a changed start page instead.
     """
 
@@ -33,6 +34,8 @@ class Dashboard(db.Model):
         index=True,
     )
     shared: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+    # Shared with these groups only (ids); None or [] = the whole club.
+    group_ids: Mapped[list | None] = mapped_column(JSON, nullable=True)
     # A start page instead of a dashboard tab: "club" (Dashboard › Verein,
     # one per club, owner = whoever changed it last) or "me" (Dashboard ›
     # Persönlich, one per member). None for an ordinary dashboard.

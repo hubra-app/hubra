@@ -703,7 +703,7 @@
   "dashboards.private": "Private",
   "dashboards.remove": "Remove",
   "dashboards.rename": "Rename",
-  "dashboards.settings": "Settings",
+  "dashboards.settings": "Name and visibility",
   "dashboards.share": "Share with the club",
   "dashboards.shared": "Shared with the club",
   "dashboards.sharedDone": "Shared with the club",
@@ -4185,5 +4185,16 @@
   "dashboards.moveHint": "Drag to move, or use the arrow keys",
   "dashboards.resize": "Resize ({{name}})",
   "dashboards.resizeHint": "Drag for width and height, or use the arrow keys",
-  "dashboards.autoHeight": "Height from content"
+  "dashboards.autoHeight": "Height from content",
+  "shell.sections.communication": "Communication",
+  "dashboards.newHint2": "Put together from widgets what you want to keep an eye on.",
+  "dashboards.visibility": "Who sees it",
+  "dashboards.visClub": "Whole club",
+  "dashboards.visGroups": "Groups",
+  "dashboards.visGroupsPick": "Choose groups",
+  "dashboards.visGroupsNone": "Choose at least one group.",
+  "dashboards.visPrivateHint": "Only you see it.",
+  "dashboards.visClubHint": "All members see it, each only with the widgets they may see.",
+  "dashboards.visGroupsHint": "Only the members of these groups see it, each only with the widgets they may see.",
+  "dashboards.sharedGroups": "Shared with {{groups}}"
 }
