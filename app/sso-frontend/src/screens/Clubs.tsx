@@ -272,7 +272,7 @@ export function ClubsScreen() {
                     <Group gap={6} wrap="nowrap">
                       {t.admin_level && (
                         <Badge size="xs" variant="light">
-                          {t.admin_level === 'owner' ? tr('Inhaber', 'Owner') : 'Admin'}
+                          {t.admin_level === 'owner' ? tr('Inhaber/in', 'Owner') : 'Admin'}
                         </Badge>
                       )}
                     </Group>

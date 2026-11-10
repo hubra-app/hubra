@@ -84,13 +84,13 @@ export function OAuthAuthorizeScreen() {
     switch (reason) {
       case 'MEMBERS_OFF':
         return tr(
-          'Dieser Verein erlaubt Mitgliedern keinen Zugang mit Apps. Admins schalten das unter Einstellungen › API & Apps ein.',
-          'This club does not let members connect apps. Admins turn it on under Settings › API & apps.',
+          'Dieser Verein erlaubt Mitgliedern keinen Zugang mit Apps. Admins schalten das unter Einstellungen › API & Webhooks ein.',
+          'This club does not let members connect apps. Admins turn it on under Settings › API & webhooks.',
         )
       case 'AI_OFF':
         return tr(
-          'Dieser Verein hat KI-Assistenten nicht erlaubt. Admins schalten das unter Einstellungen › API & Apps ein.',
-          'This club has not allowed AI assistants. Admins turn it on under Settings › API & apps.',
+          'Dieser Verein hat KI-Assistenten nicht erlaubt. Admins schalten das unter Einstellungen › API & Webhooks ein.',
+          'This club has not allowed AI assistants. Admins turn it on under Settings › API & webhooks.',
         )
       case 'MFA_SETUP_FIRST':
         return tr(

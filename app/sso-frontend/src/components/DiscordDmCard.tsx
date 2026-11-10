@@ -39,8 +39,8 @@ export function DiscordDmCard() {
         </Group>
         <Text size="sm" c="dimmed">
           {tr(
-            'Der Hubra-Bot schreibt dir auf Discord, was nur dich betrifft. Was deine Vereine dir schicken, wählst du im Verein unter Konto › Benachrichtigungen.',
-            'The Hubra bot messages you on Discord about things that only concern you. What your clubs send you, you choose in the club under Account › Notifications.',
+            'Der Hubra-Bot schreibt dir auf Discord, was nur dich betrifft. Was deine Vereine dir schicken, wählst du im Verein unter Konto › Mitgliedschaft › Benachrichtigungen.',
+            'The Hubra bot messages you on Discord about things that only concern you. What your clubs send you, you choose in the club under Account › Membership › Notifications.',
           )}
         </Text>
         <Switch

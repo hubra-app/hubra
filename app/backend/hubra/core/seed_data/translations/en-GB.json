@@ -2685,7 +2685,7 @@
   "events.guests": "{{count}} guests",
   "events.decline": "Decline",
   "events.approve": "Confirm",
-  "finance.noCategoriesHint": "Create a category under Finance → Categories first.",
+  "finance.noCategoriesHint": "Create a category under Finance › Categories first.",
   "validation.wholeNumber": "Please enter a whole number",
   "audit.actions.invite_member": "Member invited",
   "audit.actions.accept_invite": "Invite accepted",
@@ -3438,7 +3438,7 @@
   "mail.email.platform_alert.when": "Time",
   "mail.email.platform_alert.instance": "Instance",
   "mail.email.platform_alert.button": "Open alerts",
-  "mail.email.platform_alert.why": "You get this mail as a platform admin. Choose which alerts you get by mail in manage under Platform › Alerts › My alerts.",
+  "mail.email.platform_alert.why": "You get this mail as a platform admin. Choose which alerts you get by mail in Manage under Operations › Alerts › My alerts.",
   "mail.email.platform_alert.type.relay_down": "Mail relay",
   "mail.email.platform_alert.type.fallback_used": "Fallback relay",
   "mail.email.platform_alert.type.delivery_failed": "Mail delivery",
@@ -3719,21 +3719,6 @@
   "settings.modules.missingDesc": "Suggest it. Once the Hubra team puts the idea on the roadmap, every club can vote for it.",
   "settings.modules.suggest": "Suggest a module",
   "settings.modules.roadmap": "See the roadmap",
-  "data": {
-    "filter": "Filter",
-    "filterReset": "Reset",
-    "filterDone": "Done",
-    "filterRemove": "Remove {{chip}}"
-  },
-  "members": {
-    "filter": {
-      "show": "Show",
-      "current": "Current members"
-    }
-  },
-  "finance": {
-    "direction": "Direction"
-  },
   "mail.email.account_closed.body": "Your Hubra account was <strong>deleted</strong> as you asked. You can no longer sign in with it.",
   "mail.email.account_closed.clubs": "What a club keeps about its members (invoices, for example) belongs to the club. Please contact the club directly for that.",
   "mail.email.account_closed.not_you": "If this was not you, please reply to this mail right away.",

@@ -322,7 +322,7 @@ export function MemberDetailScreen({
               </DetailRow>
             )}
             {m.mobile && (
-              <DetailRow label={t('members.detail.mobile', 'Mobile')}>
+              <DetailRow label={t('members.detail.mobile', 'Mobil')}>
                 <Anchor href={`tel:${m.mobile}`} size="sm">{m.mobile}</Anchor>
               </DetailRow>
             )}

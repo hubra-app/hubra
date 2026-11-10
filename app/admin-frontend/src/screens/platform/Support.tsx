@@ -835,8 +835,8 @@ function PeopleSection({ c, onChange }: { c: StaffCase; onChange: (fresh?: Staff
         ) : (
           <Text size="xs" c="dimmed">
             {tr(
-              'Discord-Threads: Support-Kanal unter Discord › Kanäle wählen.',
-              'Discord threads: pick a support channel under Discord › Channels.',
+              'Discord-Threads: Support-Kanal unter Discord › Einstellungen wählen.',
+              'Discord threads: pick a support channel under Discord › Settings.',
             )}
           </Text>
         )}

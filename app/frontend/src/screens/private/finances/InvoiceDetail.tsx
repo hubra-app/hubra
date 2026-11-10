@@ -227,7 +227,7 @@ export function InvoiceDetailScreen() {
                   fontSize: 'var(--mantine-font-size-sm)',
                 }}
               >
-                {t('finance.noReminders', 'Noch keine Mahnungen versendet.')}
+                {t('finance.noReminders', 'Noch keine Zahlungserinnerungen versendet.')}
               </div>
             ) : (
               <div>

@@ -27,7 +27,7 @@ const DE: Record<string, { name: string; description: string; settings?: Record<
   },
   finance: {
     name: 'Finanzen',
-    description: 'Buchungen, Rechnungen mit Schweizer QR-Rechnung und Mahnungen',
+    description: 'Buchungen, Rechnungen mit Schweizer QR-Rechnung und Zahlungserinnerungen',
     settings: {
       payment_term_days: [
         'Zahlungsfrist (Tage)',
@@ -58,12 +58,12 @@ const DE: Record<string, { name: string; description: string; settings?: Record<
   groups: { name: 'Gruppen', description: 'Teams, Kommissionen und Interessengruppen' },
   inventory: {
     name: 'Inventar',
-    description: 'Werkzeuge, Maschinen und Material, Ausleihen und Einführungen',
+    description: 'Werkzeuge, Maschinen und Material, Ausleihen und Einweisungen',
     settings: {
       checkout_max_days: ['Längste Ausleihe (Tage)', 'Standard-Rückgabefrist für neue Ausleihen'],
       require_induction: [
-        'Nur eingeführte Mitglieder dürfen ausleihen',
-        'Gilt für Gegenstände, die eine Einführung brauchen',
+        'Nur eingewiesene Mitglieder dürfen ausleihen',
+        'Gilt für Gegenstände, die eine Einweisung brauchen',
       ],
       block_when_overdue: [
         'Ausleihen sperren, solange eine Rechnung überfällig ist',

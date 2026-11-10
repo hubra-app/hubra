@@ -38,12 +38,12 @@ export function PublicClubDetails({ club }: { club: PublicClub }) {
           <Group justify="space-between" wrap="wrap" gap="sm">
             <Text size="sm" style={{ flex: 1, minWidth: 200 }}>
               {tr(
-                'Lust, es auszuprobieren? Melde dich für ein Probetraining an, ohne Konto.',
+                'Lust, es auszuprobieren? Melde dich für ein Schnuppertraining an, ohne Konto.',
                 'Want to try it out? Book a trial training, no account needed.',
               )}
             </Text>
             <Button component={Link} to={`/clubs/${club.slug}/trial`} variant="light">
-              {tr('Probetraining buchen', 'Book a trial training')}
+              {tr('Schnuppertraining buchen', 'Book a trial training')}
             </Button>
           </Group>
         </Paper>

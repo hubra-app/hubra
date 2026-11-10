@@ -115,7 +115,7 @@ export function MyTenantsTab() {
                     </Text>
                     {t.admin_level && (
                       <Badge size="xs" variant="light" style={{ flexShrink: 0 }}>
-                        {t.admin_level === 'owner' ? tr('Inhaber', 'Owner') : tr('Admin', 'Admin')}
+                        {t.admin_level === 'owner' ? tr('Inhaber/in', 'Owner') : tr('Admin', 'Admin')}
                       </Badge>
                     )}
                   </Group>

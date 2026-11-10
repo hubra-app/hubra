@@ -131,7 +131,7 @@ export function ClubSwitcher() {
             const isCurrent = slug === current
             const role =
               x.admin_level === 'owner'
-                ? t('shell.clubSwitcher.owner', 'Inhaber')
+                ? t('shell.clubSwitcher.owner', 'Inhaber/in')
                 : x.admin_level === 'admin'
                   ? t('shell.clubSwitcher.admin', 'Admin')
                   : null

@@ -150,7 +150,7 @@ function InvoiceSettingsForm({ module }: { module: ModuleInfo }) {
   return (
     <Paper withBorder p="lg">
       <Title order={3} mb="md">
-        {t('finance.settings.invoicesTitle', 'Rechnungen und Mahnungen')}
+        {t('finance.settings.invoicesTitle', 'Rechnungen und Zahlungserinnerungen')}
       </Title>
       <Stack gap="md" maw={480}>
         {module.settings

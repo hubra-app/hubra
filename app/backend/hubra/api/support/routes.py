@@ -449,7 +449,7 @@ def staff_open_thread(case_id: int):
         return err
     if not support_discord.enabled():
         return api_error(
-            "CONFLICT", "Pick a support channel under Discord › Channels first", 409
+            "CONFLICT", "Pick a support channel under Discord › Settings first", 409
         )
     if case.merged_into_id is not None:
         return api_error("CONFLICT", "This case was merged into another one", 409)

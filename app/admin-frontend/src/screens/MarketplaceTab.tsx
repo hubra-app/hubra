@@ -589,7 +589,7 @@ function PluginNotes({ p, reloading, followDeps }: { p: MarketplacePlugin; reloa
       {!b.replaced && (b.updateBlocked || (!p.installed && b.outdated.length > 0 && !followDeps)) && (
         <Text size="xs" c="orange">
           {tr(
-            `Braucht ${gapText(b.outdated)}: aktualisiere es zuerst oder schalte „Benötigte Plugins mitaktualisieren“ ein`,
+            `Braucht ${gapText(b.outdated)}: aktualisiere es zuerst oder schalte «Benötigte Plugins mitaktualisieren» ein`,
             `Needs ${gapText(b.outdated)}: update it first, or turn on “Also update required plugins”`,
           )}
         </Text>

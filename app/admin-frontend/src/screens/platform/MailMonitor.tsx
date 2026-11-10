@@ -106,8 +106,8 @@ function RelayCard({
         <Text size="sm" c="dimmed">
           {relay.which === 'fallback'
             ? tr(
-                'Kein Fallback eingerichtet. Unter Mail › Relay lässt sich eins hinterlegen.',
-                'No fallback set up. Add one under Mail › Relay.',
+                'Kein Fallback eingerichtet. Unter Mail › Einstellungen lässt sich eins hinterlegen.',
+                'No fallback set up. Add one under Mail › Settings.',
               )
             : tr(
                 'Kein Relay eingerichtet: Hubra kann keine Mails senden.',

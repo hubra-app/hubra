@@ -418,7 +418,7 @@ export function PostsTab() {
             >
               {t(
                 'posts.beFirstToShare',
-                'Teile als Erste:r eine Neuigkeit mit dem Verein.',
+                'Teile die erste Neuigkeit mit dem Verein.',
               )}
             </div>
           </div>

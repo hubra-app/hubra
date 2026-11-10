@@ -120,7 +120,7 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
                         variant={a.level === 'owner' ? 'filled' : 'light'}
                         color="acc"
                       >
-                        {a.level === 'owner' ? tr('Inhaber', 'Owner') : tr('Admin', 'Admin')}
+                        {a.level === 'owner' ? tr('Inhaber/in', 'Owner') : tr('Admin', 'Admin')}
                       </Badge>
                     </Table.Td>
                     <Table.Td style={{ textAlign: 'right' }}>
@@ -190,7 +190,7 @@ export function ClubAdminsPanel({ tenantId }: { tenantId: number }) {
                 onChange={(v) => setLevel(v as 'admin' | 'owner')}
                 data={[
                   { value: 'admin', label: tr('Admin', 'Admin') },
-                  { value: 'owner', label: tr('Inhaber', 'Owner') },
+                  { value: 'owner', label: tr('Inhaber/in', 'Owner') },
                 ]}
               />
             )}

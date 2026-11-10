@@ -176,7 +176,7 @@ function AppModal({
     >
       <TextInput
         label={t('signInApps.name', 'Name')}
-        description={t('signInApps.nameHint', 'So sehen Mitglieder die App beim Anmelden, z. B. „Vereinswebsite“.')}
+        description={t('signInApps.nameHint', 'So sehen Mitglieder die App beim Anmelden, z. B. «Vereinswebsite».')}
         value={name}
         onChange={(e) => setName(e.currentTarget.value)}
         maxLength={100}

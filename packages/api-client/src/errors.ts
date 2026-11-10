@@ -217,9 +217,9 @@ const DE: Record<string, string> = {
   "No club selected": "Kein Verein ausgewählt.",
 
   // Members, roles and groups
-  "You cannot suspend yourself": "Du kannst dich nicht selbst pausieren.",
+  "You cannot suspend yourself": "Du kannst dich nicht selbst sperren.",
   "Cannot suspend an Owner or Admin role member":
-    "Mitglieder mit der Rolle Inhaber/in oder Admin können nicht pausiert werden.",
+    "Mitglieder mit der Rolle Inhaber/in oder Admin können nicht gesperrt werden.",
   "This member left the club; invite them to bring them back":
     "Dieses Mitglied hat den Verein verlassen. Lade es ein, um es zurückzuholen.",
   "The applicant has no account yet": "Die Person hat noch kein Konto.",
@@ -277,6 +277,54 @@ const DE: Record<string, string> = {
   "Cannot change the key of a protected binding": "Bei einer geschützten Verknüpfung lässt sich der Schlüssel nicht ändern.",
   "Cannot toggle a protected binding": "Eine geschützte Verknüpfung lässt sich nicht ein- oder ausschalten.",
   "Cannot delete a protected binding": "Eine geschützte Verknüpfung kann nicht gelöscht werden.",
+  // Account, sign-in and connected apps
+  "The password is not correct": "Das Passwort stimmt nicht.",
+  "The link is invalid, expired or was used already": "Der Link ist ungültig, abgelaufen oder wurde schon benutzt.",
+  "Sign in first": "Melde dich zuerst an.",
+  "This sign-in was ended": "Diese Anmeldung wurde beendet. Melde dich neu an.",
+  "This account has no passkey": "Dieses Konto hat keinen Passkey.",
+  "Google Wallet is not reachable right now": "Google Wallet ist gerade nicht erreichbar.",
+  "This connection is already active": "Diese Verbindung ist schon aktiv.",
+  "Confirm the connection first": "Bestätige zuerst die Verbindung.",
+  "This service can't be connected": "Dieser Dienst lässt sich nicht verbinden.",
+  "Connected apps belong to a club; pick a club first": "Verbundene Apps gehören zu einem Verein. Wähle zuerst einen Verein.",
+  "You already asked for deletion": "Du hast die Löschung schon beantragt.",
+  "Open a club first": "Öffne zuerst einen Verein.",
+  "The club no longer exists": "Diesen Verein gibt es nicht mehr.",
+  // Clubs, admins and modules
+  "This person is admin through a club function; take them out of it in the club":
+    "Diese Person ist Admin über eine Funktion im Verein. Nimm sie im Verein aus dieser Funktion.",
+  "Say why you change this club's admins": "Gib an, warum du die Admins dieses Vereins änderst.",
+  "This support session has already ended": "Diese Support-Sitzung ist schon beendet.",
+  "This club has sent its invites for today": "Dieser Verein hat für heute alle Einladungen verschickt. Versuche es morgen wieder.",
+  "This club is already invited or a member": "Dieser Verein ist schon eingeladen oder Mitglied.",
+  "Accept the invitation first": "Nimm zuerst die Einladung an.",
+  "This module comes with the club's plan": "Dieses Modul ist im Tarif des Vereins enthalten.",
+  "This module is not available for the club": "Dieses Modul ist für den Verein nicht verfügbar.",
+  "The club already pays by Stripe": "Der Verein zahlt schon über Stripe.",
+  "The club has nothing to pay": "Der Verein hat nichts zu bezahlen.",
+  "The club doesn't pay by Stripe yet": "Der Verein zahlt noch nicht über Stripe.",
+  "The club has no running subscription": "Der Verein hat kein laufendes Abo.",
+  "The club has no Stripe subscription": "Der Verein hat kein Stripe-Abo.",
+  "Only an export request has a download": "Nur eine Export-Anfrage hat einen Download.",
+  // Dashboards, posts, polls and events
+  "Only its owner changes a dashboard": "Nur wer das Dashboard angelegt hat, kann es ändern.",
+  "Only its owner deletes a dashboard": "Nur wer das Dashboard angelegt hat, kann es löschen.",
+  "Only its owner shares a dashboard": "Nur wer das Dashboard angelegt hat, kann es teilen.",
+  "You may not see this widget": "Dieses Widget darfst du nicht sehen.",
+  "This widget couldn't load its data": "Dieses Widget konnte seine Daten nicht laden.",
+  "You can only move this to a group you manage": "Du kannst das nur in eine Gruppe verschieben, die du leitest.",
+  "This poll is for the groups and functions it names": "Diese Umfrage ist nur für die genannten Gruppen und Funktionen.",
+  "This event is not part of a series": "Dieser Anlass gehört zu keiner Serie.",
+  "No trial places left for this training": "Für dieses Training gibt es keine Schnupperplätze mehr.",
+  "This person was already invited": "Diese Person ist schon eingeladen.",
+  "Inviting members needs the right to create members": "Zum Einladen brauchst du das Recht, Mitglieder zu erfassen.",
+  "This arrangement has ended; please contact the board": "Diese Vereinbarung ist abgelaufen. Melde dich beim Vorstand.",
+  "The member already has this role for the group": "Das Mitglied hat diese Rolle in der Gruppe schon.",
+  "This case was merged into another one": "Dieser Fall wurde mit einem anderen zusammengeführt.",
+  "Pick a support channel under Discord › Settings first": "Wähle zuerst unter Discord › Einstellungen einen Support-Kanal.",
+  "This backup can only be opened with the backup private key":
+    "Dieses Backup lässt sich nur mit dem privaten Backup-Schlüssel öffnen.",
 };
 
 // Messages that carry a name or number.
@@ -294,8 +342,26 @@ const DE_PATTERNS: [RegExp, (...m: string[]) => string][] = [
     `Diese Stufe kann nicht gelöscht werden: ${n} Mitglieder haben sie noch.`],
   [/^The (.+) module is not enabled$/, (m) => `Das Modul ${m} ist ausgeschaltet.`],
   [/^(.+) has an overdue invoice$/, (n) => `${n} hat eine überfällige Rechnung.`],
-  [/^(.+) has not been instructed on (.+)$/, (n, i) => `${n} hat noch keine Einführung für ${i}.`],
+  [/^(.+) has not been instructed on (.+)$/, (n, i) => `${n} hat noch keine Einweisung für ${i}.`],
   [/^File too large \(max (\d+) KiB\)$/, (n) => `Die Datei ist zu gross (höchstens ${n} KiB).`],
+  [/^You need a licence for (.+); ask the club's admin$/, (m) =>
+    `Für ${m} brauchst du eine Lizenz. Frag die Admins des Vereins.`],
+  [/^Your roles don't include (.+); ask the club's admin$/, (m) =>
+    `Deine Rollen umfassen ${m} nicht. Frag die Admins des Vereins.`],
+  [/^Switch on (.+) first; (.+) needs it$/, (a, b) => `Schalte zuerst ${a} ein; ${b} braucht es.`],
+  [/^Switch off (.+) first; it needs (.+)$/, (a, b) => `Schalte zuerst ${a} aus; es braucht ${b}.`],
+  [/^(.+) is not available for this club$/, (m) => `${m} ist für diesen Verein nicht verfügbar.`],
+  [/^(.+) cannot be switched off$/, (m) => `${m} lässt sich nicht ausschalten.`],
+  [/^(.+) cannot be blocked$/, (m) => `${m} lässt sich nicht sperren.`],
+  [/^This plan allows (\d+) members; the club has (\d+)$/, (l, c) =>
+    `Dieser Tarif erlaubt ${l} Mitglieder; der Verein hat ${c}.`],
+  [/^The club has (\d+) licences for this module$/, (n) => `Der Verein hat ${n} Lizenzen für dieses Modul.`],
+  [/^At most (\d+) dashboards each$/, (n) => `Höchstens ${n} Dashboards pro Person.`],
+  [/^At most (\d+) webhooks per club$/, (n) => `Höchstens ${n} Webhooks pro Verein.`],
+  [/^(.+) gave their own vote to a proxy$/, (n) => `${n} hat die eigene Stimme schon jemandem übertragen.`],
+  [/^(.+) cannot hold more proxies$/, (n) => `${n} kann keine weiteren Stimmen übernehmen.`],
+  [/^(.+) is already a member of this club$/, (e) => `${e} ist schon Mitglied dieses Vereins.`],
+  [/^(.+) isn't set up on this platform$/, (n) => `${n} ist auf dieser Plattform nicht eingerichtet.`],
   [/^Permission '.+' required$/, () => "Dafür fehlt dir die Berechtigung."],
   [/ not found(?: or archived)?$/, () => "Diesen Eintrag gibt es nicht (mehr)."],
 ];
@@ -326,7 +392,7 @@ const DE_CODE: Record<string, string> = {
   MUST_CHANGE_PASSWORD: "Bitte ändere zuerst dein Passwort.",
   LAST_OWNER: "Die letzte Inhaberin oder der letzte Inhaber kann den Verein nicht verlassen.",
   WEAK_PASSWORD: "Dieses Passwort ist zu schwach.",
-  MEMBERSHIP_SUSPENDED: "Deine Mitgliedschaft in diesem Verein ist pausiert. Melde dich beim Vorstand.",
+  MEMBERSHIP_SUSPENDED: "Deine Mitgliedschaft in diesem Verein ist gesperrt. Melde dich beim Vorstand.",
   BEYOND_OWN_PERMISSIONS: "Du kannst nur Rechte vergeben, die du selbst hast.",
   OWNER_ONLY: "Nur eine Inhaberin oder ein Inhaber kann die Inhaber-Rolle vergeben oder entziehen.",
   ADMIN_ONLY: "Nur Admins können eine Admin-Rolle vergeben oder entziehen.",
