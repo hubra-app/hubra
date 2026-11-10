@@ -35,6 +35,10 @@ interface BackendComment {
   body: string;
   created_at: string;
   updated_at: string;
+  hidden?: boolean;
+  reported_by_me?: boolean;
+  /** Only for moderators: how often the comment was reported. */
+  reports?: number;
 }
 function stripMarkdown(md: string): string {
   return md
@@ -114,6 +118,9 @@ function adaptComment(b: BackendComment): PostComment {
     body: b.body,
     createdAt: b.created_at,
     time: formatRelative(b.created_at),
+    hidden: !!b.hidden,
+    reportedByMe: !!b.reported_by_me,
+    reports: b.reports,
   };
 }
 
@@ -268,4 +275,88 @@ export interface ReadStatus {
 /** Who confirmed a must-read post and who has not (those who manage it). */
 export async function getReadStatus(id: string): Promise<ReadStatus> {
   return apiFetch<ReadStatus>(`/app/posts/${id}/reads`);
+}
+
+// ── Comment moderation ───────────────────────────────────────────────────────
+
+const commentUrl = (postId: string, commentId: string) =>
+  `/app/posts/${postId}/comments/${commentId}`;
+
+/** Report a comment to the moderators. */
+export async function reportComment(
+  postId: string,
+  commentId: string,
+  reason: string,
+): Promise<PostComment> {
+  const data = await apiFetch<BackendComment>(`${commentUrl(postId, commentId)}/report`, {
+    method: "POST",
+    body: JSON.stringify({ reason: reason.trim() || null }),
+  });
+  return adaptComment(data);
+}
+
+/** Moderators: hide a comment, or show it again. */
+export async function setCommentHidden(
+  postId: string,
+  commentId: string,
+  hidden: boolean,
+): Promise<PostComment> {
+  const data = await apiFetch<BackendComment>(
+    `${commentUrl(postId, commentId)}/${hidden ? "hide" : "show"}`,
+    { method: "POST" },
+  );
+  return adaptComment(data);
+}
+
+/** Moderators: keep a reported comment, its reports are done. */
+export async function keepComment(postId: string, commentId: string): Promise<PostComment> {
+  const data = await apiFetch<BackendComment>(`${commentUrl(postId, commentId)}/reports`, {
+    method: "DELETE",
+  });
+  return adaptComment(data);
+}
+
+export interface ReportedComment {
+  comment_id: number;
+  post_id: number;
+  post_title: string;
+  author_id: number;
+  author_name: string;
+  body: string;
+  created_at: string;
+  reports: number;
+  reasons: string[];
+  last_reported_at: string;
+}
+
+export interface CommentMute {
+  member_id: number;
+  member_name: string;
+  until: string;
+  reason: string | null;
+  by_name: string | null;
+}
+
+export async function listReportedComments(): Promise<{ items: ReportedComment[] }> {
+  return apiFetch("/app/posts/comments/reports");
+}
+
+export async function listCommentMutes(): Promise<{ items: CommentMute[] }> {
+  return apiFetch("/app/posts/comments/mutes");
+}
+
+/** Moderators: the member may not comment for *days* days. */
+export async function muteCommenter(
+  memberId: string,
+  days: number,
+  reason: string,
+): Promise<{ items: CommentMute[] }> {
+  return apiFetch("/app/posts/comments/mutes", {
+    method: "POST",
+    body: JSON.stringify({ member_id: Number(memberId), days, reason: reason.trim() || null }),
+  });
+}
+
+export async function unmuteCommenter(memberId: string | number): Promise<{ items: CommentMute[] }> {
+  return apiFetch(`/app/posts/comments/mutes/${memberId}`, { method: "DELETE" });
 }

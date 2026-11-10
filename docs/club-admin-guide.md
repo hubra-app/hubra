@@ -220,6 +220,28 @@ messengers they turned on) a number of days after the post went out:
 Beiträge › Einstellungen › **Erinnerung bei Lesebestätigung (Tage)**,
 7 by default, 0 for no reminder.
 
+### Comment moderation
+
+Who moderates is a right on the roles page: **Moderate posts and comments**
+(`posts.posts.moderate`). Give it to a role club-wide, or to a role for a
+group so it moderates that group's posts only. Admins always moderate.
+
+Any member can **Melden** (report) someone else's comment from its menu,
+with an optional reason. The first report of a comment tells the moderators
+in the bell. Reporters stay anonymous to everyone but the moderators.
+
+Moderators see how often each comment was reported. From the comment's menu
+they **Ausblenden** (hide) it, so members only see *Von der Moderation
+ausgeblendet* in its place, **Einblenden** (show) it again, or **Behalten**
+(keep) it, which closes its reports. Club-wide moderators also find a
+**Moderation** box above the posts, with the reported comments that are
+still visible and the members who are muted.
+
+**Beim Kommentieren stummschalten** (mute in comments) stops a member from
+commenting for 1 to 30 days, with an optional reason. They can still read
+posts. **Aufheben** (lift) in the Moderation box ends the mute early. Every
+hide, show, keep, mute and lift is in the audit log.
+
 ## Roles and permissions
 
 Permissions (Berechtigungen) lists the club's roles. Each role grants

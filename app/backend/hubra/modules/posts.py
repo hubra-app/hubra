@@ -40,7 +40,14 @@ module = Module(
             order=32,
         ),
     ),
-    tables=("posts", "post_likes", "post_comments", "post_reads"),
+    tables=(
+        "posts",
+        "post_likes",
+        "post_comments",
+        "post_reads",
+        "comment_reports",
+        "comment_mutes",
+    ),
     tasks=("hubra.api.posts.tasks",),
     schedule=(
         # Scheduled posts go out within five minutes of their time.
