@@ -143,13 +143,16 @@ export function deleteAccount(currentPassword: string) {
   })
 }
 
-/** The account's data as a JSON file the browser saves. */
-export async function downloadExport(): Promise<void> {
-  const res = await apiFetchRaw('/global/account/export')
+/**
+ * The account's data as a JSON file the browser saves; with *all*, a ZIP
+ * with the account and what each club keeps about you.
+ */
+export async function downloadExport(all = false): Promise<void> {
+  const res = await apiFetchRaw(all ? '/global/account/export/all' : '/global/account/export')
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const blob = await res.blob()
   const name =
-    /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? 'hubra-konto.json'
+    /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? (all ? 'hubra-daten.zip' : 'hubra-konto.json')
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

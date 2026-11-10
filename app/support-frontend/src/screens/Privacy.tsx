@@ -72,7 +72,17 @@ export function PrivacyScreen() {
 function ExportCard() {
   const { tr } = useLang()
   const { notify } = useAuth()
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState<'account' | 'all' | null>(null)
+  const download = async (all: boolean) => {
+    setBusy(all ? 'all' : 'account')
+    try {
+      await downloadExport(all)
+    } catch (err) {
+      notify('error', tr('Herunterladen fehlgeschlagen', 'Download failed'), (err as Error).message)
+    } finally {
+      setBusy(null)
+    }
+  }
   return (
     <Paper withBorder radius="lg" p="lg">
       <Group align="flex-start" wrap="nowrap" gap="md">
@@ -87,23 +97,30 @@ function ExportCard() {
               'A JSON file with your profile, your clubs, sign-ins and devices, passkeys, linked accounts, API tokens and your reports with their answers. Passwords and secrets are not included.',
             )}
           </Text>
-          <Group mt={4}>
+          <Text size="sm" c="dimmed">
+            {tr(
+              '«Alles als ZIP» legt dazu pro Verein eine Datei bei mit dem, was der Verein über dich als Mitglied speichert (Mitgliedsdaten, Rechnungen, Anwesenheit …). Jeder Download wird als erledigte Auskunft festgehalten, wie wenn du ihn im Verein holst.',
+              '"Everything as ZIP" adds one file per club with what that club keeps about you as a member (member record, invoices, attendance …). Each download is recorded as an answered access request, as when you download it in the club.',
+            )}
+          </Text>
+          <Group mt={4} gap="xs">
             <Button
               variant="light"
-              loading={busy}
+              loading={busy === 'account'}
+              disabled={busy === 'all'}
               leftSection={<IconDownload size={16} />}
-              onClick={async () => {
-                setBusy(true)
-                try {
-                  await downloadExport()
-                } catch (err) {
-                  notify('error', tr('Herunterladen fehlgeschlagen', 'Download failed'), (err as Error).message)
-                } finally {
-                  setBusy(false)
-                }
-              }}
+              onClick={() => void download(false)}
             >
-              {tr('Herunterladen', 'Download')}
+              {tr('Konto (JSON)', 'Account (JSON)')}
+            </Button>
+            <Button
+              loading={busy === 'all'}
+              disabled={busy === 'account'}
+              leftSection={<IconDownload size={16} />}
+              onClick={() => void download(true)}
+              data-testid="export-all"
+            >
+              {tr('Alles als ZIP', 'Everything as ZIP')}
             </Button>
           </Group>
         </Stack>

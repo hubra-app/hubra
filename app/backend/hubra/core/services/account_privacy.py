@@ -14,6 +14,7 @@ everything that lets someone sign in is removed.
 
 from __future__ import annotations
 
+import logging
 import secrets
 from datetime import date, datetime, timezone
 from typing import Any
@@ -22,6 +23,8 @@ from sqlalchemy import delete, select
 
 from hubra.core.extensions import db
 from hubra.core.models.user import User
+
+_log = logging.getLogger(__name__)
 
 # Columns that never leave the server, also not to their owner: secrets,
 # hashes and the keys of push subscriptions.
@@ -227,3 +230,77 @@ def delete_account(user: User, password: str) -> None:
             details={"by": "self"},
         )
     )
+
+
+def _club_exports(user: User) -> list[tuple[str, dict | None, str | None]]:
+    """(slug, the club's export of the member, error) for every club the
+    account is an active member of. Each export is recorded in the club's
+    data requests, as when the member downloads it in the club."""
+    from hubra.core.models.member import Member
+    from hubra.core.models.tenant import Tenant
+    from hubra.core.models.user_tenant import UserTenant
+    from hubra.core.services import privacy
+    from hubra.core.tenant.context import in_club
+
+    tenants = db.session.scalars(
+        select(Tenant)
+        .join(UserTenant, UserTenant.tenant_id == Tenant.id)
+        .where(
+            UserTenant.user_id == user.id,
+            UserTenant.status == "active",
+            Tenant.status == "active",
+            Tenant.deleted_at.is_(None),
+        )
+        .order_by(Tenant.slug)
+    ).all()
+    out: list[tuple[str, dict | None, str | None]] = []
+    for tenant in tenants:
+        try:
+            with in_club(tenant):
+                member = db.session.scalar(
+                    select(Member).where(Member.user_id == user.id)
+                )
+                if member is None:
+                    continue
+                data = privacy.export_own(tenant, member)
+                db.session.commit()
+            out.append((tenant.slug, data, None))
+        except Exception:  # noqa: BLE001 - one club failing keeps the rest
+            db.session.rollback()
+            _log.warning("export: club %s failed", tenant.slug, exc_info=True)
+            out.append((tenant.slug, None, "This club's data could not be read now"))
+    return out
+
+
+def export_all(user: User) -> bytes:
+    """One ZIP: ``account.json`` (as ``export``) and ``clubs/<slug>.json``
+    per club (what that club keeps about the member), plus ``README.txt``."""
+    import io
+    import json
+    import zipfile
+
+    account = export(user)
+    clubs = _club_exports(user)
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(
+            "account.json", json.dumps(account, ensure_ascii=False, indent=2)
+        )
+        lines = [
+            "Your data at Hubra",
+            "",
+            "account.json: your Hubra account (profile, clubs, sign-ins,",
+            "devices, passkeys, linked accounts, API tokens, support cases).",
+            "clubs/<club>.json: what each club keeps about you as a member.",
+            "",
+        ]
+        for slug, data, error in clubs:
+            if data is not None:
+                zf.writestr(
+                    f"clubs/{slug}.json", json.dumps(data, ensure_ascii=False, indent=2)
+                )
+                lines.append(f"clubs/{slug}.json")
+            else:
+                lines.append(f"{slug}: {error}. Ask the club or try again later.")
+        zf.writestr("README.txt", "\n".join(lines) + "\n")
+    return buf.getvalue()
