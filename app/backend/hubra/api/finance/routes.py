@@ -117,6 +117,24 @@ def list_invoices():
     return jsonify(InvoicesService.list(request.args, _invoices_schema)), 200
 
 
+@finance_bp.get("/invoices/fee-run-preview")
+@permission_required("invoices", "bulk_create", "Bulk create invoices")
+def fee_run_preview():
+    """What the daily invoice run would bill on ``?on=YYYY-MM-DD`` (default
+    today): totals per tier, every line, who has no mail address, who was
+    skipped and why. Writes nothing."""
+    from datetime import date
+
+    from hubra.api.finance.fee_run import preview
+
+    raw = request.args.get("on")
+    try:
+        on = date.fromisoformat(raw) if raw else date.today()
+    except ValueError:
+        return api_error("VALIDATION_ERROR", "on must be a date like 2027-01-01", 400)
+    return jsonify(preview(on)), 200
+
+
 @finance_bp.get("/invoices/<int:id>")
 @permission_required("invoices", "read", "View invoices")
 def get_invoice(id: int):

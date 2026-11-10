@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ActionIcon, Button, Group, Menu, Select, SimpleGrid, TextInput } from '@mantine/core'
 import { useModules } from '@/modules/useModules'
 import { useT, zmsg } from '@/locales/i18n'
-import { IconBell, IconDots, IconFileDownload, IconPlus, IconTrash } from '@tabler/icons-react'
+import { IconBell, IconCalendarDollar, IconDots, IconFileDownload, IconPlus, IconTrash } from '@tabler/icons-react'
 import { useToast, useNav, useAuth } from '@/context/AppContext'
 import { qk } from '@/data/keys'
 import { useInvoices, useListCache } from '@/data/lists'
@@ -28,6 +28,7 @@ import {
   listTxCategories,
 } from '@/api/finance'
 import { MemberPicker } from '@/components/MemberPicker'
+import { FeeRunPreviewModal } from '@/screens/private/finances/FeeRunPreview'
 import { listTiers, calculateTierCost } from '@/api/tiers'
 import { formatCHF, formatDate } from '@/format'
 import {
@@ -114,6 +115,7 @@ export function InvoicesTab() {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [bulkOpen, setBulkOpen] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
   const [bulkSaving, setBulkSaving] = useState(false)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('All')
@@ -329,6 +331,16 @@ export function InvoicesTab() {
   return (
     <div>
       <Group justify="flex-end" mb={16} className="page-actions">
+        {canBulkCreate && (
+          <Button
+            variant="default"
+            onClick={() => setPreviewOpen(true)}
+            data-testid="fee-run-preview"
+          >
+            <IconCalendarDollar size={16} />
+            {t('finance.feeRun.open', 'Vorschau Beitragslauf')}
+          </Button>
+        )}
         {canBulkCreate && (
           <Button variant="default" onClick={openBulk}>
             <IconPlus size={16} />
@@ -567,6 +579,7 @@ export function InvoicesTab() {
         }}
       />
 
+      <FeeRunPreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} />
       <Modal
         onSubmit={bulkForm.onSubmit(handleBulk)}
         open={bulkOpen}
