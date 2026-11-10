@@ -79,6 +79,20 @@ lists them, and a request that hit a server error links to its error group
 (Diagnostics › Errors, `?q=#<id>`): the error tracker keeps request id → group
 in Redis for 14 days (`error_tracker.groups_for_requests`).
 
+### Shipped mails
+
+When a roadmap item in `app/backend/ROADMAP.yaml` has `status: done` and a
+`version`, and that Hubra version runs, everyone who wanted it gets one mail
+("Out now: …"): who voted for the item, who voted for an idea linked to it
+(manage › idea › "Teil eines geplanten Eintrags") and who reported such an
+idea. The changelog tick (`services.changelogs.announce`) checks the running
+version every minute, so set `version` in the same release that ships the
+item; an item gets its mail once (`roadmap.shipped` in the platform log),
+also after a rollback. The mail links to `/roadmap` here, or to the club
+app's roadmap when `support.url` is not set. In the club app's What's new,
+a release names the items in it that the reader voted for ("Du hast dir
+das gewünscht").
+
 ### My data
 
 - **Download** (`GET /global/account/export`): one JSON file with the
