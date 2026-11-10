@@ -244,6 +244,12 @@ class Module:
     consumes: dict[str, str] = field(default_factory=dict)
     renamed_from: tuple[str, ...] = ()
     plugin: str | None = None
+    # Access the standard roles get when a club first switches the module on,
+    # as {role key: level}: {"member": "view", "treasurer": "all"}. Role keys:
+    # member, board, secretary, treasurer; levels: view, edit, all
+    # (docs/roles.md). Without it only admins use the module until someone
+    # gives a role access.
+    role_defaults: dict[str, str] = field(default_factory=dict)
 
     def setting(self, key: str) -> SettingField | None:
         return next((s for s in self.settings if s.key == key), None)
@@ -269,6 +275,11 @@ class Module:
             "required": self.required,
             "defaultEnabled": self.default_enabled,
             "plugin": self.plugin,
+            # The permission a person needs to see the module at all; None
+            # for modules everyone with the right keys uses (docs/roles.md).
+            "accessKey": (
+                f"module.{self.code}.access" if not self.required and self.nav else None
+            ),
             "nav": [
                 {
                     "path": n.path,

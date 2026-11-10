@@ -11,6 +11,7 @@ export const LEVELS: Level[] = ['none', 'view', 'edit', 'all']
 
 /** Seeing, and taking part as a member: signing up, voting, commenting. */
 const VIEW_ACTIONS = new Set([
+  'access',
   'read',
   'read_reminders',
   'calculate_cost',
@@ -95,4 +96,47 @@ export function toAreas(allPerms: PermissionEntry[]): Area[] {
     if (!area.perms.some((q) => q.key === p.key)) area.perms.push(p)
   }
   return [...map.values()].sort((a, b) => a.key.localeCompare(b.key))
+}
+
+/** `module.<code>.access`: the key that shows a module at all (docs/roles.md). */
+export function isAccessKey(key: string): boolean {
+  return key.startsWith('module.') && key.endsWith('.access')
+}
+
+export interface ModuleGroup {
+  /** The module code, or the blueprint for core keys without a module. */
+  id: string
+  module: string | null
+  /** The module has an access key: "Keine" hides it from the role. */
+  hides: boolean
+  /** Every key of the group, the access key included. */
+  perms: PermissionEntry[]
+  /** Its areas, without the access key's own. */
+  areas: Area[]
+}
+
+/**
+ * The catalog cut into modules (one picker each), each with its areas.
+ * Keys no module owns (dashboard, notifications) are grouped by blueprint.
+ */
+export function toModuleGroups(allPerms: PermissionEntry[]): ModuleGroup[] {
+  const map = new Map<string, PermissionEntry[]>()
+  for (const p of allPerms) {
+    const id = p.module ?? p.blueprint
+    const list = map.get(id) ?? []
+    if (!list.some((q) => q.key === p.key)) list.push(p)
+    map.set(id, list)
+  }
+  return [...map.entries()]
+    .map(([id, perms]) => {
+      const module = perms.find((p) => p.module)?.module ?? null
+      return {
+        id,
+        module,
+        hides: perms.some((p) => isAccessKey(p.key)),
+        perms,
+        areas: toAreas(perms.filter((p) => !isAccessKey(p.key))),
+      }
+    })
+    .filter((g) => g.areas.length > 0 || g.perms.length > 0)
 }

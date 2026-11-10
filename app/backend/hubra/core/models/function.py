@@ -11,6 +11,26 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from hubra.core.extensions import db
 
 
+# The roles a function gives its holders while their term runs (Kassier/in
+# gives Vorstand and Treasurer). Replaces the single grants_tenant_role_id.
+function_roles = db.Table(
+    "function_roles",
+    db.Column(
+        "function_id",
+        db.Integer,
+        ForeignKey("functions.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    db.Column(
+        "role_id",
+        db.Integer,
+        ForeignKey("roles.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
+)
+
+
 class Function(db.Model):
     """A club function/office with one or more holders (e.g. Kassier).
 
@@ -25,7 +45,11 @@ class Function(db.Model):
     name: Mapped[str] = mapped_column(db.String(255), unique=True, nullable=False)
     description: Mapped[str | None] = mapped_column(db.Text, nullable=True)
     max_holders: Mapped[int] = mapped_column(db.Integer, default=1, nullable=False)
-    # A Function can auto-grant a tenant role to its holder
+    # Stable name of a standard function ("president", "treasurer", ...),
+    # so upgrades find it whatever the club renamed it to.
+    key: Mapped[str | None] = mapped_column(String(50), unique=True, index=True, nullable=True)
+    # Legacy: the one role a function gave before function_roles. Copied into
+    # function_roles by migration e3a7c9f1b5d2 and no longer read.
     grants_tenant_role_id: Mapped[int | None] = mapped_column(
         db.Integer,
         ForeignKey("roles.id", ondelete="SET NULL"),
@@ -49,6 +73,9 @@ class Function(db.Model):
         nullable=False,
     )
 
+    roles: Mapped[list["Role"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        "Role", secondary=function_roles, order_by="Role.name"
+    )
     holders: Mapped[list["FunctionHolder"]] = relationship(
         "FunctionHolder",
         back_populates="function",

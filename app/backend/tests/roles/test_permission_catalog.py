@@ -53,5 +53,12 @@ def test_club_app_asks_for_existing_keys(app):
 def test_every_permission_has_a_name(app, locale):
     seed = json.loads((SEEDS / f"{locale}.json").read_text(encoding="utf-8"))
     named = {k.removeprefix("roles.perms.") for k in seed if k.startswith("roles.perms.")}
-    missing = {k for k in _catalog(app) if k.replace(".", "_") not in named}
+    # Module access keys (module.<code>.access) share one name, "Use the module".
+    assert "moduleAccess" in named
+    missing = {
+        k
+        for k in _catalog(app)
+        if k.replace(".", "_") not in named
+        and not (k.startswith("module.") and k.endswith(".access"))
+    }
     assert sorted(missing) == []

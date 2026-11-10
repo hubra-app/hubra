@@ -170,14 +170,17 @@ def function_roles(member) -> list:
     if key not in memo:
         from datetime import date
 
-        from hubra.core.models.function import Function, FunctionHolder
+        from hubra.core.models.function import FunctionHolder, function_roles
         from hubra.core.models.role import Role
 
         memo[key] = list(
             db.session.scalars(
                 select(Role)
-                .join(Function, Function.grants_tenant_role_id == Role.id)
-                .join(FunctionHolder, FunctionHolder.function_id == Function.id)
+                .join(function_roles, function_roles.c.role_id == Role.id)
+                .join(
+                    FunctionHolder,
+                    FunctionHolder.function_id == function_roles.c.function_id,
+                )
                 .where(
                     FunctionHolder.member_id == member_id,
                     Role.is_owner.is_(False),
@@ -206,13 +209,14 @@ def function_role_grants() -> dict[int, list[dict]]:
     if "_function_role_grants" not in g:
         from datetime import date
 
-        from hubra.core.models.function import Function, FunctionHolder
+        from hubra.core.models.function import Function, FunctionHolder, function_roles
         from hubra.core.models.role import Role
 
         rows = db.session.execute(
             select(FunctionHolder.member_id, Role.id, Role.name, Function.name)
             .join(Function, Function.id == FunctionHolder.function_id)
-            .join(Role, Role.id == Function.grants_tenant_role_id)
+            .join(function_roles, function_roles.c.function_id == Function.id)
+            .join(Role, Role.id == function_roles.c.role_id)
             .where(Role.is_owner.is_(False), *_active_term(date.today()))
             .order_by(Function.name)
         ).all()
@@ -364,7 +368,9 @@ def extra_permissions() -> list[dict]:
     """EXTRA_PERMISSIONS plus the ``permissions`` of every loaded module."""
     from hubra.core.modules import registry
 
-    out = [dict(m) for m in EXTRA_PERMISSIONS]
+    from hubra.core.module_access import access_permissions
+
+    out = [dict(m) for m in EXTRA_PERMISSIONS] + access_permissions()
     for module in registry.all():
         for key, display_name in module.permissions:
             bp, resource, action = key.split(".", 2)
@@ -411,7 +417,14 @@ def check_grant(actor, *, given=(), taken=(), keys=()) -> None:
     wanted = set(keys)
     for role in given:
         wanted |= _get_role_permission_keys(role.id)
-    missing = wanted - _get_member_permission_keys(actor)
+    own = _get_member_permission_keys(actor)
+    missing = wanted - own
+    if missing:
+        # A module's access key counts as held by whoever holds any key of
+        # the module (docs/roles.md).
+        from hubra.core.module_access import implied_access_keys
+
+        missing -= implied_access_keys(own)
     if missing:
         raise_error(
             403,
@@ -453,7 +466,7 @@ def invalidate_role_permissions(role_id: int) -> None:
         # Best-effort: clear member caches for members holding this role.
         from hubra.core.models.member import member_roles
 
-        from hubra.core.models.function import Function, FunctionHolder
+        from hubra.core.models.function import FunctionHolder, function_roles
 
         member_ids = set(
             db.session.scalars(
@@ -464,8 +477,11 @@ def invalidate_role_permissions(role_id: int) -> None:
         member_ids |= set(
             db.session.scalars(
                 select(FunctionHolder.member_id)
-                .join(Function, Function.id == FunctionHolder.function_id)
-                .where(Function.grants_tenant_role_id == role_id)
+                .join(
+                    function_roles,
+                    function_roles.c.function_id == FunctionHolder.function_id,
+                )
+                .where(function_roles.c.role_id == role_id)
             ).all()
         )
         if member_ids:

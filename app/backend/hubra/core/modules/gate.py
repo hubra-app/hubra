@@ -33,7 +33,30 @@ def module_gate():
         return None
     if not is_enabled(module.code):
         return _disabled(module)
-    return _license_check(module)
+    return _license_check(module) or _access_check(module)
+
+
+def _access_check(module):
+    """A person without access to a module may not use its API, except the
+    routes that serve their own data (docs/roles.md)."""
+    from hubra.core import module_access
+
+    if not module_access.is_gated(module):
+        return None
+    if not module_access.enforced():
+        return None
+    if module_access.is_own_endpoint(request.endpoint, request.path):
+        return None
+    member = _member()
+    if member is None:
+        return None  # not signed in, or not a club member: the route answers
+    if module_access.may_use(member, module.code):
+        return None
+    return api_error(
+        "MODULE_ACCESS",
+        f"Your roles don't include {module.name}; ask the club's admin",
+        403,
+    )
 
 
 def _license_check(module):
@@ -57,6 +80,20 @@ def _license_check(module):
         f"You need a licence for {module.name}; ask the club's admin",
         403,
     )
+
+
+def _member():
+    try:
+        from flask_jwt_extended import verify_jwt_in_request
+
+        if verify_jwt_in_request(optional=True) is None:
+            return None
+        from hubra.core.permissions import _current_member
+
+        member = _current_member()
+        return member if hasattr(member, "roles") else None
+    except Exception:
+        return None
 
 
 def _member_id() -> int | None:

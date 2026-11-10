@@ -5,7 +5,12 @@ import { renderWithProviders } from '@/test/render'
 const state = vi.hoisted(() => ({ modules: new Set<string>(), perms: new Set<string>() }))
 
 vi.mock('@/modules/useModules', () => ({
-  useModules: () => ({ has: (code: string) => state.modules.has(code), list: [], loaded: true }),
+  useModules: () => ({
+    has: (code: string) => state.modules.has(code),
+    canUse: (code: string) => state.modules.has(code),
+    list: [],
+    loaded: true,
+  }),
 }))
 vi.mock('@/context/AppContext', () => ({
   useAuth: () => ({ hasPermission: (p: string) => state.perms.has(p) }),

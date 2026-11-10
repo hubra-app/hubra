@@ -24,7 +24,11 @@ def test_member_role_permissions_can_change(client, db, seeded_db, auth_headers)
         headers=auth_headers,
     )
     assert resp.status_code == 200
-    assert resp.get_json()["permissions"] == [
+    # The events keys bring the module's access key (docs/roles.md) when
+    # the catalog has it.
+    assert [
+        k for k in resp.get_json()["permissions"] if not k.startswith("module.")
+    ] == [
         "events.events.read",
         "events.events.register",
     ]

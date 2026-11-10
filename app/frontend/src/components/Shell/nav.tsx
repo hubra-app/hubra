@@ -208,7 +208,7 @@ function navEntries(
     '/app/groups': c.groups,
   }
   const items = modules
-    .filter((m) => m.enabled && m.licensed !== false)
+    .filter((m) => m.enabled && m.licensed !== false && m.access !== false)
     .flatMap((m) => m.nav.map((item) => ({ item, plugin: !!m.plugin, module: m.code })))
     .sort((a, b) => a.item.order - b.item.order)
   const entries: NavEntry[] = []

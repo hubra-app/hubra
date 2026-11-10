@@ -27,12 +27,14 @@ interface ListOptions {
 
 const EMPTY: never[] = []
 
-/** Whether a list may be loaded: signed in, module on, permission held. */
+/** Whether a list may be loaded: signed in, module on and theirs to use
+ *  (docs/roles.md), permission held. */
 function useMayLoad(module?: string, perm?: string) {
   const { authStatus, hasPermission } = useAuth()
-  const { modules } = useData()
+  const { modules, moduleList } = useData()
   if (authStatus !== 'authed') return false
   if (module && modules[module] !== true) return false
+  if (module && moduleList.find((m) => m.code === module)?.access === false) return false
   return perm ? hasPermission(perm) : true
 }
 

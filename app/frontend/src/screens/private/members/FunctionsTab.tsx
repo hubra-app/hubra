@@ -29,8 +29,12 @@ export function FunctionsTab() {
   const [formTarget, setFormTarget] = useState<ClubFunction | 'new' | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ClubFunction | null>(null)
   const { data: lookups } = useQuery(lookupsQuery)
-  const roleName = (id: number | null) =>
-    id != null && lookups?.roles.get(id) ? roleLabel(lookups.roles.get(id)!) : null
+  const roleNames = (ids: number[]) =>
+    ids
+      .map((id) => lookups?.roles.get(id))
+      .filter((name): name is string => !!name)
+      .map(roleLabel)
+      .join(', ') || null
 
   const openAdd = () => setFormTarget('new')
   const openEdit = (fn: ClubFunction) => setFormTarget(fn)
@@ -99,9 +103,9 @@ export function FunctionsTab() {
               subtitle={
                 [
                   fn.description,
-                  roleName(fn.grantsRoleId)
-                    ? t('functions.givesRole', 'Gibt die Rolle {{role}}', {
-                        role: roleName(fn.grantsRoleId),
+                  roleNames(fn.grantsRoleIds)
+                    ? t('functions.givesRoles', 'Gibt die Rollen {{roles}}', {
+                        roles: roleNames(fn.grantsRoleIds),
                       })
                     : null,
                 ]

@@ -64,10 +64,16 @@ export function useRoles() {
   const savePerms = (role: Role, next: Set<string>) => {
     const base = rolePerms[role.id] ?? new Set<string>()
     setLocalPerms((prev) => ({ ...prev, [role.id]: next }))
-    return setRolePermissions(role.id, Array.from(next)).catch((err: unknown) => {
-      setLocalPerms((prev) => ({ ...prev, [role.id]: base }))
-      throw err
-    })
+    return setRolePermissions(role.id, Array.from(next))
+      .then((saved) => {
+        // The server adds a module's access key to any key of the module.
+        setLocalPerms((prev) => ({ ...prev, [role.id]: new Set(saved) }))
+        return saved
+      })
+      .catch((err: unknown) => {
+        setLocalPerms((prev) => ({ ...prev, [role.id]: base }))
+        throw err
+      })
   }
 
   const togglePerm = (role: Role, key: string) => {

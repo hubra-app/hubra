@@ -232,7 +232,7 @@ def _apply_member_filters(query, args: dict[str, str]):
     if role_id:
         # Holding the role, yourself or through a function whose term runs.
         from hubra.core.permissions import _active_term
-        from hubra.core.models.function import Function, FunctionHolder
+        from hubra.core.models.function import FunctionHolder, function_roles
         from hubra.core.models.member import member_roles
 
         try:
@@ -242,8 +242,8 @@ def _apply_member_filters(query, args: dict[str, str]):
         direct = select(member_roles.c.member_id).where(member_roles.c.role_id == rid)
         through_function = (
             select(FunctionHolder.member_id)
-            .join(Function, Function.id == FunctionHolder.function_id)
-            .where(Function.grants_tenant_role_id == rid, *_active_term(date.today()))
+            .join(function_roles, function_roles.c.function_id == FunctionHolder.function_id)
+            .where(function_roles.c.role_id == rid, *_active_term(date.today()))
         )
         query = query.where(Member.id.in_(direct.union(through_function)))
 

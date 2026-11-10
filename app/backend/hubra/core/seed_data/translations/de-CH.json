@@ -3054,7 +3054,7 @@
   "roles.level.all": "Alles",
   "roles.level.custom": "Angepasst",
   "roles.adminAll": "Diese Rolle ist eine Admin-Rolle und darf im Verein alles.",
-  "roles.levelHint": "Ansehen: sehen und mitmachen (anmelden, abstimmen, kommentieren). Bearbeiten: auch erstellen und ändern. Alles: auch löschen und exportieren.",
+  "roles.levelHint": "Keine: das Modul ist für diese Rolle ausgeblendet (eigene Daten bleiben im Profil). Ansehen: sehen und mitmachen (anmelden, abstimmen, kommentieren). Bearbeiten: auch erstellen und ändern. Alles: auch löschen und exportieren.",
   "roles.hideSingle": "Einzelne Rechte ausblenden",
   "roles.showSingle": "Einzelne Rechte zeigen",
   "roles.backToList": "Zurück zu den Rollen",
@@ -4128,5 +4128,14 @@
   "mail.email.fee_adjustment_reminder.ask": "Trifft der Grund dafür noch zu? Dann bestätige es bitte in deinem Konto, damit der Vorstand ihn verlängern kann. Sonst zahlst du ab der nächsten Periode wieder den normalen Beitrag.",
   "mail.email.fee_adjustment_reminder.button": "Grund bestätigen",
   "mail.email.fee_adjustment_reminder.note": "Fragen dazu beantwortet dir der Vorstand.",
-  "mail.email.subject.fee_adjustment_reminder": "{{club_name}}: Trifft der Grund für deinen Beitrag noch zu?"
+  "mail.email.subject.fee_adjustment_reminder": "{{club_name}}: Trifft der Grund für deinen Beitrag noch zu?",
+  "roles.perms.moduleAccess": "Modul verwenden (sehen und öffnen)",
+  "roles.system.Board": "Vorstand",
+  "roles.system.Secretary": "Aktuar/in",
+  "roles.systemDesc.Board": "Der Vorstand: sieht Mitglieder, Finanzen und Mail, führt Anlässe, Umfragen, Beiträge und Gruppen.",
+  "roles.systemDesc.Secretary": "Aktuar/in: führt Mitgliederverzeichnis, Anträge, Funktionen, Mail und das Archiv.",
+  "functions.grantsRoles": "Gibt die Rollen",
+  "functions.grantsRolesHint": "Wer die Funktion innehat, hat diese Rollen, bis die Funktion endet (zum Beispiel Vorstand und Kassier/in).",
+  "functions.givesRoles": "Gibt die Rollen {{roles}}",
+  "roles.moduleHidden": "Ausgeblendet"
 }

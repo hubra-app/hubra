@@ -791,7 +791,8 @@ export function useWidgetCatalogue(): WidgetDef[] {
 export function useWidgetAllowed(): (def: WidgetDef) => boolean {
   const modules = useModules()
   const { hasPermission } = useAuth()
-  return (def) => (!def.module || modules.has(def.module)) && (!def.perm || hasPermission(def.perm))
+  return (def) =>
+    (!def.module || modules.canUse(def.module)) && (!def.perm || hasPermission(def.perm))
 }
 
 /** One widget, in a plugin's error boundary when it comes from one. */

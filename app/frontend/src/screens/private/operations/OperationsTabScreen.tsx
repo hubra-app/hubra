@@ -13,14 +13,14 @@ export function OperationsTabScreen() {
   const { t } = useT()
   const location = useLocation()
 
-  const { has } = useModules()
+  const { canUse } = useModules()
   const { hasPermission } = useAuth()
 
   const tabs = [
     { id: 'events', label: t('shell.nav.events') },
     { id: 'polls', label: t('shell.nav.polls') },
     { id: 'posts', label: t('shell.nav.posts') },
-  ].filter((tb) => has(tb.id))
+  ].filter((tb) => canUse(tb.id))
 
   const path = location.pathname.replace('/app/operations', '').replace('/', '')
   const tab = path === '' ? (tabs[0]?.id ?? 'events') : path

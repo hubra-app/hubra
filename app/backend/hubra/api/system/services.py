@@ -42,10 +42,22 @@ class SystemService:
                         }
                     )
 
+        from hubra.core.module_access import access_permissions, module_of_key
         from hubra.core.roles import loads_club_routes
 
         if not loads_club_routes():
             entries.extend(SystemService._catalog_only(entries))
+        # The module access keys (docs/roles.md) have no route of their own.
+        known = {e["key"] for e in entries}
+        entries.extend(
+            {"method": "", "path": "", **meta}
+            for meta in access_permissions()
+            if meta["key"] not in known
+        )
+        # The module each key belongs to, so the roles page offers one level
+        # per module; None for core keys.
+        for entry in entries:
+            entry["module"] = module_of_key(entry["key"])
         return sorted(entries, key=lambda e: (e["path"], e["method"]))
 
     @staticmethod

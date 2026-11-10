@@ -116,12 +116,21 @@ read, create, update and delete. A member can have several roles; they get
 everything any of them grants.
 
 - **Owner** and **Admin** are fixed roles with full access.
+- **Standard roles.** Every club has Mitglied (the default role), Vorstand,
+  Aktuar/in and Kassier/in, and the functions Präsident/in and
+  Vizepräsident/in (Admin and Vorstand), Aktuar/in and Kassier/in (Vorstand
+  plus their own role). See [roles.md](roles.md).
+- **One level per module.** Each module has Keine, Ansehen, Bearbeiten or
+  Alles for the role. "Keine" hides the module from the role's holders
+  everywhere; their own data from it (invoices, claims, items) stays on
+  their profile.
 - A new member gets the role marked as default.
 - **Templates** set up a typical role set in one step (standard club, small
   association, makerspace).
 - **Functions** (Funktionen), such as president or treasurer, are under
-  Members › Functions. They record who holds an office; rights still come
-  from roles.
+  Members › Functions. They record who holds an office, and give their
+  holders the roles you pick for them ("Gibt die Rollen") while their term
+  runs.
 - **A role for one group.** A role can be given to a member for one group
   only (on the role's Members tab). It then counts for that group's things:
   the group itself, and the events, posts and polls that belong to the group.

@@ -83,9 +83,11 @@ export function FunctionDetailScreen() {
   }
 
   const role =
-    fn.grantsRoleId != null && lookups?.roles.get(fn.grantsRoleId)
-      ? roleLabel(lookups.roles.get(fn.grantsRoleId)!)
-      : null
+    fn.grantsRoleIds
+      .map((id) => lookups?.roles.get(id))
+      .filter((name): name is string => !!name)
+      .map(roleLabel)
+      .join(', ') || null
   const full = fn.holders.length >= fn.maxHolders
   const refresh = () => queryClient.invalidateQueries({ queryKey: qk.functions })
   const fail = (err: unknown) =>
@@ -164,7 +166,7 @@ export function FunctionDetailScreen() {
                 {fn.holders.length} / {fn.maxHolders}
               </span>
             </DetailFact>
-            <DetailFact label={t('functions.grantsRole', 'Gibt die Rolle')}>{role ?? '—'}</DetailFact>
+            <DetailFact label={t('functions.grantsRoles', 'Gibt die Rollen')}>{role ?? '—'}</DetailFact>
           </>
         }
       />
@@ -174,7 +176,7 @@ export function FunctionDetailScreen() {
           <DetailRow label={t('functions.maxHolders', 'Max. Anzahl Personen')} mono>
             {fn.maxHolders}
           </DetailRow>
-          <DetailRow label={t('functions.grantsRole', 'Gibt die Rolle')}>{role ?? <DetailEmpty />}</DetailRow>
+          <DetailRow label={t('functions.grantsRoles', 'Gibt die Rollen')}>{role ?? <DetailEmpty />}</DetailRow>
           {modules.mail && (
             <DetailRow label={t('mail.mail', 'Mail')}>
               <Anchor size="sm" onClick={() => go('/app/mail?tab=functions')}>

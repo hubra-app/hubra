@@ -59,6 +59,7 @@ def list_modules():
             in _get_member_permission_keys(member)
         )
     )
+    from hubra.core.module_access import may_use
     from hubra.core.services import licenses
     from hubra.core.tenant.context import current_tenant
 
@@ -73,6 +74,9 @@ def list_modules():
         if not can_write:
             item["config"] = {}
         item["licensed"] = state.module.code not in unlicensed
+        # False when the member's roles don't include the module: hidden in
+        # their navigation, its API answers 403 MODULE_ACCESS (docs/roles.md).
+        item["access"] = may_use(member, state.module.code)
         data.append(item)
     return jsonify(data), 200
 
