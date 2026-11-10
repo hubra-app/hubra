@@ -56,7 +56,7 @@ test('the payment term is set under Finanzen › Einstellungen', async ({ page }
   await term.fill('21')
   const invoiceCard = page
     .locator('.mantine-Paper-root')
-    .filter({ has: page.getByRole('heading', { name: 'Rechnungen und Mahnungen' }) })
+    .filter({ has: page.getByRole('heading', { name: 'Rechnungen und Zahlungserinnerungen' }) })
   await invoiceCard.getByRole('button', { name: 'Speichern' }).click()
   await expect(page.getByText('Einstellungen gespeichert').first()).toBeVisible()
   try {

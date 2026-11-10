@@ -225,8 +225,8 @@ export function AlertRulesPanel() {
         {data && !data.discordReady && (
           <Alert color="gray" variant="light" mb={12}>
             {tr(
-              'Discord ist nicht eingerichtet (Discord › Kanäle: Bot-Token und Kanal für das Plattform-Log).',
-              'Discord is not set up (Discord › Channels: bot token and platform log channel).',
+              'Discord ist nicht eingerichtet (Discord › Einstellungen: Bot-Token und Kanal für das Plattform-Log).',
+              'Discord is not set up (Discord › Settings: bot token and platform log channel).',
             )}
           </Alert>
         )}

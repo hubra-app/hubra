@@ -17,7 +17,7 @@ export function MemberPrivacySection({ memberId }: { memberId: string }) {
 
   const directory: Record<string, string> = {
     email: t('account.directory.email', 'E-Mail'),
-    phone: t('account.directory.phone', 'Telefon und Mobile'),
+    phone: t('account.directory.phone', 'Telefon und Mobil'),
     address: t('account.directory.address', 'Adresse'),
     birthday: t('account.directory.birthday', 'Geburtstag'),
   }

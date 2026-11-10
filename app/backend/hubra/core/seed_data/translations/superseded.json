@@ -1916,7 +1916,8 @@
    ],
    "finance.noReminders": [
     "No cheni Erinnerige gsendet.",
-    "No kei Erinnerige gsendet."
+    "No kei Erinnerige gsendet.",
+    "Noch keine Mahnungen versendet."
    ],
    "finance.noTransactions": [
     "Cheni Transaktione.",
@@ -4071,7 +4072,8 @@
    ],
    "posts.beFirstToShare": [
     "Be the first to share an update with the club.",
-    "Bisch de Erst wo es Update mitem Club teilt."
+    "Bisch de Erst wo es Update mitem Club teilt.",
+    "Teile als Erste:r eine Neuigkeit mit dem Verein."
    ],
    "posts.comingSoonDesc": [
     "Club-Akündigunge und Community-Biträg sind in Entwicklig."
@@ -5050,6 +5052,54 @@
    ],
    "roles.levelHint": [
     "Ansehen: sehen und mitmachen (anmelden, abstimmen, kommentieren). Bearbeiten: auch erstellen und ändern. Alles: auch löschen und exportieren."
+   ],
+   "members.detail.mobile": [
+    "Mobile"
+   ],
+   "account.directory.phone": [
+    "Telefon und Mobile"
+   ],
+   "finance.noCategoriesHint": [
+    "Lege zuerst unter Finanzen → Kategorien eine Kategorie an."
+   ],
+   "signInApps.nameHint": [
+    "So sehen Mitglieder die App beim Anmelden, z. B. „Vereinswebsite“."
+   ],
+   "webhooks.nameHint": [
+    "Wofür er ist, z. B. „Newsletter“ oder „Zapier“."
+   ],
+   "modules.inventory.description": [
+    "Werkzeuge, Maschinen und Material, Ausleihen und Einführungen"
+   ],
+   "modules.inventory.settings.require_induction.label": [
+    "Nur eingeführte Mitglieder dürfen ausleihen"
+   ],
+   "modules.inventory.settings.require_induction.description": [
+    "Gilt für Gegenstände, die eine Einführung brauchen"
+   ],
+   "roles.perms.finance_invoices_remind": [
+    "Mahnungen senden"
+   ],
+   "roles.perms.finance_invoices_read_reminders": [
+    "Mahnungen ansehen"
+   ],
+   "audit.actions.invoice_reminder": [
+    "Mahnung verschickt"
+   ],
+   "modules.finance.description": [
+    "Buchungen, Rechnungen mit Schweizer QR-Rechnung und Mahnungen"
+   ],
+   "finance.settings.invoicesTitle": [
+    "Rechnungen und Mahnungen"
+   ],
+   "account.myAddresses.hint": [
+    "Als Leitung einer Gruppe oder Inhaber:in einer Funktion schaltest du ihre Vereinsadresse ein oder aus. Den Namen der Adresse ändert der Vorstand."
+   ],
+   "shell.clubSwitcher.owner": [
+    "Inhaber"
+   ],
+   "mail.email.platform_alert.why": [
+    "Du bekommst diese Mail als Plattform-Admin. Welche Warnungen du per Mail bekommst, stellst du in manage unter Plattform › Warnungen › Meine Warnungen ein."
    ]
   },
   "en-GB": {
@@ -6572,6 +6622,12 @@
    ],
    "roles.levelHint": [
     "View: see and take part (sign up, vote, comment). Edit: also create and change. All: also delete and export."
+   ],
+   "finance.noCategoriesHint": [
+    "Create a category under Finance → Categories first."
+   ],
+   "mail.email.platform_alert.why": [
+    "You get this mail as a platform admin. Choose which alerts you get by mail in manage under Platform › Alerts › My alerts."
    ]
   }
  }

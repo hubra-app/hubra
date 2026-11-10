@@ -197,7 +197,7 @@ function AppModal({
         minRows={2}
       />
       <TextInput
-        label={tr('Webseite (optional)', 'Website (optional)')}
+        label={tr('Website (optional)', 'Website (optional)')}
         placeholder="https://"
         value={clientUri}
         onChange={(e) => setClientUri(e.currentTarget.value)}

@@ -225,7 +225,7 @@
       "title": "Im Mitgliederverzeichnis zeigen",
       "hint": "Was andere Mitglieder von dir sehen. Der Vorstand sieht deine Angaben immer.",
       "email": "E-Mail",
-      "phone": "Telefon und Mobile",
+      "phone": "Telefon und Mobil",
       "address": "Adresse",
       "birthday": "Geburtstag"
     },
@@ -286,7 +286,7 @@
     "showAllDates": "Alle {{count}} Termine anzeigen",
     "myAddresses": {
       "title": "Adressen, die du betreust",
-      "hint": "Als Leitung einer Gruppe oder Inhaber:in einer Funktion schaltest du ihre Vereinsadresse ein oder aus. Den Namen der Adresse ändert der Vorstand.",
+      "hint": "Als Leitung einer Gruppe oder Inhaber/in einer Funktion schaltest du ihre Vereinsadresse ein oder aus. Den Namen der Adresse ändert der Vorstand.",
       "function": "Funktion",
       "group": "Gruppe",
       "toggle": "{{address}} aktiv"
@@ -1061,7 +1061,7 @@
     "noCategories": "Noch keine Kategorien.",
     "noInvoices": "Keine Rechnungen gefunden.",
     "noPrice": "(kein Preis)",
-    "noReminders": "Noch keine Mahnungen versendet.",
+    "noReminders": "Noch keine Zahlungserinnerungen versendet.",
     "noTransactions": "Keine Buchungen gefunden.",
     "open": "Offen",
     "openInvoices": "Offene Rechnungen",
@@ -1097,7 +1097,7 @@
     "searchInvoices": "Rechnungen suchen …",
     "searchTransactions": "Buchungen suchen …",
     "selectCategory": "Kategorie wählen …",
-    "noCategoriesHint": "Lege zuerst unter Finanzen → Kategorien eine Kategorie an.",
+    "noCategoriesHint": "Lege zuerst unter Finanzen › Kategorien eine Kategorie an.",
     "sendReminder": "Erinnerung senden",
     "status": "Status",
     "tierHint": "Leer lassen, um allen aktiven Mitgliedern eine Rechnung zu stellen",
@@ -1198,7 +1198,7 @@
     "settings": {
       "tab": "Einstellungen",
       "saved": "Einstellungen gespeichert",
-      "invoicesTitle": "Rechnungen und Mahnungen"
+      "invoicesTitle": "Rechnungen und Zahlungserinnerungen"
     },
     "summary": {
       "title": "Nach Kategorie",
@@ -1971,7 +1971,7 @@
       "writeEmail": "E-Mail schreiben",
       "openAmount": "Offen",
       "contact": "Kontakt",
-      "mobile": "Mobile",
+      "mobile": "Mobil",
       "membership": "Mitgliedschaft",
       "membershipType": "Art",
       "types": {
@@ -2274,7 +2274,7 @@
   },
   "posts": {
     "backToPosts": "Zurück zu den Beiträgen",
-    "beFirstToShare": "Teile als Erste:r eine Neuigkeit mit dem Verein.",
+    "beFirstToShare": "Teile die erste Neuigkeit mit dem Verein.",
     "comingSoonDesc": "Mitteilungen und Beiträge der Mitglieder sind in Arbeit.",
     "comment": "Kommentieren",
     "commentAdded": "Kommentar hinzugefügt",
@@ -2669,7 +2669,7 @@
       "yourClubs": "Deine Vereine",
       "filter": "Verein suchen",
       "noMatch": "Kein Verein gefunden",
-      "owner": "Inhaber",
+      "owner": "Inhaber/in",
       "admin": "Admin",
       "find": "Weiteren Verein finden"
     }
@@ -3184,7 +3184,7 @@
       "create_invoice": "Rechnung erstellt",
       "update_invoice": "Rechnung geändert",
       "delete_invoice": "Rechnung gelöscht",
-      "invoice_reminder": "Mahnung verschickt",
+      "invoice_reminder": "Zahlungserinnerung verschickt",
       "create_external_party": "Externe Partei erstellt",
       "update_external_party": "Externe Partei geändert",
       "delete_external_party": "Externe Partei gelöscht",
@@ -3455,8 +3455,8 @@
       "finance_invoices_create": "Rechnungen erstellen",
       "finance_invoices_delete": "Rechnungen löschen",
       "finance_invoices_read": "Rechnungen ansehen",
-      "finance_invoices_read_reminders": "Mahnungen ansehen",
-      "finance_invoices_remind": "Mahnungen senden",
+      "finance_invoices_read_reminders": "Zahlungserinnerungen ansehen",
+      "finance_invoices_remind": "Zahlungserinnerungen senden",
       "finance_invoices_update": "Rechnungen bearbeiten",
       "finance_invoices_update_due": "Fälligkeit",
       "finance_invoices_update_notes": "Notizen",
@@ -3715,7 +3715,7 @@
     },
     "finance": {
       "name": "Finanzen",
-      "description": "Buchungen, Rechnungen mit Schweizer QR-Rechnung und Mahnungen"
+      "description": "Buchungen, Rechnungen mit Schweizer QR-Rechnung und Zahlungserinnerungen"
     },
     "functions": {
       "name": "Funktionen",
@@ -3727,15 +3727,15 @@
     },
     "inventory": {
       "name": "Inventar",
-      "description": "Werkzeuge, Maschinen und Material, Ausleihen und Einführungen",
+      "description": "Werkzeuge, Maschinen und Material, Ausleihen und Einweisungen",
       "settings": {
         "checkout_max_days": {
           "label": "Längste Ausleihe (Tage)",
           "description": "Standard-Rückgabefrist für neue Ausleihen"
         },
         "require_induction": {
-          "label": "Nur eingeführte Mitglieder dürfen ausleihen",
-          "description": "Gilt für Gegenstände, die eine Einführung brauchen"
+          "label": "Nur eingewiesene Mitglieder dürfen ausleihen",
+          "description": "Gilt für Gegenstände, die eine Einweisung brauchen"
         },
         "block_when_overdue": {
           "label": "Ausleihen sperren, solange eine Rechnung überfällig ist",
@@ -4166,7 +4166,7 @@
     "lastUsed": "zuletzt",
     "modalHint": "Mitglieder melden sich auf eurer Website mit ihrem Hubra-Konto an. Die Website liest nichts aus Hubra.",
     "name": "Name",
-    "nameHint": "So sehen Mitglieder die App beim Anmelden, z. B. „Vereinswebsite“.",
+    "nameHint": "So sehen Mitglieder die App beim Anmelden, z. B. «Vereinswebsite».",
     "new": "Neue Anmelde-App",
     "newSecret": "Neues Secret",
     "none": "Noch keine Anmelde-App.",
@@ -4221,7 +4221,7 @@
     "intro": "Hubra meldet euren eigenen Tools, was im Verein passiert, z. B. wenn jemand beitritt oder eine Rechnung bezahlt wird: als signierte Nachricht an eine https-Adresse.",
     "lastDelivery": "Zuletzt gesendet",
     "name": "Name",
-    "nameHint": "Wofür er ist, z. B. „Newsletter“ oder „Zapier“.",
+    "nameHint": "Wofür er ist, z. B. «Newsletter» oder «Zapier».",
     "neverSent": "Noch nichts gesendet",
     "new": "Neuer Webhook",
     "newSecret": "Neues Secret",

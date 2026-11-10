@@ -33,4 +33,21 @@ describe("localizeError", () => {
       "Please check: name (Missing data.)",
     );
   });
+
+  it("translates messages that carry a name", () => {
+    document.documentElement.lang = "de";
+    expect(localizeError(403, "LICENSE_REQUIRED", "You need a licence for Inventory; ask the club's admin")).toBe(
+      "Für Inventory brauchst du eine Lizenz. Frag die Admins des Vereins.",
+    );
+    expect(localizeError(409, "MODULE_DEPENDENCY_OFF", "Switch on Finances first; Budgets needs it")).toBe(
+      "Schalte zuerst Finances ein; Budgets braucht es.",
+    );
+  });
+
+  it("calls a suspended membership gesperrt, like its status", () => {
+    document.documentElement.lang = "de";
+    expect(localizeError(403, "MEMBERSHIP_SUSPENDED", "Your membership in this club is suspended")).toMatch(
+      /ist gesperrt/,
+    );
+  });
 });

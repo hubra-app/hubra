@@ -42,8 +42,8 @@ function errorText(err: unknown): string | undefined {
   const e = err as { code?: string; message?: string } | null
   if (e?.code === 'MFA_SETUP_FIRST') {
     return tr(
-      'Zuerst die Zwei-Faktor-Anmeldung im Konto einschalten (SSO › Konto › Sicherheit).',
-      'Turn on two-factor sign-in in your account first (SSO › Account › Security).',
+      'Zuerst die Zwei-Faktor-Anmeldung im Konto einschalten (Mein Konto › Zwei-Faktor).',
+      'Turn on two-factor sign-in in your account first (My account › Two-factor).',
     )
   }
   return e?.message ?? undefined

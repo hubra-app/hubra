@@ -88,7 +88,7 @@ export const ARTICLES: Article[] = [
 
 ## Einzeln einladen
 
-1. Öffne **Mitglieder › Alle Mitglieder** und wähle **Mitglied einladen**.
+1. Öffne **Mitglieder** und wähle **Mitglied einladen**.
 2. Gib die Mailadresse ein. Stufe, Gruppen und Rollen sind freiwillig.
 3. Die Person bekommt einen persönlichen Link, der **14 Tage** gilt. Sie meldet sich an oder erstellt ein Konto mit dieser Adresse und nimmt an.
 
@@ -111,7 +111,7 @@ Ist der Verein auffindbar, können Leute auf der Beitrittsseite um Aufnahme bitt
 
 ## Invite one person
 
-1. Open **Members › All members** and choose **Invite member**.
+1. Open **Members** and choose **Invite member**.
 2. Enter the mail address. Tier, groups and roles are optional.
 3. The person gets a personal link that is valid for **14 days**. They sign in or create an account with that address and accept.
 
@@ -210,7 +210,7 @@ To delete your whole account, leave all clubs first and then go to [My data](/da
     body: {
       de: `## Voraussetzungen
 
-Unter **Finanzen › Einstellungen** (oder **Einstellungen › Bank**) brauchst du die **IBAN** bzw. QR-IBAN und die Adresse des Vereins. Ohne sie lässt sich kein QR-Einzahlungsschein drucken.
+Unter **Finanzen › Einstellungen** (oder **Einstellungen › Bank & QR-Rechnung**) brauchst du die **IBAN** bzw. QR-IBAN und die Adresse des Vereins. Ohne sie lässt sich kein QR-Einzahlungsschein drucken.
 
 ## Beiträge automatisch
 
@@ -223,13 +223,13 @@ Jede **Stufe** hat einen Betrag und einen Zahlungsplan. Hubra erstellt die Rechn
 
 **Finanzen › Rechnungen › Neue Rechnung**. Das Mitglied sieht sie in der Vereins-App und bekommt sie als PDF mit QR-Einzahlungsschein per Mail.
 
-## Zahlungen und Mahnungen
+## Zahlungen und Zahlungserinnerungen
 
 - Verbuche eine Zahlung von Hand oder mit dem Modul **Bankimport** (camt.053, MT940, CSV).
 - Offene Rechnungen nach der Frist bekommen auf Wunsch eine Erinnerung.`,
       en: `## Before you start
 
-Under **Finance › Settings** (or **Settings › Bank**) you need the club's **IBAN** or QR-IBAN and address. Without them no QR bill can be printed.
+Under **Finance › Settings** (or **Settings › Bank & QR invoice**) you need the club's **IBAN** or QR-IBAN and address. Without them no QR bill can be printed.
 
 ## Fees automatically
 

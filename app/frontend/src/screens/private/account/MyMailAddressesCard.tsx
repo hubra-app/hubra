@@ -62,7 +62,7 @@ export function MyMailAddressesCard() {
         <Text fz="sm" c="dimmed">
           {t(
             'account.myAddresses.hint',
-            'Als Leitung einer Gruppe oder Inhaber:in einer Funktion schaltest du ihre Vereinsadresse ein oder aus. Den Namen der Adresse ändert der Vorstand.',
+            'Als Leitung einer Gruppe oder Inhaber/in einer Funktion schaltest du ihre Vereinsadresse ein oder aus. Den Namen der Adresse ändert der Vorstand.',
           )}
         </Text>
         {addresses.map((addr) => (

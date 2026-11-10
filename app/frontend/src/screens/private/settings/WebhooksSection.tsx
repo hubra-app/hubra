@@ -97,7 +97,7 @@ function WebhookModal({
     >
       <TextInput
         label={t('webhooks.name', 'Name')}
-        description={t('webhooks.nameHint', 'Wofür er ist, z. B. „Newsletter“ oder „Zapier“.')}
+        description={t('webhooks.nameHint', 'Wofür er ist, z. B. «Newsletter» oder «Zapier».')}
         value={name}
         onChange={(e) => setName(e.currentTarget.value)}
         maxLength={100}

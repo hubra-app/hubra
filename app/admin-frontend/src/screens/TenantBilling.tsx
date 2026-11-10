@@ -482,8 +482,8 @@ function BillingModal({
           <Select
             label={tr('Tarif', 'Plan')}
             description={tr(
-              'Tarife und Listenpreise: Einstellungen › Tarife & Preise',
-              'Plans and list prices: Settings › Plans & prices',
+              'Tarife und Listenpreise: Alle Vereine › Tarife & Preise',
+              'Plans and list prices: All clubs › Plans & prices',
             )}
             allowDeselect={false}
             value={plan}

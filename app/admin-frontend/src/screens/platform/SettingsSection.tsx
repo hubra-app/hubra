@@ -519,8 +519,8 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
   ) : (
     <Text span size="sm" c="dimmed">
       {tr(
-        'Zuerst die Discord-Anwendungs-ID unter Einrichtung eintragen.',
-        'Set the Discord application ID under Setup first.',
+        'Zuerst die Discord-Anwendungs-ID unter Einstellungen eintragen.',
+        'Set the Discord application ID under Settings first.',
       )}
     </Text>
   )
