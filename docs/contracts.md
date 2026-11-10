@@ -128,6 +128,37 @@ offers a dashboard widget. Core lists it only to members who may see it
 query, and checks the result against its view (`stat`, `list`, or the
 contract's `output` for `custom`). See [dashboards.md](dashboards.md).
 
+## Privacy: export and deletion
+
+Core already puts every club row that points at a member through a foreign
+key into the member's privacy export, and deletes or anonymises it with the
+member (each key's `ondelete`). A module that keeps more about a member
+(rows found by email or account, files, data in another service) offers two
+contracts named after its module code, made with
+`hubra.core.contracts.privacy.privacy_contracts`:
+
+```python
+from hubra.core.contracts.privacy import privacy_contracts
+
+provides=(
+    *privacy_contracts(
+        "documents",
+        export="hubra_documents.privacy:export",
+        erase="hubra_documents.privacy:erase",
+    ),
+)
+```
+
+| Contract | Kind | In → out | When |
+| --- | --- | --- | --- |
+| `<module>.privacy.export` | query | `{member_id}` → `{data: {...}}` | every export (manage › data requests, the member's own download, "Alles als ZIP"); lands under `modules.<module>` |
+| `<module>.privacy.erase` | action | `{member_id}` → `{rows}` | every permanent deletion (deletion request, the retention job, Endgültig löschen), before core removes the member |
+
+Both run as the system, also while the club has the module switched off:
+the data is still there. An export that fails is listed with an `error`
+and the rest still exports; an erase that fails stops the whole deletion
+(409 `PRIVACY_ERASE_FAILED`), so nothing is half deleted.
+
 ## Versions
 
 `version` is the contract's major version, a whole number. Adding an
