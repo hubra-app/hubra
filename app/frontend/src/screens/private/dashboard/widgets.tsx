@@ -867,3 +867,49 @@ export function useDefaultHome(widgets: DashboardWidget[]): DashboardWidget[] {
     [widgets, catalogue],
   )
 }
+
+// ── Dashboard templates ──────────────────────────────────────────────────
+
+export interface DashboardTemplate {
+  key: string
+  /** Translation key and German default of the name and the hint. */
+  name: [string, string]
+  hint: [string, string]
+  widgets: DashboardWidget[]
+}
+
+const cell = (id: string, type: string, width: number, config: Config = {}): DashboardWidget => ({
+  ...w(id, type, width <= 4 ? 's' : width <= 8 ? 'm' : 'l', config),
+  w: width,
+})
+
+/** Ready-made dashboards to start a new one from. A template keeps only the
+ * widgets this member may add in this club (plugins and rights differ). */
+export const DASHBOARD_TEMPLATES: DashboardTemplate[] = [
+  {
+    key: 'treasurer',
+    name: ['dashboards.tpl.treasurer', 'Kassen-Cockpit'],
+    hint: [
+      'dashboards.tpl.treasurerHint',
+      'Geld heute, erwartete Einnahmen, offene Rechnungen nach Alter, Budget und offene Spesen',
+    ],
+    widgets: [
+      cell('cash', 'w:finance.books.cash', 3),
+      cell('expected', 'w:finance.invoices.expected', 3),
+      cell('open', 'stat.openInvoices', 3),
+      cell('claims', 'w:kasse.claims', 3),
+      cell('ageing', 'w:finance.invoices.ageing', 6),
+      cell('budget', 'w:finance.budgets.usage', 6, { count: 5 }),
+    ],
+  },
+]
+
+/** The widgets of *template* this member may add here. */
+export function templateWidgets(
+  template: DashboardTemplate,
+  catalogue: WidgetDef[],
+  allowed: (def: WidgetDef) => boolean,
+) {
+  const ok = new Set(catalogue.filter(allowed).map((d) => d.type))
+  return template.widgets.filter((x) => ok.has(x.type))
+}

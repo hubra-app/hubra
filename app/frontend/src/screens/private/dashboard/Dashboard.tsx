@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocation, useParams } from 'react-router-dom'
-import { Button, Group, Stack, Text, TextInput } from '@mantine/core'
+import { Button, Group, Radio, Stack, Text, TextInput } from '@mantine/core'
 import { IconPlus } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { useAuth, useNav, useToast } from '@/context/AppContext'
@@ -13,6 +13,12 @@ import { SharingField } from './SharingField'
 import { sharingBody, sharingValid, type Sharing } from './sharing'
 import { HomeDashboard } from '@/screens/private/dashboard/HomeDashboard'
 import { CustomDashboard } from '@/screens/private/dashboard/CustomDashboard'
+import {
+  DASHBOARD_TEMPLATES,
+  templateWidgets,
+  useWidgetAllowed,
+  useWidgetCatalogue,
+} from '@/screens/private/dashboard/widgets'
 
 export function DashboardScreen() {
   const { t } = useT()
@@ -26,6 +32,15 @@ export function DashboardScreen() {
   const [creating, setCreating] = useState<string | null>(null)
   const [sharing, setSharing] = useState<Sharing>({ visibility: 'private', groupIds: [] })
   const [fresh, setFresh] = useState<number | null>(null)
+  const [template, setTemplate] = useState('')
+  const catalogue = useWidgetCatalogue()
+  const allowed = useWidgetAllowed()
+  // Templates offered: those with at least two widgets this member may add.
+  const templates = DASHBOARD_TEMPLATES.map((tpl) => ({
+    ...tpl,
+    widgets: templateWidgets(tpl, catalogue, allowed),
+  })).filter((tpl) => tpl.widgets.length >= 2)
+  const chosen = templates.find((tpl) => tpl.key === template)
   const own = modules.has('dashboards')
   const { data } = useQuery({ queryKey: qk.dashboards, queryFn: listDashboards, enabled: own })
   const dashboards = data?.items ?? []
@@ -47,14 +62,16 @@ export function DashboardScreen() {
   const openNew = () => {
     setCreating('')
     setSharing({ visibility: 'private', groupIds: [] })
+    setTemplate('')
   }
 
   const create = async () => {
-    const name = (creating ?? '').trim()
+    const name = (creating ?? '').trim() || (chosen ? t(...chosen.name) : '')
     if (!name || !sharingValid(sharing)) return
     setCreating(null)
+    setTemplate('')
     try {
-      const d = await createDashboard(name)
+      const d = await createDashboard(name, chosen?.widgets ?? [])
       // A new dashboard starts private; share it right away when asked.
       if (canShare && sharing.visibility !== 'private') {
         const body = sharingBody(sharing)
@@ -135,7 +152,10 @@ export function DashboardScreen() {
             <Button variant="default" onClick={() => setCreating(null)}>
               {t('common.cancel', 'Abbrechen')}
             </Button>
-            <Button type="submit" disabled={!(creating ?? '').trim() || !sharingValid(sharing)}>
+            <Button
+              type="submit"
+              disabled={(!(creating ?? '').trim() && !chosen) || !sharingValid(sharing)}
+            >
               {t('dashboards.create', 'Erstellen')}
             </Button>
           </Group>
@@ -144,12 +164,36 @@ export function DashboardScreen() {
         <Stack gap="md">
           <TextInput
             label={t('dashboards.name', 'Name')}
-            placeholder={t('dashboards.namePlaceholder', 'z. B. Vorstand, Training, Finanzen')}
+            placeholder={
+              chosen
+                ? t(...chosen.name)
+                : t('dashboards.namePlaceholder', 'z. B. Vorstand, Training, Finanzen')
+            }
             maxLength={100}
             data-autofocus
             value={creating ?? ''}
             onChange={(e) => setCreating(e.currentTarget.value)}
           />
+          {templates.length > 0 && (
+            <Radio.Group
+              label={t('dashboards.template', 'Vorlage')}
+              value={template}
+              onChange={setTemplate}
+              data-testid="dashboard-template"
+            >
+              <Stack gap="xs" mt={6}>
+                <Radio value="" label={t('dashboards.tpl.empty', 'Leer')} />
+                {templates.map((tpl) => (
+                  <Radio
+                    key={tpl.key}
+                    value={tpl.key}
+                    label={t(...tpl.name)}
+                    description={t(...tpl.hint)}
+                  />
+                ))}
+              </Stack>
+            </Radio.Group>
+          )}
           {canShare && <SharingField value={sharing} onChange={setSharing} />}
         </Stack>
       </Modal>
