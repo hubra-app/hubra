@@ -1,5 +1,5 @@
-import { Avatar, Badge, Group, Paper, Skeleton, Stack, Text } from '@mantine/core'
-import { useQuery } from '@tanstack/react-query'
+import { Avatar, Badge, Group, Paper, Skeleton, Stack, Text, UnstyledButton } from '@mantine/core'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { IconId } from '@tabler/icons-react'
 import { clubLogoUrl } from '@hubra/api-client'
 import { getLang, tr } from '@/lang'
@@ -92,6 +92,48 @@ function Membership({ m }: { m: BadgeMembership }) {
 }
 
 /**
+ * Google's own "Add to Google Wallet" button (black, not to be restyled; see
+ * developers.google.com/wallet/generic/resources/brand-guidelines). The
+ * click writes the pass and opens Google's save page.
+ */
+function GoogleWalletButton() {
+  const add = useMutation({
+    mutationFn: authApi.addBadgeToGoogleWallet,
+    onSuccess: ({ url }) => {
+      window.location.href = url
+    },
+  })
+  const lang = getLang() === 'en' ? 'en' : 'de'
+  const label = tr('Zu Google Wallet hinzufügen', 'Add to Google Wallet')
+  return (
+    <Stack gap={4} align="flex-start" className="member-badge-wallet">
+      <UnstyledButton
+        onClick={() => add.mutate()}
+        disabled={add.isPending}
+        aria-label={label}
+        aria-busy={add.isPending}
+        style={{ padding: 8, margin: -8, opacity: add.isPending ? 0.6 : 1, maxWidth: '100%' }}
+      >
+        {/* Scaled as a whole (never stretched); 48 px high where it fits. */}
+        <img
+          src={`/google-wallet/add-${lang}.svg`}
+          alt={label}
+          style={{ display: 'block', width: lang === 'en' ? 281 : 352, maxWidth: '100%', height: 'auto' }}
+        />
+      </UnstyledButton>
+      {add.isError && (
+        <Text size="xs" c="red">
+          {tr(
+            'Google Wallet ist gerade nicht erreichbar. Bitte später nochmals versuchen.',
+            'Google Wallet is not reachable right now. Please try again later.',
+          )}
+        </Text>
+      )}
+    </Stack>
+  )
+}
+
+/**
  * The person's member badge: one per person, the same number in every club,
  * with their memberships (tier, kind, since when) below it.
  */
@@ -144,6 +186,7 @@ export function MemberBadgeCard() {
           )}
           {b.since ? ` ${tr(`Bei Hubra seit ${day(b.since)}.`, `On Hubra since ${day(b.since)}.`)}` : ''}
         </Text>
+        {b.googleWallet && <GoogleWalletButton />}
       </Stack>
     </Paper>
   )

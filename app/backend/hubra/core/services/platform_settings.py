@@ -55,6 +55,10 @@ Legal (``legal.*``): where Hubra's privacy policy, terms of service and
 imprint are (``legal_links``).  The sign-in pages, the footers and Stripe
 Checkout link them; Stripe asks for the same addresses in its dashboard.
 
+Google Wallet (``wallet.google.*``): the issuer account, generic class and
+service account key the member badge's pass is issued with
+(``services.google_wallet``).  Hubra is the one issuer for every club.
+
 Discord (``discord.*``): the one Hubra application every club's server and
 every linked account goes through (see docs/discord.md). Set here only, with
 no env fallback.  ``discord.log_*`` is the platform log: the bot posts
@@ -702,6 +706,43 @@ SPECS: tuple[Spec, ...] = (
         "https://api-free.deepl.com for a free key, https://api.deepl.com "
         "for a paid one",
         lambda cfg: "https://api-free.deepl.com",
+    ),
+    Spec(
+        "wallet.google.issuer_id",
+        "Google Wallet issuer id",
+        "The long number on the Google Pay & Wallet Console. Empty: no "
+        "\"Add to Google Wallet\" button",
+        lambda cfg: "",
+        "google_issuer_id",
+    ),
+    Spec(
+        "wallet.google.class_id",
+        "Google Wallet class id",
+        "Id of the generic class created in the console (with or without the "
+        "issuer id in front)",
+        lambda cfg: "",
+        "google_wallet_class",
+    ),
+    Spec(
+        "wallet.google.service_account",
+        "Google Wallet service account key",
+        "The JSON key of a Google Cloud service account with the Developer "
+        "role on the issuer account. Stored encrypted",
+        lambda cfg: "",
+        "google_service_account",
+        secret=True,
+    ),
+    Spec(
+        "wallet.google.logo_url",
+        "Google Wallet pass logo",
+        "Public https address of a square PNG (660 px recommended). Default: "
+        "the sign-in site's app icon",
+        lambda cfg: (
+            f"{cfg['SSO_BASE_URL'].rstrip('/')}/icon-512.png"
+            if cfg.get("SSO_BASE_URL")
+            else ""
+        ),
+        "url",
     ),
 )
 
