@@ -384,3 +384,18 @@ def test_no_support_channel_means_no_discord(client, club, db, monkeypatch):
     case_id = _report(client).get_json()["id"]
     assert calls == []
     assert db.session.get(SupportCase, case_id).discord_thread_id is None
+
+
+def test_threads_follow_the_bot_language(client, club, db, discord):
+    platform_settings.set_many({"discord.language": "en"})
+    db.session.commit()
+    case_id = _report(client).get_json()["id"]
+    case = db.session.get(SupportCase, case_id)
+    embed = support_discord.starter_embed(case)
+    assert embed["fields"][0] == {"name": "Kind", "value": "Problem", "inline": True}
+    assert embed["footer"]["text"].startswith("What is written here")
+    _staff(club, db)
+    discord.calls.clear()
+    client.patch(f"{STAFF}/{case_id}", json={"status": "done", "notify": False})
+    status = next(b for m, p, b in discord.calls if p.endswith("/messages"))
+    assert status["embeds"][0]["description"] == "Status: Done"

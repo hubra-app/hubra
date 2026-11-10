@@ -84,6 +84,7 @@ const DISCORD_LOG = [
   'discord.log_channel_id',
   'discord.audit_channel_id',
   'discord.changelog_channel_id',
+  'discord.language',
 ]
 const DISCORD_ROLES = ['discord.platform_roles']
 const DISCORD_SUPPORT = ['discord.support_channel_id', 'discord.support_add_reporters']
@@ -401,6 +402,10 @@ const FIELD_DE: Record<string, [string, string]> = {
     'Changelog-Kanal',
     'Kanal-ID für die Release Notes von Hubra und jedem Plugin-Update. Gewählt: Hubras Release Notes kommen hierhin statt ins Plattform-Log. Leer: aus',
   ],
+  'discord.language': [
+    'Sprache des Bots',
+    'Sprache von allem, was der Bot auf dem Discord-Server der Plattform schreibt: Log, Audit, Warnungen, Tagesübersicht, Knöpfe, Antworten auf Befehle und Support-Threads. Vereinsserver folgen der Sprache des Vereins',
+  ],
   'discord.audit_channel_id': [
     'Audit-Kanal',
     'Kanal-ID für jeden Eintrag im Audit-Log, mit Links in manage. Warnungen bleiben im Plattform-Log. Leer: aus',
@@ -544,6 +549,27 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
         const value = e.currentTarget.value
         setDraft((d) => ({ ...d, [key]: value }))
       },
+    }
+    if (key === 'discord.language') {
+      return (
+        <Stack key={key} gap={4}>
+          <Text size="sm" fw={500} component="div">
+            {label}
+          </Text>
+          <SegmentedControl
+            w="fit-content"
+            value={(draft[key] ?? s.value) === 'en' ? 'en' : 'de'}
+            onChange={(value) => setDraft((d) => ({ ...d, [key]: value }))}
+            data={[
+              { value: 'de', label: 'Deutsch' },
+              { value: 'en', label: 'English' },
+            ]}
+          />
+          <Text size="xs" c="dimmed">
+            {common.description}
+          </Text>
+        </Stack>
+      )
     }
     if (key === 'stripe.mode') {
       return (
@@ -1008,6 +1034,7 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                     },
                   ]}
                 />
+                {field('discord.language')}
                 <Text size="sm">
                   {tr('Was wohin gemeldet wird, steht in der ', 'What is posted where is set in the ')}
                   <Anchor

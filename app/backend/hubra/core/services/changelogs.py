@@ -314,7 +314,13 @@ def post_to_platform(kind: str, payload: dict, post_nonce: str = "") -> bool:
             str(payload.get("version") or ""),
             {
                 "date": payload.get("date"),
-                "sections": payload.get("sections_de") or payload.get("sections") or {},
+                "sections": (
+                    payload.get("sections_de")
+                    if platform_discord.language() == "de"
+                    else None
+                )
+                or payload.get("sections")
+                or {},
             },
         )
     else:

@@ -771,3 +771,57 @@ def test_platform_roles_retry_people_not_on_the_server(roles_server, admin, redi
     assert platform_roles.joined(GUILD, ADMIN_DISCORD) is True
     assert "Plattform-Admin" in _names(roles_server, ADMIN_DISCORD)
     assert platform_roles.joined(CLUB_GUILD, ADMIN_DISCORD) is False
+
+
+# ── Language ──────────────────────────────────────────────────────────────────
+
+
+def _english(db):
+    platform_settings.set_many({"discord.language": "en"})
+    db.session.commit()
+
+
+def test_language_defaults_to_german_and_takes_only_de_or_en(db):
+    assert platform_discord.language() == "de"
+    with pytest.raises(platform_settings.PlatformSettingError):
+        platform_settings.set_many({"discord.language": "fr"})
+    db.session.rollback()
+    _english(db)
+    assert platform_discord.language() == "en"
+
+
+def test_english_buttons_and_replies(bot, admin, db):
+    _english(db)
+    answer = platform_bot.handle(
+        _click("p:al:ack:relay_down", message=_alert_message())
+    )
+    assert answer["data"]["embeds"][0]["fields"][-1]["name"] == "Acknowledged"
+    with patch.object(platform_monitor, "open_problems", return_value=[]):
+        status = platform_bot.handle(_command("plattform", "status"))
+    embed = status["data"]["embeds"][0]
+    assert embed["title"] == "Hubra platform"
+    assert any(f["name"] == "Open problems (0)" for f in embed["fields"])
+    labels = [
+        c["label"] for c in platform_bot.alert_buttons("relay_down")[0]["components"]
+    ]
+    assert labels[:2] == ["Acknowledge", "Silence 1 h"]
+    answer = platform_bot.handle(_command("wartung", "abbrechen"))
+    assert answer["data"]["content"] == "No maintenance for all clubs is planned."
+
+
+def test_english_alert_footer_and_digest(bot, db):
+    _english(db)
+    out = platform_bot.alert_embed(
+        {"title": "Hubra: relay down", "description": "error: refused"},
+        "relay_down",
+        "error",
+        platform_bot.PROBLEM,
+    )
+    assert out["footer"]["text"] == "Hubra · Alert · Mail relay"
+    assert out["fields"][0]["name"] == "Error"
+    with patch.object(platform_monitor, "open_problems", return_value=[]):
+        embed = platform_bot.digest_embed()
+    assert embed["title"].startswith("Daily overview ")
+    assert {"New accounts", "Open requests", "Slow endpoints"} <= {
+        f["name"] for f in embed["fields"]
+    }

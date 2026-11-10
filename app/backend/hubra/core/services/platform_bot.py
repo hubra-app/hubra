@@ -88,6 +88,13 @@ _local: dict[str, Any] = {}
 # ── Small helpers ─────────────────────────────────────────────────────────────
 
 
+def tr(de: str, en: str) -> str:
+    """*de* or *en*, after the platform bot's language (``discord.language``)."""
+    from hubra.core.services import platform_discord
+
+    return platform_discord.tr(de, en)
+
+
 def _redis():
     try:
         from hubra.core.redis_client import get_redis_client
@@ -316,17 +323,30 @@ def admin_for(interaction: dict, permission: str):
     user = db.session.get(User, link.user_id) if link else None
     if user is None or user.is_disabled:
         raise Refused(
-            "Dein Discord-Konto ist mit keinem Hubra-Konto verknüpft. "
-            "Verknüpfe es unter Konto › Verknüpfungen."
+            tr(
+                "Dein Discord-Konto ist mit keinem Hubra-Konto verknüpft. "
+                "Verknüpfe es unter Mein Konto › Verknüpfungen.",
+                "Your Discord account is not linked to a Hubra account. "
+                "Link it under My account › Linked accounts.",
+            )
         )
     if not mfa.enabled(user):
         raise Refused(
-            "Für Plattform-Aktionen in Discord braucht dein Hubra-Konto "
-            "die Zwei-Faktor-Anmeldung."
+            tr(
+                "Für Plattform-Aktionen in Discord braucht dein Hubra-Konto "
+                "die Zwei-Faktor-Anmeldung.",
+                "Platform actions in Discord need two-factor sign-in on your "
+                "Hubra account.",
+            )
         )
     perms = get_user_global_permissions(user.id)
     if "*" not in perms and permission not in perms:
-        raise Refused(f"Dafür fehlt dir das Recht {permission}.")
+        raise Refused(
+            tr(
+                f"Dafür fehlt dir das Recht {permission}.",
+                f"You need the permission {permission} for this.",
+            )
+        )
     return user
 
 
@@ -346,28 +366,38 @@ NOTICE_TYPES = frozenset(
     {"plugin_updates", "upgrades", "support_cases", "backup_deleted"}
 )
 
-# Alert type → (German label, manage page).  The page is where the link
-# button goes; the label is in the footer.
-ALERT_PAGES: dict[str, tuple[str, str]] = {
-    "relay_down": ("Mail-Relay", "/app/platform/mail/settings"),
-    "fallback_used": ("Fallback-Relay", "/app/platform/mail/settings"),
-    "delivery_failed": ("Mail-Zustellung", "/app/platform/mail"),
-    "service_down": ("Dienst", "/app/platform/diagnostics"),
-    "backup_failed": ("Backup", "/app/platform/backups"),
-    "backup_deleted": ("Backup gelöscht", "/app/platform/backups"),
-    "plugin_updates": ("Plugins", "/app/plugins"),
-    "upgrades": ("Update", "/app/platform/diagnostics"),
-    "system": ("System", "/app/platform/alerts"),
-    "support_cases": ("Meldungen und Ideen", "/app/reports"),
-    "billing": ("Abrechnung", "/app/tenants"),
+# Alert type → (manage page, German label, English label).  The page is
+# where the link button goes; the label is in the footer.
+ALERT_PAGES: dict[str, tuple[str, str, str]] = {
+    "relay_down": ("/app/platform/mail/settings", "Mail-Relay", "Mail relay"),
+    "fallback_used": (
+        "/app/platform/mail/settings",
+        "Fallback-Relay",
+        "Fallback relay",
+    ),
+    "delivery_failed": ("/app/platform/mail", "Mail-Zustellung", "Mail delivery"),
+    "service_down": ("/app/platform/diagnostics", "Dienst", "Service"),
+    "backup_failed": ("/app/platform/backups", "Backup", "Backup"),
+    "backup_deleted": ("/app/platform/backups", "Backup gelöscht", "Backup deleted"),
+    "plugin_updates": ("/app/plugins", "Plugins", "Plugins"),
+    "upgrades": ("/app/platform/diagnostics", "Update", "Update"),
+    "system": ("/app/platform/alerts", "System", "System"),
+    "support_cases": ("/app/reports", "Meldungen und Ideen", "Reports and ideas"),
+    "billing": ("/app/tenants", "Abrechnung", "Billing"),
 }
-_LINK_LABELS = {
-    "billing": "Verein öffnen",
-    "support_cases": "Meldung öffnen",
-    "plugin_updates": "Zum Katalog",
-    "backup_failed": "Zu den Backups",
-    "backup_deleted": "Zu den Backups",
+_LINK_LABELS: dict[str, tuple[str, str]] = {
+    "billing": ("Verein öffnen", "Open club"),
+    "support_cases": ("Meldung öffnen", "Open report"),
+    "plugin_updates": ("Zum Katalog", "Open catalogue"),
+    "backup_failed": ("Zu den Backups", "Open backups"),
+    "backup_deleted": ("Zu den Backups", "Open backups"),
 }
+
+
+def alert_label(alert_type: str) -> str:
+    """The alert type's name in the bot's language."""
+    page = ALERT_PAGES.get(alert_type)
+    return tr(page[1], page[2]) if page else alert_type
 
 
 def message_kind(alert_type: str, level: str | None) -> str:
@@ -385,7 +415,7 @@ def message_kind(alert_type: str, level: str | None) -> str:
 def alert_page(alert_type: str, link: str | None = None) -> str:
     """The manage address an alert of this type is about, or "".  *link*
     (a manage path) is this alert's own details page."""
-    path = link or ALERT_PAGES.get(alert_type, ("", "/app/platform/alerts"))[1]
+    path = link or ALERT_PAGES.get(alert_type, ("/app/platform/alerts",))[0]
     url = _manage_url(path)
     return url if url.startswith("https://") else ""
 
@@ -401,17 +431,17 @@ def alert_buttons(
     row: list[dict] = []
     if kind == PROBLEM:
         row += [
-            _button("Bestätigen", f"p:al:ack:{alert_type}", 1),
-            _button("1 h stumm", f"p:al:mute:{alert_type}", 2),
+            _button(tr("Bestätigen", "Acknowledge"), f"p:al:ack:{alert_type}", 1),
+            _button(tr("1 h stumm", "Silence 1 h"), f"p:al:mute:{alert_type}", 2),
         ]
     url = alert_page(alert_type, link)
     if url:
         label = (
-            _LINK_LABELS.get(alert_type, "Ansehen")
+            tr(*_LINK_LABELS.get(alert_type, ("Ansehen", "View")))
             if kind == NOTICE
-            else "Details ansehen"
+            else tr("Details ansehen", "View details")
             if link
-            else "In manage öffnen"
+            else tr("In manage öffnen", "Open in manage")
         )
         row.append(_link(label, url))
     return [{"type": 1, "components": row}] if row else []
@@ -426,7 +456,11 @@ _NOTICE_ICONS = {
 }
 # Lines that point at a page in manage: the link button does that here.
 _SEE_LINE = re.compile(r"^(see|check .* in) manage\b", re.IGNORECASE)
-_KIND_LABELS = {PROBLEM: "Warnung", NOTICE: "Mitteilung", RESOLVED: "Behoben"}
+_KIND_LABELS = {
+    PROBLEM: ("Warnung", "Alert"),
+    NOTICE: ("Mitteilung", "Notice"),
+    RESOLVED: ("Behoben", "Resolved"),
+}
 
 
 def alert_embed(embed: dict, alert_type: str, level: str, kind: str) -> dict:
@@ -466,12 +500,18 @@ def alert_embed(embed: dict, alert_type: str, level: str, kind: str) -> dict:
     if errors:
         text = "\n".join(errors).replace("`", "ˋ")[:990]
         fields.insert(
-            0, {"name": "Fehler", "value": f"```\n{text}\n```", "inline": False}
+            0,
+            {
+                "name": tr("Fehler", "Error"),
+                "value": f"```\n{text}\n```",
+                "inline": False,
+            },
         )
     if fields:
         out["fields"] = fields[:25]
-    label = ALERT_PAGES.get(alert_type, (alert_type, ""))[0]
-    out["footer"] = {"text": f"Hubra · {_KIND_LABELS[kind]} · {label}"}
+    out["footer"] = {
+        "text": f"Hubra · {tr(*_KIND_LABELS[kind])} · {alert_label(alert_type)}"
+    }
     out.setdefault("timestamp", datetime.now(timezone.utc).isoformat())
     return out
 
@@ -552,7 +592,9 @@ def _alert_click(interaction: dict, action: str, alert_type: str) -> dict:
             "type": R_UPDATE,
             "data": {
                 "embeds": _with_field(
-                    message, "Bestätigt", f"{plain(user.name)}, {_local_time()}"
+                    message,
+                    tr("Bestätigt", "Acknowledged"),
+                    f"{plain(user.name)}, {_local_time()}",
                 ),
                 "components": _without(message, "p:al:ack"),
             },
@@ -571,12 +613,15 @@ def _alert_click(interaction: dict, action: str, alert_type: str) -> dict:
             "type": R_UPDATE,
             "data": {
                 "embeds": _with_field(
-                    message, "Stumm", f"{alert_type} bis {ends} ({plain(user.name)})"
+                    message,
+                    tr("Stumm", "Silenced"),
+                    f"{alert_label(alert_type)} {tr('bis', 'until')} {ends} "
+                    f"({plain(user.name)})",
                 ),
                 "components": _without(message, "p:al:mute"),
             },
         }
-    return reply("Unbekannte Aktion.")
+    return reply(tr("Unbekannte Aktion.", "Unknown action."))
 
 
 def resolve_alerts() -> int:
@@ -614,7 +659,9 @@ def resolve_alerts() -> int:
         try:
             path = f"/channels/{info['channel']}/messages/{msg_id}"
             message = _bot("GET", path) or {}
-            embeds = _with_field(message, "Behoben", _local_time(), COLOR_GOOD)
+            embeds = _with_field(
+                message, tr("Behoben", "Resolved"), _local_time(), COLOR_GOOD
+            )
             title = embeds[0].get("title") or ""
             if title and not title.startswith("✅"):
                 embeds[0]["title"] = f"✅ {title}"[:256]
@@ -642,12 +689,12 @@ def request_buttons(entry) -> list | None:
         return None
     rid = entry.target_id
     row = [
-        _button("Annehmen", f"p:req:ok:{rid}", 3),
-        _button("Ablehnen", f"p:req:no:{rid}", 4),
+        _button(tr("Annehmen", "Approve"), f"p:req:ok:{rid}", 3),
+        _button(tr("Ablehnen", "Reject"), f"p:req:no:{rid}", 4),
     ]
     url = _manage_url("/app/platform/requests")
     if url.startswith("https://"):
-        row.append(_link("In manage öffnen", url))
+        row.append(_link(tr("In manage öffnen", "Open in manage"), url))
     return [{"type": 1, "components": row}]
 
 
@@ -675,12 +722,16 @@ def request_decided(entry) -> None:
     from hubra.core.models.user import User
 
     actor = db.session.get(User, entry.actor_id) if entry.actor_id else None
-    who = actor.name if actor else "jemand"
+    who = actor.name if actor else tr("jemand", "someone")
     approved = entry.action.endswith("approve")
-    text = f"{'Angenommen' if approved else 'Abgelehnt'} von {who}, {_local_time()}"
+    if approved:
+        text = tr(f"Angenommen von {who}", f"Approved by {who}")
+    else:
+        text = tr(f"Abgelehnt von {who}", f"Rejected by {who}")
+    text += f", {_local_time()}"
     note = (entry.details or {}).get("note")
     if not approved and note:
-        text += f"\nGrund: {str(note)[:900]}"
+        text += f"\n{tr('Grund', 'Reason')}: {str(note)[:900]}"
     try:
         info = json.loads(raw)
         path = f"/channels/{info['channel']}/messages/{info['id']}"
@@ -690,7 +741,10 @@ def request_decided(entry) -> None:
             path,
             {
                 "embeds": _with_field(
-                    message, "Entscheid", text, COLOR_GOOD if approved else COLOR_BAD
+                    message,
+                    tr("Entscheid", "Decision"),
+                    text,
+                    COLOR_GOOD if approved else COLOR_BAD,
                 ),
                 "components": _without(message, "p:req:"),
             },
@@ -706,9 +760,14 @@ def _pending_request(raw_id: str):
 
     req = db.session.get(TenantRequest, int(raw_id)) if raw_id.isdigit() else None
     if req is None:
-        raise Refused("Diese Anfrage gibt es nicht mehr.")
+        raise Refused(tr("Diese Anfrage gibt es nicht mehr.", "This request is gone."))
     if req.status != "pending":
-        raise Refused(f"Die Anfrage ist schon entschieden ({req.status}).")
+        raise Refused(
+            tr(
+                f"Die Anfrage ist schon entschieden ({req.status}).",
+                f"The request is already decided ({req.status}).",
+            )
+        )
     return req
 
 
@@ -725,7 +784,7 @@ def _request_click(interaction: dict, action: str, raw_id: str) -> dict:
             "type": R_MODAL,
             "data": {
                 "custom_id": f"p:reqm:{req.id}",
-                "title": f"Anfrage ablehnen: {req.name}"[:45],
+                "title": f"{tr('Anfrage ablehnen', 'Reject request')}: {req.name}"[:45],
                 "components": [
                     {
                         "type": 1,
@@ -733,7 +792,10 @@ def _request_click(interaction: dict, action: str, raw_id: str) -> dict:
                             {
                                 "type": 4,
                                 "custom_id": "note",
-                                "label": "Grund (geht an die Person)",
+                                "label": tr(
+                                    "Grund (geht an die Person)",
+                                    "Reason (goes to the person)",
+                                ),
                                 "style": 2,
                                 "required": False,
                                 "max_length": 1000,
@@ -743,7 +805,7 @@ def _request_click(interaction: dict, action: str, raw_id: str) -> dict:
                 ],
             },
         }
-    return reply("Unbekannte Aktion.")
+    return reply(tr("Unbekannte Aktion.", "Unknown action."))
 
 
 def _modal_value(interaction: dict, field: str) -> str:
@@ -764,9 +826,19 @@ def _reject_submit(interaction: dict, raw_id: str) -> dict:
             req.id, user.id, _modal_value(interaction, "note"), via="discord"
         )
     except club_requests.RequestDecisionError as exc:
-        return reply(f"Nicht abgelehnt: {exc}")
-    mail = "Die Person hat eine Mail bekommen." if notified else "Keine Mail versandt."
-    return reply(f"Anfrage «{plain(req.name)}» abgelehnt. {mail}")
+        return reply(f"{tr('Nicht abgelehnt', 'Not rejected')}: {exc}")
+    name = plain(req.name)
+    return reply(
+        tr(f"Anfrage «{name}» abgelehnt.", f"Request “{name}” rejected.")
+        + " "
+        + _mail_note(notified)
+    )
+
+
+def _mail_note(notified: bool) -> str:
+    if notified:
+        return tr("Die Person hat eine Mail bekommen.", "The person got a mail.")
+    return tr("Keine Mail versandt.", "No mail sent.")
 
 
 def approve_now(req_id: int, user_id: int) -> str:
@@ -776,9 +848,16 @@ def approve_now(req_id: int, user_id: int) -> str:
     try:
         req, tenant, notified = club_requests.approve(req_id, user_id, via="discord")
     except club_requests.RequestDecisionError as exc:
-        return f"Nicht angenommen: {exc}"
-    mail = "Die Person hat eine Mail bekommen." if notified else "Keine Mail versandt."
-    return f"Verein «{plain(tenant.name)}» ({tenant.slug}) ist eingerichtet. {mail}"
+        return f"{tr('Nicht angenommen', 'Not approved')}: {exc}"
+    name = plain(tenant.name)
+    return (
+        tr(
+            f"Verein «{name}» ({tenant.slug}) ist eingerichtet.",
+            f"Club “{name}” ({tenant.slug}) is set up.",
+        )
+        + " "
+        + _mail_note(notified)
+    )
 
 
 def follow_up(interaction_token: str, text: str) -> None:
@@ -1042,14 +1121,19 @@ def _status(interaction: dict) -> dict:
     )
     state = maintenance.state(fresh=True)
     if state["active"]:
-        wartung = "Ein" + (
-            f" bis {_local_time(datetime.fromisoformat(state['until']))}"
+        wartung = tr("Ein", "On") + (
+            f" {tr('bis', 'until')} "
+            f"{_local_time(datetime.fromisoformat(state['until']))}"
             if state.get("until")
             else ""
         )
     else:
         upcoming = _next_window()
-        wartung = f"Geplant ab {_local_time(upcoming.starts_at)}" if upcoming else "Aus"
+        wartung = (
+            f"{tr('Geplant ab', 'Planned from')} {_local_time(upcoming.starts_at)}"
+            if upcoming
+            else tr("Aus", "Off")
+        )
     icons = {"error": "🔴", "warning": "🟠", "info": "🔵"}
     lines = [f"{icons.get(p['level'], '•')} {p['title']}" for p in problems[:15]]
     muted = [
@@ -1057,17 +1141,26 @@ def _status(interaction: dict) -> dict:
     ]
     fields = [
         {"name": "Version", "value": VersionService.get_version(), "inline": True},
-        {"name": "Aktive Vereine", "value": str(clubs or 0), "inline": True},
-        {"name": "Wartung", "value": wartung, "inline": True},
         {
-            "name": f"Offene Probleme ({len(problems)})",
-            "value": "\n".join(lines)[:1000] or "Keine 🎉",
+            "name": tr("Aktive Vereine", "Active clubs"),
+            "value": str(clubs or 0),
+            "inline": True,
+        },
+        {"name": tr("Wartung", "Maintenance"), "value": wartung, "inline": True},
+        {
+            "name": f"{tr('Offene Probleme', 'Open problems')} ({len(problems)})",
+            "value": "\n".join(lines)[:1000] or tr("Keine 🎉", "None 🎉"),
         },
     ]
     if muted:
-        fields.append({"name": "Stumm", "value": ", ".join(muted)})
+        fields.append(
+            {
+                "name": tr("Stumm", "Silenced"),
+                "value": ", ".join(alert_label(t) for t in muted),
+            }
+        )
     embed = {
-        "title": "Hubra-Plattform",
+        "title": tr("Hubra-Plattform", "Hubra platform"),
         "color": COLOR_BAD
         if any(p["level"] == "error" for p in problems)
         else COLOR_WARN
@@ -1084,7 +1177,7 @@ def _club(interaction: dict, values: dict) -> dict:
     admin_for(interaction, "tenants.read")
     club = _find_club(str(values.get("name") or ""))
     if club is None:
-        return reply("Kein Verein gefunden.")
+        return reply(tr("Kein Verein gefunden.", "No club found."))
     h = tenant_health.for_tenants([club]).get(club.id) or {}
     mail = h.get("mail") or {}
     alerts = h.get("alerts") or {}
@@ -1092,31 +1185,34 @@ def _club(interaction: dict, values: dict) -> dict:
     last = h.get("last_activity")
     fields = [
         {"name": "Status", "value": club.status, "inline": True},
-        {"name": "Plan", "value": club.plan or "–", "inline": True},
+        {"name": tr("Tarif", "Plan"), "value": club.plan or "–", "inline": True},
         {
-            "name": "Mitglieder",
-            "value": f"{h.get('members', 0)} ({h.get('active_members', 0)} aktiv)",
+            "name": tr("Mitglieder", "Members"),
+            "value": f"{h.get('members', 0)} "
+            f"({h.get('active_members', 0)} {tr('aktiv', 'active')})",
             "inline": True,
         },
         {
-            "name": "Letzte Aktivität",
+            "name": tr("Letzte Aktivität", "Last activity"),
             "value": _local_time(datetime.fromisoformat(last)) if last else "–",
             "inline": True,
         },
-        {"name": "Speicher", "value": f"{size:.1f} MB", "inline": True},
+        {"name": tr("Speicher", "Storage"), "value": f"{size:.1f} MB", "inline": True},
         {
             "name": "Mails (24 h)",
-            "value": f"{mail.get('sent', 0)} versandt, {mail.get('failed', 0)} fehlgeschlagen",
+            "value": f"{mail.get('sent', 0)} {tr('versandt', 'sent')}, "
+            f"{mail.get('failed', 0)} {tr('fehlgeschlagen', 'failed')}",
             "inline": True,
         },
         {"name": "Plugins", "value": str(h.get("plugins", 0)), "inline": True},
         {
-            "name": "Warnungen",
-            "value": f"{alerts.get('error', 0)} Fehler, {alerts.get('warning', 0)} Warnungen",
+            "name": tr("Warnungen", "Alerts"),
+            "value": f"{alerts.get('error', 0)} {tr('Fehler', 'errors')}, "
+            f"{alerts.get('warning', 0)} {tr('Warnungen', 'warnings')}",
             "inline": True,
         },
         {
-            "name": "Seit",
+            "name": tr("Seit", "Since"),
             "value": _local_time(club.created_at) if club.created_at else "–",
             "inline": True,
         },
@@ -1140,11 +1236,11 @@ def _backup(interaction: dict, values: dict) -> dict:
 
     user = admin_for(interaction, "backups.manage")
     tenant_id = None
-    label = "Plattform"
+    label = tr("Plattform", "Platform")
     if values.get("verein"):
         club = _find_club(str(values["verein"]))
         if club is None:
-            return reply("Kein Verein gefunden.")
+            return reply(tr("Kein Verein gefunden.", "No club found."))
         tenant_id, label = club.id, f"{plain(club.name)} ({club.slug})"
     task = create_backup_task.delay(
         backup_type="manual", triggered_by=user.email, tenant_id=tenant_id
@@ -1164,7 +1260,12 @@ def _backup(interaction: dict, values: dict) -> dict:
         )
     )
     db.session.commit()
-    return reply(f"Backup gestartet: {label}. Das Ergebnis kommt in den Log.")
+    return reply(
+        tr(
+            f"Backup gestartet: {label}. Das Ergebnis kommt ins Log.",
+            f"Backup started: {label}. The result goes to the log.",
+        )
+    )
 
 
 def _parse_start(text: str) -> datetime | None:
@@ -1215,19 +1316,33 @@ def _maintenance(interaction: dict, sub: str, values: dict) -> dict:
             str(values.get("text") or ""), int(minutes) if minutes else None, user.id
         )
         until = (
-            f" bis {_local_time(datetime.fromisoformat(state['until']))}"
+            f" {tr('bis', 'until')} "
+            f"{_local_time(datetime.fromisoformat(state['until']))}"
             if state.get("until")
             else ""
         )
-        return reply(f"Wartung ist an{until}. Die Vereins-Apps zeigen den Hinweis.")
+        return reply(
+            tr(
+                f"Wartung ist an{until}. Die Vereins-Apps zeigen den Hinweis.",
+                f"Maintenance is on{until}. The club apps show the notice.",
+            )
+        )
     if sub == "planen":
         start = _parse_start(str(values.get("start") or ""))
         if start is None:
             return reply(
-                "Beginn nicht verstanden. Beispiel: 22:00 oder 2026-11-05 22:00."
+                tr(
+                    "Beginn nicht verstanden. Beispiel: 22:00 oder 2026-11-05 22:00.",
+                    "Start not understood. Example: 22:00 or 2026-11-05 22:00.",
+                )
             )
         if start <= datetime.now(timezone.utc):
-            return reply("Der Beginn liegt in der Vergangenheit.")
+            return reply(
+                tr(
+                    "Der Beginn liegt in der Vergangenheit.",
+                    "The start is in the past.",
+                )
+            )
         minutes = int(values.get("minuten") or 15)
         start = start.astimezone(timezone.utc)  # stored without its zone in SQLite
         try:
@@ -1240,23 +1355,45 @@ def _maintenance(interaction: dict, sub: str, values: dict) -> dict:
                 actor_id=user.id,
             )
         except maintenance.WindowError as exc:
-            return reply(f"Nicht geplant: {exc.args[0] if exc.args else exc}")
+            reason = exc.args[0] if exc.args else exc
+            return reply(f"{tr('Nicht geplant', 'Not planned')}: {reason}")
+        at = _local_time(start)
         return reply(
-            f"Wartung für alle Vereine geplant ab {_local_time(start)}, "
-            f"{minutes} Minuten. Die Vereins-Apps zeigen ab 24 Stunden vorher "
-            "einen Hinweis; sie beginnt von selbst."
+            tr(
+                f"Wartung für alle Vereine geplant ab {at}, {minutes} Minuten. "
+                "Die Vereins-Apps zeigen ab 24 Stunden vorher einen Hinweis; "
+                "sie beginnt von selbst.",
+                f"Maintenance for all clubs planned from {at}, {minutes} minutes. "
+                "The club apps show a notice from 24 hours before; it starts "
+                "by itself.",
+            )
         )
     if sub == "ende":
         was = maintenance.state(fresh=True)
         maintenance.turn_off(user.id)
-        return reply("Wartung beendet." if was["active"] else "Es lief keine Wartung.")
+        return reply(
+            tr("Wartung beendet.", "Maintenance ended.")
+            if was["active"]
+            else tr("Es lief keine Wartung.", "No maintenance was running.")
+        )
     if sub == "abbrechen":
         window = _next_window()
         if window is None:
-            return reply("Es ist keine Wartung für alle Vereine geplant.")
+            return reply(
+                tr(
+                    "Es ist keine Wartung für alle Vereine geplant.",
+                    "No maintenance for all clubs is planned.",
+                )
+            )
         maintenance.cancel(window.id, user.id)
-        return reply(f"Geplante Wartung ab {_local_time(window.starts_at)} abgesagt.")
-    return reply("Unbekannter Befehl.")
+        at = _local_time(window.starts_at)
+        return reply(
+            tr(
+                f"Geplante Wartung ab {at} abgesagt.",
+                f"Planned maintenance from {at} cancelled.",
+            )
+        )
+    return reply(tr("Unbekannter Befehl.", "Unknown command."))
 
 
 def handle(interaction: dict) -> dict:
@@ -1276,7 +1413,7 @@ def handle(interaction: dict) -> dict:
                 return _club(interaction, values)
             if sub == "backup":
                 return _backup(interaction, values)
-            return reply("Unbekannter Befehl.")
+            return reply(tr("Unbekannter Befehl.", "Unknown command."))
         parts = str(data.get("custom_id") or "").split(":")
         if kind == MODAL and len(parts) == 3 and parts[1] == "reqm":
             return _reject_submit(interaction, parts[2])
@@ -1287,9 +1424,9 @@ def handle(interaction: dict) -> dict:
 
             # Only known types: the type names a Redis key (mute).
             if parts[3] not in ALERT_TYPES:
-                return reply("Unbekannte Aktion.")
+                return reply(tr("Unbekannte Aktion.", "Unknown action."))
             return _alert_click(interaction, parts[2], parts[3])
-        return reply("Unbekannte Aktion.")
+        return reply(tr("Unbekannte Aktion.", "Unknown action."))
     except Refused as exc:
         if kind == AUTOCOMPLETE:
             return {"type": 8, "data": {"choices": []}}
@@ -1299,7 +1436,12 @@ def handle(interaction: dict) -> dict:
         from hubra.core.extensions import db
 
         db.session.rollback()
-        return reply("Das hat nicht geklappt; der Fehler ist im Log.")
+        return reply(
+            tr(
+                "Das hat nicht geklappt; der Fehler ist im Log.",
+                "That did not work; the error is in the log.",
+            )
+        )
 
 
 # ── Club servers ──────────────────────────────────────────────────────────────
@@ -1421,36 +1563,52 @@ def digest_embed(now: datetime | None = None) -> dict:
 
     def names(rows):
         text = ", ".join(f"{plain(t.name)} ({t.slug})" for t in rows[:10])
-        return text + (f" und {len(rows) - 10} weitere" if len(rows) > 10 else "")
+        more = len(rows) - 10
+        return text + (
+            tr(f" und {more} weitere", f" and {more} more") if more > 0 else ""
+        )
 
+    none = tr("Keine", "None")
     fields = [
         {
-            "name": f"Neue Vereine ({len(clubs)})",
+            "name": f"{tr('Neue Vereine', 'New clubs')} ({len(clubs)})",
             "value": names(clubs) or "–",
         },
-        {"name": "Neue Konten", "value": str(signups or 0), "inline": True},
-        {"name": "Offene Anfragen", "value": str(pending or 0), "inline": True},
         {
-            "name": "Mails",
-            "value": f"{mail['sent']} versandt, {mail['fallback']} über Ersatz, "
-            f"{mail['failed']} fehlgeschlagen",
+            "name": tr("Neue Konten", "New accounts"),
+            "value": str(signups or 0),
             "inline": True,
         },
         {
-            "name": f"Offene Probleme ({len(other)})",
-            "value": "\n".join(f"• {p['title']}" for p in other[:8])[:1000] or "Keine",
+            "name": tr("Offene Anfragen", "Open requests"),
+            "value": str(pending or 0),
+            "inline": True,
         },
         {
-            "name": "Langsame Endpunkte",
-            "value": "\n".join(f"• {p['title']}" for p in slow[:5])[:1000] or "Keine",
+            "name": "Mails",
+            "value": f"{mail['sent']} {tr('versandt', 'sent')}, "
+            f"{mail['fallback']} {tr('über Ersatz', 'via fallback')}, "
+            f"{mail['failed']} {tr('fehlgeschlagen', 'failed')}",
+            "inline": True,
         },
-        {"name": "Plugin-Updates", "value": plugin_updates or "Keine"},
+        {
+            "name": f"{tr('Offene Probleme', 'Open problems')} ({len(other)})",
+            "value": "\n".join(f"• {p['title']}" for p in other[:8])[:1000] or none,
+        },
+        {
+            "name": tr("Langsame Endpunkte", "Slow endpoints"),
+            "value": "\n".join(f"• {p['title']}" for p in slow[:5])[:1000] or none,
+        },
+        {"name": "Plugin-Updates", "value": plugin_updates or none},
     ]
+    day = f"{now.astimezone(_zone()):%d.%m.%Y}"
     embed: dict[str, Any] = {
-        "title": f"Tagesübersicht {now.astimezone(_zone()):%d.%m.%Y}",
+        "title": tr(f"Tagesübersicht {day}", f"Daily overview {day}"),
         "color": COLOR_WARN if other else COLOR_INFO,
         "fields": fields,
-        "footer": {"text": "Hubra platform · digest"},
+        "footer": {
+            "text": tr("Hubra-Plattform · Tagesübersicht", "Hubra platform · digest")
+        },
         "timestamp": now.isoformat(),
     }
     url = _manage_url("/app/platform/alerts/overview")
@@ -1514,7 +1672,9 @@ def _announced(version: str) -> bool:
 def release_notes(version: str) -> dict | None:
     from hubra.core.services.version import VersionService
 
-    for entry in VersionService.get_changelog("de"):
+    from hubra.core.services import platform_discord
+
+    for entry in VersionService.get_changelog(platform_discord.language()):
         if str(entry.get("version")) == version:
             return entry
     return None
@@ -1526,17 +1686,22 @@ def release_embed(version: str, entry: dict | None) -> dict:
     for heading, items in ((entry or {}).get("sections") or {}).items():
         text = "\n".join(f"• {item}" for item in items[:8])
         if len(items) > 8:
-            text += f"\n… und {len(items) - 8} weitere"
+            more = len(items) - 8
+            text += tr(f"\n… und {more} weitere", f"\n… and {more} more")
         if text:
             fields.append({"name": str(heading)[:250] or "–", "value": text[:1000]})
     embed: dict[str, Any] = {
-        "title": f"Hubra {version} läuft",
+        "title": tr(f"Hubra {version} läuft", f"Hubra {version} is running"),
         "color": COLOR_INFO,
         "fields": fields[:10],
-        "footer": {"text": "Hubra platform · releases"},
+        "footer": {
+            "text": tr("Hubra-Plattform · Releases", "Hubra platform · releases")
+        },
     }
     if entry and entry.get("date"):
-        embed["description"] = f"Veröffentlicht am {entry['date']}"
+        embed["description"] = tr(
+            f"Veröffentlicht am {entry['date']}", f"Released on {entry['date']}"
+        )
     return embed
 
 
@@ -1607,7 +1772,9 @@ def post_security_now(title: str, lines: list[str], level: str = "warning") -> b
             "title": f"🔐 {title}"[:256],
             "description": "\n".join(lines)[:3500],
             "color": COLOR_BAD if level == "error" else COLOR_WARN,
-            "footer": {"text": "Hubra platform · security"},
+            "footer": {
+                "text": tr("Hubra-Plattform · Sicherheit", "Hubra platform · security")
+            },
             "timestamp": datetime.now(timezone.utc).isoformat(),
         },
         channel_id=channel_id,
@@ -1624,11 +1791,14 @@ def staff_new_device(user, ip: str, browser: str, platform: str) -> None:
             return
     except Exception:  # noqa: BLE001
         return
+    who = f"**{plain(user.name)}** ({plain(user.email)})"
     security(
-        "Plattform-Admin auf neuem Gerät",
+        tr("Plattform-Admin auf neuem Gerät", "Platform admin on a new device"),
         [
-            f"**{plain(user.name)}** ({plain(user.email)}) "
-            "hat sich auf einem neuen Gerät angemeldet.",
+            tr(
+                f"{who} hat sich auf einem neuen Gerät angemeldet.",
+                f"{who} signed in on a new device.",
+            ),
             f"Browser: {plain(browser)} · System: {plain(platform)}",
             f"IP: {plain(ip, 64)} · {_local_time()}",
         ],
@@ -1644,13 +1814,23 @@ def staff_mfa_off(user) -> None:
             return
     except Exception:  # noqa: BLE001
         return
+    who = f"**{plain(user.name)}** ({plain(user.email)})"
     security(
-        "Zwei-Faktor bei Plattform-Admin ausgeschaltet",
+        tr(
+            "Zwei-Faktor bei Plattform-Admin ausgeschaltet",
+            "Two-factor turned off for a platform admin",
+        ),
         [
-            f"**{plain(user.name)}** ({plain(user.email)}) "
-            "hat keine Zwei-Faktor-Anmeldung mehr.",
-            "Seine Plattform-Rechte ruhen, bis sie wieder an ist "
-            "(wenn MFA_REQUIRED_FOR_STAFF gilt).",
+            tr(
+                f"{who} hat keine Zwei-Faktor-Anmeldung mehr.",
+                f"{who} no longer has two-factor sign-in.",
+            ),
+            tr(
+                "Die Plattform-Rechte ruhen, bis sie wieder an ist "
+                "(wenn MFA_REQUIRED_FOR_STAFF gilt).",
+                "The platform permissions are on hold until it is back on "
+                "(when MFA_REQUIRED_FOR_STAFF applies).",
+            ),
         ],
         level="error",
     )
@@ -1674,12 +1854,17 @@ def failed_login(ip: str | None, email: str = "") -> None:
         try:
             from hubra.core.tasks.platform_bot_tasks import post_security
 
+            addr, minutes = plain(ip, 64), FAILED_LOGIN_WINDOW // 60
             post_security.delay(
-                "Viele fehlgeschlagene Anmeldungen",
+                tr("Viele fehlgeschlagene Anmeldungen", "Many failed sign-ins"),
                 [
-                    f"{count} fehlgeschlagene Anmeldungen von **{plain(ip, 64)}** "
-                    f"in {FAILED_LOGIN_WINDOW // 60} Minuten.",
-                    f"Zuletzt für: {plain(email)}",
+                    tr(
+                        f"{count} fehlgeschlagene Anmeldungen von **{addr}** "
+                        f"in {minutes} Minuten.",
+                        f"{count} failed sign-ins from **{addr}** "
+                        f"in {minutes} minutes.",
+                    ),
+                    f"{tr('Zuletzt für', 'Last for')}: {plain(email)}",
                 ],
                 "warning",
             )
@@ -1721,11 +1906,25 @@ def key_reminder(now: datetime | None = None) -> bool:
     clubs = len([s for s in scopes if s != "p"])
     lines = []
     if platform:
-        lines.append("Der Plattform-Schlüssel ist über ein Jahr alt.")
+        lines.append(
+            tr(
+                "Der Plattform-Schlüssel ist über ein Jahr alt.",
+                "The platform key is over a year old.",
+            )
+        )
     if clubs:
-        lines.append(f"{clubs} Vereins-Schlüssel sind über ein Jahr alt.")
+        lines.append(
+            tr(
+                f"{clubs} Vereins-Schlüssel sind über ein Jahr alt.",
+                f"{clubs} club keys are over a year old.",
+            )
+        )
     lines.append(
-        "Erneuern mit `flask crypto rotate --new-keys`; der Stand steht in "
-        "manage › Plattform-Einstellungen › Verschlüsselung."
+        tr(
+            "Erneuern mit `flask crypto rotate --new-keys`; der Stand steht in "
+            "Manage › Plattform-Einstellungen › Verschlüsselung.",
+            "Renew with `flask crypto rotate --new-keys`; the state is shown in "
+            "Manage › Platform settings › Encryption.",
+        )
     )
-    return post_security_now("Schlüssel erneuern", lines)
+    return post_security_now(tr("Schlüssel erneuern", "Renew keys"), lines)

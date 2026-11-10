@@ -497,3 +497,16 @@ def test_unknown_actions_are_spelled_out():
     assert platform_discord.action_label("platform.encryption.rotate") == (
         "Platform: encryption rotate"
     )
+
+
+def test_audit_entries_in_english(db):
+    platform_settings.set_many({"discord.language": "en"})
+    db.session.commit()
+    assert platform_discord.action_label("tenant.provision") == "Club created"
+    assert platform_discord._field_value(False) == "No"
+    entry = GlobalAuditEntry(id=7, action="backup.delete", target_type="backup")
+    embed = platform_discord.audit_embed(entry)
+    assert embed["title"].endswith("Backup deleted")
+    assert embed["footer"]["text"].startswith("Hubra · Backups · backup.delete")
+    links = dict(platform_discord.audit_links(entry, "https://m.example"))
+    assert "Audit log" in links

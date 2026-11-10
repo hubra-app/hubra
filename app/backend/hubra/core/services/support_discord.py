@@ -58,14 +58,31 @@ PRIVATE_THREAD = 12
 ARCHIVE_MINUTES = 10080  # a week without messages
 
 KIND_COLORS = {"bug": 0xE74C3C, "feature": 0xD4A72C, "question": 0x6D4AFF}
-KIND_LABELS = {"bug": "Problem", "feature": "Idee", "question": "Frage"}
-STATUS_LABELS = {
-    "open": "Offen",
-    "planned": "Geplant",
-    "in_progress": "In Arbeit",
-    "done": "Erledigt",
-    "closed": "Geschlossen",
+KIND_LABELS: dict[str, tuple[str, str]] = {
+    "bug": ("Problem", "Problem"),
+    "feature": ("Idee", "Idea"),
+    "question": ("Frage", "Question"),
 }
+STATUS_LABELS: dict[str, tuple[str, str]] = {
+    "open": ("Offen", "Open"),
+    "planned": ("Geplant", "Planned"),
+    "in_progress": ("In Arbeit", "In progress"),
+    "done": ("Erledigt", "Done"),
+    "closed": ("Geschlossen", "Closed"),
+}
+
+
+def _tr(de: str, en: str) -> str:
+    """*de* or *en*, after the platform bot's language (``discord.language``)."""
+    from hubra.core.services import platform_discord
+
+    return platform_discord.tr(de, en)
+
+
+def _label(labels: dict[str, tuple[str, str]], key: str) -> str:
+    pair = labels.get(key)
+    return _tr(*pair) if pair else key
+
 
 # Where a person stands in the case's thread (``SupportCasePerson.discord``).
 ADDED, INVITED, NO_DISCORD, FAILED = "added", "invited", "no_discord", "failed"
@@ -345,36 +362,70 @@ def _manage_link(case: SupportCase) -> str:
 def starter_embed(case: SupportCase) -> dict:
     from hubra.core.services import support
 
-    club = support._clubs({case.tenant_id}).get(case.tenant_id) if case.tenant_id else None
+    club = (
+        support._clubs({case.tenant_id}).get(case.tenant_id) if case.tenant_id else None
+    )
     reporter = db.session.get(User, case.user_id) if case.user_id else None
     fields = [
-        {"name": "Art", "value": KIND_LABELS.get(case.kind, case.kind), "inline": True},
+        {
+            "name": _tr("Art", "Kind"),
+            "value": _label(KIND_LABELS, case.kind),
+            "inline": True,
+        },
         {
             "name": "Status",
-            "value": STATUS_LABELS.get(case.status, case.status),
+            "value": _label(STATUS_LABELS, case.status),
             "inline": True,
         },
     ]
     if case.severity:
-        fields.append({"name": "Dringlichkeit", "value": case.severity, "inline": True})
+        fields.append(
+            {
+                "name": _tr("Dringlichkeit", "Severity"),
+                "value": case.severity,
+                "inline": True,
+            }
+        )
     if reporter is not None:
-        fields.append({"name": "Von", "value": _plain(reporter.name), "inline": True})
+        fields.append(
+            {"name": _tr("Von", "From"), "value": _plain(reporter.name), "inline": True}
+        )
     if club:
-        fields.append({"name": "Verein", "value": _plain(club["name"]), "inline": True})
+        fields.append(
+            {
+                "name": _tr("Verein", "Club"),
+                "value": _plain(club["name"]),
+                "inline": True,
+            }
+        )
     if case.page:
-        fields.append({"name": "Seite", "value": _plain(case.page, 300), "inline": False})
+        fields.append(
+            {
+                "name": _tr("Seite", "Page"),
+                "value": _plain(case.page, 300),
+                "inline": False,
+            }
+        )
     details = case.details or {}
-    for key, label in (("steps", "Schritte"), ("expected", "Erwartet"), ("useCase", "Wofür")):
+    for key, de, en in (
+        ("steps", "Schritte", "Steps"),
+        ("expected", "Erwartet", "Expected"),
+        ("useCase", "Wofür", "Use case"),
+    ):
         if details.get(key):
-            fields.append({"name": label, "value": str(details[key])[:1000]})
+            fields.append({"name": _tr(de, en), "value": str(details[key])[:1000]})
     embed = {
         "title": f"#{case.id} {case.title}"[:256],
         "description": case.description[:3000],
         "color": KIND_COLORS.get(case.kind, 0x6D4AFF),
         "fields": fields[:25],
         "footer": {
-            "text": "Was hier geschrieben wird, kommt als Kommentar zum Fall. "
-            "Eine Nachricht des Teams mit // am Anfang bleibt eine interne Notiz."
+            "text": _tr(
+                "Was hier geschrieben wird, kommt als Kommentar zum Fall. "
+                "Eine Nachricht des Teams mit // am Anfang bleibt eine interne Notiz.",
+                "What is written here becomes a comment on the case. "
+                "A team message starting with // stays an internal note.",
+            )
         },
     }
     link = _manage_link(case)
@@ -434,7 +485,18 @@ def open_thread(case_id: int) -> bool:
         {
             "embeds": [starter_embed(case)],
             **(
-                {"components": [{"type": 1, "components": [platform_bot._link("In manage öffnen", link)]}]}
+                {
+                    "components": [
+                        {
+                            "type": 1,
+                            "components": [
+                                platform_bot._link(
+                                    _tr("In manage öffnen", "Open in manage"), link
+                                )
+                            ],
+                        }
+                    ]
+                }
                 if link
                 else {}
             ),
@@ -515,11 +577,15 @@ def join(case: SupportCase, row: SupportCasePerson) -> str:
             platform_discord.dm(
                 discord_user,
                 {
-                    "title": f"Support-Fall #{case.id}: {case.title}"[:256],
-                    "description": (
+                    "title": f"{_tr('Support-Fall', 'Support case')} "
+                    f"#{case.id}: {case.title}"[:256],
+                    "description": _tr(
                         "Das Hubra-Team bespricht diesen Fall auf Discord. Tritt dem "
                         "Server mit der Einladung bei; danach kommst du automatisch "
-                        f"in den Thread des Falls. Die Einladung gilt {INVITE_DAYS} Tage."
+                        f"in den Thread des Falls. Die Einladung gilt {INVITE_DAYS} Tage.",
+                        "The Hubra team discusses this case on Discord. Join the "
+                        "server with the invite; then you are added to the case's "
+                        f"thread automatically. The invite is valid for {INVITE_DAYS} days.",
                     ),
                     "color": KIND_COLORS.get(case.kind, 0x6D4AFF),
                 },
@@ -530,7 +596,7 @@ def join(case: SupportCase, row: SupportCasePerson) -> str:
                             {
                                 "type": 2,
                                 "style": 5,
-                                "label": "Server beitreten",
+                                "label": _tr("Server beitreten", "Join server"),
                                 "url": invite_url(row),
                             }
                         ],
@@ -591,11 +657,13 @@ def mirror_status(case_id: int) -> bool:
         return False
     if case.merged_into_id is not None:
         target = db.session.get(SupportCase, case.merged_into_id)
-        text = f"Zusammengeführt mit #{case.merged_into_id}" + (
-            f": {target.title}" if target else ""
+        text = (
+            _tr("Zusammengeführt mit", "Merged into")
+            + (f" #{case.merged_into_id}")
+            + (f": {target.title}" if target else "")
         )
     else:
-        text = f"Status: {STATUS_LABELS.get(case.status, case.status)}"
+        text = f"Status: {_label(STATUS_LABELS, case.status)}"
     _post(
         case,
         {

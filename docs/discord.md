@@ -203,6 +203,18 @@ Platform log:
 
 ![Discord › Setup › Platform log](screenshots/discord/platform-log-picker.png)
 
+### Language of the platform bot
+
+**Bot language** on the platform log card (`discord.language`, Deutsch or
+English, default Deutsch) sets the language of everything the bot writes on
+the platform server: audit entries, the buttons and footers of alerts, the
+daily overview, release notes of Hubra, security pings, the replies to
+`/plattform` and `/wartung`, and the support threads with their invite DMs.
+The command names and descriptions follow each person's own Discord language.
+The text of an alert itself (for example "Main relay is down") and plugin
+release notes stay as their source writes them. Club servers are not
+affected: the Discord plugin follows each club's language.
+
 ### Audit channel (optional)
 
 The platform log card has one **Server** picker and three channel pickers on
