@@ -14,6 +14,7 @@ section and position, or the apps show that version in English.
 - **Problem reports carry the request ids**: "Problem melden" in the club app also sends the last ten API calls of the session (request id, method, path without query, status, error code). On the case in manage › Reports & ideas, **Last requests** lists them and links a failed one to its error group under Diagnostics › Errors.
 - **Upgrade check for plugins**: manage › Plugin catalogue › Upgrade check lists the installed plugins whose `hubra:` range leaves out the Hubra version you are about to move to, whether a plugin update fixes it, and how many clubs use each. The release check (pull requests and the dry run) fails when an official plugin has no version for the new release.
 - **Fee run preview**: Finanzen › Rechnungen › **Vorschau Beitragslauf** shows what the daily invoice run would bill on a chosen day, before it does: count, total, due date, a total per tier, every member with period and amount (pro rata, payment plan, no email address flagged), why members are skipped, and the last twelve months for comparison. Nothing is created.
+- **Call an event off with a reason**: Anlässe › **Absagen** cancels an event with a reason (one tap on a common one, or your own). It stays in the calendar, marked and struck through; sign-ups close, no reminder goes out, and everyone signed up or waiting plus the event's group hear it with the reason (bell, push, messengers; a mail to those signed up). `event.changed` carries `cancelled` and `reason` for plugins and webhooks. **Doch durchführen** undoes it. Needs `flask db upgrade` (runs by itself after the deploy).
 
 ### Changed
 
@@ -22,7 +23,6 @@ section and position, or the apps show that version in English.
 ### Fixed
 
 - Customising Dashboard › Verein failed, and "Offene Rechnungen" couldn't be added to a dashboard: widget types with capital letters were refused.
-- **Call an event off with a reason**: Anlässe › **Absagen** cancels an event with a reason (one tap on a common one, or your own). It stays in the calendar, marked and struck through; sign-ups close, no reminder goes out, and everyone signed up or waiting plus the event's group hear it with the reason (bell, push, messengers; a mail to those signed up). `event.changed` carries `cancelled` and `reason` for plugins and webhooks. **Doch durchführen** undoes it. Needs `flask db upgrade` (runs by itself after the deploy).
 
 ## [0.2.5] - 2026-11-10
 
