@@ -60,12 +60,49 @@ def test_widgets_are_checked(client, plain_member_token):  # noqa: F811
         [{"id": "a", "type": "note", "config": "x"}],
         [{"id": "a", "type": "note", "config": {"text": "x" * 5000}}],
         [{"id": f"w{i}", "type": "note"} for i in range(25)],
+        [{"id": "a", "type": "note", "w": 1}],
+        [{"id": "a", "type": "note", "w": 13}],
+        [{"id": "a", "type": "note", "h": 0}],
+        [{"id": "a", "type": "note", "h": 25}],
+        [{"id": "a", "type": "note", "h": 2.5}],
+        [{"id": "a", "type": "note", "w": True}],
         "nope",
     ]
     for widgets in bad:
         resp = _create(client, plain_member_token, widgets=widgets)
         assert resp.status_code == 400, widgets
     assert _create(client, plain_member_token, name="  ").status_code == 400
+
+
+def test_widgets_keep_their_place_on_the_grid(client, plain_member_token):  # noqa: F811
+    widgets = [
+        {"id": "a", "type": "note", "w": 7, "h": 5},
+        {"id": "b", "type": "note", "size": "s", "w": 3},
+        {"id": "c", "type": "note", "w": 12},
+        {"id": "d", "type": "note", "size": "l"},
+    ]
+    resp = _create(client, plain_member_token, widgets=widgets)
+    assert resp.status_code == 201, resp.get_json()
+    saved = resp.get_json()["widgets"]
+    assert [(w["size"], w.get("w"), w.get("h")) for w in saved] == [
+        ("m", 7, 5),  # size follows the width when the app doesn't send one
+        ("s", 3, None),
+        ("l", 12, None),
+        ("l", None, None),  # an old widget without a grid size stays as it was
+    ]
+
+
+def test_built_in_camel_case_types_save(client, plain_member_token):  # noqa: F811
+    # The club start page's built-in layout starts with polls.voteNeeded; a
+    # lowercase-only check made every change to it fail with 400.
+    widgets = [
+        {"id": "vote", "type": "polls.voteNeeded", "size": "l"},
+        {"id": "inv", "type": "stat.openInvoices", "size": "s"},
+        {"id": "plug", "type": "p:inventory.checkedOut", "size": "m"},
+    ]
+    resp = _create(client, plain_member_token, widgets=widgets)
+    assert resp.status_code == 201, resp.get_json()
+    assert [w["type"] for w in resp.get_json()["widgets"]] == [w["type"] for w in widgets]
 
 
 def test_private_dashboards_stay_private(client, auth_headers, plain_member_token):  # noqa: F811

@@ -4218,7 +4218,6 @@
     "deleteBody": "“{{name}}” and its widgets will be deleted.",
     "deleteTitle": "Delete dashboard",
     "done": "Done",
-    "down": "Move back",
     "edit": "Edit",
     "empty": "No widgets yet",
     "emptyHint": "Add widgets: events, posts, numbers, notes and more.",
@@ -4251,7 +4250,6 @@
     "unknown": "This widget no longer exists (plugin removed?).",
     "unshare": "Stop sharing",
     "unsharedDone": "No longer shared",
-    "up": "Move forward",
     "w": {
       "closes": "closes {{date}}",
       "eventsCount": "Number of upcoming events",
@@ -4289,7 +4287,12 @@
     "widgetFailed": "Couldn't load",
     "nothing": "Nothing to show",
     "more": "{{count}} more",
-    "noView": "The plugin has no view for this widget"
+    "noView": "The plugin has no view for this widget",
+    "move": "Move ({{name}})",
+    "moveHint": "Drag to move, or use the arrow keys",
+    "resize": "Resize ({{name}})",
+    "resizeHint": "Drag for width and height, or use the arrow keys",
+    "autoHeight": "Height from content"
   },
   "subscription": {
     "cancelled": "Payment cancelled, nothing was charged.",
