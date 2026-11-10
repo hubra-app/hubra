@@ -159,6 +159,42 @@ the data is still there. An export that fails is listed with an `error`
 and the rest still exports; an erase that fails stops the whole deletion
 (409 `PRIVACY_ERASE_FAILED`), so nothing is half deleted.
 
+## Calendar: one club calendar
+
+**Kalender** in the club app (`/app/calendar`, `GET /api/v1/app/calendar/?start=&end=`)
+shows the dated things of every module side by side: events from core,
+bookings from Booking, and whatever else a module offers. Each module
+offers one query named after its module code, made with
+`hubra.core.contracts.calendar.calendar_contract`:
+
+```python
+from hubra.core.contracts.calendar import calendar_contract
+
+provides=(
+    calendar_contract("booking", "hubra_booking.calendar:items"),
+    # perm="...": only members with that right see these items
+)
+```
+
+| Contract | Kind | In → out |
+| --- | --- | --- |
+| `<module>.calendar.items` | query | `{start, end}` (dates, both included) → `{items: [{id, title, kind, start, end?, all_day, location?, path?, group_id?, color?, cancelled}]}` |
+
+Times are the club's local time without a zone; an all-day item starts at
+midnight of its first day and its `end` is midnight of its last day. `kind`
+("event", "booking", "fixture", "duty", ...) drives the filter chips and
+colours; `path` is where the club app opens the item. The calendar asks
+each module as the viewing member: a module that is off, or whose `perm`
+the member lacks, is left out, and one that fails is named under `failed`
+while the rest still shows. Ranges are at most 400 days, and a module
+answers at most 1000 items per range.
+
+The calendar and privacy contracts are the two whose input and output are
+Hubra's own models; a plugin may offer them (the handler stays its own
+code).
+
+![Club calendar](screenshots/club-calendar/month.png)
+
 ## PDFs: one letterhead
 
 Every PDF a club sends carries the same letterhead
@@ -258,6 +294,7 @@ and switch it on. Emitters and handlers don't change.
 | `finance.invoice.create` | action | `{member_id \| external_party_id, issued, due, amount, purpose?, description?, category_id?, actor_id?}` → `{id, status, amount, ...}`, booked and announced like an invoice made in the app; needs `finance.invoices.create` |
 | `finance.invoice.delete` | action | `{invoice_id, actor_id?}`, with its booking; needs `finance.invoices.delete` |
 | `finance.external_party.save` | action | `{external_party_id?, name, email?, address_*?, notes?, actor_id?}` → `{id, name, created}`: a new outside party, or the given one kept up to date; needs `finance.external_parties.create` |
+| `events.calendar.items` | query | `{start, end}` → the club's events in that range for the [club calendar](#calendar-one-club-calendar); needs `events.events.read` |
 | `events.event.get` | query | `{event_id}` → `{id, title, starts_at, ends_at, places_taken, maybe}` (local times; none for all-day); needs `events.events.read` |
 | `events.event.create` | action | the event form's fields (`title, date, type, time?, ...`, `actor_id?`), checked like the form → `{id, title, date}`; needs `events.events.create` |
 | `events.registration.set` | action | `{event_id, member_id, status: registered\|cancelled\|maybe, own?, notes?, guests?}` → `{status}`, with the waitlist and (for `own`) the deadlines; needs `events.events.register` |

@@ -91,3 +91,20 @@ export function formatRelative(iso: string | Date): string {
   if (Math.abs(mo) < 12) return relativeFormatter.format(mo, "month");
   return relativeFormatter.format(Math.round(mo / 12), "year");
 }
+
+const monthYearFormatter = new Intl.DateTimeFormat("de-CH", {
+  month: "long",
+  year: "numeric",
+});
+
+/** "Juni 2030", for calendar headings. */
+export function formatMonthYear(d: Date): string {
+  return monthYearFormatter.format(d);
+}
+
+const weekdayShortFormatter = new Intl.DateTimeFormat("de-CH", { weekday: "short" });
+
+/** "Mo", "Di", … for calendar columns. */
+export function formatWeekdayShort(d: Date): string {
+  return weekdayShortFormatter.format(d).replace(".", "");
+}

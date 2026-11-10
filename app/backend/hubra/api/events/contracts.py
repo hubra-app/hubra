@@ -167,3 +167,41 @@ def set_attendance(ctx, data: AttendanceIn) -> Attendance:
         event, data.member_id, data.status, actor_id=_actor_id(ctx, data.actor_id)
     )
     return Attendance(event_id=event.id, member_id=data.member_id, status=data.status)
+
+
+# ── events.calendar.items ────────────────────────────────────────────────────
+
+
+def calendar_items(ctx, data):
+    """The club's events in the range, for the club calendar."""
+    from datetime import time as dtime
+
+    from hubra.api.events.services import EventsService, _event_times, event_link
+    from hubra.core.contracts.calendar import MAX_ITEMS, CalendarItems
+
+    events = EventsService.list(
+        from_str=data.start.isoformat(), to_str=data.end.isoformat()
+    )
+    items = []
+    for event in events[:MAX_ITEMS]:
+        start, end = _event_times(event)
+        all_day = start is None
+        if all_day:
+            start = datetime.combine(event.date, dtime())
+            end = datetime.combine(event.end_date, dtime()) if event.end_date else None
+        items.append(
+            {
+                "id": f"event:{event.id}",
+                "title": event.title,
+                "kind": "event",
+                "start": start,
+                "end": end,
+                "all_day": all_day,
+                "location": event.location,
+                "path": event_link(event.id),
+                "group_id": event.group_id,
+                "color": event.color,
+                "cancelled": event.cancelled_at is not None,
+            }
+        )
+    return CalendarItems.model_validate({"items": items})

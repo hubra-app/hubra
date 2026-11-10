@@ -109,6 +109,16 @@ def club_prefix(prefix: str) -> str:
     return APP + new[len(V1) :]
 
 
+# Contracts every module offers in the same shape (the club calendar, the
+# privacy export): a plugin's input and output may be Hubra's models there;
+# the handler is still its own code.
+SHARED_SHAPES = ("hubra.core.contracts.calendar", "hubra.core.contracts.privacy")
+
+
+def _shared_shape(ref: str, handler: str | None) -> bool:
+    return ref != handler and ref.split(":", 1)[0] in SHARED_SHAPES
+
+
 def check(module, spec, taken_prefixes: dict[str, str], core_tables: set[str]):
     """Return *module* ready to register, or raise LimitError.
 
@@ -225,7 +235,9 @@ def _check_contracts(module, pkg: str) -> None:
                 refs.append(schema)
             elif schema is not None:
                 refs.append(f"{getattr(schema, '__module__', '')}:{getattr(schema, '__name__', '')}")
-        foreign = sorted({r for r in refs if not _own(r, pkg)})
+        foreign = sorted(
+            {r for r in refs if not _own(r, pkg) and not _shared_shape(r, c.handler)}
+        )
         if foreign:
             raise LimitError(
                 f"contract {c.name} points at code outside {pkg}: {', '.join(foreign)}"

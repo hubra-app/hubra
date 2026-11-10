@@ -164,6 +164,15 @@ and those signed up hear that it takes place after all.
 Right: `events.events.update`, or the person who put the event up, or a role
 held for the event's group.
 
+### Club calendar
+
+**Kalender** in the sidebar shows a month or a week with the club's events
+and, from plugins that offer them, other dated things such as bookings
+(Booking). The chips above the grid filter by kind; a cancelled event is
+struck through. Clicking an entry opens it on its own page. Every member
+sees what their roles let them see: someone without the right to view
+events sees no events there.
+
 ### One calendar for all clubs
 
 Members who are in several clubs find **Kalender aller Vereine** in their

@@ -1,6 +1,7 @@
 """Events: club events, registrations and attendance."""
 
 from hubra.core.contracts import action_contract, query_contract
+from hubra.core.contracts.calendar import calendar_contract
 from hubra.core.modules import Blueprint, Module, NavItem, Schedule, SettingField
 
 _C = "hubra.api.events.contracts"
@@ -109,6 +110,7 @@ module = Module(
             perm="events.events.add_attendee",
             description="Record one member's attendance at an event",
         ),
+        calendar_contract("events", f"{_C}:calendar_items", perm="events.events.read"),
     ),
     tasks=("hubra.core.tasks.reminder_tasks",),
     schedule=(

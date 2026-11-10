@@ -28,6 +28,11 @@ const DashboardScreen = lazy(() =>
     default: m.DashboardScreen,
   })),
 )
+const CalendarScreen = lazy(() =>
+  import('./screens/private/calendar/CalendarScreen').then((m) => ({
+    default: m.CalendarScreen,
+  })),
+)
 const FederationScreen = lazy(() =>
   import('./screens/private/federation/FederationScreen').then((m) => ({
     default: m.FederationScreen,
@@ -264,6 +269,7 @@ function PrivateRoutes() {
             >
               <Routes>
                 <Route path="dashboard" element={<DashboardScreen />} />
+                <Route path="calendar" element={<CalendarScreen />} />
                 <Route path="dashboard/global" element={<DashboardScreen />} />
                 <Route path="dashboard/me" element={<DashboardScreen />} />
                 <Route path="dashboard/d/:id" element={<DashboardScreen />} />
