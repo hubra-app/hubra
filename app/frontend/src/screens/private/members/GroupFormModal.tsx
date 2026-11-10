@@ -1,8 +1,9 @@
-import { Badge, Button, SegmentedControl, SimpleGrid, Textarea, TextInput } from '@mantine/core'
+import { useMemo } from 'react'
+import { Badge, Button, MultiSelect, SegmentedControl, SimpleGrid, Switch, Textarea, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { IconEye, IconLock, IconWorld } from '@tabler/icons-react'
 import { useT, zmsg } from '@/locales/i18n'
 import { useAuth, useToast } from '@/context/AppContext'
@@ -11,6 +12,8 @@ import { MemberPicker } from '@/components/MemberPicker'
 import type { Group, GroupVisibility } from '@/types'
 import { createGroup, updateGroup } from '@/api/groups'
 import { qk } from '@/data/keys'
+import { lookupsQuery } from '@/api/lookups'
+import { roleLabel } from '@/roles'
 import { VISIBILITIES } from './groupVisibility'
 
 const VISIBILITY_ICON = { open: IconWorld, visible: IconEye, private: IconLock }
@@ -38,6 +41,9 @@ const groupSchema = z.object({
   sessions: z.string(),
   leadId: z.string(),
   visibility: z.enum(['open', 'visible', 'private']),
+  roleIds: z.array(z.string()),
+  tierIds: z.array(z.string()),
+  isDefault: z.boolean(),
 })
 type GroupForm = z.infer<typeof groupSchema>
 
@@ -74,6 +80,9 @@ export function GroupFormModal({
           sessions: group.sessions,
           leadId: '',
           visibility: group.visibility ?? 'visible',
+          roleIds: (group.roleIds ?? []).map(String),
+          tierIds: (group.tierIds ?? []).map(String),
+          isDefault: group.isDefault ?? false,
         }
       : {
           name: '',
@@ -82,8 +91,39 @@ export function GroupFormModal({
           sessions: '',
           leadId: '',
           visibility: 'visible',
+          roleIds: [],
+          tierIds: [],
+          isDefault: false,
         },
   })
+  const { data: lookups } = useQuery(lookupsQuery)
+  // Being put in a group never makes anyone an owner or admin.
+  const roleOptions = useMemo(
+    () =>
+      lookups
+        ? [...lookups.roles.entries()]
+            .filter(([id]) => !lookups.adminRoleIds.has(id))
+            .map(([id, name]) => ({ value: String(id), label: roleLabel(name) }))
+        : [],
+    [lookups],
+  )
+  const tierOptions = useMemo(
+    () =>
+      lookups ? [...lookups.tiers.entries()].map(([id, tier]) => ({ value: String(id), label: tier.name })) : [],
+    [lookups],
+  )
+  // Roles, tiers and the default flag are the club's, not the leader's.
+  const showLinks = !leaderOnly
+  const open = form.values.visibility === 'open'
+  const links = (data: GroupForm) =>
+    showLinks
+      ? {
+          // Anyone may join an open group, so it gives no roles.
+          roleIds: data.visibility === 'open' ? [] : data.roleIds.map(Number),
+          tierIds: data.tierIds.map(Number),
+          isDefault: data.isDefault,
+        }
+      : {}
 
   const save = async (data: GroupForm) => {
     try {
@@ -95,6 +135,7 @@ export function GroupFormModal({
           sessions: data.sessions,
           ...(data.leadId ? { leadId: Number(data.leadId) } : {}),
           visibility: data.visibility,
+          ...links(data),
         })
       } else {
         await createGroup({
@@ -104,6 +145,7 @@ export function GroupFormModal({
           sessions: data.sessions,
           leadId: data.leadId ? Number(data.leadId) : undefined,
           visibility: data.visibility,
+          ...links(data),
         })
       }
       queryClient.invalidateQueries({ queryKey: qk.groups.all })
@@ -200,6 +242,59 @@ export function GroupFormModal({
             {...form.getInputProps('visibility')}
           />
         </Field>
+        {showLinks && (
+          <>
+            <Field
+              label={t('groups.roles.label', 'Gibt die Rollen')}
+              hint={
+                open
+                  ? t('groups.roles.openHint', 'Eine offene Gruppe gibt keine Rollen: alle könnten beitreten.')
+                  : t(
+                      'groups.roles.hint',
+                      'Alle in der Gruppe haben diese Rollen im ganzen Verein, solange sie in der Gruppe sind. Admin-Rollen gehen hier nicht.',
+                    )
+              }
+            >
+              <MultiSelect
+                data={roleOptions}
+                value={open ? [] : form.values.roleIds}
+                onChange={(v) => form.setFieldValue('roleIds', v)}
+                placeholder={form.values.roleIds.length && !open ? undefined : t('functions.noRole', 'Keine Rolle')}
+                disabled={open}
+                clearable
+                searchable
+                data-testid="group-roles"
+              />
+            </Field>
+            <Field
+              label={t('groups.tiers.label', 'Mitglieder dieser Stufen')}
+              hint={t(
+                'groups.tiers.hint',
+                'Wer eine dieser Stufen hat, ist in der Gruppe. Bei einem Stufenwechsel wechselt auch die Gruppe.',
+              )}
+            >
+              <MultiSelect
+                data={tierOptions}
+                value={form.values.tierIds}
+                onChange={(v) => form.setFieldValue('tierIds', v)}
+                placeholder={form.values.tierIds.length ? undefined : t('groups.tiers.none', 'Keine Stufe')}
+                clearable
+                searchable
+                data-testid="group-tiers"
+              />
+            </Field>
+            <Switch
+              label={t('groups.default.label', 'Neue Mitglieder kommen in diese Gruppe')}
+              description={t(
+                'groups.default.hint',
+                'Gilt für alle, die ab jetzt beitreten. Wer schon Mitglied ist, wird nicht verschoben.',
+              )}
+              checked={form.values.isDefault}
+              onChange={(e) => form.setFieldValue('isDefault', e.currentTarget.checked)}
+              data-testid="group-default"
+            />
+          </>
+        )}
       </div>
     </Modal>
   )

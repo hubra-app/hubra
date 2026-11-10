@@ -186,6 +186,9 @@ export function TierDetailScreen() {
           <DetailRow label={t('tiers.form.priceType', 'Preisart')}>
             {t(`tiers.type.${tier.priceType}`, tier.priceType)}
           </DetailRow>
+          <DetailRow label={t('tiers.form.groups', 'Mitglieder kommen in die Gruppen')}>
+            {tier.groups?.length ? tier.groups.map((g) => g.name).join(', ') : <DetailEmpty />}
+          </DetailRow>
           <DetailRow label={t('tiers.form.billingCycle', 'Abrechnung')}>
             {tier.billingCycle ? t(`tiers.cycle.${tier.billingCycle}`, tier.billingCycle) : t('tiers.cycle.none', 'Keine (manuell)')}
           </DetailRow>

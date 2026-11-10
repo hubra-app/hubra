@@ -13,6 +13,8 @@ interface BackendTier {
   coefficient: number | null;
   round_to: number | null;
   deduct_tier_ids: number[];
+  group_ids?: number[];
+  groups?: { id: number; name: string }[];
 }
 
 function adapt(b: BackendTier): MembershipTier {
@@ -27,6 +29,8 @@ function adapt(b: BackendTier): MembershipTier {
     coefficient: b.coefficient,
     roundTo: b.round_to,
     deductTierIds: b.deduct_tier_ids ?? [],
+    groupIds: b.group_ids ?? [],
+    groups: b.groups ?? [],
   };
 }
 
@@ -45,6 +49,7 @@ export async function createTier(input: {
   coefficient: number | null;
   roundTo: number | null;
   deductTierIds: number[];
+  groupIds?: number[];
 }): Promise<MembershipTier> {
   const b = await apiFetch<BackendTier>("/app/tiers/", {
     method: "POST",
@@ -58,6 +63,7 @@ export async function createTier(input: {
       coefficient: input.coefficient,
       round_to: input.roundTo,
       deduct_tier_ids: input.deductTierIds,
+      ...(input.groupIds !== undefined ? { group_ids: input.groupIds } : {}),
     }),
   });
   clearLookups();
@@ -76,6 +82,7 @@ export async function updateTier(
     coefficient: number | null;
     roundTo: number | null;
     deductTierIds: number[];
+    groupIds: number[];
   }>,
 ): Promise<MembershipTier> {
   const body: Record<string, unknown> = {};
@@ -90,6 +97,7 @@ export async function updateTier(
   if (input.roundTo !== undefined) body.round_to = input.roundTo;
   if (input.deductTierIds !== undefined)
     body.deduct_tier_ids = input.deductTierIds;
+  if (input.groupIds !== undefined) body.group_ids = input.groupIds;
   const b = await apiFetch<BackendTier>(`/app/tiers/${id}`, {
     method: "PATCH",
     body: JSON.stringify(body),

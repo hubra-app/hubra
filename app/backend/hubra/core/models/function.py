@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime, timezone
 
 import sqlalchemy as sa
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, String, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from hubra.core.extensions import db
@@ -57,6 +57,11 @@ class Function(db.Model):
     )
     # Reference to a managed mail address for this function
     mailbox_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # A group function (Trainer/in, Gruppenkassier/in): its holders hold it
+    # for one group each, and its roles count in that group only.
+    per_group: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=sa.text("false")
+    )
     # Enforces max_holders=1 at the model level
     is_singleton: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=sa.text("false")
@@ -90,7 +95,27 @@ class FunctionHolder(db.Model):
     """Association between a Function and the Member currently holding it."""
 
     __tablename__ = "function_holders"
-    __table_args__ = (UniqueConstraint("function_id", "member_id"),)
+    # A club function once per member; a group function once per member and
+    # group (migration f4c2a8e6b1d3 replaced the unique function + member).
+    __table_args__ = (
+        db.Index(
+            "uq_function_holders_club",
+            "function_id",
+            "member_id",
+            unique=True,
+            postgresql_where=sa.text("group_id IS NULL"),
+            sqlite_where=sa.text("group_id IS NULL"),
+        ),
+        db.Index(
+            "uq_function_holders_group",
+            "function_id",
+            "member_id",
+            "group_id",
+            unique=True,
+            postgresql_where=sa.text("group_id IS NOT NULL"),
+            sqlite_where=sa.text("group_id IS NOT NULL"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     function_id: Mapped[int] = mapped_column(
@@ -110,10 +135,18 @@ class FunctionHolder(db.Model):
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
+    # The group a group function is held for; None for a club function.
+    group_id: Mapped[int | None] = mapped_column(
+        db.Integer,
+        ForeignKey("groups.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
     term_start: Mapped[date | None] = mapped_column(Date, nullable=True)
     term_end: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     function: Mapped["Function"] = relationship("Function", back_populates="holders")
+    group: Mapped["Group | None"] = relationship("Group")  # type: ignore[name-defined]  # noqa: F821
     member: Mapped["Member"] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "Member", backref="function_holders"
     )

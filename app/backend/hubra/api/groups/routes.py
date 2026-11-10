@@ -116,6 +116,7 @@ def get_group(id: int):
 
     data = _group_schema.dump(group)
     data["member_ids"] = list(member_ids)
+    data["functions"] = GroupService.functions(group.id)
     return jsonify(data), 200
 
 
@@ -226,7 +227,7 @@ def add_member_to_group(group_id: int, member_id: int):
         raise_error(404, "NOT_FOUND", f"Member {member_id} not found")
         return
 
-    GroupService.add_member(group, member)
+    GroupService.add_member(group, member, get_current_member().id)
     log_audit(
         get_current_member().id,
         "add_group_member",
@@ -252,7 +253,7 @@ def add_member_to_group(group_id: int, member_id: int):
     "groups", "remove_member", "Remove member from group", scope="group_id", allow=_leads
 )
 def remove_group_member(group_id: int, member_id: int):
-    GroupService.remove_member(member_id, group_id)
+    GroupService.remove_member(member_id, group_id, get_current_member().id)
     group = db.session.get(Group, group_id)
     member = db.session.get(Member, member_id)
     log_audit(

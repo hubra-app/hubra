@@ -60,6 +60,9 @@ class ApplicationService:
 
         member = MembersService.create_from_application(application)
         db.session.flush()
+        from hubra.api.groups.services import join_automatic_groups
+
+        join_automatic_groups(member)
         from hubra.core.modules.events import MEMBER_JOINED, emit
 
         emit(MEMBER_JOINED, member_id=member.id)

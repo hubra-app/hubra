@@ -26,9 +26,12 @@ class TierService:
         return tier  # type: ignore[return-value]
 
     @staticmethod
-    def update(tier: MembershipTier, data: dict) -> MembershipTier:
+    def update(
+        tier: MembershipTier, data: dict, actor_id: int | None = None
+    ) -> MembershipTier:
         """Update allowed fields on a tier. Returns the tier."""
         ALLOWED = {
+            "group_ids",
             "name",
             "price_chf",
             "color",
@@ -42,6 +45,18 @@ class TierService:
         unknown = set(data.keys()) - ALLOWED
         if unknown:
             raise_error(422, "VALIDATION_ERROR", f"Unknown fields: {unknown}")
+
+        if "group_ids" in data:
+            ids = data["group_ids"]
+            if not isinstance(ids, list) or not all(
+                isinstance(i, int) and not isinstance(i, bool) for i in ids
+            ):
+                raise_error(
+                    400, "VALIDATION_ERROR", "group_ids must be a list of group ids"
+                )
+            from hubra.api.groups.services import set_tier_groups
+
+            set_tier_groups(tier, ids, actor_id)
 
         if "name" in data:
             name = data["name"]
@@ -161,6 +176,9 @@ class TierService:
             )
 
         tier_name = tier.name
+        # Club schemas have no foreign keys: unlink the tier's groups.
+        tier.groups = []
+        db.session.flush()
         db.session.delete(tier)
 
         log_audit(
@@ -235,6 +253,10 @@ class TiersService:
         )
         db.session.add(tier)
         db.session.flush()
+        if data.get("group_ids"):
+            from hubra.api.groups.services import set_tier_groups
+
+            set_tier_groups(tier, data["group_ids"], actor_id)
 
         log_audit(
             actor_id=actor_id,

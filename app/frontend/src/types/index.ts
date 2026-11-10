@@ -32,6 +32,8 @@ export interface Member {
   roles: string[];
   /** Roles that come with a function the member holds (Kassier gives Treasurer). */
   functionRoles?: { name: string; function: string }[];
+  /** Roles that come with a group the member is in. */
+  groupRoles?: { name: string; group: string }[];
   /** Roles held for one group only ("Gruppenleitung", nur Jugend). */
   scopedRoles?: { name: string; group: string }[];
   joined: string;
@@ -72,10 +74,14 @@ export interface ClubFunction {
   /** Every role the function gives its holders (Kassier/in gives Vorstand
    *  and Kassier/in). */
   grantsRoleIds: number[];
+  /** A group function (Trainer/in): held per group, its roles count there. */
+  perGroup: boolean;
   holders: {
     memberId: number;
     memberName: string;
     assignedAt: string | null;
+    groupId?: number | null;
+    groupName?: string | null;
   }[];
 }
 
@@ -96,6 +102,14 @@ export interface Group {
   visibility?: GroupVisibility;
   parentGroupId?: number | null;
   parentGroupName?: string | null;
+  /** New members join the group. */
+  isDefault?: boolean;
+  /** The roles everyone in the group holds for the whole club. */
+  roleIds?: number[];
+  roles?: { id: number; name: string }[];
+  /** Tiers whose members are in the group. */
+  tierIds?: number[];
+  tiers?: { id: number; name: string }[];
 }
 
 export type GroupVisibility = "open" | "visible" | "private";
@@ -330,5 +344,8 @@ export interface MembershipTier {
   coefficient: number | null;
   roundTo: number | null;
   deductTierIds: number[];
+  /** The groups the tier's members are in. */
+  groupIds?: number[];
+  groups?: { id: number; name: string }[];
 }
 

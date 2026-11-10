@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Button, MultiSelect, SimpleGrid, Textarea, TextInput } from '@mantine/core'
+import { Button, MultiSelect, SimpleGrid, Switch, Textarea, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
@@ -18,6 +18,7 @@ const functionSchema = z.object({
   description: z.string(),
   maxHolders: z.number().min(1),
   grantsRoleIds: z.array(z.string()),
+  perGroup: z.boolean(),
 })
 type FunctionForm = z.infer<typeof functionSchema>
 
@@ -42,27 +43,33 @@ export function FunctionFormModal({
           description: fn.description ?? '',
           maxHolders: fn.maxHolders,
           grantsRoleIds: fn.grantsRoleIds.map(String),
+          perGroup: fn.perGroup,
         }
-      : { name: '', description: '', maxHolders: 1, grantsRoleIds: [] },
+      : { name: '', description: '', maxHolders: 1, grantsRoleIds: [], perGroup: false },
   })
   const { data: lookups } = useQuery(lookupsQuery)
-  // Owners are named one by one, never through a function.
+  // Owners are named one by one, never through a function; a group
+  // function gives no admin role (an admin role is never held for a group).
+  const perGroup = form.values.perGroup
   const roleOptions = useMemo(
     () =>
       lookups
         ? [...lookups.roles.entries()]
-            .filter(([, name]) => name !== 'Owner')
+            .filter(([id, name]) => name !== 'Owner' && !(perGroup && lookups.adminRoleIds.has(id)))
             .map(([id, name]) => ({ value: String(id), label: roleLabel(name) }))
         : [],
-    [lookups],
+    [lookups, perGroup],
   )
+  // Changing club ↔ group needs the function empty first (the API says 409).
+  const hasHolders = (fn?.holders.length ?? 0) > 0
 
   const save = async (data: FunctionForm) => {
     const body = {
       name: data.name,
       description: data.description || undefined,
       maxHolders: data.maxHolders,
-      grantsRoleIds: data.grantsRoleIds.map(Number),
+      grantsRoleIds: data.grantsRoleIds.filter((id) => roleOptions.some((o) => o.value === id)).map(Number),
+      perGroup: data.perGroup,
     }
     try {
       if (fn) await updateFunction(fn.id, body)
@@ -108,7 +115,13 @@ export function FunctionFormModal({
           <Field label={t('common.name', 'Name')}>
             <TextInput {...form.getInputProps('name')} placeholder={t('common.namePlaceholder', 'Name')} />
           </Field>
-          <Field label={t('functions.maxHolders', 'Max. Anzahl Personen')}>
+          <Field
+            label={
+              perGroup
+                ? t('functions.maxHoldersPerGroup', 'Max. Personen je Gruppe')
+                : t('functions.maxHolders', 'Max. Anzahl Personen')
+            }
+          >
             <TextInput
               type="number"
               min={1}
@@ -123,12 +136,34 @@ export function FunctionFormModal({
             placeholder={t('functions.descPlaceholder', 'Kurze Beschreibung …')}
           />
         </Field>
+        <Switch
+          label={t('functions.perGroup', 'Gruppenfunktion')}
+          description={
+            hasHolders
+              ? t('functions.perGroupLocked', 'Zuerst alle Personen aus der Funktion nehmen, dann umstellen.')
+              : t(
+                  'functions.perGroupHint',
+                  'Wird je Gruppe besetzt (zum Beispiel Trainer/in). Die Rollen gelten nur in der Gruppe der Person.',
+                )
+          }
+          checked={perGroup}
+          disabled={hasHolders}
+          onChange={(e) => form.setFieldValue('perGroup', e.currentTarget.checked)}
+          data-testid="function-per-group"
+        />
         <Field
           label={t('functions.grantsRoles', 'Gibt die Rollen')}
-          hint={t(
-            'functions.grantsRolesHint',
-            'Wer die Funktion innehat, hat diese Rollen, bis die Funktion endet (zum Beispiel Vorstand und Kassier/in).',
-          )}
+          hint={
+            perGroup
+              ? t(
+                  'functions.grantsRolesGroupHint',
+                  'Wer die Funktion in einer Gruppe innehat, hat diese Rollen für diese Gruppe. Admin-Rollen gehen hier nicht.',
+                )
+              : t(
+                  'functions.grantsRolesHint',
+                  'Wer die Funktion innehat, hat diese Rollen, bis die Funktion endet (zum Beispiel Vorstand und Kassier/in).',
+                )
+          }
         >
           <MultiSelect
             data={roleOptions}

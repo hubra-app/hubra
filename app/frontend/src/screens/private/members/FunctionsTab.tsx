@@ -102,6 +102,7 @@ export function FunctionsTab() {
               onClick={() => go(`/app/members/functions/${fn.id}`)}
               subtitle={
                 [
+                  fn.perGroup ? t('functions.perGroupBadge', 'Gruppenfunktion') : null,
                   fn.description,
                   roleNames(fn.grantsRoleIds)
                     ? t('functions.givesRoles', 'Gibt die Rollen {{roles}}', {
@@ -122,8 +123,8 @@ export function FunctionsTab() {
                     onClick={() => go(`/app/members/functions/${fn.id}`)}
                   >
                     <IconUserCog size={16} />
-                    {t('functions.holders', 'Besetzt durch')} ({fn.holders.length}/
-                    {fn.maxHolders})
+                    {t('functions.holders', 'Besetzt durch')} (
+                    {fn.perGroup ? fn.holders.length : `${fn.holders.length}/${fn.maxHolders}`})
                   </Button>
                   {canUpdate && (
                     <Button
@@ -158,7 +159,7 @@ export function FunctionsTab() {
                 >
                   {fn.holders.map((h) => (
                     <span
-                      key={h.memberId}
+                      key={`${h.memberId}:${h.groupId ?? ''}`}
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -170,7 +171,7 @@ export function FunctionsTab() {
                         padding: '3px 8px',
                       }}
                     >
-                      {h.memberName}
+                      {h.groupName ? `${h.memberName} · ${h.groupName}` : h.memberName}
                     </span>
                   ))}
                 </div>

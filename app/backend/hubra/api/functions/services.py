@@ -81,7 +81,8 @@ class FunctionService:
                     selectinload(Function.roles),
                     selectinload(Function.holders)
                     .selectinload(FunctionHolder.member)
-                    .selectinload(Member.user)
+                    .selectinload(Member.user),
+                    selectinload(Function.holders).selectinload(FunctionHolder.group),
                 )
             ).all()
         )
@@ -102,6 +103,7 @@ class FunctionService:
         actor_id: int | None = None,
         grants_role_ids=None,
         key: str | None = None,
+        per_group: bool = False,
     ) -> Function:
         name = name.strip() if isinstance(name, str) else ""
         if not name:
@@ -115,6 +117,7 @@ class FunctionService:
         roles = _granted_roles(
             grants_role_ids if grants_role_ids is not None else grants_role_id
         )
+        _no_admin_for_group(bool(per_group), roles)
         if roles:
             from hubra.core.permissions import check_grant
 
@@ -124,6 +127,7 @@ class FunctionService:
             description=description,
             max_holders=max_holders,
             key=key,
+            per_group=bool(per_group),
         )
         fn.roles = roles
         db.session.add(fn)
@@ -143,12 +147,23 @@ class FunctionService:
     def update(function_id: int, actor_id: int | None = None, **fields) -> Function:
         fn = FunctionService.get_by_id(function_id)
 
+        if "per_group" in fields and bool(fields["per_group"]) != fn.per_group:
+            if fn.holders:
+                raise_error(
+                    409,
+                    "CONFLICT",
+                    "Remove the function's holders before making it a group "
+                    "function or a club function",
+                )
+            fn.per_group = bool(fields["per_group"])
+
         if "grants_role_ids" in fields or "grants_role_id" in fields:
             roles = _granted_roles(
                 fields["grants_role_ids"]
                 if "grants_role_ids" in fields
                 else fields["grants_role_id"]
             )
+            _no_admin_for_group(fn.per_group, roles)
             old = list(fn.roles)
             given = [r for r in roles if r not in old]
             taken = [r for r in old if r not in roles]
@@ -161,6 +176,7 @@ class FunctionService:
                 db.session.flush()
                 _refresh_holders(fn)
 
+        _no_admin_for_group(fn.per_group, list(fn.roles))
         allowed = {"name", "description", "max_holders"}
         updates = {k: v for k, v in fields.items() if k in allowed}
 
@@ -178,7 +194,7 @@ class FunctionService:
 
         if "max_holders" in updates:
             updates["max_holders"] = _holder_count(updates["max_holders"])
-            current_holders = len(fn.holders)
+            current_holders = _most_holders(fn)
             if updates["max_holders"] < current_holders:
                 raise_error(
                     400,
@@ -222,7 +238,10 @@ class FunctionService:
 
     @staticmethod
     def assign_holder(
-        function_id: int, member_id: int, actor_id: int | None = None
+        function_id: int,
+        member_id: int,
+        actor_id: int | None = None,
+        group_id: int | None = None,
     ) -> FunctionHolder:
         from hubra.core.models.member import Member
 
@@ -238,15 +257,18 @@ class FunctionService:
                 400, "VALIDATION_ERROR", "Cannot assign archived member to a function"
             )
 
+        group_id = _holder_group(fn, group_id)
         existing = db.session.scalar(
             select(FunctionHolder)
             .where(FunctionHolder.function_id == function_id)
             .where(FunctionHolder.member_id == member_id)
+            .where(_same_group(group_id))
         )
         if existing is not None:
             raise_error(409, "CONFLICT", "Member already holds this function")
 
-        current_count = len(fn.holders)
+        # A group function's places count per group.
+        current_count = sum(1 for h in fn.holders if h.group_id == group_id)
         if current_count >= fn.max_holders:
             raise_error(
                 409,
@@ -255,7 +277,9 @@ class FunctionService:
             )
 
         _check_role_change(fn, actor_id, give=True)
-        holder = FunctionHolder(function_id=function_id, member_id=member_id)
+        holder = FunctionHolder(
+            function_id=function_id, member_id=member_id, group_id=group_id
+        )
         db.session.add(holder)
         db.session.flush()
         from hubra.core.permissions import invalidate_member_permissions
@@ -267,12 +291,16 @@ class FunctionService:
 
     @staticmethod
     def remove_holder(
-        function_id: int, member_id: int, actor_id: int | None = None
+        function_id: int,
+        member_id: int,
+        actor_id: int | None = None,
+        group_id: int | None = None,
     ) -> None:
         holder = db.session.scalar(
             select(FunctionHolder)
             .where(FunctionHolder.function_id == function_id)
             .where(FunctionHolder.member_id == member_id)
+            .where(_same_group(group_id))
         )
         if holder is None:
             raise_error(404, "NOT_FOUND", "Holder not found for this function")
@@ -288,7 +316,7 @@ class FunctionService:
     def serialize(fn: Function) -> dict:
         holders = sorted(
             (fh for fh in fn.holders if fh.member is not None),
-            key=lambda fh: fh.member_id,
+            key=lambda fh: (fh.group_id or 0, fh.member_id),
         )
         return {
             "id": fn.id,
@@ -296,6 +324,8 @@ class FunctionService:
             "description": fn.description,
             "maxHolders": fn.max_holders,
             "key": fn.key,
+            # A group function: holders are named per group (groupId).
+            "perGroup": fn.per_group,
             # Every role the function gives; grantsRoleId is the first one,
             # for clients that only know one.
             "grantsRoleIds": [r.id for r in fn.roles],
@@ -304,6 +334,8 @@ class FunctionService:
                 {
                     "memberId": fh.member_id,
                     "memberName": fh.member.name,
+                    "groupId": fh.group_id,
+                    "groupName": fh.group.name if fh.group is not None else None,
                     "assignedAt": fh.assigned_at.isoformat()
                     if fh.assigned_at
                     else None,
@@ -311,6 +343,56 @@ class FunctionService:
                 for fh in holders
             ],
         }
+
+
+def _no_admin_for_group(per_group: bool, roles) -> None:
+    """A group function's roles count in its group only; an admin role is
+    never held for one group, so it cannot give one."""
+    if per_group and any(r.is_admin for r in roles):
+        raise_error(
+            400,
+            "VALIDATION_ERROR",
+            "A group function cannot give an admin role",
+            {"grantsRoleIds": ["A group function cannot give an admin role"]},
+        )
+
+
+def _holder_group(fn: Function, group_id) -> int | None:
+    """The group a new holder holds *fn* for: required for a group
+    function, refused for a club function."""
+    if not fn.per_group:
+        if group_id not in (None, ""):
+            raise_error(
+                400, "VALIDATION_ERROR", "Only a group function is held for a group"
+            )
+        return None
+    from hubra.core.models.group import Group
+
+    try:
+        gid = int(group_id)
+    except (TypeError, ValueError):
+        raise_error(400, "VALIDATION_ERROR", "groupId is required for a group function")
+    group = db.session.get(Group, gid)
+    if group is None or group.archived_at is not None or group.deleted_at is not None:
+        raise_error(404, "NOT_FOUND", f"Group {gid} not found")
+    return gid
+
+
+def _same_group(group_id):
+    if group_id in (None, ""):
+        return FunctionHolder.group_id.is_(None)
+    try:
+        return FunctionHolder.group_id == int(group_id)
+    except (TypeError, ValueError):
+        raise_error(400, "VALIDATION_ERROR", "groupId must be a group id")
+
+
+def _most_holders(fn: Function) -> int:
+    """Holders in the fullest group (or all, for a club function)."""
+    counts: dict = {}
+    for h in fn.holders:
+        counts[h.group_id] = counts.get(h.group_id, 0) + 1
+    return max(counts.values(), default=0)
 
 
 def _check_role_change(fn: Function, actor_id: int | None, *, give: bool) -> None:

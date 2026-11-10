@@ -100,6 +100,13 @@ class MembershipTier(db.Model):
         cascade="all, delete-orphan",
         order_by="PaymentPlan.id",
     )
+    # The groups the tier's members are in (tier_groups).
+    groups: Mapped[list["Group"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        "Group",
+        secondary="tier_groups",
+        back_populates="tiers",
+        order_by="Group.name",
+    )
 
     def __repr__(self) -> str:
         return f"<MembershipTier id={self.id} name={self.name!r}>"

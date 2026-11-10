@@ -12,6 +12,8 @@ interface BackendRole {
   id: number;
   name: string;
   is_default: boolean;
+  is_admin?: boolean;
+  is_owner?: boolean;
 }
 interface BackendGroup {
   id: number;
@@ -24,6 +26,8 @@ export interface Lookups {
   tiersByName: Map<string, number>;
   roles: Map<number, string>;
   rolesByName: Map<string, number>;
+  /** Owner and admin roles: never given by a group or a group function. */
+  adminRoleIds: Set<number>;
   groups: Map<number, { name: string; color: string }>;
   groupsByName: Map<string, number>;
 }
@@ -73,6 +77,7 @@ async function fetchLookups(): Promise<Lookups> {
     tiersByName: new Map(tiers.map((t) => [t.name, t.id])),
     roles: new Map(roles.map((r) => [r.id, r.name])),
     rolesByName: new Map(roles.map((r) => [r.name, r.id])),
+    adminRoleIds: new Set(roles.filter((r) => r.is_admin || r.is_owner).map((r) => r.id)),
     groups: new Map(
       groups.map((g) => [g.id, { name: g.name, color: g.color ?? "#7441e0" }]),
     ),

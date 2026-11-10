@@ -1420,7 +1420,18 @@
     },
     "grantsRoles": "Gives the roles",
     "grantsRolesHint": "Whoever holds the function has these roles until the function ends (for example Board and Treasurer).",
-    "givesRoles": "Gives the roles {{roles}}"
+    "givesRoles": "Gives the roles {{roles}}",
+    "perGroupBadge": "Group function",
+    "scope": "Applies to",
+    "scopeGroup": "One group per person (roles count there only)",
+    "scopeClub": "The whole club",
+    "maxHoldersPerGroup": "Max. people per group",
+    "forGroup": "For the group",
+    "pickGroup": "Pick a group, then assign a person",
+    "perGroup": "Group function",
+    "perGroupLocked": "Remove everyone from the function first, then switch.",
+    "perGroupHint": "Filled per group (for example Coach). Its roles count only in the person's group.",
+    "grantsRolesGroupHint": "Whoever holds the function in a group has these roles for that group. Admin roles can't be used here."
   },
   "groups": {
     "addGroup": "Add Group",
@@ -1507,6 +1518,33 @@
       "about": "Group",
       "parent": "Part of",
       "mail": "Mail address"
+    },
+    "functions": {
+      "assigned": "Function assigned",
+      "removed": "Function removed",
+      "tab": "Functions",
+      "empty": "No function is filled in this group. Create group functions (for example Coach) under Members › Functions.",
+      "rolesHere": "here: {{roles}}",
+      "function": "Function",
+      "person": "Person"
+    },
+    "default": {
+      "badge": "For new members",
+      "short": "New members",
+      "yes": "join this group",
+      "no": "not automatically",
+      "label": "New members join this group",
+      "hint": "Applies to everyone who joins from now on. Existing members aren't moved."
+    },
+    "roles": {
+      "label": "Gives the roles",
+      "openHint": "An open group gives no roles: anyone could join it.",
+      "hint": "Everyone in the group holds these roles for the whole club while they're in it. Admin roles can't be used here."
+    },
+    "tiers": {
+      "label": "Members of these tiers",
+      "hint": "Anyone on one of these tiers is in the group. When their tier changes, their group changes too.",
+      "none": "No tier"
     }
   },
   "mail": {
@@ -2174,7 +2212,8 @@
       "byStatus": "By status",
       "byTier": "By tier",
       "todayNote": "Status and tier are today's."
-    }
+    },
+    "roleViaGroup": "{{role}} (through group {{group}})"
   },
   "notifications": {
     "invoicePaid": "Invoice paid",
@@ -2781,7 +2820,10 @@
       "coefficientHint": "e.g. 0.70 to deduct 70% of other tier fees",
       "roundHint": "Round up to nearest (e.g. 5 → next 5 CHF)",
       "deductHint": "Tiers whose fees are deducted in the formula",
-      "noOtherTiers": "No other tiers available"
+      "noOtherTiers": "No other tiers available",
+      "groups": "Members join the groups",
+      "groupsHint": "Anyone on this tier is in these groups. When their tier changes, their groups change too.",
+      "noGroups": "No group"
     },
     "type": {
       "fixed": "Fixed",

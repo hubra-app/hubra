@@ -30,6 +30,15 @@ class MembershipTierSchema(ma.SQLAlchemyAutoSchema):
     round_to = fields.Int(allow_none=True, dump_default=None)
     deduct_tier_ids = fields.List(fields.Int(), allow_none=True, dump_default=None)
     payment_plans = fields.Method("get_payment_plans", dump_only=True)
+    # The groups the tier's members are in.
+    group_ids = fields.Method("get_group_ids", dump_only=True)
+    groups = fields.Method("get_groups", dump_only=True)
+
+    def get_group_ids(self, obj):
+        return [g.id for g in obj.groups]
+
+    def get_groups(self, obj):
+        return [{"id": g.id, "name": g.name} for g in obj.groups]
 
     def get_payment_plans(self, obj):
         from hubra.api.tiers.plans import plan_to_dict
@@ -77,6 +86,7 @@ class MembershipTierCreateSchema(ma.Schema):
     coefficient = fields.Float(allow_none=True, load_default=None)
     round_to = fields.Int(allow_none=True, load_default=None)
     deduct_tier_ids = fields.List(fields.Int(), load_default=[])
+    group_ids = fields.List(fields.Int(), load_default=[])
 
 
 # ── Nested stubs (used inside MemberSchema) ───────────────────────────────────
@@ -152,6 +162,8 @@ class MemberSchema(ma.SQLAlchemyAutoSchema):
     function_roles = fields.Method("get_function_roles", dump_only=True)
     # Roles held for one group only ("Event-Organisation for Jugend").
     scoped_roles = fields.Method("get_scoped_roles", dump_only=True)
+    # Roles that come with a group the member is in.
+    group_roles = fields.Method("get_group_roles", dump_only=True)
 
     # Computed list fields from M:N relationships
     group_ids = fields.Method("get_group_ids", dump_only=True)
@@ -247,6 +259,11 @@ class MemberSchema(ma.SQLAlchemyAutoSchema):
         from hubra.core.permissions import scoped_role_grants
 
         return scoped_role_grants().get(obj.id, [])
+
+    def get_group_roles(self, obj):
+        from hubra.core.permissions import group_role_grants
+
+        return group_role_grants().get(obj.id, [])
 
 
 # ── MemberCreateSchema ────────────────────────────────────────────────────────

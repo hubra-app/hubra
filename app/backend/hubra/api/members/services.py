@@ -107,7 +107,43 @@ def _clear_member_groups(member_id: int) -> set[int]:
     db.session.execute(
         delete(member_groups).where(member_groups.c.member_id == member_id)
     )
+    # Roles the groups gave go with them.
+    invalidate_member_permissions(member_id)
     return group_ids
+
+
+def _check_group_role_change(actor_id: int | None, member_id: int, new_ids: set[int]) -> None:
+    """Joining a group gives its roles and leaving takes them, so the actor
+    needs the right to give or take those roles, as on the member."""
+    from hubra.core.models.group import group_roles
+    from hubra.core.models.role import Role
+
+    old_ids = set(
+        db.session.scalars(
+            select(member_groups.c.group_id).where(member_groups.c.member_id == member_id)
+        ).all()
+    )
+
+    def roles_of(group_ids: set[int]) -> list:
+        if not group_ids:
+            return []
+        return list(
+            db.session.scalars(
+                select(Role)
+                .join(group_roles, group_roles.c.role_id == Role.id)
+                .where(group_roles.c.group_id.in_(group_ids))
+                .distinct()
+            ).all()
+        )
+
+    given = roles_of(new_ids - old_ids)
+    taken = roles_of(old_ids - new_ids)
+    if given or taken:
+        check_grant(
+            db.session.get(Member, actor_id) if actor_id else None,
+            given=given,
+            taken=taken,
+        )
 
 
 def _clear_member_functions(member_id: int) -> None:
@@ -245,7 +281,22 @@ def _apply_member_filters(query, args: dict[str, str]):
             .join(function_roles, function_roles.c.function_id == FunctionHolder.function_id)
             .where(function_roles.c.role_id == rid, *_active_term(date.today()))
         )
-        query = query.where(Member.id.in_(direct.union(through_function)))
+        from hubra.core.models.group import group_roles
+
+        through_function = through_function.where(FunctionHolder.group_id.is_(None))
+        through_group = (
+            select(member_groups.c.member_id)
+            .join(Group, Group.id == member_groups.c.group_id)
+            .join(group_roles, group_roles.c.group_id == Group.id)
+            .where(
+                group_roles.c.role_id == rid,
+                Group.archived_at.is_(None),
+                Group.deleted_at.is_(None),
+            )
+        )
+        query = query.where(
+            Member.id.in_(direct.union(through_function, through_group))
+        )
 
     group_name = args.get("group", "").strip()
     if group_name:
@@ -347,6 +398,10 @@ def _welcome_back(
         former.tier_id = tier_id
         former.payment_plan_id = None
     link_user_to_tenant(user_id, tenant_id)
+    from hubra.api.groups.services import join_automatic_groups
+
+    db.session.flush()
+    join_automatic_groups(former)
     if not former.is_disabled:
         from hubra.core.services.managed_mail import enable_member_mail
 
@@ -1205,6 +1260,9 @@ class MembersService:
                 insert(member_groups),
                 [{"member_id": member.id, "group_id": gid} for gid in group_ids],
             )
+        from hubra.api.groups.services import join_automatic_groups
+
+        join_automatic_groups(member)
 
         log_audit(
             actor_id=member.id,
@@ -1334,6 +1392,7 @@ class MembersService:
             and db.session.get(MembershipTier, validated["tier_id"]) is None
         ):
             raise_error(400, "VALIDATION_ERROR", "Unknown membership tier")
+        old_tier_id = member.tier_id
         if "tier_id" in validated and validated["tier_id"] != member.tier_id:
             # A payment plan belongs to one tier; on the new one they start
             # on its own billing cycle and may pick one of its plans.
@@ -1341,6 +1400,7 @@ class MembersService:
         for field in tenant_fields:
             if field in validated:
                 setattr(member, field, validated[field])
+        tier_changed = "tier_id" in validated and member.tier_id != old_tier_id
 
         # Mail flags via MMA
         from hubra.core.models.managed_mail import ManagedMailAddress as _MMA
@@ -1434,6 +1494,9 @@ class MembersService:
                         "VALIDATION_ERROR",
                         f"Invalid group IDs: {sorted(invalid)}",
                     )
+            _check_group_role_change(
+                actor_id, member_id, set(validated["group_ids"] or [])
+            )
             old_group_ids = _clear_member_groups(member_id)
             if validated["group_ids"]:
                 db.session.execute(
@@ -1443,6 +1506,14 @@ class MembersService:
                         for gid in validated["group_ids"]
                     ],
                 )
+
+        if tier_changed:
+            # Leave the old tier's groups, join the new tier's (after the
+            # group list above, so a form that sent both ends up right).
+            from hubra.api.groups.services import move_tier_groups
+
+            db.session.flush()
+            move_tier_groups(member, old_tier_id)
 
         # Replace role associations
         if "role_ids" in validated:

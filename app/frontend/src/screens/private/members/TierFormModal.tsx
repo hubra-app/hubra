@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Button, Checkbox, Select, SimpleGrid, TextInput } from '@mantine/core'
+import { Button, Checkbox, MultiSelect, Select, SimpleGrid, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/context/AppContext'
+import { lookupsQuery } from '@/api/lookups'
 import { useT } from '@/locales/i18n'
 import { Field, Modal } from '@/components/ui'
 import type { MembershipTier } from '@/types'
@@ -25,6 +26,7 @@ const makeTierSchema = (t: Translate) => z.object({
   coefficient: z.string(),
   roundTo: z.string(),
   deductIds: z.array(z.number()),
+  groupIds: z.array(z.string()),
 })
 type TierForm = z.infer<ReturnType<typeof makeTierSchema>>
 
@@ -39,6 +41,7 @@ function tierBody(data: TierForm) {
     coefficient: data.coefficient ? Number(data.coefficient) : null,
     roundTo: data.roundTo ? Number(data.roundTo) : null,
     deductTierIds: data.deductIds,
+    groupIds: data.groupIds.map(Number),
   }
 }
 
@@ -71,6 +74,7 @@ export function TierFormModal({
           coefficient: editTarget.coefficient != null ? String(editTarget.coefficient) : '',
           roundTo: editTarget.roundTo != null ? String(editTarget.roundTo) : '',
           deductIds: editTarget.deductTierIds ?? [],
+          groupIds: (editTarget.groupIds ?? []).map(String),
         }
       : {
           name: '',
@@ -82,8 +86,13 @@ export function TierFormModal({
           coefficient: '',
           roundTo: '',
           deductIds: [],
+          groupIds: [],
         },
   })
+  const { data: lookups } = useQuery(lookupsQuery)
+  const groupOptions = lookups
+    ? [...lookups.groups.entries()].map(([id, g]) => ({ value: String(id), label: g.name }))
+    : []
 
   const watchedPriceType = form.values.priceType
   const watchedBillingCycle = form.values.billingCycle
@@ -317,6 +326,26 @@ export function TierFormModal({
                   </span>
                 )}
               </SimpleGrid>
+            </Field>
+          )}
+
+          {groupOptions.length > 0 && (
+            <Field
+              label={t('tiers.form.groups', 'Mitglieder kommen in die Gruppen')}
+              hint={t(
+                'tiers.form.groupsHint',
+                'Wer diese Stufe hat, ist in diesen Gruppen. Bei einem Stufenwechsel wechseln auch die Gruppen.',
+              )}
+            >
+              <MultiSelect
+                data={groupOptions}
+                value={form.values.groupIds}
+                onChange={(v) => form.setFieldValue('groupIds', v)}
+                placeholder={form.values.groupIds.length ? undefined : t('tiers.form.noGroups', 'Keine Gruppe')}
+                clearable
+                searchable
+                data-testid="tier-groups"
+              />
             </Field>
           )}
 
