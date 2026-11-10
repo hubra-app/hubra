@@ -451,6 +451,15 @@ SPECS: tuple[Spec, ...] = (
         "number",
     ),
     Spec(
+        "discord.language",
+        "Platform bot language",
+        "Language of everything the bot posts on the platform's Discord server "
+        "(log, audit, alerts, digest, buttons, command replies, support threads): "
+        "de or en. Club servers follow each club's language",
+        lambda cfg: "de",
+        "discord_language",
+    ),
+    Spec(
         "discord.support_channel_id",
         "Support channel",
         "Channel ID on the platform's Discord server: every support case gets "

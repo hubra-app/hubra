@@ -135,6 +135,7 @@ VALIDATORS: dict[str, Callable[[str], str | None]] = {
         None if v.isdigit() and int(v) <= 600000 else "Whole milliseconds, 0 to 600000"
     ),
     "on_off": lambda v: None if v in ("on", "off") else "on or off",
+    "discord_language": lambda v: None if v in ("de", "en") else "de or en",
     "alert_types": lambda v: _validate_alert_types(v),
     "iso_datetime": lambda v: _validate_iso_datetime(v),
     "percent": lambda v: (

@@ -54,6 +54,26 @@ AUDIT_CHANNEL_KEY = "discord.audit_channel_id"
 # release notes stay in the platform log ("releases").
 CHANGELOG_CHANNEL_KEY = "discord.changelog_channel_id"
 EVENTS_KEY = "discord.log_events"
+# The language of everything the bot posts on the platform server: "de"
+# (default) or "en".  Club servers follow each club's own language.
+LANGUAGE_KEY = "discord.language"
+
+
+def language() -> str:
+    """``de`` or ``en``: the language of the platform bot's posts."""
+    try:
+        from hubra.core.services import platform_settings
+
+        value = platform_settings.get(LANGUAGE_KEY)
+    except Exception:  # noqa: BLE001
+        return "de"
+    return "en" if str(value or "").lower().startswith("en") else "de"
+
+
+def tr(de: str, en: str) -> str:
+    """*de* or *en*, after ``discord.language``."""
+    return en if language() == "en" else de
+
 
 # Category → label (manage shows these).  ``members`` is off by default:
 # every member who joins a club would be a post.
@@ -401,69 +421,87 @@ def _clean(value: Any, depth: int = 0) -> Any:
 
 # Audit actions as people read them.  Anything not listed is spelled out
 # from its key ("tenant.early_access" → "Tenant: early access").
-ACTION_LABELS: dict[str, str] = {
-    "tenant.provision": "Verein erstellt",
-    "tenant.update": "Verein geändert",
-    "tenant.active": "Verein aktiviert",
-    "tenant.suspended": "Verein gesperrt",
-    "tenant.soft_delete": "Verein in den Papierkorb gelegt",
-    "tenant.delete": "Verein gelöscht",
-    "tenant.limits": "Limits geändert",
-    "tenant.billing": "Tarif geändert",
-    "tenant.early_access": "Early Access geändert",
-    "tenant.add_owner": "Inhaber:in hinzugefügt",
-    "tenant.remove_owner": "Inhaber:in entfernt",
-    "tenant.add_admin": "Vereinsadmin hinzugefügt",
-    "tenant.remove_admin": "Vereinsadmin entfernt",
-    "tenant.add_member": "Mitglied hinzugefügt",
-    "tenant.invite_accepted": "Einladung angenommen",
-    "tenant_request.submit": "Neue Vereinsanfrage",
-    "tenant_request.approve": "Vereinsanfrage angenommen",
-    "tenant_request.reject": "Vereinsanfrage abgelehnt",
-    "support_case.update": "Meldung geändert",
-    "support_case.merge": "Meldungen zusammengeführt",
-    "support_case.people_added": "Personen zur Meldung hinzugefügt",
-    "support_case.person_removed": "Person von der Meldung entfernt",
-    "impersonation.start": "Support-Zugriff gestartet",
-    "impersonation.end": "Support-Zugriff beendet",
-    "impersonation.revoked": "Support-Zugriff entzogen",
-    "global_role.assign": "Plattform-Rolle vergeben",
-    "global_role.revoke": "Plattform-Rolle entzogen",
-    "set_tenant_module": "Modul ein- oder ausgeschaltet",
-    "club_settings.update": "Vereinseinstellungen geändert",
-    "bank_settings.update": "Bankeinstellungen geändert",
-    "domain.expired": "Domain-Prüfung abgelaufen",
-    "domain.unverified": "Domain nicht mehr bestätigt",
-    "backup.create": "Backup erstellt",
-    "backup.verify": "Backup geprüft",
-    "backup.restore": "Backup wiederhergestellt",
-    "backup.delete": "Backup gelöscht",
-    "install_plugin": "Plugin installiert",
-    "uninstall_plugin": "Plugin entfernt",
-    "rollback_plugin": "Plugin zurückgesetzt",
-    "plugin_update_available": "Plugin-Update verfügbar",
-    "trust_plugin_key": "Plugin-Schlüssel vertraut",
-    "untrust_plugin_key": "Plugin-Schlüssel nicht mehr vertraut",
-    "remove_plugin_repository": "Plugin-Quelle entfernt",
-    "connect_app": "App verbunden",
-    "disconnect_app": "App getrennt",
-    "update_app": "App-Einstellungen geändert",
-    "platform.settings.update": "Plattform-Einstellungen geändert",
-    "platform.mail_relay.use_main": "Zurück auf das Haupt-Relay",
-    "platform.discord.channel_created": "Discord-Kanal angelegt",
-    "platform.maintenance.cancelled": "Wartung abgesagt",
-    "platform.plan.created": "Tarif erstellt",
-    "platform.plan.deleted": "Tarif gelöscht",
-    "audit.export": "Audit-Log exportiert",
+ACTION_LABELS: dict[str, tuple[str, str]] = {
+    "tenant.provision": ("Verein erstellt", "Club created"),
+    "tenant.update": ("Verein geändert", "Club changed"),
+    "tenant.active": ("Verein aktiviert", "Club activated"),
+    "tenant.suspended": ("Verein gesperrt", "Club suspended"),
+    "tenant.soft_delete": ("Verein in den Papierkorb gelegt", "Club moved to the bin"),
+    "tenant.delete": ("Verein gelöscht", "Club deleted"),
+    "tenant.limits": ("Limits geändert", "Limits changed"),
+    "tenant.billing": ("Tarif geändert", "Plan changed"),
+    "tenant.early_access": ("Early Access geändert", "Early access changed"),
+    "tenant.add_owner": ("Inhaber/in hinzugefügt", "Owner added"),
+    "tenant.remove_owner": ("Inhaber/in entfernt", "Owner removed"),
+    "tenant.add_admin": ("Vereinsadmin hinzugefügt", "Club admin added"),
+    "tenant.remove_admin": ("Vereinsadmin entfernt", "Club admin removed"),
+    "tenant.add_member": ("Mitglied hinzugefügt", "Member added"),
+    "tenant.invite_accepted": ("Einladung angenommen", "Invite accepted"),
+    "tenant_request.submit": ("Neue Vereinsanfrage", "New club request"),
+    "tenant_request.approve": ("Vereinsanfrage angenommen", "Club request approved"),
+    "tenant_request.reject": ("Vereinsanfrage abgelehnt", "Club request rejected"),
+    "support_case.update": ("Meldung geändert", "Report changed"),
+    "support_case.merge": ("Meldungen zusammengeführt", "Reports merged"),
+    "support_case.people_added": (
+        "Personen zur Meldung hinzugefügt",
+        "People added to the report",
+    ),
+    "support_case.person_removed": (
+        "Person von der Meldung entfernt",
+        "Person removed from the report",
+    ),
+    "impersonation.start": ("Support-Zugriff gestartet", "Support access started"),
+    "impersonation.end": ("Support-Zugriff beendet", "Support access ended"),
+    "impersonation.revoked": ("Support-Zugriff entzogen", "Support access revoked"),
+    "global_role.assign": ("Plattform-Rolle vergeben", "Platform role given"),
+    "global_role.revoke": ("Plattform-Rolle entzogen", "Platform role taken away"),
+    "set_tenant_module": ("Modul ein- oder ausgeschaltet", "Module switched on or off"),
+    "club_settings.update": ("Vereinseinstellungen geändert", "Club settings changed"),
+    "bank_settings.update": ("Bankeinstellungen geändert", "Bank settings changed"),
+    "domain.expired": ("Domain-Prüfung abgelaufen", "Domain check expired"),
+    "domain.unverified": ("Domain nicht mehr bestätigt", "Domain no longer verified"),
+    "backup.create": ("Backup erstellt", "Backup created"),
+    "backup.verify": ("Backup geprüft", "Backup verified"),
+    "backup.restore": ("Backup wiederhergestellt", "Backup restored"),
+    "backup.delete": ("Backup gelöscht", "Backup deleted"),
+    "install_plugin": ("Plugin installiert", "Plugin installed"),
+    "uninstall_plugin": ("Plugin entfernt", "Plugin removed"),
+    "rollback_plugin": ("Plugin zurückgesetzt", "Plugin rolled back"),
+    "plugin_update_available": ("Plugin-Update verfügbar", "Plugin update available"),
+    "trust_plugin_key": ("Plugin-Schlüssel vertraut", "Plugin key trusted"),
+    "untrust_plugin_key": (
+        "Plugin-Schlüssel nicht mehr vertraut",
+        "Plugin key no longer trusted",
+    ),
+    "remove_plugin_repository": ("Plugin-Quelle entfernt", "Plugin source removed"),
+    "connect_app": ("App verbunden", "App connected"),
+    "disconnect_app": ("App getrennt", "App disconnected"),
+    "update_app": ("App-Einstellungen geändert", "App settings changed"),
+    "platform.settings.update": (
+        "Plattform-Einstellungen geändert",
+        "Platform settings changed",
+    ),
+    "platform.mail_relay.use_main": (
+        "Zurück auf das Haupt-Relay",
+        "Back on the main relay",
+    ),
+    "platform.discord.channel_created": (
+        "Discord-Kanal angelegt",
+        "Discord channel created",
+    ),
+    "platform.maintenance.cancelled": ("Wartung abgesagt", "Maintenance cancelled"),
+    "platform.plan.created": ("Tarif erstellt", "Plan created"),
+    "platform.plan.deleted": ("Tarif gelöscht", "Plan deleted"),
+    "audit.export": ("Audit-Log exportiert", "Audit log exported"),
 }
-CATEGORY_LABELS: dict[str, str] = {
-    "clubs": "Vereine",
-    "requests": "Anfragen",
-    "access": "Zugriff",
-    "members": "Mitglieder",
-    "plugins": "Plugins",
-    "backups": "Backups",
-    "platform": "Plattform",
+CATEGORY_LABELS: dict[str, tuple[str, str]] = {
+    "clubs": ("Vereine", "Clubs"),
+    "requests": ("Anfragen", "Requests"),
+    "access": ("Zugriff", "Access"),
+    "members": ("Mitglieder", "Members"),
+    "plugins": ("Plugins", "Plugins"),
+    "backups": ("Backups", "Backups"),
+    "platform": ("Plattform", "Platform"),
 }
 CATEGORY_ICONS: dict[str, str] = {
     "clubs": "🏠",
@@ -480,11 +518,11 @@ def action_label(action: str) -> str:
     """A readable name for an audit action."""
     a = action or ""
     if a in ACTION_LABELS:
-        return ACTION_LABELS[a]
+        return tr(*ACTION_LABELS[a])
     head, _, rest = a.partition(".")
     words = lambda t: t.replace("_", " ").replace(".", " ").strip()  # noqa: E731
     if not rest:
-        return words(head).capitalize() or "Plattform-Ereignis"
+        return words(head).capitalize() or tr("Plattform-Ereignis", "Platform event")
     return f"{words(head).capitalize()}: {words(rest)}"
 
 
@@ -501,7 +539,7 @@ def _field_value(value: Any) -> str:
     if value is None or value == "":
         text = "–"
     elif isinstance(value, bool):
-        text = "Ja" if value else "Nein"
+        text = tr("Ja", "Yes") if value else tr("Nein", "No")
     elif isinstance(value, (list, tuple)):
         text = ", ".join(_field_value(v) for v in value) or "–"
     elif isinstance(value, dict):
@@ -529,24 +567,26 @@ def _area(entry: GlobalAuditEntry) -> tuple[str, str] | None:
     """(label, manage path) of the page the change belongs to, if any."""
     a = entry.action or ""
     if a.startswith("tenant_request."):
-        return "Vereinsanfragen", "/app/tenants/requests"
+        return tr("Vereinsanfragen", "Club requests"), "/app/tenants/requests"
     if a.startswith("impersonation."):
-        return "Support-Zugriff", "/app/support"
+        return tr("Support-Zugriff", "Support access"), "/app/support"
     if a.startswith("global_role."):
-        return "Plattform-Rollen", "/app/roles"
+        return tr("Plattform-Rollen", "Platform roles"), "/app/roles"
     if a.startswith(("tenant.add_", "tenant.remove_")) and entry.tenant_id:
         if a not in ("tenant.add_member",):
-            return "Vereinsadmins", f"/app/clubs/{entry.tenant_id}/admins"
+            return tr(
+                "Vereinsadmins", "Club admins"
+            ), f"/app/clubs/{entry.tenant_id}/admins"
     if a.startswith("backup."):
         return "Backups", "/app/platform/backups"
     if "plugin" in a:
         return "Plugins", "/app/plugins"
     if a.startswith("support_case."):
-        return "Meldungen", "/app/reports"
+        return tr("Meldungen", "Reports"), "/app/reports"
     if a.startswith("platform.maintenance"):
-        return "Wartung", "/app/platform/maintenance"
+        return tr("Wartung", "Maintenance"), "/app/platform/maintenance"
     if a.startswith("platform.plan"):
-        return "Tarife", "/app/tenants/plans"
+        return tr("Tarife", "Plans"), "/app/tenants/plans"
     if a.startswith("platform.mail_relay"):
         return "Mail-Relay", "/app/platform/mail/settings"
     # Other platform settings have no single page: the audit entry says
@@ -562,9 +602,9 @@ def audit_links(
     base = _manage_url() if base is None else base.rstrip("/")
     if not base:
         return []
-    links = [("Audit-Log", f"{base}/app/audit?entry={entry.id}")]
+    links = [(tr("Audit-Log", "Audit log"), f"{base}/app/audit?entry={entry.id}")]
     if entry.tenant_id:
-        links.append(("Verein", f"{base}/app/tenants/{entry.tenant_id}"))
+        links.append((tr("Verein", "Club"), f"{base}/app/tenants/{entry.tenant_id}"))
     area = _area(entry)
     if area:
         links.append((area[0], base + area[1]))
@@ -584,19 +624,23 @@ def audit_embed(entry: GlobalAuditEntry) -> dict:
     if entry.tenant_id:
         tenant = db.session.get(Tenant, entry.tenant_id)
         club = f"{tenant.name} ({tenant.slug})" if tenant else f"#{entry.tenant_id}"
-        fields.append({"name": "Verein", "value": club[:1000], "inline": True})
+        fields.append(
+            {"name": tr("Verein", "Club"), "value": club[:1000], "inline": True}
+        )
     if entry.actor_id:
         user = db.session.get(User, entry.actor_id)
         if user is None:
-            who = f"Konto #{entry.actor_id}"
+            who = f"{tr('Konto', 'Account')} #{entry.actor_id}"
         elif user.name and user.name != user.email:
             who = f"{user.name} ({user.email})"
         else:
             who = user.email
-        fields.append({"name": "Von", "value": who[:1000], "inline": True})
+        fields.append({"name": tr("Von", "By"), "value": who[:1000], "inline": True})
     if entry.target_type or entry.target_id:
         target = " ".join(str(x) for x in (entry.target_type, entry.target_id) if x)
-        fields.append({"name": "Betrifft", "value": target[:1000], "inline": True})
+        fields.append(
+            {"name": tr("Betrifft", "Target"), "value": target[:1000], "inline": True}
+        )
     details = [
         (k, v)
         for k, v in (_clean(entry.details or {}) or {}).items()
@@ -626,7 +670,7 @@ def audit_embed(entry: GlobalAuditEntry) -> dict:
         "color": _color(entry.action),
         "fields": fields[:25],
         "footer": {
-            "text": f"Hubra · {CATEGORY_LABELS.get(cat, cat)} · {entry.action} · #{entry.id}"[
+            "text": f"Hubra · {tr(*CATEGORY_LABELS.get(cat, (cat, cat)))} · {entry.action} · #{entry.id}"[
                 :2048
             ]
         },
