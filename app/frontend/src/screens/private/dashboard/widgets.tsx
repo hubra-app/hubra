@@ -23,6 +23,7 @@ import {
   getWidgetData,
   listContractWidgets,
   type ContractWidget,
+  type DashboardWidget,
   type ListWidgetData,
   type StatWidgetData,
   type WidgetSize,
@@ -834,9 +835,35 @@ export const CLUB_HOME = [
 export const MY_HOME = [
   w('payments', 'me.payments', 'l'),
   w('summary', 'me.summary', 'l'),
+  // Booking's "Heute vor Ort"; left out where Booking is off (see OPTIONAL_HOME).
+  w('onsite', 'booking.onsite_today', 'l'),
   w('events', 'me.events', 'l'),
   w('votes', 'me.votes', 'l'),
   w('attendance', 'me.attendance', 'l'),
   w('groups', 'me.groups', 'l'),
   w('plugins', 'plugins.cards', 'l'),
 ]
+
+/**
+ * Widget types on a built-in start page that come from a plugin. They show
+ * only while the catalogue offers them to this member, instead of an
+ * "this widget is gone" box in clubs without the plugin.
+ */
+export const OPTIONAL_HOME = new Set(['booking.onsite_today'])
+
+/** The built-in start page without plugin widgets this member can't use. */
+export function useDefaultHome(widgets: DashboardWidget[]): DashboardWidget[] {
+  const catalogue = useWidgetCatalogue()
+  const allowed = useWidgetAllowed()
+  return useMemo(
+    () =>
+      widgets.filter((wd) => {
+        if (!OPTIONAL_HOME.has(wd.type)) return true
+        const def = catalogue.find((d) => d.type === wd.type)
+        return !!def && allowed(def)
+      }),
+    // allowed is a fresh closure each render; catalogue carries the change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [widgets, catalogue],
+  )
+}

@@ -22,6 +22,7 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 - **Dashboards als Raster**: Dashboards und Startseiten sind ein Raster aus 12 Spalten: Widget am Griff ziehen verschiebt es, an der Ecke ziehen ändert Breite und Höhe (oder mit den Pfeiltasten), «Höhe nach Inhalt» stellt die Höhe wieder auf den Inhalt. Bestehende Dashboards behalten ihr Layout.
 - **Deutsche Texte überarbeitet**: API-Fehler, die auf Deutsch englisch erschienen (Dashboards, Schnuppertraining, Lizenzen und Module, Anmeldung, verbundene Apps und mehr), sind jetzt deutsch; Menüpfade in Hinweisen zeigen auf die heutigen Seiten (API & Webhooks, Mein Konto › Zwei-Faktor, Discord › Einstellungen, Alle Vereine › Tarife & Preise, Konto › Mitgliedschaft › Benachrichtigungen); ein Wort pro Sache: Zahlungserinnerung (nicht Mahnung), Einweisung (nicht Einführung), Schnuppertraining, Gesperrt, Mobil, Inhaber/in, «» als Anführungszeichen. Das Glossar für Übersetzungen beschreibt Hochdeutsch statt des alten Dialekts.
+- **Vor Ort auf der Startseite**: Dashboard › Persönlich zeigt «Heute vor Ort» (wer heute in welchem Raum ist), solange das Plugin Reservationen eingeschaltet ist und das Mitglied die Seite nicht angepasst hat. Vereine ohne Reservationen sehen die Seite wie bisher.
 
 ### Fixed
 
