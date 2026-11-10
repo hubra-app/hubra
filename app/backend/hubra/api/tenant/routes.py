@@ -1472,6 +1472,9 @@ def _add_user_to_tenant(tenant: Tenant, user: User) -> dict:
                 member.roles = [default_role]
             db.session.add(member)
         db.session.flush()
+        from hubra.api.groups.services import join_automatic_groups
+
+        join_automatic_groups(member)
 
         # Build the dict while the search_path still points at the club, so
         # a later commit expiring the attributes can't break it.

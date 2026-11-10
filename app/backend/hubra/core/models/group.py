@@ -11,6 +11,45 @@ from hubra.core.extensions import db
 from hubra.core.models.member import member_groups
 
 
+# The roles a group gives everyone in it, for the whole club, while they are
+# in the group (docs/roles.md, "Groups"). Never Owner or an admin role.
+group_roles = db.Table(
+    "group_roles",
+    db.Column(
+        "group_id",
+        db.Integer,
+        ForeignKey("groups.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    db.Column(
+        "role_id",
+        db.Integer,
+        ForeignKey("roles.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
+)
+
+# The groups a tier's members are in: they join when they get the tier and
+# leave when they change to another one.
+tier_groups = db.Table(
+    "tier_groups",
+    db.Column(
+        "tier_id",
+        db.Integer,
+        ForeignKey("membership_tiers.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    db.Column(
+        "group_id",
+        db.Integer,
+        ForeignKey("groups.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
+)
+
+
 class Group(db.Model):
     __tablename__ = "groups"
 
@@ -24,6 +63,7 @@ class Group(db.Model):
     icon_name: Mapped[str | None] = mapped_column(db.String(255), nullable=True)
     # e.g. "3x/week"
     sessions: Mapped[str | None] = mapped_column(db.String(255), nullable=True)
+    # New members join every default group.
     is_default: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     # M5 fields
     # board | committee | team | interest_group | mailing_list
@@ -81,6 +121,12 @@ class Group(db.Model):
         "GroupMembership",
         back_populates="group",
         cascade="all, delete-orphan",
+    )
+    roles: Mapped[list["Role"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        "Role", secondary=group_roles, order_by="Role.name"
+    )
+    tiers: Mapped[list["MembershipTier"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        "MembershipTier", secondary=tier_groups, back_populates="groups"
     )
 
     def __repr__(self) -> str:

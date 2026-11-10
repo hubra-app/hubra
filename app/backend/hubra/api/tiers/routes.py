@@ -89,7 +89,7 @@ def update_tier(tier_id: int):
     tier = TierService.get(tier_id)
 
     body = request.get_json(silent=True) or {}
-    TierService.update(tier, body)
+    TierService.update(tier, body, get_current_member().id)
 
     try:
         db.session.commit()

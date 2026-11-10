@@ -183,8 +183,49 @@ def function_roles(member) -> list:
                 )
                 .where(
                     FunctionHolder.member_id == member_id,
+                    # A group function's roles count in its group only.
+                    FunctionHolder.group_id.is_(None),
                     Role.is_owner.is_(False),
                     *_active_term(date.today()),
+                )
+                .distinct()
+            ).all()
+        )
+    return memo[key]
+
+
+def _live_group():
+    """Groups that still give their roles: not archived or deleted."""
+    from hubra.core.models.group import Group
+
+    return (Group.archived_at.is_(None), Group.deleted_at.is_(None))
+
+
+def group_roles(member) -> list:
+    """Roles the member holds because they are in a group that gives them
+    (``group_roles``). Derived on every check like function roles, so leaving
+    the group takes them away. Never Owner or an admin role."""
+    member_id = getattr(member, "id", None)
+    if member_id is None or not hasattr(member, "roles"):
+        return []
+    memo = g.setdefault("_group_roles", {})
+    key = (_club_scope(), member_id)
+    if key not in memo:
+        from hubra.core.models.group import Group, group_roles as group_roles_t
+        from hubra.core.models.member import member_groups
+        from hubra.core.models.role import Role
+
+        memo[key] = list(
+            db.session.scalars(
+                select(Role)
+                .join(group_roles_t, group_roles_t.c.role_id == Role.id)
+                .join(Group, Group.id == group_roles_t.c.group_id)
+                .join(member_groups, member_groups.c.group_id == Group.id)
+                .where(
+                    member_groups.c.member_id == member_id,
+                    Role.is_owner.is_(False),
+                    Role.is_admin.is_(False),
+                    *_live_group(),
                 )
                 .distinct()
             ).all()
@@ -217,7 +258,11 @@ def function_role_grants() -> dict[int, list[dict]]:
             .join(Function, Function.id == FunctionHolder.function_id)
             .join(function_roles, function_roles.c.function_id == Function.id)
             .join(Role, Role.id == function_roles.c.role_id)
-            .where(Role.is_owner.is_(False), *_active_term(date.today()))
+            .where(
+                FunctionHolder.group_id.is_(None),
+                Role.is_owner.is_(False),
+                *_active_term(date.today()),
+            )
             .order_by(Function.name)
         ).all()
         grants: dict[int, list[dict]] = {}
@@ -236,6 +281,10 @@ def scoped_role_grants() -> dict[int, list[dict]]:
         from hubra.core.models.group import Group
         from hubra.core.models.role import MemberRoleScope, Role
 
+        from datetime import date
+
+        from hubra.core.models.function import Function, FunctionHolder, function_roles
+
         rows = db.session.execute(
             select(MemberRoleScope.member_id, Role.id, Role.name, Group.id, Group.name)
             .join(Role, Role.id == MemberRoleScope.role_id)
@@ -247,15 +296,72 @@ def scoped_role_grants() -> dict[int, list[dict]]:
             grants.setdefault(member_id, []).append(
                 {"id": role_id, "name": role_name, "group_id": group_id, "group": group_name}
             )
+        # ... and through a group function they hold for that group.
+        rows = db.session.execute(
+            select(
+                FunctionHolder.member_id,
+                Role.id,
+                Role.name,
+                Group.id,
+                Group.name,
+                Function.name,
+            )
+            .join(Function, Function.id == FunctionHolder.function_id)
+            .join(function_roles, function_roles.c.function_id == Function.id)
+            .join(Role, Role.id == function_roles.c.role_id)
+            .join(Group, Group.id == FunctionHolder.group_id)
+            .where(Role.is_admin.is_(False), *_active_term(date.today()))
+            .order_by(Group.name, Function.name)
+        ).all()
+        for member_id, role_id, role_name, group_id, group_name, fn_name in rows:
+            grants.setdefault(member_id, []).append(
+                {
+                    "id": role_id,
+                    "name": role_name,
+                    "group_id": group_id,
+                    "group": group_name,
+                    "function": fn_name,
+                }
+            )
         g._scoped_role_grants = grants
     return g._scoped_role_grants
 
 
+def group_role_grants() -> dict[int, list[dict]]:
+    """For the members list: member id -> the roles they hold through a
+    group they are in, as ``{"id", "name", "group_id", "group"}``."""
+    if "_group_role_grants" not in g:
+        from hubra.core.models.group import Group, group_roles as group_roles_t
+        from hubra.core.models.member import member_groups
+        from hubra.core.models.role import Role
+
+        rows = db.session.execute(
+            select(member_groups.c.member_id, Role.id, Role.name, Group.id, Group.name)
+            .join(Group, Group.id == member_groups.c.group_id)
+            .join(group_roles_t, group_roles_t.c.group_id == Group.id)
+            .join(Role, Role.id == group_roles_t.c.role_id)
+            .where(Role.is_owner.is_(False), Role.is_admin.is_(False), *_live_group())
+            .order_by(Group.name)
+        ).all()
+        grants: dict[int, list[dict]] = {}
+        for member_id, role_id, role_name, group_id, group_name in rows:
+            grants.setdefault(member_id, []).append(
+                {"id": role_id, "name": role_name, "group_id": group_id, "group": group_name}
+            )
+        g._group_role_grants = grants
+    return g._group_role_grants
+
+
 def held_roles(member) -> list:
-    """The member's own roles and those of the functions they hold."""
-    own = list(getattr(member, "roles", None) or [])
-    ids = {r.id for r in own}
-    return own + [r for r in function_roles(member) if r.id not in ids]
+    """The member's own roles, those of the club functions they hold and
+    those of the groups they are in."""
+    out = list(getattr(member, "roles", None) or [])
+    ids = {r.id for r in out}
+    for role in (*function_roles(member), *group_roles(member)):
+        if role.id not in ids:
+            ids.add(role.id)
+            out.append(role)
+    return out
 
 
 def _get_member_permission_keys(member) -> set[str]:
@@ -313,6 +419,25 @@ def scoped_permission_keys(member) -> dict[int, set[str]]:
             .join(Role, Role.id == MemberRoleScope.role_id)
             .where(MemberRoleScope.member_id == member_id, Role.is_admin.is_(False))
         ).all()
+        from datetime import date
+
+        from hubra.core.models.function import FunctionHolder, function_roles
+
+        # A group function gives its roles for the group it is held for.
+        rows += db.session.execute(
+            select(FunctionHolder.group_id, function_roles.c.role_id)
+            .join(
+                function_roles,
+                function_roles.c.function_id == FunctionHolder.function_id,
+            )
+            .join(Role, Role.id == function_roles.c.role_id)
+            .where(
+                FunctionHolder.member_id == member_id,
+                FunctionHolder.group_id.is_not(None),
+                Role.is_admin.is_(False),
+                *_active_term(date.today()),
+            )
+        ).all()
         scoped: dict[int, set[str]] = {}
         for group_id, role_id in rows:
             scoped.setdefault(group_id, set()).update(_get_role_permission_keys(role_id))
@@ -335,6 +460,8 @@ def invalidate_member_permissions(member_id: int) -> None:
     """Delete the cached union permission set for a member."""
     g.pop("_function_roles", None)
     g.pop("_function_role_grants", None)
+    g.pop("_group_roles", None)
+    g.pop("_group_role_grants", None)
     g.pop("_scoped_keys", None)
     g.pop("_scoped_role_grants", None)
     client = _get_redis_client()
@@ -482,6 +609,17 @@ def invalidate_role_permissions(role_id: int) -> None:
                     function_roles.c.function_id == FunctionHolder.function_id,
                 )
                 .where(function_roles.c.role_id == role_id)
+            ).all()
+        )
+        # ... and those who hold it through a group they are in.
+        from hubra.core.models.group import group_roles as group_roles_t
+        from hubra.core.models.member import member_groups
+
+        member_ids |= set(
+            db.session.scalars(
+                select(member_groups.c.member_id)
+                .join(group_roles_t, group_roles_t.c.group_id == member_groups.c.group_id)
+                .where(group_roles_t.c.role_id == role_id)
             ).all()
         )
         if member_ids:

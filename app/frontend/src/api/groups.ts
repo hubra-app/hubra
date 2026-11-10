@@ -18,6 +18,10 @@ interface BackendGroup {
   visibility?: GroupVisibility;
   parent_group_id: number | null;
   parent_group_name: string | null;
+  role_ids?: number[];
+  roles?: { id: number; name: string }[];
+  tier_ids?: number[];
+  tiers?: { id: number; name: string }[];
 }
 
 function adapt(b: BackendGroup): Group {
@@ -36,7 +40,19 @@ function adapt(b: BackendGroup): Group {
     visibility: b.visibility ?? "visible",
     parentGroupId: b.parent_group_id ?? null,
     parentGroupName: b.parent_group_name ?? null,
+    isDefault: b.is_default ?? false,
+    roleIds: b.role_ids ?? [],
+    roles: b.roles ?? [],
+    tierIds: b.tier_ids ?? [],
+    tiers: b.tiers ?? [],
   };
+}
+
+/** Who sends roles, default flag and tiers: the club, not a leader. */
+function links(input: GroupCreate | GroupUpdate, body: Record<string, unknown>) {
+  if (input.roleIds !== undefined) body.role_ids = input.roleIds;
+  if (input.tierIds !== undefined) body.tier_ids = input.tierIds;
+  if (input.isDefault !== undefined) body.is_default = input.isDefault;
 }
 
 export async function listGroups(): Promise<Group[]> {
@@ -54,6 +70,12 @@ export interface GroupCreate {
   emailAlias?: string;
   visibility?: GroupVisibility;
   parentGroupId?: number | null;
+  /** The roles everyone in the group holds. */
+  roleIds?: number[];
+  /** Tiers whose members are in the group. */
+  tierIds?: number[];
+  /** New members join the group. */
+  isDefault?: boolean;
 }
 
 export async function createGroup(input: GroupCreate): Promise<Group> {
@@ -66,6 +88,7 @@ export async function createGroup(input: GroupCreate): Promise<Group> {
   if (input.emailAlias !== undefined) body.email_alias = input.emailAlias;
   if (input.visibility !== undefined) body.visibility = input.visibility;
   if (input.parentGroupId !== undefined) body.parent_group_id = input.parentGroupId;
+  links(input, body);
   const b = await apiFetch<BackendGroup>("/app/groups/", {
     method: "POST",
     body: JSON.stringify(body),
@@ -84,6 +107,9 @@ export interface GroupUpdate {
   emailAlias?: string;
   visibility?: GroupVisibility;
   parentGroupId?: number | null;
+  roleIds?: number[];
+  tierIds?: number[];
+  isDefault?: boolean;
 }
 
 export async function updateGroup(
@@ -100,6 +126,7 @@ export async function updateGroup(
   if (input.emailAlias !== undefined) body.email_alias = input.emailAlias;
   if (input.visibility !== undefined) body.visibility = input.visibility;
   if (input.parentGroupId !== undefined) body.parent_group_id = input.parentGroupId;
+  links(input, body);
   const b = await apiFetch<BackendGroup>(`/app/groups/${id}`, {
     method: "PATCH",
     body: JSON.stringify(body),
@@ -150,4 +177,32 @@ export async function joinGroup(id: number): Promise<void> {
 
 export async function leaveGroup(id: number): Promise<void> {
   await apiFetch(`/app/groups/${id}/leave`, { method: "POST" });
+}
+
+export interface GroupFunctionHolder {
+  functionId: number;
+  functionName: string;
+  memberId: number;
+  memberName: string | null;
+  roleNames: string[];
+}
+
+/** The group functions held for this group (Trainer/in: Anna). */
+export async function listGroupFunctions(groupId: string): Promise<GroupFunctionHolder[]> {
+  const b = await apiFetch<{
+    functions?: {
+      function_id: number;
+      function_name: string;
+      member_id: number;
+      member_name: string | null;
+      role_names: string[];
+    }[];
+  }>(`/app/groups/${groupId}`);
+  return (b.functions ?? []).map((f) => ({
+    functionId: f.function_id,
+    functionName: f.function_name,
+    memberId: f.member_id,
+    memberName: f.member_name,
+    roleNames: f.role_names,
+  }));
 }

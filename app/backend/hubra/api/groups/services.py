@@ -82,6 +82,249 @@ class GroupVisibility:
             raise_error(404, "NOT_FOUND", f"Group {group_id} not found")
 
 
+# ── Roles a group gives, default groups, tier groups ──────────────────────────
+
+
+def _actor(actor_id: int | None):
+    return db.session.get(Member, actor_id) if actor_id is not None else None
+
+
+def _group_roles_from(role_ids) -> list:
+    """The roles a group is to give: never Owner or an admin role (being put
+    in a group must never make anyone an admin)."""
+    from hubra.core.models.role import Role
+
+    roles = []
+    for rid in role_ids or []:
+        role = db.session.get(Role, rid)
+        if role is None:
+            raise_error(
+                400,
+                "VALIDATION_ERROR",
+                f"Role {rid} not found",
+                {"role_ids": [f"Role {rid} not found"]},
+            )
+        if role.is_owner or role.is_admin:
+            raise_error(
+                400,
+                "VALIDATION_ERROR",
+                "A group cannot give the Owner role or an admin role",
+                {"role_ids": ["A group cannot give the Owner role or an admin role"]},
+            )
+        if role not in roles:
+            roles.append(role)
+    return roles
+
+
+def _tiers_from(tier_ids) -> list:
+    from hubra.core.models.member import MembershipTier
+
+    tiers = []
+    for tid in tier_ids or []:
+        tier = db.session.get(MembershipTier, tid)
+        if tier is None:
+            raise_error(
+                400,
+                "VALIDATION_ERROR",
+                f"Tier {tid} not found",
+                {"tier_ids": [f"Tier {tid} not found"]},
+            )
+        if tier not in tiers:
+            tiers.append(tier)
+    return tiers
+
+
+def _no_open_group_with_roles(visibility: str, roles: list) -> None:
+    """Anyone may join an open group on their own, so it cannot give roles."""
+    if visibility == "open" and roles:
+        raise_error(
+            400,
+            "VALIDATION_ERROR",
+            "An open group cannot give roles: anyone could join it and get them",
+            {"role_ids": ["An open group cannot give roles"]},
+        )
+
+
+def group_member_ids(group_id: int) -> list[int]:
+    return list(
+        db.session.scalars(
+            select(member_groups.c.member_id).where(
+                member_groups.c.group_id == group_id
+            )
+        ).all()
+    )
+
+
+def _refresh_members(group_id: int) -> None:
+    from hubra.core.permissions import invalidate_member_permissions
+
+    for member_id in group_member_ids(group_id):
+        invalidate_member_permissions(member_id)
+
+
+def _apply_links(group: Group, data: dict, actor_id: int | None) -> None:
+    """Set the roles, tiers and default flag of *group* from *data*.
+
+    Linking a role gives it to everyone in the group, and linking a tier or
+    marking the group default puts members in it later without anyone
+    checking again, so the actor needs the right to give the group's roles
+    for each of these, as for a function's roles.
+    """
+    from hubra.core.permissions import check_grant
+
+    actor = _actor(actor_id)
+    if "role_ids" in data:
+        roles = _group_roles_from(data["role_ids"])
+        old = list(group.roles)
+        given = [r for r in roles if r not in old]
+        taken = [r for r in old if r not in roles]
+        if given or taken:
+            check_grant(actor, given=given, taken=taken)
+            group.roles = roles
+            db.session.flush()
+            _refresh_members(group.id)
+    _no_open_group_with_roles(group.visibility, list(group.roles))
+
+    adds_members_later = False
+    if "tier_ids" in data:
+        tiers = _tiers_from(data["tier_ids"])
+        new_tiers = [t for t in tiers if t not in group.tiers]
+        group.tiers = tiers
+        db.session.flush()
+        if new_tiers:
+            adds_members_later = True
+            for tier in new_tiers:
+                _join_tier_members(group, tier.id)
+    if "is_default" in data:
+        if data["is_default"] and not group.is_default:
+            adds_members_later = True
+        group.is_default = bool(data["is_default"])
+    if adds_members_later and group.roles:
+        check_grant(actor, given=list(group.roles))
+
+
+def _join_tier_members(group: Group, tier_id: int) -> None:
+    """The tier's current members are in the group from now on (unlinking
+    a tier later leaves them in it)."""
+    for member in db.session.scalars(
+        select(Member).where(Member.tier_id == tier_id, Member.archived_at.is_(None))
+    ).all():
+        _join_quietly(group, member)
+
+
+def set_tier_groups(tier, group_ids, actor_id: int | None) -> None:
+    """The tier side of ``tier_groups``: the groups *tier*'s members are in.
+    Newly linked groups get the tier's members now; the actor needs the
+    right to give the roles of those groups."""
+    from hubra.core.permissions import check_grant
+
+    groups = []
+    for gid in group_ids or []:
+        group = db.session.get(Group, gid)
+        if (
+            group is None
+            or group.archived_at is not None
+            or group.deleted_at is not None
+        ):
+            raise_error(
+                400,
+                "VALIDATION_ERROR",
+                f"Group {gid} not found",
+                {"group_ids": [f"Group {gid} not found"]},
+            )
+        if group not in groups:
+            groups.append(group)
+    new_groups = [g for g in groups if g not in tier.groups]
+    given = {r.id: r for g in new_groups for r in g.roles}
+    if given:
+        check_grant(_actor(actor_id), given=list(given.values()))
+    tier.groups = groups
+    db.session.flush()
+    for group in new_groups:
+        _join_tier_members(group, tier.id)
+
+
+def _in_group(group_id: int, member_id: int) -> bool:
+    return (
+        db.session.scalar(
+            select(func.count())
+            .select_from(member_groups)
+            .where(
+                member_groups.c.group_id == group_id,
+                member_groups.c.member_id == member_id,
+            )
+        )
+        or 0
+    ) > 0
+
+
+def _join_quietly(group: Group, member: Member) -> bool:
+    """Put *member* in *group* unless they are in it already. No grant
+    check: the default and tier groups were set up by someone who may give
+    their roles. Returns whether they joined."""
+    if group.archived_at is not None or group.deleted_at is not None:
+        return False
+    if _in_group(group.id, member.id):
+        return False
+    GroupService.add_member(group, member)
+    return True
+
+
+def join_automatic_groups(member: Member) -> list[int]:
+    """A new (or returning) member joins the default groups and the groups
+    of their tier. Returns the ids of the groups they joined."""
+    groups = list(
+        db.session.scalars(
+            select(Group).where(
+                Group.is_default.is_(True),
+                Group.archived_at.is_(None),
+                Group.deleted_at.is_(None),
+            )
+        ).all()
+    )
+    if member.tier_id is not None:
+        groups += _tier_group_list(member.tier_id)
+    joined = []
+    for group in groups:
+        if _join_quietly(group, member):
+            joined.append(group.id)
+    return joined
+
+
+def _tier_group_list(tier_id: int) -> list[Group]:
+    from hubra.core.models.group import tier_groups
+
+    return list(
+        db.session.scalars(
+            select(Group)
+            .join(tier_groups, tier_groups.c.group_id == Group.id)
+            .where(
+                tier_groups.c.tier_id == tier_id,
+                Group.archived_at.is_(None),
+                Group.deleted_at.is_(None),
+            )
+        ).all()
+    )
+
+
+def move_tier_groups(member: Member, old_tier_id: int | None) -> None:
+    """After a tier change: leave the old tier's groups (unless they are
+    default groups or groups of the new tier too) and join the new tier's."""
+    new_tier_id = member.tier_id
+    if old_tier_id == new_tier_id:
+        return
+    new_groups = _tier_group_list(new_tier_id) if new_tier_id is not None else []
+    keep = {g.id for g in new_groups}
+    if old_tier_id is not None:
+        for group in _tier_group_list(old_tier_id):
+            if group.id in keep or group.is_default:
+                continue
+            if _in_group(group.id, member.id):
+                GroupService.remove_member(member.id, group.id)
+    for group in new_groups:
+        _join_quietly(group, member)
+
+
 # ── GroupService (singular) ────────────────────────────────────────────────────
 
 
@@ -143,6 +386,7 @@ class GroupService:
         ):
             if field in data:
                 setattr(group, field, data[field])
+        _apply_links(group, data, actor_id)
 
         log_audit(
             actor_id=actor_id,
@@ -165,9 +409,6 @@ class GroupService:
 
         group = GroupService.get_by_id(group_id)
 
-        if group.is_default:
-            raise_error(409, "CONFLICT", "Default groups cannot be deleted")
-
         from hubra.core.services.binding_engine import (
             assert_source_deletable,
             assert_mail_address_owner_deletable,
@@ -178,6 +419,31 @@ class GroupService:
         assert_mail_address_owner_deletable("group", group_id)
 
         remove_for_group(group_id)
+
+        from hubra.core.models.function import FunctionHolder
+        from hubra.core.permissions import invalidate_member_permissions
+
+        # The members lose the roles the group gave them, and the holders
+        # of its group functions those of the functions.
+        affected = set(group_member_ids(group.id)) | set(
+            db.session.scalars(
+                select(FunctionHolder.member_id).where(
+                    FunctionHolder.group_id == group.id
+                )
+            ).all()
+        )
+        if group.roles:
+            from hubra.core.permissions import check_grant
+
+            check_grant(_actor(actor_id), taken=list(group.roles))
+        group.roles = []
+        group.tiers = []
+        db.session.flush()
+        db.session.execute(
+            delete(FunctionHolder).where(FunctionHolder.group_id == group.id)
+        )
+        for member_id in affected:
+            invalidate_member_permissions(member_id)
 
         db.session.execute(
             delete(member_groups).where(member_groups.c.group_id == group.id)
@@ -232,8 +498,11 @@ class GroupService:
         return db.session.scalars(query).all()  # type: ignore[return-value]
 
     @staticmethod
-    def add_member(group: Group, member: Member) -> None:
-        """Add a member to a group. Raises 409 if already a member."""
+    def add_member(group: Group, member: Member, actor_id: int | None = None) -> None:
+        """Add a member to a group. Raises 409 if already a member.
+
+        With *actor_id*, the actor needs the right to give the roles the group
+        gives (``None`` is the system: default and tier groups)."""
         existing = (
             db.session.scalar(
                 select(func.count())
@@ -247,10 +516,17 @@ class GroupService:
         )
         if existing > 0:
             raise_error(409, "CONFLICT", "Member is already in this group")
+        if actor_id is not None and group.roles:
+            from hubra.core.permissions import check_grant
+
+            check_grant(_actor(actor_id), given=list(group.roles))
 
         db.session.execute(
             insert(member_groups).values(member_id=member.id, group_id=group.id)
         )
+        from hubra.core.permissions import invalidate_member_permissions
+
+        invalidate_member_permissions(member.id)
 
         _trigger_group_mail_sync(group.id)
         emit(
@@ -261,8 +537,11 @@ class GroupService:
         )
 
     @staticmethod
-    def remove_member(member_id: int, group_id: int) -> None:
-        """Remove a member from a group."""
+    def remove_member(
+        member_id: int, group_id: int, actor_id: int | None = None
+    ) -> None:
+        """Remove a member from a group. With *actor_id*, the actor needs the
+        right to take the roles the group gives."""
         existing = (
             db.session.scalar(
                 select(func.count())
@@ -276,6 +555,11 @@ class GroupService:
         )
         if existing == 0:
             raise_error(404, "NOT_FOUND", "Member is not linked to this group")
+        group = db.session.get(Group, group_id)
+        if actor_id is not None and group is not None and group.roles:
+            from hubra.core.permissions import check_grant
+
+            check_grant(_actor(actor_id), taken=list(group.roles))
 
         db.session.execute(
             delete(member_groups).where(
@@ -283,6 +567,9 @@ class GroupService:
                 member_groups.c.group_id == group_id,
             )
         )
+        from hubra.core.permissions import invalidate_member_permissions
+
+        invalidate_member_permissions(member_id)
 
         # Also remove from GroupMembership if it exists
         db.session.execute(
@@ -343,6 +630,30 @@ class GroupService:
         return membership
 
     @staticmethod
+    def functions(group_id: int) -> list[dict]:
+        """The group functions held for this group and who holds them."""
+        from hubra.core.models.function import Function, FunctionHolder
+
+        rows = db.session.execute(
+            select(FunctionHolder, Function)
+            .join(Function, Function.id == FunctionHolder.function_id)
+            .where(FunctionHolder.group_id == group_id)
+            .order_by(Function.name, FunctionHolder.member_id)
+            .options(selectinload(FunctionHolder.member).selectinload(Member.user))
+        ).all()
+        return [
+            {
+                "function_id": fn.id,
+                "function_name": fn.name,
+                "member_id": holder.member_id,
+                "member_name": holder.member.name if holder.member else None,
+                "role_names": [r.name for r in fn.roles],
+            }
+            for holder, fn in rows
+            if holder.member is not None and holder.member.archived_at is None
+        ]
+
+    @staticmethod
     def get_mailing_list(group_id: int) -> list[dict]:
         """Return email addresses of all group members."""
         members = GroupService.list_members(group_id)
@@ -389,6 +700,8 @@ class GroupsService:
             .options(
                 selectinload(Group.lead).selectinload(Member.user),
                 selectinload(Group.parent_group),
+                selectinload(Group.roles),
+                selectinload(Group.tiers),
             )
         ).all()
 
@@ -428,6 +741,7 @@ class GroupsService:
         )
         db.session.add(group)
         db.session.flush()
+        _apply_links(group, data, actor_id)
 
         log_audit(
             actor_id=actor_id,

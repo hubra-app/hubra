@@ -550,6 +550,16 @@ export function MembersTab() {
                         })}
                       </Tag>
                     ))}
+                  {(m.groupRoles ?? [])
+                    .filter((gr) => !m.roles.includes(gr.name))
+                    .map((gr) => (
+                      <Tag key={`${gr.name}~${gr.group}`}>
+                        {t('members.roleViaGroup', '{{role}} (über Gruppe {{group}})', {
+                          role: roleLabel(gr.name),
+                          group: gr.group,
+                        })}
+                      </Tag>
+                    ))}
                   {(m.scopedRoles ?? []).map((sr) => (
                     <Tag key={`${sr.name}@${sr.group}`}>
                       {t('members.roleForGroup', '{{role}} (nur {{group}})', {

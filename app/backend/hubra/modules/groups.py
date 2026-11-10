@@ -45,5 +45,5 @@ module = Module(
             description="Join or leave an open group",
         ),
     ),
-    tables=("groups", "group_memberships"),
+    tables=("groups", "group_memberships", "group_roles", "tier_groups"),
 )

@@ -99,3 +99,41 @@ deploy (`--tenant <slug>` for one club). The first run in a club:
 
 Until that has run, nothing is hidden. Later runs only add what is missing
 and give the `role_defaults` of modules the club has switched on since.
+
+## Groups
+
+Groups can give roles, hold functions of their own, and fill themselves.
+
+- **A group gives roles** (Gruppe › Bearbeiten › "Gibt die Rollen"):
+  everyone in the group holds them for the whole club while they are in it;
+  leaving the group takes them away. Owner and admin roles can't be given
+  this way (being put in a group never makes anyone an admin), and an open
+  group gives no roles, since anyone may join it on their own. Adding someone
+  to such a group, or taking them out, needs the right to give or take its
+  roles, as for a function (`check_grant`); a group leader without those
+  rights can't.
+- **Group functions** (Funktionen › Bearbeiten › "Gruppenfunktion"): a
+  function such as Trainer/in is filled per group, on the function's page
+  (pick the group, then the person) or on the group's Funktionen tab. Its
+  roles count in that group only, like a role held for one group
+  (`member_role_scopes`), so a group function can't give an admin role.
+  `max_holders` counts per group. A function switches between club and group
+  function only while nobody holds it.
+- **Default groups** ("Neue Mitglieder kommen in diese Gruppe"): every new or
+  returning member joins them (invite accepted, application approved, added
+  by the platform). Existing members aren't moved.
+- **Tier groups** (on the group, "Mitglieder dieser Stufen", or on the tier,
+  "Mitglieder kommen in die Gruppen"): the tier's members are in the group.
+  Linking a tier adds its current members at once; a member whose tier
+  changes leaves the old tier's groups (unless they are default groups or
+  groups of the new tier too) and joins the new tier's. Unlinking leaves
+  everyone where they are.
+
+Marking a group default or linking a tier to it puts members in it later
+without asking anyone, so it needs the right to give the group's roles, as
+setting the roles does.
+
+Where a member's roles come from shows in the members list and on the
+member's page: "(über Kassier/in)" for a function, "(über Gruppe Jugend)"
+for a group, "(nur Jugend)" for a role or group function held for one group.
+The role filter and the member counts on the roles page include all of them.

@@ -44,6 +44,13 @@ class GroupSchema(ma.SQLAlchemyAutoSchema):
     visibility = fields.Str(dump_default="visible")
     parent_group_id = fields.Int(allow_none=True, dump_default=None)
     deleted_at = fields.DateTime(allow_none=True, dump_only=True, dump_default=None)
+    is_default = fields.Bool(dump_only=True)
+    # The roles everyone in the group holds, and the tiers whose members
+    # are in it.
+    roles = fields.Method("get_roles", dump_only=True)
+    role_ids = fields.Method("get_role_ids", dump_only=True)
+    tiers = fields.Method("get_tiers", dump_only=True)
+    tier_ids = fields.Method("get_tier_ids", dump_only=True)
 
     def dump(self, obj, *, many=None):
         if not (self.many if many is None else many):
@@ -65,6 +72,18 @@ class GroupSchema(ma.SQLAlchemyAutoSchema):
                 .where(member_groups.c.group_id == obj.id)
             ),
         )
+
+    def get_roles(self, obj):
+        return [{"id": r.id, "name": r.name} for r in obj.roles]
+
+    def get_role_ids(self, obj):
+        return [r.id for r in obj.roles]
+
+    def get_tiers(self, obj):
+        return [{"id": t.id, "name": t.name} for t in obj.tiers]
+
+    def get_tier_ids(self, obj):
+        return [t.id for t in obj.tiers]
 
     def get_lead_name(self, obj):
         return obj.lead.name if obj.lead else None
@@ -96,6 +115,9 @@ class GroupCreateSchema(ma.Schema):
     email_alias = fields.Str(allow_none=True, load_default=None)
     visibility = fields.Str(load_default="visible", validate=validate.OneOf(VISIBILITIES))
     parent_group_id = fields.Int(allow_none=True, load_default=None)
+    is_default = fields.Bool()
+    role_ids = fields.List(fields.Int())
+    tier_ids = fields.List(fields.Int())
 
 
 class GroupUpdateSchema(ma.Schema):
@@ -118,6 +140,9 @@ class GroupUpdateSchema(ma.Schema):
     email_alias = fields.Str(allow_none=True)
     visibility = fields.Str(validate=validate.OneOf(VISIBILITIES))
     parent_group_id = fields.Int(allow_none=True)
+    is_default = fields.Bool()
+    role_ids = fields.List(fields.Int())
+    tier_ids = fields.List(fields.Int())
 
 
 class GroupMembershipSchema(ma.Schema):

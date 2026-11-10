@@ -136,6 +136,14 @@ export function MemberDetailScreen({
           fn: fr.function,
         }),
       ),
+    ...(m.groupRoles ?? [])
+      .filter((gr) => !m.roles.includes(gr.name))
+      .map((gr) =>
+        t('members.roleViaGroup', '{{role}} (über Gruppe {{group}})', {
+          role: roleLabel(gr.name),
+          group: gr.group,
+        }),
+      ),
     ...(m.scopedRoles ?? []).map((sr) =>
       t('members.roleForGroup', '{{role}} (nur {{group}})', {
         role: roleLabel(sr.name),

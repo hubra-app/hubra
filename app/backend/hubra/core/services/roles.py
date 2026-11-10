@@ -89,8 +89,17 @@ class RoleService:
             target_label=role.name,
         )
 
-        db.session.delete(role)
+        # Club schemas have no foreign keys: unlink the role from the
+        # functions and groups that gave it.
+        from sqlalchemy import delete
+
+        from hubra.core.models.function import function_roles
+        from hubra.core.models.group import group_roles
+
         invalidate_role_permissions(role_id)
+        db.session.execute(delete(function_roles).where(function_roles.c.role_id == role.id))
+        db.session.execute(delete(group_roles).where(group_roles.c.role_id == role.id))
+        db.session.delete(role)
 
     @staticmethod
     def get_permissions(role_id: int) -> list[str]:
@@ -188,8 +197,8 @@ class RolesService:
 
     @staticmethod
     def member_counts() -> dict[int, int]:
-        """Role id -> how many current members hold it, themselves or through
-        a function whose term runs."""
+        """Role id -> how many current members hold it, themselves, through
+        a club function whose term runs or through a group they are in."""
         from datetime import date
 
         from sqlalchemy import func, union
@@ -198,6 +207,9 @@ class RolesService:
         from hubra.core.models.function import FunctionHolder, function_roles
         from hubra.core.models.member import Member, member_roles
 
+        from hubra.core.models.group import Group, group_roles
+        from hubra.core.models.member import member_groups
+
         holds = union(
             select(member_roles.c.role_id, member_roles.c.member_id),
             select(function_roles.c.role_id, FunctionHolder.member_id)
@@ -205,7 +217,12 @@ class RolesService:
                 function_roles,
                 function_roles.c.function_id == FunctionHolder.function_id,
             )
-            .where(*_active_term(date.today())),
+            .where(FunctionHolder.group_id.is_(None), *_active_term(date.today())),
+            # ... and through a group they are in.
+            select(group_roles.c.role_id, member_groups.c.member_id)
+            .join(Group, Group.id == group_roles.c.group_id)
+            .join(member_groups, member_groups.c.group_id == Group.id)
+            .where(Group.archived_at.is_(None), Group.deleted_at.is_(None)),
         ).subquery()
         rows = db.session.execute(
             select(holds.c[0], func.count())

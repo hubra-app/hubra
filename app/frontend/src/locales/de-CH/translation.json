@@ -1420,7 +1420,18 @@
     },
     "grantsRoles": "Gibt die Rollen",
     "grantsRolesHint": "Wer die Funktion innehat, hat diese Rollen, bis die Funktion endet (zum Beispiel Vorstand und Kassier/in).",
-    "givesRoles": "Gibt die Rollen {{roles}}"
+    "givesRoles": "Gibt die Rollen {{roles}}",
+    "perGroupBadge": "Gruppenfunktion",
+    "scope": "Gilt für",
+    "scopeGroup": "Eine Gruppe je Person (Rollen gelten nur dort)",
+    "scopeClub": "Den ganzen Verein",
+    "maxHoldersPerGroup": "Max. Personen je Gruppe",
+    "forGroup": "Für die Gruppe",
+    "pickGroup": "Gruppe wählen, dann Person zuweisen",
+    "perGroup": "Gruppenfunktion",
+    "perGroupLocked": "Zuerst alle Personen aus der Funktion nehmen, dann umstellen.",
+    "perGroupHint": "Wird je Gruppe besetzt (zum Beispiel Trainer/in). Die Rollen gelten nur in der Gruppe der Person.",
+    "grantsRolesGroupHint": "Wer die Funktion in einer Gruppe innehat, hat diese Rollen für diese Gruppe. Admin-Rollen gehen hier nicht."
   },
   "groups": {
     "addGroup": "Gruppe hinzufügen",
@@ -1507,6 +1518,33 @@
       "about": "Gruppe",
       "parent": "Gehört zu",
       "mail": "Mailadresse"
+    },
+    "functions": {
+      "assigned": "Funktion vergeben",
+      "removed": "Funktion entzogen",
+      "tab": "Funktionen",
+      "empty": "Keine Funktion in dieser Gruppe besetzt. Gruppenfunktionen (zum Beispiel Trainer/in) legst du unter Mitglieder › Funktionen an.",
+      "rolesHere": "hier: {{roles}}",
+      "function": "Funktion",
+      "person": "Person"
+    },
+    "default": {
+      "badge": "Für neue Mitglieder",
+      "short": "Neue Mitglieder",
+      "yes": "kommen in diese Gruppe",
+      "no": "nicht automatisch",
+      "label": "Neue Mitglieder kommen in diese Gruppe",
+      "hint": "Gilt für alle, die ab jetzt beitreten. Wer schon Mitglied ist, wird nicht verschoben."
+    },
+    "roles": {
+      "label": "Gibt die Rollen",
+      "openHint": "Eine offene Gruppe gibt keine Rollen: alle könnten beitreten.",
+      "hint": "Alle in der Gruppe haben diese Rollen im ganzen Verein, solange sie in der Gruppe sind. Admin-Rollen gehen hier nicht."
+    },
+    "tiers": {
+      "label": "Mitglieder dieser Stufen",
+      "hint": "Wer eine dieser Stufen hat, ist in der Gruppe. Bei einem Stufenwechsel wechselt auch die Gruppe.",
+      "none": "Keine Stufe"
     }
   },
   "mail": {
@@ -2174,7 +2212,8 @@
       "byStatus": "Nach Status",
       "byTier": "Nach Stufe",
       "todayNote": "Status und Stufe sind die heutigen."
-    }
+    },
+    "roleViaGroup": "{{role}} (über Gruppe {{group}})"
   },
   "notifications": {
     "invoicePaid": "Rechnung bezahlt",
@@ -2780,7 +2819,10 @@
       "coefficientHint": "z. B. 0.70, um 70 % der Beiträge anderer Stufen abzuziehen",
       "roundHint": "Aufrunden auf (z. B. 5 → nächste 5 CHF)",
       "deductHint": "Stufen, deren Beiträge in der Formel abgezogen werden",
-      "noOtherTiers": "Keine anderen Stufen vorhanden"
+      "noOtherTiers": "Keine anderen Stufen vorhanden",
+      "groups": "Mitglieder kommen in die Gruppen",
+      "groupsHint": "Wer diese Stufe hat, ist in diesen Gruppen. Bei einem Stufenwechsel wechseln auch die Gruppen.",
+      "noGroups": "Keine Gruppe"
     },
     "type": {
       "fixed": "Fester Betrag",

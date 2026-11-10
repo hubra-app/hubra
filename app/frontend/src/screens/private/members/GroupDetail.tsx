@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
-import { Anchor, Badge, Button, Paper } from '@mantine/core'
+import { ActionIcon, Anchor, Badge, Button, Group as Row, Paper, Select, Stack, Text } from '@mantine/core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
-import { IconBolt, IconClock, IconInfoCircle, IconPencil, IconTrash } from '@tabler/icons-react'
+import { IconBolt, IconClock, IconInfoCircle, IconPencil, IconStar, IconTrash, IconX } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { useAuth, useNav, useToast } from '@/context/AppContext'
 import { ConfirmModal, LoadingSpinner, MemberRoster, Tabs, type SlideOverMember } from '@/components/ui'
@@ -17,7 +17,10 @@ import {
   DetailSection,
   RecordActivity,
 } from '@/components/detail'
-import { addGroupMember, deleteGroup, listGroups, removeGroupMember } from '@/api/groups'
+import { addGroupMember, deleteGroup, listGroupFunctions, listGroups, removeGroupMember } from '@/api/groups'
+import { assignHolder, listFunctions, removeHolder } from '@/api/functions'
+import { MemberPicker } from '@/components/MemberPicker'
+import { roleLabel } from '@/roles'
 import { listGroupMembers } from '@/api/members'
 import { useMemberSearch } from '@/data/members'
 import { qk } from '@/data/keys'
@@ -47,6 +50,19 @@ export function GroupDetailScreen() {
     enabled: !!group,
   })
   const { data: searchData } = useMemberSearch(searchQuery, { enabled: searchQuery.length >= 2 })
+  const { data: groupFunctions = [] } = useQuery({
+    queryKey: [...qk.groups.members(id ?? ''), 'functions'],
+    queryFn: () => listGroupFunctions(id!),
+    enabled: !!group,
+  })
+  const canAssign = hasPermission('functions.functions.update')
+  const { data: allFunctions = [] } = useQuery({
+    queryKey: qk.functions,
+    queryFn: () => listFunctions(),
+    enabled: !!group && canAssign,
+  })
+  const [pickFunction, setPickFunction] = useState<string | null>(null)
+  const [pickMember, setPickMember] = useState<string | null>(null)
 
   const roster: SlideOverMember[] = useMemo(
     () =>
@@ -121,8 +137,34 @@ export function GroupDetailScreen() {
     }
   }
 
+  const groupFunctionOptions = allFunctions
+    .filter((f) => f.perGroup)
+    .map((f) => ({ value: String(f.id), label: f.name }))
+  const refreshFunctions = () => {
+    queryClient.invalidateQueries({ queryKey: [...qk.groups.members(group.id), 'functions'] })
+    queryClient.invalidateQueries({ queryKey: qk.functions })
+  }
+  const assign = () => {
+    if (!pickFunction || !pickMember) return
+    assignHolder(Number(pickFunction), Number(pickMember), Number(group.id))
+      .then(() => {
+        refreshFunctions()
+        setPickMember(null)
+        notify('success', t('common.saved', 'Gespeichert'), t('groups.functions.assigned', 'Funktion vergeben'))
+      })
+      .catch(fail)
+  }
+  const unassign = (functionId: number, memberId: number) =>
+    removeHolder(functionId, memberId, Number(group.id))
+      .then(() => {
+        refreshFunctions()
+        notify('info', t('common.removed', 'Entfernt'), t('groups.functions.removed', 'Funktion entzogen'))
+      })
+      .catch(fail)
+
   const tabs = [
     { id: 'members', label: t('common.members', 'Mitglieder') },
+    { id: 'functions', label: t('groups.functions.tab', 'Funktionen') },
     ...(canAudit ? [{ id: 'activity', label: t('members.detail.activity') }] : []),
   ]
 
@@ -140,6 +182,11 @@ export function GroupDetailScreen() {
         badges={
           <>
             <VisibilityBadge visibility={group.visibility ?? 'visible'} />
+            {group.isDefault && (
+              <Badge variant="light" color="yellow" leftSection={<IconStar size={12} />} style={{ textTransform: 'none' }}>
+                {t('groups.default.badge', 'Für neue Mitglieder')}
+              </Badge>
+            )}
             {group.sessions && (
               <Badge variant="light" leftSection={<IconClock size={12} />} style={{ textTransform: 'none' }}>
                 {group.sessions}
@@ -194,6 +241,17 @@ export function GroupDetailScreen() {
             {t(`groups.visibility.${group.visibility ?? 'visible'}`)}
           </DetailRow>
           <DetailRow label={t('groups.sessions', 'Treffen')}>{group.sessions || <DetailEmpty />}</DetailRow>
+          <DetailRow label={t('groups.roles.label', 'Gibt die Rollen')}>
+            {group.roles?.length ? group.roles.map((r) => roleLabel(r.name)).join(', ') : <DetailEmpty />}
+          </DetailRow>
+          <DetailRow label={t('groups.tiers.label', 'Mitglieder dieser Stufen')}>
+            {group.tiers?.length ? group.tiers.map((tier) => tier.name).join(', ') : <DetailEmpty />}
+          </DetailRow>
+          <DetailRow label={t('groups.default.short', 'Neue Mitglieder')}>
+            {group.isDefault
+              ? t('groups.default.yes', 'kommen in diese Gruppe')
+              : t('groups.default.no', 'nicht automatisch')}
+          </DetailRow>
           {group.parentGroupName && (
             <DetailRow label={t('groups.detail.parent', 'Gehört zu')}>
               {group.parentGroupId != null ? (
@@ -213,7 +271,7 @@ export function GroupDetailScreen() {
         </DetailSection>
 
         <Paper withBorder p={{ base: 16, sm: 20 }} pt={8}>
-          {tabs.length > 1 && <Tabs tabs={tabs} activeTab={tab} onTabChange={setTab} />}
+          <Tabs tabs={tabs} activeTab={tab} onTabChange={setTab} />
           {tab === 'members' && (
             <MemberRoster
               members={roster}
@@ -227,6 +285,75 @@ export function GroupDetailScreen() {
               onOpen={canSeeMembers ? (m) => go(`/app/members/${m.id}`) : undefined}
               testId="group-members"
             />
+          )}
+          {tab === 'functions' && (
+            <Stack gap={10} mt={12} data-testid="group-functions">
+              {groupFunctions.length === 0 && (
+                <Text size="sm" c="dimmed">
+                  {t(
+                    'groups.functions.empty',
+                    'Keine Funktion in dieser Gruppe besetzt. Gruppenfunktionen (zum Beispiel Trainer/in) legst du unter Mitglieder › Funktionen an.',
+                  )}
+                </Text>
+              )}
+              {groupFunctions.map((f) => (
+                <Row key={`${f.functionId}:${f.memberId}`} justify="space-between" wrap="nowrap">
+                  <div style={{ minWidth: 0 }}>
+                    <Text size="sm" fw={600}>
+                      {f.functionName}
+                    </Text>
+                    <Text size="sm">
+                      {canSeeMembers ? (
+                        <Anchor size="sm" onClick={() => go(`/app/members/${f.memberId}`)}>
+                          {f.memberName}
+                        </Anchor>
+                      ) : (
+                        f.memberName
+                      )}
+                      {f.roleNames.length > 0 && (
+                        <Text span size="xs" c="dimmed">
+                          {' · '}
+                          {t('groups.functions.rolesHere', 'hier: {{roles}}', {
+                            roles: f.roleNames.map(roleLabel).join(', '),
+                          })}
+                        </Text>
+                      )}
+                    </Text>
+                  </div>
+                  {canAssign && (
+                    <ActionIcon
+                      variant="subtle"
+                      color="red"
+                      aria-label={t('common.remove', 'Entfernen')}
+                      onClick={() => unassign(f.functionId, f.memberId)}
+                    >
+                      <IconX size={16} />
+                    </ActionIcon>
+                  )}
+                </Row>
+              ))}
+              {canAssign && groupFunctionOptions.length > 0 && (
+                <Row align="flex-end" gap={8} wrap="wrap">
+                  <Select
+                    style={{ flex: '1 1 160px' }}
+                    label={t('groups.functions.function', 'Funktion')}
+                    data={groupFunctionOptions}
+                    value={pickFunction}
+                    onChange={setPickFunction}
+                    data-testid="group-function-pick"
+                  />
+                  <div style={{ flex: '1 1 200px' }}>
+                    <Text size="sm" fw={500} mb={4}>
+                      {t('groups.functions.person', 'Person')}
+                    </Text>
+                    <MemberPicker value={pickMember ?? ''} onChange={(v) => setPickMember(v || null)} />
+                  </div>
+                  <Button onClick={assign} disabled={!pickFunction || !pickMember} data-testid="group-function-assign">
+                    {t('functions.assignHolder', 'Person zuweisen')}
+                  </Button>
+                </Row>
+              )}
+            </Stack>
           )}
           {tab === 'activity' && <RecordActivity type="Group" id={group.id} testId="group-activity" />}
         </Paper>

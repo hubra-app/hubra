@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Anchor, Button, Paper } from '@mantine/core'
+import { Anchor, Button, Paper, Select } from '@mantine/core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import { IconInfoCircle, IconMail, IconPencil, IconTrash, IconUserCog } from '@tabler/icons-react'
@@ -42,6 +42,8 @@ export function FunctionDetailScreen() {
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  // A group function: the group the next holder holds it for.
+  const [forGroup, setForGroup] = useState<string | null>(null)
 
   const { data: functions, isLoading } = useQuery({
     queryKey: qk.functions,
@@ -51,23 +53,34 @@ export function FunctionDetailScreen() {
   const { data: lookups } = useQuery(lookupsQuery)
   const { data: searchData } = useMemberSearch(searchQuery, { enabled: searchQuery.length >= 2 })
 
+  // A group function's holders are named per group: one row each, keyed
+  // member:group so the same person can hold it in two groups.
   const holders: SlideOverMember[] = useMemo(
     () =>
-      (fn?.holders ?? []).map((h) => ({
-        id: String(h.memberId),
-        name: h.memberName,
-        email: h.assignedAt ? t('members.detail.since', 'seit {{date}}', { date: formatDate(h.assignedAt) }) : '',
-        avatarColor: 'var(--hb-text-2)',
-      })),
+      (fn?.holders ?? []).map((h) => {
+        const since = h.assignedAt
+          ? t('members.detail.since', 'seit {{date}}', { date: formatDate(h.assignedAt) })
+          : ''
+        return {
+          id: h.groupId != null ? `${h.memberId}:${h.groupId}` : String(h.memberId),
+          name: h.memberName,
+          email: h.groupName ? [h.groupName, since].filter(Boolean).join(' · ') : since,
+          avatarColor: 'var(--hb-text-2)',
+        }
+      }),
     [fn, t],
   )
   const searchResults = useMemo(() => {
     if (!searchData || searchQuery.length < 2) return undefined
-    const held = new Set(holders.map((h) => h.id))
+    const held = new Set(
+      (fn?.holders ?? [])
+        .filter((h) => (fn?.perGroup ? String(h.groupId) === forGroup : true))
+        .map((h) => String(h.memberId)),
+    )
     return searchData.members
       .filter((m) => !held.has(m.id))
       .map((m) => ({ id: m.id, name: m.name, email: m.email, avatarColor: m.avatarColor }))
-  }, [searchData, holders, searchQuery])
+  }, [searchData, fn, forGroup, searchQuery])
 
   const back = '/app/members/functions'
   const backLabel = t('functions.backToFunctions', 'Zurück zu den Funktionen')
@@ -88,25 +101,34 @@ export function FunctionDetailScreen() {
       .filter((name): name is string => !!name)
       .map(roleLabel)
       .join(', ') || null
-  const full = fn.holders.length >= fn.maxHolders
+  // A group function's places count per group.
+  const groupId = fn.perGroup && forGroup ? Number(forGroup) : null
+  const full = fn.perGroup
+    ? groupId == null || fn.holders.filter((h) => h.groupId === groupId).length >= fn.maxHolders
+    : fn.holders.length >= fn.maxHolders
+  const groupOptions = lookups
+    ? [...lookups.groups.entries()].map(([gid, g]) => ({ value: String(gid), label: g.name }))
+    : []
   const refresh = () => queryClient.invalidateQueries({ queryKey: qk.functions })
   const fail = (err: unknown) =>
     notify('error', t('common.error'), err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'))
 
   const add = (m: SlideOverMember) =>
-    assignHolder(fn.id, Number(m.id))
+    assignHolder(fn.id, Number(m.id), groupId)
       .then(() => {
         refresh()
         notify('success', t('common.saved', 'Gespeichert'), `${m.name} → ${fn.name}`)
       })
       .catch(fail)
-  const remove = (m: SlideOverMember) =>
-    removeHolder(fn.id, Number(m.id))
+  const remove = (m: SlideOverMember) => {
+    const [memberId, holderGroup] = m.id.split(':')
+    return removeHolder(fn.id, Number(memberId), holderGroup ? Number(holderGroup) : null)
       .then(() => {
         refresh()
         notify('info', t('common.removed', 'Entfernt'), `${m.name} ← ${fn.name}`)
       })
       .catch(fail)
+  }
   const destroy = async () => {
     try {
       await deleteFunction(fn.id)
@@ -137,6 +159,7 @@ export function FunctionDetailScreen() {
         badges={
           <>
             {role && <Tag color="var(--mantine-color-acc-text)">{t('functions.givesRole', 'Gibt die Rolle {{role}}', { role })}</Tag>}
+            {fn.perGroup && <Tag>{t('functions.perGroupBadge', 'Gruppenfunktion')}</Tag>}
             {fn.holders.length === 0 && <Tag>{t('functions.noHolder', 'Unbesetzt')}</Tag>}
           </>
         }
@@ -163,7 +186,7 @@ export function FunctionDetailScreen() {
           <>
             <DetailFact label={t('functions.holders', 'Besetzt durch')}>
               <span className="num" data-testid="function-holder-count">
-                {fn.holders.length} / {fn.maxHolders}
+                {fn.perGroup ? fn.holders.length : `${fn.holders.length} / ${fn.maxHolders}`}
               </span>
             </DetailFact>
             <DetailFact label={t('functions.grantsRoles', 'Gibt die Rollen')}>{role ?? '—'}</DetailFact>
@@ -173,7 +196,19 @@ export function FunctionDetailScreen() {
 
       <div className="detail-grid">
         <DetailSection icon={<IconInfoCircle size={16} />} title={t('functions.detail.about', 'Funktion')}>
-          <DetailRow label={t('functions.maxHolders', 'Max. Anzahl Personen')} mono>
+          <DetailRow label={t('functions.scope', 'Gilt für')}>
+            {fn.perGroup
+              ? t('functions.scopeGroup', 'Eine Gruppe je Person (Rollen gelten nur dort)')
+              : t('functions.scopeClub', 'Den ganzen Verein')}
+          </DetailRow>
+          <DetailRow
+            label={
+              fn.perGroup
+                ? t('functions.maxHoldersPerGroup', 'Max. Personen je Gruppe')
+                : t('functions.maxHolders', 'Max. Anzahl Personen')
+            }
+            mono
+          >
             {fn.maxHolders}
           </DetailRow>
           <DetailRow label={t('functions.grantsRoles', 'Gibt die Rollen')}>{role ?? <DetailEmpty />}</DetailRow>
@@ -189,6 +224,19 @@ export function FunctionDetailScreen() {
 
         <Paper withBorder p={{ base: 16, sm: 20 }} pt={8}>
           {tabs.length > 1 && <Tabs tabs={tabs} activeTab={tab} onTabChange={setTab} />}
+          {tab === 'holders' && fn.perGroup && canUpdate && (
+            <Select
+              mt={12}
+              label={t('functions.forGroup', 'Für die Gruppe')}
+              placeholder={t('functions.pickGroup', 'Gruppe wählen, dann Person zuweisen')}
+              data={groupOptions}
+              value={forGroup}
+              onChange={setForGroup}
+              searchable
+              clearable
+              data-testid="function-for-group"
+            />
+          )}
           {tab === 'holders' && (
             <MemberRoster
               title={t('functions.holders', 'Besetzt durch')}
