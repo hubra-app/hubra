@@ -67,6 +67,18 @@ export interface StaffCase {
   /** The reporter first, then everyone staff added. */
   people?: CasePerson[]
   discord?: { enabled: boolean; threadId: string | null; threadUrl: string | null }
+  /** The reporter's last API calls before reporting, with the error group a failed one hit. */
+  requests?: CaseRequest[]
+}
+
+export interface CaseRequest {
+  id: string
+  method?: string
+  path?: string
+  status?: number
+  at?: string
+  code?: string
+  errorGroup: { id: number; type: string; route: string; status: 'open' | 'resolved' } | null
 }
 
 /** Where someone stands in the case's Discord thread. */

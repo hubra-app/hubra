@@ -1,4 +1,4 @@
-import { apiFetch } from '@hubra/api-client'
+import { apiFetch, type RecentRequest } from '@hubra/api-client'
 import type { RoadmapItem, RoadmapStatus } from '@hubra/ui'
 import type { DeviceInfo } from '@/screens/private/support/deviceInfo'
 
@@ -66,6 +66,8 @@ export interface NewCase {
   severity?: Severity | null
   page?: string
   fingerprint: DeviceInfo
+  /** The last API calls (request id, method, path, status), see recentRequests. */
+  requests?: RecentRequest[]
 }
 
 export function sendCase(body: NewCase) {

@@ -10,6 +10,7 @@ section and position, or the apps show that version in English.
 ### Added
 
 - **Post-deploy steps run themselves**: once every backend process runs a new build, a worker runs `flask db upgrade`, `sync-tenant-schemas`, `sync-permissions`, `seed` and `plugins sync` once for that build, unless an init step is already doing it. manage › Diagnostics › System health › Builds shows each step and the output of one that failed, with **Run now** to start them again; a failure also sends an upgrades alert. A platform setting (Diagnostics › Settings) turns it off. Operators no longer need to run these by hand after a release.
+- **Problem reports carry the request ids**: "Problem melden" in the club app also sends the last ten API calls of the session (request id, method, path without query, status, error code). On the case in manage › Reports & ideas, **Last requests** lists them and links a failed one to its error group under Diagnostics › Errors.
 
 ### Changed
 

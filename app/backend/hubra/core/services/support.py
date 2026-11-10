@@ -17,6 +17,7 @@ when staff answer or change the status.
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime, timezone
 
 from sqlalchemy import func, or_, select
@@ -125,6 +126,44 @@ def clean_fingerprint(raw) -> dict:
     return out
 
 
+# The last API calls of the session the report came from (api-client
+# recentRequests): request id, method, path without query, status, time,
+# error code.  Staff jump from them to the error group.
+REQUESTS_MAX = 10
+_REQ_ID = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
+_METHODS = ("GET", "POST", "PUT", "PATCH", "DELETE")
+
+
+def clean_requests(raw) -> list[dict]:
+    if not isinstance(raw, list):
+        return []
+    out: list[dict] = []
+    for item in raw[-REQUESTS_MAX:]:
+        if not isinstance(item, dict):
+            continue
+        rid = item.get("id")
+        if not isinstance(rid, str) or not _REQ_ID.match(rid):
+            continue
+        entry: dict = {"id": rid}
+        method = item.get("method")
+        if isinstance(method, str) and method.upper() in _METHODS:
+            entry["method"] = method.upper()
+        path = item.get("path")
+        if isinstance(path, str) and path.startswith("/"):
+            entry["path"] = path.split("?", 1)[0].split("#", 1)[0][:200]
+        status = item.get("status")
+        if isinstance(status, int) and not isinstance(status, bool) and 100 <= status < 600:
+            entry["status"] = status
+        at = item.get("at")
+        if isinstance(at, str):
+            entry["at"] = at[:40]
+        code = item.get("code")
+        if isinstance(code, str) and code:
+            entry["code"] = code[:64]
+        out.append(entry)
+    return out
+
+
 def _with_version(fp: dict) -> dict:
     """The server's own version, not what the browser claims."""
     try:
@@ -168,6 +207,9 @@ def submit(user_id: int, tenant_id: int | None, body: dict) -> SupportCase:
         value = _text(body.get(key), key, TEXT_MAX)
         if value:
             details[key] = value
+    requests = clean_requests(body.get("requests"))
+    if requests:
+        details["requests"] = requests
     area = body.get("area")
     if area is not None and area not in AREAS:
         raise SupportError("Unknown area")
@@ -230,6 +272,9 @@ def submit_guest(body: dict) -> SupportCase:
     mail = _text(body.get("mail"), "mail", 120)
     if mail:
         details["guest"]["mail"] = mail
+    requests = clean_requests(body.get("requests"))
+    if requests:
+        details["requests"] = requests
     case = SupportCase(
         kind=kind,
         status="open",
@@ -713,6 +758,11 @@ def staff_detail(case: SupportCase) -> dict:
     )
     item["club"] = _clubs({case.tenant_id}).get(case.tenant_id)
     item["comments"] = comments_for(case, staff=True)
+    from hubra.core.services import error_tracker
+
+    requests = list((case.details or {}).get("requests") or [])
+    errors = error_tracker.groups_for_requests([r["id"] for r in requests if r.get("id")])
+    item["requests"] = [{**r, "errorGroup": errors.get(r.get("id"))} for r in requests]
     merged = db.session.scalars(
         select(SupportCase)
         .where(SupportCase.merged_into_id == case.id)

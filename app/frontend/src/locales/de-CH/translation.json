@@ -3886,7 +3886,9 @@
       "tablet": "Tablet",
       "desktop": "Computer",
       "theme_light": "Hell",
-      "theme_dark": "Dunkel"
+      "theme_dark": "Dunkel",
+      "requests": "Letzte Anfragen an Hubra",
+      "requestsFailed": "{{count}}, davon {{failed}} mit Fehler"
     },
     "page": {
       "title": "Meldungen und Ideen",

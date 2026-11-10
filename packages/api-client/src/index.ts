@@ -20,3 +20,5 @@ export type { InstanceInfo, LegalLinks, MaintenanceState } from "./client";
 export type { FieldErrors } from "./errors";
 export { redirectTo, recentRedirects } from "./redirectGuard";
 export type { Hop as RedirectHop } from "./redirectLoop";
+export { recentRequests } from "./recentRequests";
+export type { RecentRequest } from "./recentRequests";
