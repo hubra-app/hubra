@@ -56,6 +56,7 @@ import { CommentItem } from './CommentItem'
 import { CommentModeration } from './CommentModeration'
 import { GroupBadge, GroupField } from './ContentGroupFields'
 import { PostLanguagesField } from './PostLanguagesField'
+import { PostChannelsField } from './PostChannelsField'
 import { useContentGroups } from './contentGroups'
 import { fromLocalInput, toLocalInput } from './localInput'
 import { formatDateTime } from '@/format'
@@ -76,6 +77,7 @@ const postSchema = z.object({
   publishAt: z.string(),
   hideAfter: z.string(),
   mustRead: z.boolean(),
+  channels: z.array(z.string()).nullable(),
 })
 type PostForm = z.infer<typeof postSchema>
 
@@ -141,7 +143,7 @@ export function PostsTab() {
 
   const form = useForm<PostForm>({
     validate: zod4Resolver(postSchema),
-    initialValues: { title: '', summary: '', body: '', groupId: '', language: readerLanguage(), translations: {}, publishAt: '', hideAfter: '', mustRead: false },
+    initialValues: { title: '', summary: '', body: '', groupId: '', language: readerLanguage(), translations: {}, publishAt: '', hideAfter: '', mustRead: false, channels: null },
   })
   const formScope = editTarget ? updateScope : createScope
 
@@ -156,6 +158,7 @@ export function PostsTab() {
       publishAt: '',
       hideAfter: '',
       mustRead: false,
+      channels: null,
     })
     setAddOpen(true)
   }
@@ -172,6 +175,7 @@ export function PostsTab() {
       publishAt: toLocalInput(post.publishAt),
       hideAfter: toLocalInput(post.hideAfter),
       mustRead: post.mustRead,
+      channels: post.channels,
     })
   }
 
@@ -187,6 +191,7 @@ export function PostsTab() {
         publishAt: fromLocalInput(data.publishAt),
         hideAfter: fromLocalInput(data.hideAfter),
         mustRead: data.mustRead,
+        channels: data.channels,
       })
       postCache.prepend(post)
       setAddOpen(false)
@@ -238,6 +243,8 @@ export function PostsTab() {
           ? { hideAfter: fromLocalInput(data.hideAfter) }
           : {}),
         mustRead: data.mustRead,
+        // Until it goes out: then it has been announced.
+        ...(editTarget.publishAt ? { channels: data.channels } : {}),
       })
       postCache.replace(post)
       setEditTarget(null)
@@ -461,6 +468,12 @@ export function PostsTab() {
         {...form.getInputProps('mustRead', { type: 'checkbox' })}
         data-testid="post-must-read"
       />
+      {(!editTarget || editTarget.publishAt) && (
+        <PostChannelsField
+          value={form.values.channels}
+          onChange={(v) => form.setFieldValue('channels', v)}
+        />
+      )}
       <PostLanguagesField
         language={form.values.language}
         translations={form.values.translations as Post['translations']}

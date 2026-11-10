@@ -221,6 +221,18 @@ may edit it still see it, marked **Ausgeblendet**, and can give it a later
 date or clear the field to show it again. The dashboard and the weekly
 digest only show posts members can see.
 
+### Where a post is announced
+
+**Senden an** in the post form lists where the post goes besides the feed:
+**Mitteilung in Hubra** (the bell and push) and every module on in the
+club that announces posts, such as Discord and Messengers. All are ticked;
+untick one to leave it out, or untick all to put the post only in the feed
+without telling anyone. Each channel still follows its own settings (the
+Discord channel for posts, the messengers' "Post new posts"). A scheduled
+post keeps its choice until it goes out; after that it can't change.
+Webhooks always get `post.published`, with `channels` in the payload
+(`null` for all).
+
 ### Must-read posts
 
 For safety rules, rule changes or the papers for the general meeting, tick

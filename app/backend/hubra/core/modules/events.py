@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import importlib
 import logging
+from collections.abc import Collection
 from typing import Any
 
 from .registry import registry
@@ -230,9 +231,18 @@ def _to_outbox(event, module, target, tid, env) -> bool:
         return False
 
 
-def emit(event: str, tenant_id=CURRENT, **payload: Any) -> list[str]:
+def emit(
+    event: str,
+    tenant_id=CURRENT,
+    *,
+    to_modules: Collection[str] | None = None,
+    **payload: Any,
+) -> list[str]:
     """Deliver *event* to enabled subscribers.  Returns the module codes called
-    (or, for a plugin's handler, stored for after the commit)."""
+    (or, for a plugin's handler, stored for after the commit).
+
+    *to_modules* limits it to those modules (a post sent only to some
+    channels); the club's webhooks still hear it."""
     from hubra.core.contracts import registry as contracts
     from hubra.core.contracts.transport import envelope
 
@@ -243,6 +253,8 @@ def emit(event: str, tenant_id=CURRENT, **payload: Any) -> list[str]:
     env = None
     for module, target in registry.subscribers(event):
         if not is_enabled(module.code, tenant_id=tid):
+            continue
+        if to_modules is not None and module.code not in to_modules:
             continue
         if _defer(module, event):
             if not _wants(module, offer):

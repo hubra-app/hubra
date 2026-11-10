@@ -258,6 +258,8 @@ export interface Post {
   hideAfter: string | null;
   /** Members confirm they read it. */
   mustRead: boolean;
+  /** Where it is announced; null: every channel. */
+  channels: string[] | null;
   /** How many confirmed (must-read posts). */
   readCount: number;
   /** Whether the current member confirmed. */
