@@ -67,6 +67,19 @@ def marketplace():
     return jsonify(data), 200
 
 
+@plugins_bp.get("/upgrade-impact")
+@require_global_permission(_PERM)
+def upgrade_impact():
+    """``?version=0.3.0``: installed plugins that would stop loading on that
+    Hubra version, whether an update fixes it, and how many clubs use them."""
+    from hubra.core.plugins.impact import ImpactError, check
+
+    try:
+        return jsonify(check(request.args.get("version") or "")), 200
+    except ImpactError as exc:
+        return api_error("VALIDATION_ERROR", error_message(exc), 400)
+
+
 @plugins_bp.post("/upload")
 @require_global_permission(_PERM)
 @require_step_up

@@ -17,7 +17,14 @@ moved. As a file, the same code runs on pull requests (ci.yml, job
         Writes out/CHANGELOG.md (this version's section) and notes.md (the
         release description: a draft's $BODY, the changelog, the images).
 
-Both take --root, the repository checkout (default: the current directory).
+    release_check.py plugins v1.3.0 [--index URL-or-file] [--strict]
+        Upgrade impact: which official plugins (plugins.hubra.club/index.json)
+        have no version whose `hubra:` range takes this release, and which
+        need an update first. Warnings; with --strict a plugin without any
+        working version fails (the dry run passes --strict).
+
+check and notes take --root, the repository checkout (default: the current
+directory).
 Python 3.11+, standard library only.
 """
 
@@ -29,7 +36,9 @@ import re
 import sys
 from pathlib import Path
 
+import json
 import tomllib
+import urllib.request
 
 CHANGELOG = "app/backend/CHANGELOG.md"
 PYPROJECT = "app/backend/pyproject.toml"
@@ -103,6 +112,102 @@ def notes(tag: str, root: Path, images: Path, out: Path, body: str = "", repo: s
     return "\n\n".join(parts)
 
 
+DEFAULT_INDEX = "https://plugins.hubra.club/index.json"
+_SPEC_RE = re.compile(r"^\s*(~=|==|!=|<=|>=|<|>)\s*([0-9][0-9A-Za-z.*+-]*)\s*$")
+
+
+def _vtuple(v: str) -> tuple[int, ...]:
+    """1.2.3rc1 -> (1, 2, 3); enough for ranges like '>=0.2,<1'."""
+    parts = []
+    for piece in v.split("."):
+        m = re.match(r"\d+", piece)
+        parts.append(int(m.group()) if m else 0)
+    while len(parts) < 3:
+        parts.append(0)
+    return tuple(parts)
+
+
+def in_range(version: str, spec: str) -> bool:
+    """Whether *version* satisfies a PEP 440 range such as '>=0.2,<1'.
+    Standard library only, so the common operators and numeric versions;
+    '==1.2.*' works too. An empty range takes every version."""
+    if not spec or not spec.strip():
+        return True
+    v = _vtuple(version)
+    for clause in spec.split(","):
+        if not clause.strip():
+            continue
+        m = _SPEC_RE.match(clause)
+        if not m:
+            raise ReleaseError(f"hubra range '{spec}' is not like '>=0.2,<1'")
+        op, raw = m.groups()
+        if raw.endswith(".*"):
+            prefix = tuple(int(x) for x in raw[:-2].split("."))
+            same = v[: len(prefix)] == prefix
+            if (op == "==" and not same) or (op == "!=" and same):
+                return False
+            continue
+        w = _vtuple(raw)
+        ok = {
+            "==": v == w,
+            "!=": v != w,
+            ">=": v >= w,
+            "<=": v <= w,
+            ">": v > w,
+            "<": v < w,
+            # ~=1.2 means >=1.2,==1.*; ~=1.2.3 means >=1.2.3,==1.2.*
+            "~=": v >= w and v[: max(1, raw.count("."))] == w[: max(1, raw.count("."))],
+        }[op]
+        if not ok:
+            return False
+    return True
+
+
+def _versions(entry: dict) -> list[dict]:
+    seen, out = set(), []
+    for v in [entry, *(entry.get("versions") or [])]:
+        if isinstance(v, dict) and v.get("version") and str(v["version"]) not in seen:
+            seen.add(str(v["version"]))
+            out.append(v)
+    return sorted(out, key=lambda v: _vtuple(str(v["version"])), reverse=True)
+
+
+def plugin_impact(version: str, index: dict) -> dict[str, list[dict]]:
+    """``{"blocked": [...], "update": [...], "ok": [...]}`` for every plugin of
+    *index*: blocked has no live version that takes *version*; update means
+    the newest version does not, but an older one does (rare: a plugin that
+    narrowed its range), so clubs on it are fine only after picking it; ok:
+    the newest version works."""
+    out: dict[str, list[dict]] = {"blocked": [], "update": [], "ok": []}
+    for entry in index.get("plugins") or []:
+        live = [v for v in _versions(entry) if not v.get("yanked")]
+        if not live:
+            continue
+        newest = live[0]
+        fits = [v for v in live if in_range(version, str(v.get("hubra") or ""))]
+        row = {
+            "id": entry.get("id"),
+            "newest": str(newest["version"]),
+            "hubra": str(newest.get("hubra") or ""),
+            "works": str(fits[0]["version"]) if fits else None,
+        }
+        if not fits:
+            out["blocked"].append(row)
+        elif fits[0] is not newest:
+            out["update"].append(row)
+        else:
+            out["ok"].append(row)
+    return out
+
+
+def _load_index(where: str) -> dict:
+    if where.startswith(("https://", "http://")):
+        req = urllib.request.Request(where, headers={"User-Agent": "hubra-release-check"})
+        with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310 - fixed https URL
+            return json.load(resp)
+    return json.loads(Path(where).read_text())
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -115,8 +220,37 @@ def main(argv: list[str] | None = None) -> int:
     n.add_argument("--images", type=Path, required=True, help="the images.yaml block")
     n.add_argument("--out", type=Path, required=True, help="directory for CHANGELOG.md")
     n.add_argument("--notes", type=Path, default=Path("notes.md"))
+    pl = sub.add_parser("plugins", help="official plugins whose hubra: range leaves this release out")
+    pl.add_argument("tag")
+    pl.add_argument("--index", default=DEFAULT_INDEX, help="index.json URL or file")
+    pl.add_argument("--strict", action="store_true", help="fail when a plugin has no working version")
     a = p.parse_args(argv)
     try:
+        if a.cmd == "plugins":
+            version = str(parse_tag(a.tag)["version"])
+            try:
+                index = _load_index(a.index)
+            except (OSError, ValueError) as e:
+                print(f"::warning::plugin index {a.index} not readable ({e}); upgrade impact not checked")
+                return 0
+            impact = plugin_impact(version, index)
+            for row in impact["update"]:
+                print(
+                    f"::warning::plugin {row['id']}: newest {row['newest']} needs Hubra "
+                    f"{row['hubra']}; {row['works']} is the newest that takes {version}"
+                )
+            level = "error" if a.strict else "warning"
+            for row in impact["blocked"]:
+                print(
+                    f"::{level}::plugin {row['id']}: no version takes Hubra {version} "
+                    f"(newest {row['newest']} needs {row['hubra']}); release a plugin version "
+                    "with a wider hubra: range first"
+                )
+            print(
+                f"plugins: {len(impact['ok'])} fine, {len(impact['update'])} need an older version, "
+                f"{len(impact['blocked'])} without a version for {version}"
+            )
+            return 1 if a.strict and impact["blocked"] else 0
         if a.cmd == "check":
             result = check(a.tag, a.root)
             lines = "".join(f"{k}={v}\n" for k, v in result.items())

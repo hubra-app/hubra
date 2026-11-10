@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { UpgradeImpactView } from './UpgradeImpact'
 import {
   ActionIcon,
   Alert,
@@ -135,19 +136,24 @@ export function MarketplaceTab() {
   const [view, setView] = useState('plugins')
   return (
     <Stack gap="md">
-      <SegmentedControl
-        w="fit-content"
-        value={view}
-        onChange={setView}
-        data={[
-          { value: 'plugins', label: tr('Plugins', 'Plugins') },
-          { value: 'repositories', label: tr('Quellen', 'Repositories') },
-          { value: 'keys', label: tr('Signaturschlüssel', 'Signing keys') },
-        ]}
-      />
+      {/* Four views: scrolls sideways on a phone instead of widening the page. */}
+      <div style={{ maxWidth: '100%', overflowX: 'auto' }}>
+        <SegmentedControl
+          w="fit-content"
+          value={view}
+          onChange={setView}
+          data={[
+            { value: 'plugins', label: tr('Plugins', 'Plugins') },
+            { value: 'repositories', label: tr('Quellen', 'Repositories') },
+            { value: 'keys', label: tr('Signaturschlüssel', 'Signing keys') },
+            { value: 'upgrade', label: tr('Update-Prüfung', 'Upgrade check') },
+          ]}
+        />
+      </div>
       {view === 'plugins' && <PluginsView />}
       {view === 'repositories' && <RepositoriesView />}
       {view === 'keys' && <KeysView />}
+      {view === 'upgrade' && <UpgradeImpactView />}
     </Stack>
   )
 }
