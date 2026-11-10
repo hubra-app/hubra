@@ -178,6 +178,7 @@ Marketplace README and the hubra.club Modules page stay current.
 | Public API (pricing, plugins)          | [docs/public-api.md](docs/public-api.md)                 |
 | Claude connector (MCP server)          | [docs/mcp.md](docs/mcp.md)                               |
 | Discord bot                            | [docs/discord.md](docs/discord.md)                       |
+| Member badge in Google Wallet          | [docs/google-wallet.md](docs/google-wallet.md)           |
 | Support site                           | [docs/support-site.md](docs/support-site.md)             |
 | Mail stack (WildDuck, Haraka, ZoneMTA) | [modules/mail/README.md](modules/mail/README.md)         |
 | Plugins and extension areas            | [docs/plugins.md](docs/plugins.md), [plugins/README.md](plugins/README.md) |
