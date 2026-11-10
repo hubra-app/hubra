@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import Date, DateTime, ForeignKey, Numeric
+from sqlalchemy import Date, DateTime, ForeignKey, Numeric, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from hubra.core.extensions import db
@@ -259,3 +259,49 @@ class FiscalYear(db.Model):
 
     def __repr__(self) -> str:
         return f"<FiscalYear {self.start}..{self.end} closed={self.closed_at is not None}>"
+
+
+class OpenItem(db.Model):
+    """Something a member owes that is not on an invoice yet (a drinks tab,
+    a booking fee, a shop order). Modules hand them over through
+    ``finance.open_item.add``; with collecting on (Finanzen › Einstellungen)
+    they go on one invoice per member each month or quarter, otherwise on
+    an invoice of their own straight away."""
+
+    __tablename__ = "open_items"
+    __table_args__ = (
+        # A module hands each thing over once (None: no reference).
+        UniqueConstraint("source", "source_ref", name="uq_open_item_source_ref"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    member_id: Mapped[int] = mapped_column(
+        db.Integer, ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    text: Mapped[str] = mapped_column(db.String(200), nullable=False)
+    # The day it happened (the drink, the booking).
+    day: Mapped[date] = mapped_column(Date, nullable=False)
+    # The module that handed it over ("kasse", "booking"; "finance" by hand)
+    # and its own reference, to take it back before it is billed.
+    source: Mapped[str] = mapped_column(db.String(40), nullable=False)
+    source_ref: Mapped[str | None] = mapped_column(db.String(80), nullable=True)
+    category_id: Mapped[int | None] = mapped_column(
+        db.Integer,
+        ForeignKey("transaction_categories.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    # Set once billed: the invoice it went on.
+    invoice_id: Mapped[int | None] = mapped_column(
+        db.Integer, ForeignKey("invoices.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    member: Mapped["Member"] = relationship("Member")  # type: ignore[name-defined]  # noqa: F821
+
+    def __repr__(self) -> str:
+        return f"<OpenItem id={self.id} member_id={self.member_id} amount={self.amount}>"

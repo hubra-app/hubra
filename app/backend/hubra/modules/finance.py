@@ -7,7 +7,7 @@ booking, so they live in every club schema either way.
 """
 
 from hubra.core.contracts import action_contract, query_contract, widget_contract
-from hubra.core.modules import Blueprint, Module, NavItem, SettingField
+from hubra.core.modules import Blueprint, Module, NavItem, Schedule, SettingField
 from hubra.core.contracts.search import search_contract
 
 module = Module(
@@ -85,6 +85,21 @@ module = Module(
             description="By the months left, the join month counting in full",
         ),
         SettingField(
+            "collect_items",
+            "choice",
+            default="off",
+            label="Bill small items together",
+            description="Drinks, booking fees and other open items go on one invoice per member each month or quarter; off: each on its own invoice",
+            choices=("off", "monthly", "quarterly"),
+        ),
+        SettingField(
+            "collect_min_amount",
+            "float",
+            default=0.0,
+            label="Smallest collected invoice (CHF)",
+            description="Below it the items wait for the next time",
+        ),
+        SettingField(
             "statement_enabled",
             "bool",
             default=False,
@@ -142,6 +157,7 @@ module = Module(
     tables=(
         "transactions",
         "invoices",
+        "open_items",
         "transaction_categories",
         "external_parties",
         "invoice_reminder_history",
@@ -149,6 +165,15 @@ module = Module(
         "recurring_transactions",
         "accounts",
         "fiscal_years",
+    ),
+    tasks=("hubra.api.finance.tasks",),
+    schedule=(
+        # Collected invoices go out on the first of a month or quarter.
+        Schedule(
+            "collect-open-items",
+            "hubra.api.finance.tasks.collect_open_items_task",
+            86400,
+        ),
     ),
     provides=(
         search_contract("finance", "hubra.api.search.sources:invoices", perm="finance.invoices.read"),
@@ -158,6 +183,22 @@ module = Module(
             input="hubra.api.finance.contracts:PeriodIn",
             output="hubra.api.finance.contracts:Period",
             description="The club's billing year around a day",
+        ),
+        action_contract(
+            "finance.open_item.add",
+            "hubra.api.finance.contracts:add_open_item",
+            input="hubra.api.finance.contracts:OpenItemIn",
+            output="hubra.api.finance.contracts:OpenItemOut",
+            perm="finance.invoices.create",
+            description="Something a member owes, for their next (collected) invoice",
+        ),
+        action_contract(
+            "finance.open_item.remove",
+            "hubra.api.finance.contracts:remove_open_item",
+            input="hubra.api.finance.contracts:OpenItemRef",
+            output="hubra.api.finance.contracts:OpenItemRemoved",
+            perm="finance.invoices.create",
+            description="Take an open item back before it is billed",
         ),
         action_contract(
             "finance.invoice.set_status",

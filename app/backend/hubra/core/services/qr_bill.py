@@ -195,10 +195,24 @@ def generate_invoice_pdf(invoice: Invoice) -> bytes:
     # ── 6. Render the invoice under the club's letterhead ─────────────────
     from flask import render_template
 
+    from sqlalchemy import select
+
+    from hubra.core.extensions import db
+    from hubra.core.models.finance import OpenItem
     from hubra.core.services import pdf
 
+    # A collected invoice lists its items, one line each.
+    lines = [
+        {"day": i.day.strftime("%d.%m.%Y"), "text": i.text, "amount": float(i.amount)}
+        for i in db.session.scalars(
+            select(OpenItem)
+            .where(OpenItem.invoice_id == invoice.id)
+            .order_by(OpenItem.day, OpenItem.id)
+        )
+    ]
     body = render_template(
         "invoice/invoice.html",
+        lines=lines,
         iban=iban,
         finance_email=finance_email,
         recipient_name=recipient_name,

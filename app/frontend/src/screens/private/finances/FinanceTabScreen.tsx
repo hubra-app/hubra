@@ -4,6 +4,7 @@ import { useT } from '@/locales/i18n'
 import { PageHead, SubTabs, Tabs } from '@/components/ui'
 import { useAuth } from '@/context/AppContext'
 import { InvoicesTab } from '@/screens/private/finances/InvoicesTab'
+import { OpenItemsTab } from '@/screens/private/finances/OpenItemsTab'
 import { ExternalPartiesTab } from '@/screens/private/finances/ExternalPartiesTab'
 import { FeeBasisTab } from '@/screens/private/finances/FeeBasisTab'
 import { FinanceSettingsTab } from '@/screens/private/finances/FinanceSettingsTab'
@@ -66,6 +67,12 @@ export function FinanceTabScreen() {
           label: t('shell.nav.invoices'),
           allowed: hasPermission('finance.invoices.read'),
           render: () => <InvoicesTab />,
+        },
+        {
+          id: 'open-items',
+          label: t('openItems.tab', 'Offene Posten'),
+          allowed: hasPermission('finance.invoices.read'),
+          render: () => <OpenItemsTab />,
         },
         // Such as settling the Kasse plugin's tab, which makes invoices.
         ...pluginParts('invoices'),

@@ -4015,7 +4015,24 @@
     },
     "finance": {
       "name": "Finance",
-      "description": "Transactions, invoices with Swiss QR-bill, and reminders"
+      "description": "Transactions, invoices with Swiss QR-bill, and reminders",
+      "settings": {
+        "collect_items": {
+          "label": "Bill small items together",
+          "description": "Drinks, booking fees and other open items go on one invoice per member each month or quarter; off: each on its own"
+        },
+        "collect_min_amount": {
+          "label": "Smallest collected invoice (CHF)",
+          "description": "Below it the items wait for the next time"
+        }
+      },
+      "choices": {
+        "collect_items": {
+          "off": "Off",
+          "monthly": "Monthly",
+          "quarterly": "Quarterly"
+        }
+      }
     },
     "bindings": {
       "name": "Bindings",
@@ -4968,5 +4985,23 @@
       "onsite": "On site"
     },
     "all": "All"
+  },
+  "openItems": {
+    "tab": "Open items",
+    "billed": "Billed",
+    "billedMsg": "{{count}} invoices created.",
+    "cycleOff": "Each item goes on an invoice of its own straight away. Under Settings they can be collected.",
+    "cycleMonthly": "On the 1st of each month each member's items go on one invoice.",
+    "cycleQuarterly": "On the 1st of each quarter each member's items go on one invoice.",
+    "minimum": "Below {{amount}} they wait for the next time.",
+    "add": "Add item",
+    "billNow": "Bill now",
+    "empty": "No open items.",
+    "day": "Date",
+    "text": "Item",
+    "source": "From",
+    "amount": "Amount",
+    "amountHint": "Negative for a credit.",
+    "totalFor": "Total {{name}}"
   }
 }
