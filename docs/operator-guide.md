@@ -391,6 +391,13 @@ Settings › Modules like a built-in module.
   not undo migrations.
 - Uninstalling keeps the plugin's tables unless you tick "also delete its
   data".
+- Usage: manage › Plugin catalogue › **Nutzung** shows, per module and
+  plugin, in how many active clubs it is on, in how many something was
+  written to its tables in the last 30 days, and where it is on but unused,
+  plus installed plugins no club has on. It is counted every night at 04:40
+  (`usage-snapshot-nightly`, `services/module_usage.py`, kept in Redis);
+  **Jetzt zählen** counts at once. Modules without timestamped tables of
+  their own show "nicht messbar".
 
 Details, the trust badges and the CLI: [plugins/README.md](../plugins/README.md).
 

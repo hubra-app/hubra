@@ -36,6 +36,7 @@ section and position, or the apps show that version in English.
 - **"Out now" mails**: when a roadmap item ships, everyone who voted for it, or for or reported an idea linked to it, gets one short mail. What's new marks the items you voted for on their release ("You asked for this").
 - **Support access in the club's log**: when Hubra support opens a club, its audit log shows who, as which member, why, for how long and whether they could change things, and when it ended. Settings › Club › **Support access only when approved** makes support ask first: the club's admins approve or decline the request, and an approval opens one session within 24 hours. Needs `flask db upgrade` (runs by itself after the deploy). <!-- for: admins -->
 - **What's new for your club**: What's new in the club app leaves out changes to modules the club doesn't have or the reader can't use, changes only admins care about (for members) and changes for Hubra's own team.
+- **Module and plugin usage**: manage › Plugin catalogue › **Usage** shows in how many clubs each module and plugin is on, in how many it was used in the last 30 days, where it is on but unused, and installed plugins no club uses. Counted every night, or at once with **Count now**. <!-- for: staff -->
 
 ### Changed
 
