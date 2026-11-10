@@ -9,6 +9,8 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-11-10
+
 ### Added
 
 - **Standardrollen und Zugriff pro Modul** (Einstellungen › Rollen, docs/roles.md): Jeder Verein hat Mitglied, Vorstand, Aktuar/in und Kassier/in sowie die Funktionen Präsident/in und Vizepräsident/in (Administration und Vorstand), Aktuar/in (Vorstand und Aktuar/in) und Kassier/in (Vorstand und Kassier/in). Eine Funktion kann jetzt mehrere Rollen geben. Jede Rolle hat pro Modul eine Stufe; «Keine» blendet das Modul für ihre Inhaber/innen überall aus (Seitenleiste, Seiten, Tabs, Widgets, Suche, API `403 MODULE_ACCESS`), die eigenen Rechnungen, Spesen und Gegenstände bleiben im Profil. Plugins können den Standardrollen Zugriff geben, wenn ein Verein sie zum ersten Mal einschaltet (`role_defaults`). Betrieb: `flask db upgrade` und `flask seed` ausführen; das erste `flask seed` gibt jedem Verein die Standardrollen und lässt jeder Rolle ihre Module.
