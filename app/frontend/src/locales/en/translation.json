@@ -989,6 +989,18 @@
       "today": "Today",
       "more": "+{{count}} more",
       "none": "No events on this day."
+    },
+    "notes": {
+      "guide": "Open guide",
+      "previous": "Last time ({{date}})",
+      "forTrainer": "For trainers:",
+      "saved": "Notes saved",
+      "trained": "What was trained",
+      "trainedHint": "Shown on the next date of the series.",
+      "trainerNote": "Note for the next trainer",
+      "trainerNoteHint": "Only those who take attendance see it.",
+      "guideUrl": "Link to a guide",
+      "save": "Save notes"
     }
   },
   "finance": {

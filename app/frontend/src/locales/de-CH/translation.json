@@ -989,6 +989,18 @@
       "today": "Heute",
       "more": "+{{count}} weitere",
       "none": "Keine Anlässe an diesem Tag."
+    },
+    "notes": {
+      "guide": "Anleitung öffnen",
+      "previous": "Letztes Mal ({{date}})",
+      "forTrainer": "Für Trainer:",
+      "saved": "Notizen gespeichert",
+      "trained": "Was trainiert wurde",
+      "trainedHint": "Erscheint beim nächsten Termin der Serie.",
+      "trainerNote": "Notiz für die nächste Trainerin, den nächsten Trainer",
+      "trainerNoteHint": "Nur wer die Anwesenheit führt, sieht sie.",
+      "guideUrl": "Link zur Anleitung",
+      "save": "Notizen speichern"
     }
   },
   "finance": {

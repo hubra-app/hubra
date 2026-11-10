@@ -790,3 +790,4 @@ def public_links():
 # to this blueprint.
 from hubra.api.events import trials  # noqa: E402,F401
 from hubra.api.events import federation  # noqa: E402,F401
+from hubra.api.events import session_notes  # noqa: E402,F401

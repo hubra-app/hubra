@@ -189,6 +189,20 @@ length. The bin next to a template in that list deletes it.
 Templates belong to the club. Saving, listing and deleting them takes the
 club-wide right `events.events.create`.
 
+### Session notes
+
+The attendance dialog of an event (**Anwesenheit**) has room for notes on
+that date: **Was trainiert wurde** (what was trained), a **note for the
+next trainer**, and a **link to a guide** (an `https://` link or a page in
+the app such as a Guides page). On the next date of the same series the
+dialog shows the last notes before it under **Letztes Mal**, so whoever
+trains next knows where the group is.
+
+Writing notes takes the right to take attendance (`events.events.add_attendee`,
+club-wide or for the event's group). Only those see the trainer note; the
+API also gives the event's members what was trained and the guide link.
+Clearing all three fields removes the notes.
+
 ## Posts
 
 ### Scheduled and expiring posts

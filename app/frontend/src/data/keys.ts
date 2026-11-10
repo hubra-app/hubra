@@ -52,6 +52,7 @@ export const qk = {
   eventRoll: (id: string) => ['events', id, 'roll'] as const,
   eventRegistrations: (id: string) => ['events', id, 'registrations'] as const,
   eventParticipants: (id: string) => ['events', id, 'participants'] as const,
+  sessionNotes: (id: string) => ['events', id, 'session-notes'] as const,
   attendance: ['attendance'] as const,
   trialsAll: ['trials'] as const,
   trials: (past: boolean) => ['trials', past] as const,
