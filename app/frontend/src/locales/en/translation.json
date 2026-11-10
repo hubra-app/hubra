@@ -2585,7 +2585,8 @@
       "workspace": "Club",
       "activities": "Club life",
       "favourites": "Favourites",
-      "plugins": "Add-ons"
+      "plugins": "Add-ons",
+      "communication": "Communication"
     },
     "tooltips": {
       "dismiss": "Dismiss",

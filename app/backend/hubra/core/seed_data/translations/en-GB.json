@@ -4176,5 +4176,6 @@
   "dashboards.moveHint": "Drag to move, or use the arrow keys",
   "dashboards.resize": "Resize ({{name}})",
   "dashboards.resizeHint": "Drag for width and height, or use the arrow keys",
-  "dashboards.autoHeight": "Height from content"
+  "dashboards.autoHeight": "Height from content",
+  "shell.sections.communication": "Communication"
 }

@@ -4176,5 +4176,6 @@
   "dashboards.moveHint": "Ziehen zum Verschieben, oder Pfeiltasten",
   "dashboards.resize": "Grösse ändern ({{name}})",
   "dashboards.resizeHint": "Ziehen für Breite und Höhe, oder Pfeiltasten",
-  "dashboards.autoHeight": "Höhe nach Inhalt"
+  "dashboards.autoHeight": "Höhe nach Inhalt",
+  "shell.sections.communication": "Kommunikation"
 }

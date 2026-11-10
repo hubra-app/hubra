@@ -2585,7 +2585,8 @@
       "workspace": "Verein",
       "activities": "Vereinsleben",
       "favourites": "Favoriten",
-      "plugins": "Erweiterungen"
+      "plugins": "Erweiterungen",
+      "communication": "Kommunikation"
     },
     "tooltips": {
       "dismiss": "Ausblenden",

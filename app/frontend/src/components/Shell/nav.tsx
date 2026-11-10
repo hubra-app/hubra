@@ -126,6 +126,7 @@ export const SECTION_ORDER = [
   'workspace',
   'activities',
   'operations',
+  'communication',
   'plugins',
   'system',
   'all',
@@ -136,7 +137,7 @@ export const SECTION_ORDER = [
 export const MORE_PATH = '/app/more'
 
 /** Sections a person can move entries between (besides "Weitere"). */
-const MOVABLE_SECTIONS = ['workspace', 'activities', 'operations', 'plugins', 'system']
+const MOVABLE_SECTIONS = ['workspace', 'activities', 'operations', 'communication', 'plugins', 'system']
 
 /** Headings a person may rename; their own categories they may rename too. */
 const RENAMABLE_SECTIONS = ['favourites', ...MOVABLE_SECTIONS]

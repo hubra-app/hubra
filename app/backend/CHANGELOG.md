@@ -21,6 +21,7 @@ section and position, or the apps show that version in English.
 - **Dashboards as a grid**: dashboards and start pages are a grid of 12 columns: drag a widget's grip to move it, drag its corner to change width and height (or use the arrow keys), and "Höhe nach Inhalt" goes back to the content's height. Older dashboards keep their layout.
 - **German texts reviewed**: German API errors that showed in English (dashboards, trial training, licences and modules, sign-in, connected apps and more) are now German; menu paths in hints point at today's pages (API & Webhooks, Mein Konto › Zwei-Faktor, Discord › Einstellungen, Alle Vereine › Tarife & Preise, Konto › Mitgliedschaft › Benachrichtigungen); one word per thing: Zahlungserinnerung (not Mahnung), Einweisung (not Einführung), Schnuppertraining, Gesperrt, Mobil, Inhaber/in, «» quotes. The German glossary for translators describes Standard German instead of the old dialect.
 - **Vor Ort on the start page**: Dashboard › Persönlich shows "Heute vor Ort" (who is in which room today) while the Booking plugin is on, until the member changes the page. Clubs without Booking see the page as before.
+- **Kommunikation in the sidebar**: a new sidebar area Kommunikation holds Mail and the plugins that reach members (Letters, Messengers, Inbox). Each person can still move entries or rename the area.
 
 ### Fixed
 
