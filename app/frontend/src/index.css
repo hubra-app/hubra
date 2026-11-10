@@ -674,17 +674,30 @@ table[style*="min-width"] td::before {
   border-bottom: none !important;
 }
 
-/* Own dashboards: widgets a third (s), half (m) or the full width (l). */
+/* Dashboards: a grid of 12 columns and 40px rows. A widget spans --w
+   columns (--wt on a tablet, all on a phone) and --h rows; without a set
+   height --h is what its content needs (WidgetBoard measures it). Later
+   small widgets move up into gaps. */
 .hb-dash-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: 40px;
+  grid-auto-flow: row dense;
   gap: 16px;
-  align-items: stretch;
 }
-.hb-dash-grid > div {
+.hb-dash-cell {
+  position: relative;
+  grid-column: span var(--w, 6);
+  grid-row: span var(--h, 4);
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+.hb-dash-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 /* The widget fills its cell, so a row's cards line up. */
 .hb-dash-body {
@@ -696,35 +709,105 @@ table[style*="min-width"] td::before {
   flex: 1;
   width: 100%;
 }
-.hb-dash-s {
-  grid-column: span 2;
+/* A set height: the cell keeps it and the widget scrolls inside. */
+.hb-dash-cell.fixed .hb-dash-inner,
+.hb-dash-cell.fixed .hb-dash-body {
+  min-height: 0;
+  overflow: hidden;
 }
-.hb-dash-m {
-  grid-column: span 3;
-}
-.hb-dash-l {
-  grid-column: span 6;
+.hb-dash-cell.fixed .hb-dash-body > * {
+  overflow: auto;
+  min-height: 0;
 }
 @media (max-width: 62em) {
-  .hb-dash-s {
-    grid-column: span 3;
-  }
-  .hb-dash-m {
-    grid-column: span 6;
+  .hb-dash-cell {
+    grid-column: span var(--wt, 12);
   }
 }
 @media (max-width: 35.99em) {
-  .hb-dash-s {
-    grid-column: span 6;
+  .hb-dash-cell {
+    grid-column: span 12;
+  }
+}
+
+/* Edit mode: the grid's columns show, the grip moves, the corner resizes. */
+.hb-dash-grid.editing {
+  background-image: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--mantine-color-violet-filled) 6%, transparent) 0,
+    color-mix(in srgb, var(--mantine-color-violet-filled) 6%, transparent)
+      calc((100% - 11 * 16px) / 12),
+    transparent calc((100% - 11 * 16px) / 12),
+    transparent calc((100% - 11 * 16px) / 12 + 16px)
+  );
+  background-size: calc((100% - 11 * 16px) / 12 + 16px) 100%;
+  background-repeat: repeat-x;
+  border-radius: var(--mantine-radius-md);
+}
+.hb-dash-grid.editing .hb-dash-cell {
+  outline: 1px dashed var(--mantine-color-line-1, #d6d2e3);
+  outline-offset: 4px;
+  border-radius: var(--mantine-radius-md);
+}
+.hb-dash-cell.dragging {
+  opacity: 0.55;
+  outline: 2px solid var(--mantine-color-violet-filled) !important;
+}
+.hb-dash-grid.sizing {
+  user-select: none;
+}
+.hb-dash-grip {
+  cursor: grab;
+  touch-action: none;
+}
+.hb-dash-cell.dragging .hb-dash-grip {
+  cursor: grabbing;
+}
+.hb-dash-resize {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  cursor: nwse-resize;
+  touch-action: none;
+  background:
+    linear-gradient(
+      135deg,
+      transparent 45%,
+      var(--mantine-color-violet-filled) 45%,
+      var(--mantine-color-violet-filled) 55%,
+      transparent 55%,
+      transparent 70%,
+      var(--mantine-color-violet-filled) 70%,
+      var(--mantine-color-violet-filled) 80%,
+      transparent 80%
+    ),
+    var(--mantine-color-body);
+  box-shadow: 0 0 0 1px var(--hb-border);
+  z-index: 2;
+}
+.hb-dash-resize:focus-visible,
+.hb-dash-grip:focus-visible {
+  outline: 2px solid var(--mantine-color-violet-filled);
+  outline-offset: 2px;
+}
+@media (max-width: 62em) {
+  /* Widths follow the screen there; the corner changes only the height. */
+  .hb-dash-resize {
+    cursor: ns-resize;
   }
 }
 
 /* Start pages: a widget with nothing to show right now (no open payment, no
    poll to vote in) takes no room; in edit mode it says so. */
-.hb-dash-grid:not(.editing) > div:has(> .hb-dash-body:empty) {
+.hb-dash-grid:not(.editing) > .hb-dash-cell:has(.hb-dash-body:empty) {
   display: none;
 }
-.hb-dash-grid.editing > div > .hb-dash-body:empty::after {
+.hb-dash-grid.editing .hb-dash-body:empty::after {
   content: attr(data-empty);
   display: block;
   padding: var(--mantine-spacing-md);

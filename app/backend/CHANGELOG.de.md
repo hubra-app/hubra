@@ -9,6 +9,14 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ## [Unreleased]
 
+### Changed
+
+- **Dashboards als Raster**: Dashboards und Startseiten sind ein Raster aus 12 Spalten: Widget am Griff ziehen verschiebt es, an der Ecke ziehen ändert Breite und Höhe (oder mit den Pfeiltasten), «Höhe nach Inhalt» stellt die Höhe wieder auf den Inhalt. Bestehende Dashboards behalten ihr Layout.
+
+### Fixed
+
+- Dashboard › Verein anpassen schlug fehl, und «Offene Rechnungen» liess sich keinem Dashboard hinzufügen: Widget-Typen mit Grossbuchstaben wurden abgelehnt.
+
 ## [0.2.5] - 2026-11-10
 
 ### Added

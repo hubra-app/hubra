@@ -6,7 +6,12 @@ export type WidgetSize = 's' | 'm' | 'l'
 export interface DashboardWidget {
   id: string
   type: string
+  /** The size before the grid; still set, from `w`, for older apps. */
   size: WidgetSize
+  /** Columns spanned on a wide screen, 2 to 12 (from `size` when missing). */
+  w?: number
+  /** Rows of the grid it is high, 1 to 24; missing: as tall as its content. */
+  h?: number
   config: Record<string, unknown>
 }
 

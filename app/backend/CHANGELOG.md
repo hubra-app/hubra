@@ -7,6 +7,14 @@ section and position, or the apps show that version in English.
 
 ## [Unreleased]
 
+### Changed
+
+- **Dashboards as a grid**: dashboards and start pages are a grid of 12 columns: drag a widget's grip to move it, drag its corner to change width and height (or use the arrow keys), and "Höhe nach Inhalt" goes back to the content's height. Older dashboards keep their layout.
+
+### Fixed
+
+- Customising Dashboard › Verein failed, and "Offene Rechnungen" couldn't be added to a dashboard: widget types with capital letters were refused.
+
 ## [0.2.5] - 2026-11-10
 
 ### Added

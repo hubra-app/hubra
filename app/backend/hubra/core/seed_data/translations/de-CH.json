@@ -677,7 +677,6 @@
   "dashboards.deleteBody": "«{{name}}» und seine Widgets werden gelöscht.",
   "dashboards.deleteTitle": "Dashboard löschen",
   "dashboards.done": "Fertig",
-  "dashboards.down": "Nach hinten",
   "dashboards.edit": "Bearbeiten",
   "dashboards.empty": "Noch keine Widgets",
   "dashboards.emptyHint": "Füge Widgets hinzu: Anlässe, Beiträge, Zahlen, Notizen und mehr.",
@@ -714,7 +713,6 @@
   "dashboards.unknown": "Dieses Widget gibt es nicht mehr (Plugin entfernt?).",
   "dashboards.unshare": "Nicht mehr teilen",
   "dashboards.unsharedDone": "Nicht mehr geteilt",
-  "dashboards.up": "Nach vorne",
   "dashboards.w.closes": "endet am {{date}}",
   "dashboards.w.eventsCount": "Anzahl bevorstehender Anlässe",
   "dashboards.w.joinsLeaves": "Ein- und Austritte {{year}}",
@@ -4137,5 +4135,10 @@
   "functions.grantsRoles": "Gibt die Rollen",
   "functions.grantsRolesHint": "Wer die Funktion innehat, hat diese Rollen, bis die Funktion endet (zum Beispiel Vorstand und Kassier/in).",
   "functions.givesRoles": "Gibt die Rollen {{roles}}",
-  "roles.moduleHidden": "Ausgeblendet"
+  "roles.moduleHidden": "Ausgeblendet",
+  "dashboards.move": "Verschieben ({{name}})",
+  "dashboards.moveHint": "Ziehen zum Verschieben, oder Pfeiltasten",
+  "dashboards.resize": "Grösse ändern ({{name}})",
+  "dashboards.resizeHint": "Ziehen für Breite und Höhe, oder Pfeiltasten",
+  "dashboards.autoHeight": "Höhe nach Inhalt"
 }

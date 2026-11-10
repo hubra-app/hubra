@@ -55,9 +55,12 @@ MAX_DASHBOARDS = 20  # per member
 MAX_WIDGETS = 24
 MAX_CONFIG = 4000  # characters of a widget's config as JSON
 SIZES = ("s", "m", "l")
+COLS = 12  # the grid's columns; a widget spans 2 to 12
+MAX_ROWS = 24  # a widget's set height in rows; none: as tall as its content
 SHARE_PERM = "dashboards.dashboards.share"
 HOME_PERM = "dashboards.home.update"
-_TYPE = re.compile(r"^[a-z0-9][a-z0-9_.:-]{0,79}$")
+# Built-in types are camelCase (polls.voteNeeded, stat.openInvoices).
+_TYPE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,79}$")
 _ID = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
 
 
@@ -114,13 +117,23 @@ def _widgets(value):
         size = w.get("size", "m")
         if size not in SIZES:
             return None, f"widgets[{i}].size is one of {', '.join(SIZES)}"
+        grid = {}
+        for key, low, high in (("w", 2, COLS), ("h", 1, MAX_ROWS)):
+            n = w.get(key)
+            if n is None:
+                continue
+            if isinstance(n, bool) or not isinstance(n, int) or not low <= n <= high:
+                return None, f"widgets[{i}].{key} is a whole number from {low} to {high}"
+            grid[key] = n
+        if "w" in grid and "size" not in w:
+            size = "s" if grid["w"] <= 4 else "m" if grid["w"] <= 8 else "l"
         config = w.get("config") or {}
         if not isinstance(config, dict):
             return None, f"widgets[{i}].config must be an object"
         if len(json.dumps(config, ensure_ascii=False)) > MAX_CONFIG:
             return None, f"widgets[{i}].config is too large"
         seen.add(wid)
-        out.append({"id": wid, "type": wtype, "size": size, "config": config})
+        out.append({"id": wid, "type": wtype, "size": size, **grid, "config": config})
     return out, None
 
 
