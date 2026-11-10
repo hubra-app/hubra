@@ -6,9 +6,8 @@ import { useHotkeys } from '@mantine/hooks'
 import { IconSearch } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { useNav, useApp } from '@/context/AppContext'
-import { useEvents, useInvoices, usePolls } from '@/data/lists'
-import { listMembers } from '@/api/members'
-import { listGroups } from '@/api/groups'
+import { searchClub } from '@/api/search'
+import { formatDate } from '@/format'
 import { listAuditLog } from '@/api/settings'
 import type { SearchResult } from './nav'
 import { useSidebarNav } from './useSidebarNav'
@@ -28,8 +27,7 @@ export function GlobalSearch({
 } = {}) {
   const { t } = useT()
   const { go } = useNav()
-  // A switched-off module answers 403: only search what is on.
-  const { modules, hasPermission } = useApp()
+  const { hasPermission } = useApp()
   // Pages too, hidden ones included, so nothing is out of reach.
   const { customizable: pages } = useSidebarNav()
   const [query, setQuery] = useState('')
@@ -37,9 +35,6 @@ export function GlobalSearch({
   const [dropOpen, setDropOpen] = useState(false)
   // Load what the search looks through only once someone uses it.
   const [used, setUsed] = useState(false)
-  const { events } = useEvents({ enabled: used })
-  const { polls } = usePolls({ enabled: used })
-  const { invoices } = useInvoices({ enabled: used })
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   // Arrow keys move through the results, Enter opens the highlighted one.
@@ -47,20 +42,18 @@ export function GlobalSearch({
   // Ctrl+K / Cmd+K jumps to the search from anywhere.
   useHotkeys([['mod+K', () => inputRef.current?.focus()]])
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [term, setTerm] = useState('')
 
-  const { data: memberResp } = useQuery({
-    queryKey: qk.search.members,
-    enabled: used && modules.members === true,
-    queryFn: () => listMembers({ pageSize: 200 }),
-    staleTime: 60_000,
+  // Members, groups, events, posts, polls, invoices and what plugins offer
+  // through `<module>.search`, searched on the server (each module checks
+  // the member's rights).
+  const { data: server } = useQuery({
+    queryKey: qk.search.club(term.trim().toLowerCase()),
+    enabled: term.trim().length >= 2,
+    queryFn: ({ signal }) => searchClub(term.trim(), signal),
+    staleTime: 30_000,
   })
-  const { data: groupList = NONE } = useQuery({
-    queryKey: qk.search.groups,
-    enabled: used && modules.groups === true,
-    queryFn: () => listGroups(),
-    staleTime: 60_000,
-  })
-  // Lists plugins add (Inventory, …), each loaded like the ones above.
+  // Lists plugins add in the browser (Inventory, …), each loaded once.
   const pluginSearches = usePluginSearches()
   const pluginLists = useQueries({
     queries: pluginSearches.map((s) => ({
@@ -79,73 +72,33 @@ export function GlobalSearch({
   })
 
   const runSearch = (q: string) => {
-    if (q.length < 2) {
+    if (q.trim().length < 2) {
       setResults([])
       setDropOpen(false)
       return
     }
-    const lower = q.toLowerCase()
+    const lower = q.trim().toLowerCase()
 
-    const evResults: SearchResult[] = events
-      .filter((ev) => ev.title.toLowerCase().includes(lower))
-      .slice(0, 3)
-      .map((ev) => ({
-        kind: 'event',
-        id: ev.id,
-        label: ev.title,
-        sub: ev.date,
-        path: '/app/operations/events',
-      }))
-    const pollResults: SearchResult[] = polls
-      .filter((p) => p.question.toLowerCase().includes(lower))
-      .slice(0, 3)
-      .map((p) => ({
-        kind: 'poll',
-        id: p.id,
-        label: p.question,
-        sub: p.status === 'open' ? t('shell.search.pollOpen', 'Offen') : t('shell.search.pollClosed', 'Geschlossen'),
-        path: '/app/operations/polls',
-      }))
-    const invoiceResults: SearchResult[] = invoices
-      .filter(
-        (inv) =>
-          inv.member.toLowerCase().includes(lower) ||
-          inv.description?.toLowerCase().includes(lower) ||
-          inv.status.toLowerCase().includes(lower),
-      )
-      .slice(0, 3)
-      .map((inv) => ({
-        kind: 'invoice',
-        id: inv.id,
-        label: t('shell.search.invoice', 'Rechnung {{id}} – {{member}}', { id: inv.id, member: inv.member }),
-        sub: `${t(`status.${inv.status}`, inv.status)} · CHF ${inv.amount}`,
-        path: `/app/finance/invoices/${inv.id}`,
-      }))
-
-    const mResults: SearchResult[] = (memberResp?.members ?? [])
-      .filter(
-        (m) =>
-          m.name.toLowerCase().includes(lower) ||
-          m.email?.toLowerCase().includes(lower),
-      )
-      .slice(0, 3)
-      .map((m) => ({
-        kind: 'member',
-        id: m.id,
-        label: m.name,
-        sub: m.tier,
-        path: `/app/members/${m.id}`,
-      }))
-    const gResults: SearchResult[] = groupList
-      .filter((g) => g.name.toLowerCase().includes(lower))
-      .slice(0, 3)
-      .map((g) => ({
-        kind: 'group',
-        id: g.id,
-        label: g.name,
-        sub: g.description || undefined,
-        path: `/app/groups/${g.id}`,
-      }))
+    // Per kind at most three, as before; the server sends up to five.
+    const perKind = new Map<string, number>()
+    const serverResults: SearchResult[] = []
+    for (const hit of server?.hits ?? NONE) {
+      const n = perKind.get(hit.kind) ?? 0
+      if (n >= 3) continue
+      perKind.set(hit.kind, n + 1)
+      serverResults.push({
+        kind: hit.kind,
+        id: hit.id,
+        label: hit.label,
+        sub:
+          hit.kind === 'poll'
+            ? hit.sub === 'open'
+              ? t('shell.search.pollOpen', 'Offen')
+              : t('shell.search.pollClosed', 'Geschlossen')
+            : [hit.date ? formatDate(hit.date) : null, hit.sub].filter(Boolean).join(' · ') || undefined,
+        path: hit.path,
+      })
+    }
     const pluginResults: SearchResult[] = pluginSearches.flatMap((s, i) =>
       (pluginData[i] ?? NONE)
         .filter((hit) =>
@@ -180,25 +133,14 @@ export function GlobalSearch({
         path: `/app/audit-log/${e.id}`,
       }))
 
-    setResults([
-      ...pageResults,
-      ...mResults,
-      ...gResults,
-      ...evResults,
-      ...pollResults,
-      ...invoiceResults,
-      ...pluginResults,
-      ...auditResults,
-    ])
+    setResults([...pageResults, ...serverResults, ...pluginResults, ...auditResults])
     setActive(0)
     setDropOpen(true)
   }
 
-  // Search with the lists of this render: they load on first focus, often
-  // after the first letters are typed, so search again once they arrive
-  // instead of keeping "no results".
-  const [term, setTerm] = useState('')
-  const sources = [term, memberResp, groupList, auditPage, events, polls, invoices, ...pluginData]
+  // Search with the answers of this render: they arrive after the letters
+  // are typed, so search again once they do instead of keeping "no results".
+  const sources = [term, server, auditPage, ...pluginData]
   const [searched, setSearched] = useState(sources)
   if (sources.some((s, i) => s !== searched[i])) {
     setSearched(sources)
@@ -242,6 +184,7 @@ export function GlobalSearch({
     event: t('shell.searchKind.event'),
     invoice: t('shell.searchKind.invoice'),
     poll: t('shell.searchKind.poll'),
+    post: t('shell.searchKind.post', 'Beitrag'),
     audit: t('shell.searchKind.audit'),
     page: t('shell.searchKind.page'),
   }
@@ -252,6 +195,7 @@ export function GlobalSearch({
     event: { bg: `color-mix(in srgb, ${categoryColors.green} 12%, var(--hb-surface))`, color: colorText(categoryColors.green) },
     invoice: { bg: `color-mix(in srgb, ${categoryColors.orange} 12%, var(--hb-surface))`, color: colorText(categoryColors.orange) },
     poll: { bg: `color-mix(in srgb, ${categoryColors.red} 12%, var(--hb-surface))`, color: colorText(categoryColors.red) },
+    post: { bg: `color-mix(in srgb, ${categoryColors.royal} 12%, var(--hb-surface))`, color: colorText(categoryColors.royal) },
     audit: { bg: `color-mix(in srgb, ${categoryColors.slate} 12%, var(--hb-surface))`, color: colorText(categoryColors.slate) },
     page: { bg: 'var(--hb-surface-2)', color: 'var(--hb-text-2)' },
   }
@@ -358,7 +302,7 @@ export function GlobalSearch({
                     kindColors[r.kind]?.color ?? 'var(--mantine-color-dimmed)',
                 }}
               >
-                {kindLabel[r.kind]}
+                {kindLabel[r.kind] ?? t(`shell.searchKind.${r.kind}`, r.kind)}
               </span>
               <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
                 <Text

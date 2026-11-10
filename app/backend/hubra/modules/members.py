@@ -2,6 +2,7 @@
 
 from hubra.core.contracts import query_contract
 from hubra.core.modules import Blueprint, Module, NavItem, Schedule
+from hubra.core.contracts.search import search_contract
 
 _C = "hubra.api.members.contracts"
 
@@ -81,6 +82,7 @@ module = Module(
     ),
     # What plugins use instead of the members services (docs/contracts.md).
     provides=(
+        search_contract("members", "hubra.api.search.sources:members", perm="members.members.read"),
         query_contract(
             "members.badge.lookup",
             f"{_C}:lookup",

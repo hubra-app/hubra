@@ -176,8 +176,7 @@ export const qk = {
 
   /** What the header search looks through, loaded once someone uses it. */
   search: {
-    members: ['search-members'] as const,
-    groups: ['search-groups'] as const,
+    club: (q: string) => ['search-club', q] as const,
     plugin: ['search-plugin'] as const,
     audit: ['search-audit'] as const,
   },

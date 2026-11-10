@@ -3,6 +3,7 @@
 from hubra.core.contracts import action_contract, query_contract
 from hubra.core.contracts.calendar import calendar_contract
 from hubra.core.modules import Blueprint, Module, NavItem, Schedule, SettingField
+from hubra.core.contracts.search import search_contract
 
 _C = "hubra.api.events.contracts"
 
@@ -78,6 +79,7 @@ module = Module(
     ),
     # What plugins use instead of the events services (docs/contracts.md).
     provides=(
+        search_contract("events", "hubra.api.search.sources:events", perm="events.events.read"),
         query_contract(
             "events.event.get",
             f"{_C}:get_event",

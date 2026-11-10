@@ -63,6 +63,8 @@ export type SearchResult = {
     | 'page'
     /** A plugin's search: `<plugin>:<search id>`. */
     | `${string}:${string}`
+    /** Any other kind a module's server search (`<module>.search`) sends. */
+    | (string & {})
   id: string
   label: string
   sub?: string

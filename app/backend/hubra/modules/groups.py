@@ -2,6 +2,7 @@
 
 from hubra.core.contracts import action_contract, query_contract
 from hubra.core.modules import Blueprint, Module, NavItem
+from hubra.core.contracts.search import search_contract
 
 _C = "hubra.api.groups.contracts"
 
@@ -30,6 +31,7 @@ module = Module(
     ),
     # What plugins use instead of the groups services (docs/contracts.md).
     provides=(
+        search_contract("groups", "hubra.api.search.sources:groups", perm="groups.groups.read"),
         query_contract(
             "groups.self_join.list",
             f"{_C}:joinable",

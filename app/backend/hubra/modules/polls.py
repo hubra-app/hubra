@@ -2,6 +2,7 @@
 
 from hubra.core.contracts import action_contract, query_contract
 from hubra.core.modules import Blueprint, Module, NavItem, Schedule, SettingField
+from hubra.core.contracts.search import search_contract
 
 _C = "hubra.api.polls.contracts"
 
@@ -45,6 +46,7 @@ module = Module(
     ),
     # What plugins use instead of the polls services (docs/contracts.md).
     provides=(
+        search_contract("polls", "hubra.api.search.sources:polls", perm="polls.polls.read"),
         query_contract(
             "polls.poll.get",
             f"{_C}:get_poll",

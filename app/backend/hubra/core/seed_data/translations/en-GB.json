@@ -2386,6 +2386,7 @@
   "shell.searchKind.invoice": "Invoice",
   "shell.searchKind.member": "Member",
   "shell.searchKind.poll": "Poll",
+  "shell.searchKind.post": "Post",
   "shell.searchKind.transaction": "Transaction",
   "shell.searchNoResults": "No results for \"{{query}}\"",
   "shell.searchPlaceholder": "Search members, invoices, inventory…",
