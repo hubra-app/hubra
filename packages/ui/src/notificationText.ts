@@ -17,6 +17,11 @@ const TITLES: Record<string, [string, string, string]> = {
   'Event changed': ['shell.notif.text.eventChanged', 'Anlass geändert', 'Event changed'],
   'Event reminder': ['shell.notif.text.eventReminder', 'Erinnerung an einen Anlass', 'Event reminder'],
   'Event cancelled': ['shell.notif.text.eventCancelled', 'Anlass abgesagt', 'Event cancelled'],
+  'Event takes place': [
+    'shell.notif.text.eventReinstated',
+    'Anlass findet doch statt',
+    'Event takes place after all',
+  ],
   'Sign-up to approve': [
     'shell.notif.text.signUpToApprove',
     'Anmeldung bestätigen',

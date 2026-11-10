@@ -52,6 +52,10 @@ class EventRef(_Payload):
 class EventChanged(_Payload):
     event_id: int
     deleted: bool = False
+    # Called off (still in the calendar), with the organiser's reason; a
+    # cancelled event that takes place again sends cancelled=False.
+    cancelled: bool = False
+    reason: str | None = None
 
 
 class PostRef(_Payload):

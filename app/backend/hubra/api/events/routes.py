@@ -160,6 +160,48 @@ def delete_event(event_id: int):
     return "", 204
 
 
+# ── POST/DELETE /events/<id>/cancel — call an event off, or on again ─────────
+
+CANCEL_REASON_MAX = 500
+
+
+@events_bp.post("/<int:event_id>/cancel")
+@permission_required(
+    "events", "update", "Update events", scope=_event_group, allow=_own_event
+)
+def cancel_event(event_id: int):
+    """Call the event off with a reason ("Platz gesperrt"). It stays in the
+    calendar, marked; those signed up and the event's group are told."""
+    event = EventService.get(event_id)
+    body = request.get_json(silent=True) or {}
+    reason = str(body.get("reason") or "").strip()
+    if not reason:
+        return api_error("VALIDATION_ERROR", "A reason is required", 400)
+    if len(reason) > CANCEL_REASON_MAX:
+        return api_error(
+            "VALIDATION_ERROR",
+            f"The reason is longer than {CANCEL_REASON_MAX} characters",
+            400,
+        )
+    EventService.cancel(event, get_current_member().id, reason)
+    db.session.commit()
+    db.session.refresh(event)
+    return jsonify(_event_schema.dump(event)), 200
+
+
+@events_bp.delete("/<int:event_id>/cancel")
+@permission_required(
+    "events", "update", "Update events", scope=_event_group, allow=_own_event
+)
+def reinstate_event(event_id: int):
+    """The event takes place after all."""
+    event = EventService.get(event_id)
+    EventService.reinstate(event, get_current_member().id)
+    db.session.commit()
+    db.session.refresh(event)
+    return jsonify(_event_schema.dump(event)), 200
+
+
 # ── POST /events/<id>/attendees/<member_id> ───────────────────────────────────
 
 

@@ -31,6 +31,8 @@ interface BackendEvent {
   series_date?: string | null;
   recurrence?: BackendRecurrence | null;
   created_by?: number | null;
+  cancelled_at?: string | null;
+  cancel_reason?: string | null;
 }
 
 interface BackendRecurrence {
@@ -93,6 +95,8 @@ function adapt(b: BackendEvent): ClubEvent {
     seriesDate: b.series_date ?? null,
     recurrence: b.recurrence ? adaptRecurrence(b.recurrence) : null,
     createdById: b.created_by ?? null,
+    cancelledAt: b.cancelled_at ?? null,
+    cancelReason: b.cancel_reason ?? null,
   };
 }
 
@@ -211,6 +215,23 @@ export async function deleteEvent(
 ): Promise<void> {
   const suffix = scope === "following" ? "?scope=following" : "";
   await apiFetch(`/app/events/${id}${suffix}`, { method: "DELETE" });
+}
+
+/** Call the event off with a reason; those signed up and its group are told. */
+export async function cancelEvent(id: string, reason: string): Promise<ClubEvent> {
+  const b = await apiFetch<BackendEvent>(`/app/events/${id}/cancel`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+  return adapt(b);
+}
+
+/** The event takes place after all. */
+export async function reinstateEvent(id: string): Promise<ClubEvent> {
+  const b = await apiFetch<BackendEvent>(`/app/events/${id}/cancel`, {
+    method: "DELETE",
+  });
+  return adapt(b);
 }
 
 // The signed-in member signs up or gives up their place. This goes through

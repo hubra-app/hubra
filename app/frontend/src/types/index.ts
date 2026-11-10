@@ -142,6 +142,9 @@ export interface ClubEvent {
   maybeCount?: number;
   /** Who put the event up; they run it without the club-wide rights. */
   createdById?: number | null;
+  /** Called off (still shown, marked), with the organiser's reason. */
+  cancelledAt?: string | null;
+  cancelReason?: string | null;
   /** The viewer's own sign-up, if any. */
   myStatus?:
     | "registered"

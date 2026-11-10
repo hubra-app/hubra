@@ -179,6 +179,7 @@ def _send_event_reminders(now: datetime | None = None) -> dict:
     candidates = db.session.scalars(
         select(ClubEvent)
         .where(ClubEvent.reminder_sent_at.is_(None))
+        .where(ClubEvent.cancelled_at.is_(None))
         .where(ClubEvent.date >= local_today)
         .where(ClubEvent.date <= local_today + window + timedelta(days=1))
         .order_by(ClubEvent.date, ClubEvent.id)
