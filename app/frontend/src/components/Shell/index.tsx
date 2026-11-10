@@ -9,6 +9,7 @@ import { MobileDrawer } from './MobileDrawer'
 import { NotificationPanel } from './NotificationPanel'
 import { ImpersonationBanner } from './ImpersonationBanner'
 import { ClubBanner } from './ClubBanner'
+import { LimitBanner } from './LimitBanner'
 import { MaintenanceNotice } from './MaintenanceNotice'
 import { ClubBranding } from './ClubBranding'
 import { CustomizeSidebarModal } from './CustomizeSidebar'
@@ -61,6 +62,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <AppShell.Main>
         <MaintenanceNotice />
         <ClubBanner />
+        <LimitBanner />
         <div className="page-container">
           {children}
         </div>

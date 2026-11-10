@@ -5,9 +5,13 @@ row, ``services.plans``; empty = no limit); a club can have its own (``Tenant.se
 set in manage only: a number, or ``null`` for no limit, and a missing key
 for the plan's default).
 
-* **members** — members that are not archived.  A hard limit: when it is
-  reached, no new member joins (invites, applications, joining an open
-  club); platform staff adding someone in manage are not stopped.
+* **members** — members that are not archived.  At the limit a club gets a
+  grace period (``limits.grace_days``, 14 days by default) from the first
+  join past it, in which members still join while its admins see which plan
+  fits (``suggest_plan``, club app banner); after it no new member joins
+  (invites, applications, joining an open club) until the club is under the
+  limit again or on a bigger plan.  0 days: a hard stop at the limit.
+  Platform staff adding someone in manage are never stopped.
 * **mail_month** — mails the relay took for the club this calendar month
   (UTC).  A soft limit: mails still go out, the club and the platform are
   warned.
@@ -43,6 +47,7 @@ _log = logging.getLogger(__name__)
 KINDS = ("members", "mail_month", "storage_mb")
 FILE_KIND = "file_mb"
 WARN_PERCENT = 80
+GRACE_DAYS = 14
 
 _MAIL_KINDS = ("mail.sent", "mail.fallback")
 
@@ -65,6 +70,13 @@ def warn_percent() -> int:
 
     value = platform_settings.int_setting("limits.warn_percent", WARN_PERCENT)
     return value if 1 <= value <= 100 else WARN_PERCENT
+
+
+def grace_days() -> int:
+    from hubra.core.services import platform_settings
+
+    value = platform_settings.int_setting("limits.grace_days", GRACE_DAYS)
+    return value if 0 <= value <= 90 else GRACE_DAYS
 
 
 def plan_limits(plan: str) -> dict[str, int | None]:
@@ -320,12 +332,114 @@ def ensure_room_for_member(tenant: Tenant | None = None) -> None:
     limit = limits_for(tenant)["members"]
     if limit is None:
         return
-    if member_count(tenant) >= limit:
-        raise ApiError(
-            409,
-            "MEMBER_LIMIT_REACHED",
-            f"This club has reached its limit of {limit} members",
-        )
+    if member_count(tenant) < limit:
+        return
+    until = grace_until(tenant, start=True)
+    if until is not None and _now() < until:
+        return
+    raise ApiError(
+        409,
+        "MEMBER_LIMIT_REACHED",
+        f"This club has reached its limit of {limit} members",
+    )
+
+
+# ── Grace period and the plan that fits ────────────────────────────────────
+
+
+def _over_since(tenant: Tenant) -> datetime | None:
+    raw = ((tenant.settings or {}).get("limits_over_since") or {}).get("members")
+    try:
+        return datetime.fromisoformat(raw) if raw else None
+    except ValueError:
+        return None
+
+
+def grace_until(tenant: Tenant, *, start: bool = False) -> datetime | None:
+    """When the member grace period ends (None: no grace, 0 days). With
+    *start*, the first join past the limit starts it (saved with the
+    caller's transaction)."""
+    from datetime import timedelta
+
+    days = grace_days()
+    if days <= 0:
+        return None
+    since = _over_since(tenant)
+    if since is None:
+        if not start:
+            return None
+        since = _now()
+        settings = dict(tenant.settings or {})
+        settings["limits_over_since"] = {
+            **(settings.get("limits_over_since") or {}),
+            "members": since.isoformat(),
+        }
+        tenant.settings = settings
+    return since + timedelta(days=days)
+
+
+def end_grace(tenant: Tenant) -> None:
+    """Under the limit again: the next time starts a new grace period."""
+    over = dict((tenant.settings or {}).get("limits_over_since") or {})
+    if over.pop("members", None) is not None:
+        settings = dict(tenant.settings or {})
+        settings["limits_over_since"] = over
+        tenant.settings = settings
+
+
+def suggest_plan(tenant: Tenant, state: dict | None = None) -> dict | None:
+    """The cheapest plan the club may pick whose limits hold what it uses
+    now with room (every kind near or over its limit fits under the new
+    plan's warning line). None when no offered plan fits better."""
+    from decimal import Decimal
+
+    from hubra.core.billing.self_service import _plan_choices
+    from hubra.core.services import plans
+
+    state = state or status(tenant)["limits"]
+    tight = {k: r["used"] for k, r in state.items() if r["level"] != "ok"}
+    if not tight:
+        return None
+    warn = warn_percent()
+    best = None
+    for plan in _plan_choices(tenant):
+        if plan.key == tenant.plan:
+            continue
+        lim = plans.limits(plan.key)
+        if not all(
+            lim.get(k) is None or used * 100 < lim[k] * warn
+            for k, used in tight.items()
+        ):
+            continue
+        price = plans.month_price(plan.key)
+        cost = Decimal(price) if price not in (None, "") else Decimal("Infinity")
+        if best is None or cost < best[0]:
+            best = (cost, plan, price, lim)
+    if best is None:
+        return None
+    _, plan, price, lim = best
+    return {
+        "key": plan.key,
+        "name_de": plan.name_de,
+        "name_en": plan.name_en or plan.name_de,
+        "price_month_chf": price,
+        "limits": {k: lim.get(k) for k in KINDS},
+    }
+
+
+def club_view(tenant: Tenant) -> dict:
+    """What a club's billing admins see: usage against the limits, the
+    member grace period and the plan that fits."""
+    state = status(tenant)
+    members = state["limits"]["members"]
+    until = grace_until(tenant) if members["level"] == "over" else None
+    return {
+        "plan": tenant.plan,
+        **state,
+        "grace_days": grace_days(),
+        "grace_until": until.isoformat() if until else None,
+        "suggestion": suggest_plan(tenant, state["limits"]),
+    }
 
 
 # ── Warnings ────────────────────────────────────────────────────────────────
@@ -347,6 +461,8 @@ def check_tenant(tenant: Tenant, used: dict[str, int]) -> list[tuple[str, str]]:
     state = status(tenant, used)["limits"]
     seen = _notified(tenant)
     changed: list[tuple[str, str]] = []
+    if state["members"]["level"] != "over":
+        end_grace(tenant)
     for kind, row in state.items():
         level = row["level"]
         mark = f"{_period(kind, now)}:{level}"

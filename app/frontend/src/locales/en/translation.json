@@ -4830,5 +4830,27 @@
       "used": "Used",
       "expired": "Expired"
     }
+  },
+  "limits": {
+    "kind": {
+      "members": "Members",
+      "mail": "Mails this month",
+      "storage": "Storage"
+    },
+    "banner": {
+      "grace": "Your club has reached its limit of {{limit}} members. New members can still join until {{date}}.",
+      "full": "Your club has reached its limit of {{limit}} members. New members can only join with a bigger plan.",
+      "near": "Your club is close to its plan's limit: {{tight}}."
+    },
+    "fits": {
+      "unlimited": "{{name}} has no member limit",
+      "members": "{{name}} has room for {{limit}} members"
+    },
+    "perMonth": "per month",
+    "switchTo": "Switch to {{name}}",
+    "seePlans": "See plans",
+    "confirmTitle": "Switch to {{name}}?",
+    "newPrice": "New: {{price}} per month.",
+    "switch": "Switch"
   }
 }
