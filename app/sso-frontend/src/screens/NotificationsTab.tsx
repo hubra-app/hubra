@@ -38,6 +38,7 @@ import {
 import { useSso } from '@/context/SsoContext'
 import { LoadFailed } from '@/components/LoadFailed'
 import { DiscordDmCard } from '@/components/DiscordDmCard'
+import { QuietHoursCard } from '@/components/QuietHoursCard'
 import { getLang, tr } from '@/lang'
 import * as authApi from '@/api/auth'
 import type { AccountNotification } from '@/api/auth'
@@ -80,7 +81,14 @@ export function NotificationsTab() {
         ]}
         style={{ alignSelf: 'flex-start' }}
       />
-      {view === 'inbox' ? <NotificationInbox /> : <NotifySettings />}
+      {view === 'inbox' ? (
+        <NotificationInbox />
+      ) : (
+        <>
+          <QuietHoursCard />
+          <NotifySettings />
+        </>
+      )}
     </Stack>
   )
 }
