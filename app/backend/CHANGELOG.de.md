@@ -13,6 +13,14 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 - **Mitgliederausweis in Google Wallet** (sso › Mein Konto › Profil): Der Knopf «Zu Google Wallet hinzufügen» unter dem Mitgliederausweis speichert ihn als Pass mit Name, Ausweisnummer als QR-Code und den Vereinen. Hubra stellt für alle Vereine aus; der Pass folgt Ein- und Austritten und Namensänderungen und wird inaktiv, wenn das Konto gelöscht wird. Einrichten unter manage › Dienste › Google Wallet (docs/google-wallet.md). Betrieb: `flask db upgrade` ausführen (neue Spalten `users.google_wallet_object`, `users.google_wallet_hash`).
 
+### Changed
+
+- **Dashboards als Raster**: Dashboards und Startseiten sind ein Raster aus 12 Spalten: Widget am Griff ziehen verschiebt es, an der Ecke ziehen ändert Breite und Höhe (oder mit den Pfeiltasten), «Höhe nach Inhalt» stellt die Höhe wieder auf den Inhalt. Bestehende Dashboards behalten ihr Layout.
+
+### Fixed
+
+- Dashboard › Verein anpassen schlug fehl, und «Offene Rechnungen» liess sich keinem Dashboard hinzufügen: Widget-Typen mit Grossbuchstaben wurden abgelehnt.
+
 ## [0.2.5] - 2026-11-10
 
 ### Added

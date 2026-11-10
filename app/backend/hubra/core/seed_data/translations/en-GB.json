@@ -677,7 +677,6 @@
   "dashboards.deleteBody": "“{{name}}” and its widgets will be deleted.",
   "dashboards.deleteTitle": "Delete dashboard",
   "dashboards.done": "Done",
-  "dashboards.down": "Move back",
   "dashboards.edit": "Edit",
   "dashboards.empty": "No widgets yet",
   "dashboards.emptyHint": "Add widgets: events, posts, numbers, notes and more.",
@@ -714,7 +713,6 @@
   "dashboards.unknown": "This widget no longer exists (plugin removed?).",
   "dashboards.unshare": "Stop sharing",
   "dashboards.unsharedDone": "No longer shared",
-  "dashboards.up": "Move forward",
   "dashboards.w.closes": "closes {{date}}",
   "dashboards.w.eventsCount": "Number of upcoming events",
   "dashboards.w.joinsLeaves": "Joins and leaves {{year}}",
@@ -4137,5 +4135,10 @@
   "functions.grantsRoles": "Gives the roles",
   "functions.grantsRolesHint": "Whoever holds the function has these roles until the function ends (for example Board and Treasurer).",
   "functions.givesRoles": "Gives the roles {{roles}}",
-  "roles.moduleHidden": "Hidden"
+  "roles.moduleHidden": "Hidden",
+  "dashboards.move": "Move ({{name}})",
+  "dashboards.moveHint": "Drag to move, or use the arrow keys",
+  "dashboards.resize": "Resize ({{name}})",
+  "dashboards.resizeHint": "Drag for width and height, or use the arrow keys",
+  "dashboards.autoHeight": "Height from content"
 }

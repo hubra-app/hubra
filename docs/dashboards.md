@@ -35,19 +35,29 @@ if that member is deleted, the club gets the built-in layout back.
 
 ## Building one
 
-**Bearbeiten** turns on edit mode:
+Widgets sit on a grid of 12 columns and 40 px rows, like tiles. **Bearbeiten**
+turns on edit mode, which shows the columns:
 
 * **Widget hinzufügen** opens the widget list. A widget with settings asks
   for them before it is added; the cog changes them later.
-* Each widget is **Schmal** (a third of the row), **Halb** or **Breit** (the
-  whole row). On a tablet a narrow widget takes half the row and a half one
-  the whole row; on a phone every widget takes the whole row.
-* The arrows move a widget, the bin removes it.
+* Drag the **grip** (⠿, left of the widget's name) onto another widget to
+  move it there. Focused, the arrow keys move it one place.
+* Drag the **corner** (bottom right) to change the width in columns (2 to 12)
+  and the height in rows (1 to 24). Focused, ←/→ change the width and ↑/↓
+  the height. A widget without a set height is as tall as its content; once
+  it has one it keeps it and scrolls inside. **Höhe nach Inhalt** (the icon
+  next to the cog) goes back to the content's height.
+* The bin removes it.
+
+Widgets fill the grid in their order, and a later small widget moves up into
+a gap a wide one left. On a tablet a widget up to 4 columns wide takes half
+the row and a wider one the whole row (the corner then only changes the
+height); on a phone every widget takes the whole row.
 
 **Fertig** leaves edit mode; every change is saved as it is made. The `⋯`
 menu renames, shares or deletes the dashboard.
 
-![Edit mode](screenshots/dashboards/edit.png)
+![Edit mode](screenshots/dashboard-grid/2-edit-desktop.png)
 
 ## Widgets
 
@@ -104,9 +114,13 @@ shared ones. Changes to a shared dashboard are written to the audit log.
 | `PUT /home/me` / `DELETE /home/me` | the member's own start page |
 
 A dashboard is `{id, name, shared, widgets, owner: {id, name}, mine, canEdit,
-updatedAt}`. A widget is `{id, type, size, config}`: `id` is unique on the
-dashboard (`[A-Za-z0-9_-]`, up to 40), `type` names the widget (lowercase,
-up to 80), `size` is `s`, `m` or `l`, and `config` is an object of at most
+updatedAt}`. A widget is `{id, type, size, w?, h?, config}`: `id` is unique on the
+dashboard (`[A-Za-z0-9_-]`, up to 40), `type` names the widget (letters,
+digits and `_.:-`, up to 80), `w` the columns it spans (2 to 12), `h` its
+height in rows (1 to 24; missing: as tall as its content), `size` (`s`, `m`
+or `l`) the width before the grid, which the app still sends (and the server
+fills from `w` when it is missing) so older apps keep working; a widget
+without `w` is 4, 6 or 12 columns wide by its `size`. `config` is an object of at most
 4000 characters as JSON. The server doesn't check that a type exists, so a
 widget of a plugin that was removed stays saved and comes back with it.
 

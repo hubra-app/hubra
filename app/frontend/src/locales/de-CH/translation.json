@@ -4218,7 +4218,6 @@
     "deleteBody": "«{{name}}» und seine Widgets werden gelöscht.",
     "deleteTitle": "Dashboard löschen",
     "done": "Fertig",
-    "down": "Nach hinten",
     "edit": "Bearbeiten",
     "empty": "Noch keine Widgets",
     "emptyHint": "Füge Widgets hinzu: Anlässe, Beiträge, Zahlen, Notizen und mehr.",
@@ -4251,7 +4250,6 @@
     "unknown": "Dieses Widget gibt es nicht mehr (Plugin entfernt?).",
     "unshare": "Nicht mehr teilen",
     "unsharedDone": "Nicht mehr geteilt",
-    "up": "Nach vorne",
     "w": {
       "closes": "endet am {{date}}",
       "eventsCount": "Anzahl bevorstehender Anlässe",
@@ -4289,7 +4287,12 @@
     "widgetFailed": "Konnte nicht geladen werden",
     "nothing": "Nichts anzuzeigen",
     "more": "{{count}} weitere",
-    "noView": "Das Plugin bringt keine Ansicht für dieses Widget mit"
+    "noView": "Das Plugin bringt keine Ansicht für dieses Widget mit",
+    "move": "Verschieben ({{name}})",
+    "moveHint": "Ziehen zum Verschieben, oder Pfeiltasten",
+    "resize": "Grösse ändern ({{name}})",
+    "resizeHint": "Ziehen für Breite und Höhe, oder Pfeiltasten",
+    "autoHeight": "Höhe nach Inhalt"
   },
   "subscription": {
     "cancelled": "Zahlung abgebrochen, es wurde nichts belastet.",
