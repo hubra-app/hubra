@@ -38,12 +38,8 @@ import { addonPrice, useAddonSwitch, useHubraCatalog } from './subscriptionHooks
 
 type FormValue = string | number | boolean | null
 
-/**
- * Modules whose settings have their own page in the module (more than the
- * generic form can show). Their "Einstellungen" button goes there, so each
- * setting is edited in one place only.
- */
-const SETTINGS_PAGES: Record<string, string> = { finance: '/app/finance/settings' }
+/** A module has settings when it has fields or its own settings page. */
+const hasSettings = (m: ModuleInfo) => m.settings.length > 0 || Boolean(m.settingsPage)
 
 /** "Fehlt ein Modul?": opens the idea form with the area "Modul" set. */
 function MissingModule() {
@@ -108,7 +104,7 @@ export function ModulesTab() {
   // ?module=<code> opens that module's settings, so a module's own page can
   // link straight to them (/app/settings/modules?module=messengers).
   const wanted = byCode[params.get('module') ?? '']
-  const fromUrl = wanted && wanted.enabled && canWrite && wanted.settings.length > 0 ? wanted : null
+  const fromUrl = wanted && wanted.enabled && canWrite && hasSettings(wanted) ? wanted : null
   const editing = picked ?? fromUrl
   const setEditing = (m: ModuleInfo | null) => {
     setPicked(m)
@@ -119,8 +115,7 @@ export function ModulesTab() {
     }
   }
 
-  const configure = (m: ModuleInfo) =>
-    SETTINGS_PAGES[m.code] ? navigate(SETTINGS_PAGES[m.code]) : setEditing(m)
+  const configure = (m: ModuleInfo) => (m.settingsPage ? navigate(m.settingsPage) : setEditing(m))
 
   const optional = modules.filter((m) => !m.required)
   const required = modules.filter((m) => m.required)
@@ -158,7 +153,7 @@ export function ModulesTab() {
           : t('settings.modules.switchedOff', '{{name}} ausgeschaltet', { name: m.name }),
       )
       if (enabled && updated.settings.length > 0 && !updated.configured) {
-        setEditing(updated)
+        configure(updated)
       }
     } catch (err) {
       notify('error', m.name, (err as Error).message)
@@ -180,8 +175,7 @@ export function ModulesTab() {
     />
   )
 
-  if (fromUrl && SETTINGS_PAGES[fromUrl.code])
-    return <Navigate to={SETTINGS_PAGES[fromUrl.code]} replace />
+  if (fromUrl?.settingsPage) return <Navigate to={fromUrl.settingsPage} replace />
 
   if (isLoading) {
     return (
@@ -329,10 +323,7 @@ function ModuleCard({
       <Text fz="sm" c="dimmed" style={{ flex: 1 }}>
         {m.description}
       </Text>
-      {(blocker ||
-        needsSetup ||
-        uses.length > 0 ||
-        (m.settings.length > 0 && m.enabled && canWrite)) && (
+      {(blocker || needsSetup || uses.length > 0 || (hasSettings(m) && m.enabled && canWrite)) && (
         <Group justify="space-between" gap="xs" wrap="wrap">
           <Group gap={6}>
             {blocker && (
@@ -353,7 +344,7 @@ function ModuleCard({
               </Text>
             )}
           </Group>
-          {m.settings.length > 0 && m.enabled && canWrite && (
+          {hasSettings(m) && m.enabled && canWrite && (
             <Button
               size="xs"
               variant="default"

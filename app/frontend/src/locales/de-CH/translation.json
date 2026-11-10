@@ -2322,7 +2322,7 @@
       "bank": "Bank & QR-Rechnung",
       "apps": "Verbundene Apps",
       "encryption": "Verschlüsselung",
-      "api": "API & Apps",
+      "api": "API & Webhooks",
       "subscription": "Hubra-Abo"
     },
     "title": "Einstellungen",

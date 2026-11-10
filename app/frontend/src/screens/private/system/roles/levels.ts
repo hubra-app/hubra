@@ -133,6 +133,7 @@ export function toModuleGroups(allPerms: PermissionEntry[]): ModuleGroup[] {
       return {
         id,
         module,
+        hides: perms.some((p) => isAccessKey(p.key)),
         perms,
         areas: toAreas(perms.filter((p) => !isAccessKey(p.key))),
       }

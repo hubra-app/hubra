@@ -143,8 +143,8 @@ def states(tenant_id=CURRENT) -> dict[str, ModuleState]:
         if m.plugin is not None and m.plugin in removed:
             # Uninstalled since this process started; gone after its reload.
             continue
-        grant = grants.get(m.code)
-        feature = catalog.get(m.code)
+        grant = _own_or_renamed(grants, m)
+        feature = _own_or_renamed(catalog, m)
         if m.required:
             enabled, allowed = True, True
         elif grant is not None:
@@ -177,6 +177,14 @@ def states(tenant_id=CURRENT) -> dict[str, ModuleState]:
     if cache is not None:
         cache[tid] = result
     return result
+
+
+def _own_or_renamed(rows: dict, m: Module):
+    """*m*'s row in *rows*, else the row of a code it had before."""
+    row = rows.get(m.code)
+    if row is None:
+        row = next((rows[o] for o in m.renamed_from if o in rows), None)
+    return row
 
 
 def _uninstalled_plugins() -> set[str]:
@@ -288,12 +296,19 @@ def sync_catalog() -> int:
     for m in registry.all():
         row = db.session.get(Feature, m.code)
         if row is None:
+            # A renamed module keeps the default a manager set for its old code.
+            old = next(
+                (f for f in (db.session.get(Feature, o) for o in m.renamed_from) if f),
+                None,
+            )
             db.session.add(
                 Feature(
                     code=m.code,
                     name=m.name,
                     description=m.description,
-                    default_enabled=m.default_enabled or m.required,
+                    default_enabled=old.default_enabled
+                    if old is not None
+                    else m.default_enabled or m.required,
                 )
             )
             created += 1
@@ -324,12 +339,26 @@ def _grant(tenant_id: int, code: str, create: bool = True):
         if db.session.get(Feature, code) is None:
             sync_catalog()
         feature = db.session.get(Feature, code)
+        m = registry.get(code)
+        # A renamed module starts from what the club had under its old code.
+        old = (
+            db.session.scalar(
+                select(TenantFeature)
+                .where(TenantFeature.tenant_id == tenant_id)
+                .where(TenantFeature.feature_code.in_(m.renamed_from))
+                .order_by(TenantFeature.id.desc())
+            )
+            if m is not None and m.renamed_from
+            else None
+        )
         grant = TenantFeature(
             tenant_id=tenant_id,
             feature_code=code,
-            enabled=bool(feature.default_enabled) if feature else False,
-            allowed=True,
-            config={},
+            enabled=bool(old.enabled)
+            if old is not None
+            else bool(feature.default_enabled) if feature else False,
+            allowed=bool(old.allowed) if old is not None else True,
+            config=dict(old.config or {}) if old is not None else {},
         )
         # Written now, in a savepoint: two saves at once (a double click,
         # two tabs) both found no row; the second insert hit

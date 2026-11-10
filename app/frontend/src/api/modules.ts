@@ -49,6 +49,8 @@ export interface ModuleInfo {
   accessKey?: string | null
   nav: ModuleNavItem[]
   settings: ModuleSettingField[]
+  /** The module's own settings page in the club app, if it has one. */
+  settingsPage?: string | null
   config: Record<string, string | number | boolean | null>
   configured: boolean
   /** Set when the module comes from a plugin. */

@@ -213,3 +213,18 @@ which plugin to update; the new plugin's card lists what it takes over.
 
 A rollback of the new plugin to a version without `replaces:` doesn't bring
 the old plugin back: install it again (its data is still there).
+
+### Renaming a module (`renamed_from`)
+
+A module that gets a new code names its old ones, so each club keeps
+whether it had the module on, and its settings:
+
+```python
+module = Module(code="qualifications", renamed_from=("inventory.guides",), ...)
+```
+
+Until a club changes something, its switch and settings are read from the
+old code; the first change copies them to the new code. The catalogue row
+of the new code starts with the default a manager set for the old one. A
+plugin can't name a code that is still a loaded module. Permission keys
+come from the blueprint names, so keep those to keep the roles' rights.

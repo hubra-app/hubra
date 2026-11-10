@@ -18,7 +18,7 @@ import { SignInAppsSection } from './SignInAppsSection'
 import { WebhooksSection } from './WebhooksSection'
 
 /**
- * Einstellungen › API & Apps: who may reach the club's data from outside
+ * Einstellungen › API & Webhooks: who may reach the club's data from outside
  * (docs/api-tokens.md, docs/oauth.md). Two switches (members' own access,
  * AI assistants such as Claude) and every token and app sign-in of the
  * club, each of which an admin can end.

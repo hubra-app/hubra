@@ -226,7 +226,7 @@ function AppModal({
 }
 
 /**
- * Einstellungen › API & Apps › Anmelden mit Hubra (docs/oidc.md): the
+ * Einstellungen › API & Webhooks › Anmelden mit Hubra (docs/oidc.md): the
  * club's website or forum signs members in with their Hubra account.
  */
 export function SignInAppsSection() {
