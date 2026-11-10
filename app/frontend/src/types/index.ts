@@ -330,6 +330,8 @@ export interface Application {
   wantsTier: string;
   appliedAt: string;
   avatarColor: string;
+  /** The poster tag the person came from. */
+  source: string | null;
 }
 
 export interface AuditEntry {

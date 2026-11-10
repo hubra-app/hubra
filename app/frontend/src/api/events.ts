@@ -604,6 +604,8 @@ export interface TrialSignup {
   phone: string | null;
   birthDate: string | null;
   message: string | null;
+  /** The trial poster's tag the person came from. */
+  source?: string | null;
   status: TrialStatus;
   createdAt: string;
   confirmedAt: string | null;

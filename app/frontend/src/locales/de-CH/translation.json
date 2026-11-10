@@ -2238,7 +2238,29 @@
       "byTier": "Nach Stufe",
       "todayNote": "Status und Stufe sind die heutigen."
     },
-    "roleViaGroup": "{{role}} (über Gruppe {{group}})"
+    "roleViaGroup": "{{role}} (über Gruppe {{group}})",
+    "poster": {
+      "via": "über Plakat «{{source}}»",
+      "title": "Plakate und Flyer",
+      "intro": "Ein Plakat mit QR-Code zur Beitritts- oder Probetrainings-Seite. Gib jedem Aushang einen eigenen Namen, dann siehst du hier, welcher Anfragen bringt.",
+      "create": "Plakat erstellen",
+      "source": "Plakat",
+      "joins": "Beitrittsanfragen",
+      "trials": "Probetrainings",
+      "headlineJoin": "Werde Mitglied!",
+      "headlineTrial": "Komm ins Probetraining!",
+      "callJoin": "QR-Code scannen und Beitritt anfragen",
+      "callTrial": "QR-Code scannen und gratis Probetraining buchen",
+      "print": "Drucken",
+      "kindJoin": "Mitglied werden",
+      "kindTrial": "Probetraining",
+      "a4": "A4 Plakat",
+      "a6": "A6 Flyer",
+      "headline": "Überschrift",
+      "tag": "Name des Aushangs",
+      "tagHint": "Zum Beispiel «bahnhof» oder «flyer-schule». Wer über diesen Code kommt, wird so gezählt.",
+      "qrAlt": "QR-Code zur Seite des Vereins"
+    }
   },
   "notifications": {
     "invoicePaid": "Rechnung bezahlt",

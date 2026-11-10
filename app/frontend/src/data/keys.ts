@@ -77,6 +77,8 @@ export const qk = {
     fee: (id: string) => ['member-fee', id] as const,
   },
   applications: ['applications'] as const,
+  poster: (kind: string, source: string) => ['poster', kind, source] as const,
+  signupSources: ['signup-sources'] as const,
   leaveRequests: ['leave-requests'] as const,
   groups: {
     all: ['groups'] as const,

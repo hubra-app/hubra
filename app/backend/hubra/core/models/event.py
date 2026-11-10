@@ -288,6 +288,8 @@ class TrialSignup(db.Model):
     phone: Mapped[str | None] = mapped_column(db.String(50), nullable=True)
     birth_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # The tag of the trial poster's QR code the person came from.
+    source: Mapped[str | None] = mapped_column(db.String(40), nullable=True)
     # The secret in the mail's links (confirm, cancel).
     token: Mapped[str] = mapped_column(db.String(64), nullable=False, unique=True)
     # pending (address not confirmed) | confirmed | attended | no_show |

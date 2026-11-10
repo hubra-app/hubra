@@ -2238,7 +2238,29 @@
       "byTier": "By tier",
       "todayNote": "Status and tier are today's."
     },
-    "roleViaGroup": "{{role}} (through group {{group}})"
+    "roleViaGroup": "{{role}} (through group {{group}})",
+    "poster": {
+      "via": "via poster «{{source}}»",
+      "title": "Posters and flyers",
+      "intro": "A poster with a QR code to the join or trial page. Give each one its own name, and you see here which one brings requests.",
+      "create": "Make a poster",
+      "source": "Poster",
+      "joins": "Requests to join",
+      "trials": "Trial trainings",
+      "headlineJoin": "Join us!",
+      "headlineTrial": "Come to a trial training!",
+      "callJoin": "Scan the QR code and ask to join",
+      "callTrial": "Scan the QR code and book a free trial training",
+      "print": "Print",
+      "kindJoin": "Join",
+      "kindTrial": "Trial training",
+      "a4": "A4 poster",
+      "a6": "A6 flyer",
+      "headline": "Headline",
+      "tag": "Name of this poster",
+      "tagHint": "For example «station» or «school-flyer». Whoever comes through this code is counted under it.",
+      "qrAlt": "QR code to the club's page"
+    }
   },
   "notifications": {
     "invoicePaid": "Invoice paid",
