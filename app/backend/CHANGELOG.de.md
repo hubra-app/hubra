@@ -9,6 +9,10 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ## [Unreleased]
 
+### Added
+
+- **Schritte nach dem Deploy laufen von selbst**: Sobald alle Backend-Prozesse eine neue Version laufen, führt ein Worker `flask db upgrade`, `sync-tenant-schemas`, `sync-permissions`, `seed` und `plugins sync` einmal für diese Version aus, ausser ein Init-Schritt erledigt das schon. manage › Diagnose › Systemzustand › Builds zeigt jeden Schritt und die Ausgabe eines fehlgeschlagenen, mit **Jetzt ausführen** zum erneuten Start; ein Fehler löst zudem eine Upgrade-Warnung aus. Eine Plattform-Einstellung (Diagnose › Einstellungen) schaltet es aus. Betreiber müssen diese Schritte nach einem Release nicht mehr von Hand ausführen.
+
 ## [0.2.5] - 2026-11-10
 
 ### Added

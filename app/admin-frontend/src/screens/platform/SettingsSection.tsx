@@ -90,6 +90,7 @@ const DISCORD_SUPPORT = ['discord.support_channel_id', 'discord.support_add_repo
 // Defaults built into Hubra, not read from the environment.
 const PERF = ['perf.slow_request_ms', 'perf.slow_query_ms', 'perf.p95_warning_ms']
 const ERRORS = ['errors.auto_resolve']
+const UPGRADES = ['upgrades.post_deploy_steps']
 const LIMITS = ['limits.warn_percent']
 const MCP = ['mcp.url']
 const OAUTH = ['oauth.dynamic_clients', 'oauth.dynamic_redirect_hosts']
@@ -101,7 +102,7 @@ const BUILT_IN = [
   'domains.cluster_issuer',
   'domains.ingress_class',
   'domains.service',
-  'alerts.cooldown_minutes', 'alerts.retention_days', 'translate.deepl_url', ...PERF, ...ERRORS, ...LIMITS, ...OAUTH, ...LEGAL]
+  'alerts.cooldown_minutes', 'alerts.retention_days', 'translate.deepl_url', ...PERF, ...ERRORS, ...UPGRADES, ...LIMITS, ...OAUTH, ...LEGAL]
 const ALERTS = ['alerts.cooldown_minutes', 'alerts.retention_days', 'alerts.manage_url']
 
 
@@ -351,6 +352,10 @@ const FIELD_DE: Record<string, [string, string]> = {
   'errors.auto_resolve': [
     'Fehler beim Upgrade als behoben markieren',
     'Wenn alle Prozesse eine neue Version laufen, gelten offene Fehler, die dort nicht aufgetreten sind, als behoben. Kommen sie wieder, sind sie wieder offen',
+  ],
+  'upgrades.post_deploy_steps': [
+    'Schritte nach dem Deploy',
+    'Läuft auf allen Prozessen eine neue Version, führt ein Worker Migrationen, Seeds, Rechte-Abgleich und Plugin-Sync aus und meldet unter Systemzustand',
   ],
   'limits.warn_percent': [
     'Warnen ab (%)',
@@ -672,6 +677,35 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                 onChange={(e) => {
                   const on = e.currentTarget.checked
                   setDraft((d) => ({ ...d, 'errors.auto_resolve': on ? 'on' : 'off' }))
+                }}
+              />
+            </Paper>
+          )}
+
+          {section === 'performance' && byKey['upgrades.post_deploy_steps'] && (
+            <Paper withBorder p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Nach dem Deploy', 'After a deploy')}</Title>
+                {resetButton(UPGRADES)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Das Ergebnis steht unter Diagnose › Systemzustand › Builds. Von Hand starten geht dort immer.',
+                  'The result is under Diagnostics › System health › Builds. Starting them by hand always works there.',
+                )}
+              </Text>
+              <Switch
+                label={tr('Schritte nach dem Deploy selbst ausführen', 'Run the post-deploy steps')}
+                description={tr(
+                  'Sobald alle Prozesse eine neue Version laufen: flask db upgrade, sync-tenant-schemas, sync-permissions, seed und plugins sync, einmal pro Version.',
+                  'Once every process runs a new build: flask db upgrade, sync-tenant-schemas, sync-permissions, seed and plugins sync, once per build.',
+                )}
+                checked={
+                  (draft['upgrades.post_deploy_steps'] ?? byKey['upgrades.post_deploy_steps'].value) === 'on'
+                }
+                onChange={(e) => {
+                  const on = e.currentTarget.checked
+                  setDraft((d) => ({ ...d, 'upgrades.post_deploy_steps': on ? 'on' : 'off' }))
                 }}
               />
             </Paper>

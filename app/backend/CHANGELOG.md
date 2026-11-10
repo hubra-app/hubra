@@ -7,6 +7,10 @@ section and position, or the apps show that version in English.
 
 ## [Unreleased]
 
+### Added
+
+- **Post-deploy steps run themselves**: once every backend process runs a new build, a worker runs `flask db upgrade`, `sync-tenant-schemas`, `sync-permissions`, `seed` and `plugins sync` once for that build, unless an init step is already doing it. manage › Diagnostics › System health › Builds shows each step and the output of one that failed, with **Run now** to start them again; a failure also sends an upgrades alert. A platform setting (Diagnostics › Settings) turns it off. Operators no longer need to run these by hand after a release.
+
 ## [0.2.5] - 2026-11-10
 
 ### Added
