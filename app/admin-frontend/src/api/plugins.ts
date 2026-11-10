@@ -271,3 +271,26 @@ export const addTrustedKey = (name: string, publicKey: string) =>
 
 export const deleteTrustedKey = (id: number) =>
   withStepUp(() => apiFetch<void>(`${P}/keys/${id}`, json('DELETE')))
+
+/** One installed plugin against another Hubra version (upgrade impact). */
+export interface ImpactRow {
+  id: string
+  name: string
+  installedVersion: string
+  requiresHubra: string
+  /** ok: takes it; update: a repository version does; blocked: none known does. */
+  state: 'ok' | 'update' | 'blocked'
+  updateTo: string | null
+  /** Clubs with one of its modules on (only when it is not ok). */
+  clubs: number | null
+}
+
+export interface UpgradeImpact {
+  target: string
+  current: string
+  plugins: ImpactRow[]
+  counts: { ok: number; update: number; blocked: number }
+}
+
+export const getUpgradeImpact = (version: string) =>
+  apiFetch<UpgradeImpact>(`${P}/upgrade-impact?version=${encodeURIComponent(version)}`)

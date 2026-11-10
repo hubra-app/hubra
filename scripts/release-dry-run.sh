@@ -13,6 +13,9 @@ echo "== check $tag"
 GITHUB_OUTPUT="" python3 scripts/release_check.py check "$tag"
 # Placeholder images: the real block comes from the promote job.
 printf 'images:\n  - name: ghcr.io/example/backend\n    newTag: "%s"\n    digest: sha256:0\n' "$version" > "$tmp/images.yaml"
+echo "== plugins $tag"
+# Upgrade impact: an official plugin without a version for this release.
+python3 scripts/release_check.py plugins "$tag" --strict
 echo "== notes $tag"
 python3 scripts/release_check.py notes "$tag" --images "$tmp/images.yaml" --out "$tmp/out" --notes "$tmp/notes.md"
 cat "$tmp/notes.md"

@@ -142,3 +142,49 @@ class RealChangelogTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PluginImpactTest(unittest.TestCase):
+    INDEX = {
+        "plugins": [
+            {"id": "fine", "version": "2.0.0", "hubra": ">=0.2", "versions": []},
+            {
+                "id": "narrowed",
+                "version": "3.0.0",
+                "hubra": ">=0.2,<0.3",
+                "versions": [{"version": "2.9.0", "hubra": ">=0.2"}],
+            },
+            {"id": "stuck", "version": "1.0.0", "hubra": ">=0.1,<0.3", "versions": []},
+            {"id": "gone", "version": "1.0.0", "yanked": "bad", "versions": []},
+            {"id": "open", "version": "0.1.0", "versions": []},
+        ]
+    }
+
+    def test_ranges(self):
+        self.assertTrue(rc.in_range("0.3.0", ">=0.2,<1"))
+        self.assertFalse(rc.in_range("1.0.0", ">=0.2,<1"))
+        self.assertTrue(rc.in_range("0.2.5", "==0.2.*"))
+        self.assertFalse(rc.in_range("0.3.0", "==0.2.*"))
+        self.assertTrue(rc.in_range("1.4.0", "~=1.2"))
+        self.assertFalse(rc.in_range("2.0.0", "~=1.2"))
+        self.assertFalse(rc.in_range("1.3.0", "~=1.2.3"))
+        self.assertTrue(rc.in_range("0.3.0", ""))
+        with self.assertRaises(rc.ReleaseError):
+            rc.in_range("0.3.0", "around 0.3")
+
+    def test_impact_sorts_plugins(self):
+        impact = rc.plugin_impact("0.3.0", self.INDEX)
+        self.assertEqual([r["id"] for r in impact["ok"]], ["fine", "open"])
+        self.assertEqual([(r["id"], r["works"]) for r in impact["update"]], [("narrowed", "2.9.0")])
+        self.assertEqual([r["id"] for r in impact["blocked"]], ["stuck"])
+
+    def test_cli_strict_fails_only_on_blocked(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "index.json"
+            import json
+
+            path.write_text(json.dumps(self.INDEX))
+            self.assertEqual(rc.main(["plugins", "v0.2.5", "--index", str(path), "--strict"]), 0)
+            self.assertEqual(rc.main(["plugins", "v0.3.0", "--index", str(path)]), 0)
+            self.assertEqual(rc.main(["plugins", "v0.3.0", "--index", str(path), "--strict"]), 1)
+            self.assertEqual(rc.main(["plugins", "v0.3.0", "--index", str(Path(tmp) / "none.json")]), 0)

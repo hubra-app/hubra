@@ -37,6 +37,22 @@ the checks themselves in [ci.md](ci.md).
    `SHA256SUMS`), creates `release/1.3` if it is missing and mirrors the tag
    to GitLab.
 
+### Plugins and the new version
+
+Every plugin names the Hubra versions it runs on (`hubra:` in plugin.yaml).
+Two checks catch a release that would leave plugins behind:
+
+- The PR check and the dry run run `scripts/release_check.py plugins v1.3.0
+  --strict` against the official index (plugins.hubra.club/index.json). It
+  fails when an official plugin has no version whose range takes the new
+  version (release that plugin with a wider `hubra:` first) and warns when
+  only an older plugin version does. If the index can't be read it only
+  warns.
+- On an install: manage › Plugin catalogue › **Upgrade check** takes the
+  version you are about to move to (the next minor by default) and lists the
+  installed plugins that would stop loading, whether a repository version
+  fixes it (update the plugin first) and how many clubs use each.
+
 A pre-release (`v1.3.0-rc.1`) runs the same way, but gets no `1.3` or
 `latest` tag and no release branch, and needs no changelog section.
 
