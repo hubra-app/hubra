@@ -9,7 +9,7 @@ section and position, or the apps show that version in English.
 
 ### Changed
 
-- Dashboards and start pages are a grid of 12 columns: drag a widget's grip to move it, drag its corner to change width and height (or use the arrow keys), and "Höhe nach Inhalt" goes back to the content's height. Older dashboards keep their layout.
+- **Dashboards as a grid**: dashboards and start pages are a grid of 12 columns: drag a widget's grip to move it, drag its corner to change width and height (or use the arrow keys), and "Höhe nach Inhalt" goes back to the content's height. Older dashboards keep their layout.
 
 ### Fixed
 
