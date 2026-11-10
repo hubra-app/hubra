@@ -68,6 +68,17 @@ The contact form sends a case of kind `question` (besides `bug` and
 info or votes. Manage › Reports & ideas has a Questions tab, and answers
 mail the person like the other kinds.
 
+### Request ids on problem reports
+
+A problem reported from the club app (Problem melden) also sends the last ten
+API calls of that page load: request id (`X-Request-ID`), method, path without
+its query, status, time and error code (`@hubra/api-client`
+`recentRequests()`, kept in memory only). The case stores them in
+`details.requests`. On the case in manage › Reports & ideas, **Last requests**
+lists them, and a request that hit a server error links to its error group
+(Diagnostics › Errors, `?q=#<id>`): the error tracker keeps request id → group
+in Redis for 14 days (`error_tracker.groups_for_requests`).
+
 ### My data
 
 - **Download** (`GET /global/account/export`): one JSON file with the

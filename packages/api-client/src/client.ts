@@ -2,6 +2,7 @@
 // In local dev: VITE_API_BASE points to http://localhost:5000/api (direct to Flask)
 // VITE_API_BASE can fall back to relative "/api" (Vite proxy or Caddy proxy)
 import { localizeError, type FieldErrors } from "./errors";
+import { noteRequest } from "./recentRequests";
 
 export const BASE = (import.meta.env.VITE_API_BASE ?? "/api") + "/v1";
 
@@ -244,6 +245,7 @@ export async function apiFetch<T = unknown>(
     } catch {
       /* ignore */
     }
+    noteRequest(res, init.method, path, code);
     throw Object.assign(new Error(localizeError(res.status, code, message, fields)), {
       status: res.status,
       code,
@@ -253,6 +255,7 @@ export async function apiFetch<T = unknown>(
     });
   }
 
+  noteRequest(res, init.method, path);
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
@@ -312,6 +315,7 @@ export async function apiFetchRaw(
     } catch {
       /* ignore */
     }
+    noteRequest(res, init.method, path, code);
     throw Object.assign(new Error(localizeError(res.status, code, message, fields)), {
       status: res.status,
       code,
@@ -320,5 +324,6 @@ export async function apiFetchRaw(
     });
   }
 
+  noteRequest(res, init.method, path);
   return res;
 }

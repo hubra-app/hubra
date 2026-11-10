@@ -3858,7 +3858,9 @@
       "tablet": "Tablet",
       "desktop": "Computer",
       "theme_light": "Light",
-      "theme_dark": "Dark"
+      "theme_dark": "Dark",
+      "requests": "Last requests to Hubra",
+      "requestsFailed": "{{count}}, {{failed}} of them failed"
     },
     "form": {
       "area": "Area",

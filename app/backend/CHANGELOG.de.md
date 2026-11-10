@@ -12,6 +12,7 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 ### Added
 
 - **Schritte nach dem Deploy laufen von selbst**: Sobald alle Backend-Prozesse eine neue Version laufen, führt ein Worker `flask db upgrade`, `sync-tenant-schemas`, `sync-permissions`, `seed` und `plugins sync` einmal für diese Version aus, ausser ein Init-Schritt erledigt das schon. manage › Diagnose › Systemzustand › Builds zeigt jeden Schritt und die Ausgabe eines fehlgeschlagenen, mit **Jetzt ausführen** zum erneuten Start; ein Fehler löst zudem eine Upgrade-Warnung aus. Eine Plattform-Einstellung (Diagnose › Einstellungen) schaltet es aus. Betreiber müssen diese Schritte nach einem Release nicht mehr von Hand ausführen.
+- **Problem-Meldungen bringen die Request-IDs mit**: «Problem melden» in der Vereins-App schickt auch die letzten zehn API-Aufrufe der Sitzung mit (Request-ID, Methode, Pfad ohne Suchbegriffe, Status, Fehlercode). Beim Fall in manage › Meldungen & Ideen listet **Letzte Anfragen** sie auf und verlinkt einen fehlgeschlagenen mit seiner Fehlergruppe unter Diagnose › Fehler.
 
 ### Changed
 

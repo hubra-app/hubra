@@ -2158,6 +2158,8 @@
   "status.pending": "Pending",
   "status.suspended": "Suspended",
   "status.trial": "Trial",
+  "support.device.requests": "Last requests to Hubra",
+  "support.device.requestsFailed": "{{count}}, {{failed}} of them failed",
   "system.accessDenied": "Access denied: admin role required.",
   "system.adminRequired": "Detailed service checks require admin role.",
   "system.allMethods": "All methods",

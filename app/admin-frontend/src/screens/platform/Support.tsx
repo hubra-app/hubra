@@ -59,6 +59,7 @@ import {
   type CaseStatus,
   type DiscordState,
   type Fingerprint,
+  type CaseRequest,
   type StaffCase,
 } from '@/api/support'
 
@@ -630,6 +631,7 @@ function CaseDetail({ id }: { id: number }) {
               <Fact label={tr('Hubra-Version', 'Hubra version')}>{fp.appVersion ?? '–'}</Fact>
             </SimpleGrid>
           </Section>
+          {c.requests && c.requests.length > 0 && <RequestsSection requests={c.requests} />}
           {(c.merged ?? []).length > 0 && (
             <Section title={tr('Zusammengeführt', 'Merged here')}>
               <Stack gap={4}>
@@ -1153,5 +1155,52 @@ function MergeModal({
         </Group>
       </Stack>
     </Modal>
+  )
+}
+
+/** The reporter's last API calls: request id (for the logs), and the error
+ * group behind a failed one. */
+function RequestsSection({ requests }: { requests: CaseRequest[] }) {
+  const navigate = useNavigate()
+  return (
+    <Section title={tr('Letzte Anfragen', 'Last requests')}>
+      <Stack gap={8}>
+        {[...requests].reverse().map((r) => {
+          const status = r.status ?? 0
+          return (
+            <Stack key={r.id} gap={2}>
+              <Group gap={6} wrap="nowrap">
+                {r.status !== undefined && (
+                  <Badge size="xs" variant="light" color={status >= 500 ? 'red' : status >= 400 ? 'orange' : 'gray'}>
+                    {r.status}
+                  </Badge>
+                )}
+                <Text size="xs" ff="monospace" style={{ wordBreak: 'break-all' }}>
+                  {[r.method, r.path].filter(Boolean).join(' ')}
+                </Text>
+              </Group>
+              <Text size="xs" c="dimmed">
+                <Text span ff="monospace" size="xs">
+                  {r.id}
+                </Text>
+                {r.code ? ` · ${r.code}` : ''}
+                {r.at ? ` · ${formatDateTime(r.at)}` : ''}
+              </Text>
+              {r.errorGroup && (
+                <Anchor
+                  size="xs"
+                  onClick={() =>
+                    navigate(`/app/platform/diagnostics/errors?q=${encodeURIComponent(`#${r.errorGroup!.id}`)}`)
+                  }
+                >
+                  {tr('Fehler', 'Error')} #{r.errorGroup.id}: {r.errorGroup.type}
+                  {r.errorGroup.status === 'resolved' ? tr(' (behoben)', ' (fixed)') : ''}
+                </Anchor>
+              )}
+            </Stack>
+          )
+        })}
+      </Stack>
+    </Section>
   )
 }

@@ -16,6 +16,7 @@ import {
   UnstyledButton,
 } from '@mantine/core'
 import { IconBug, IconBulb, IconChevronDown, IconChevronRight, IconDeviceDesktop } from '@tabler/icons-react'
+import { recentRequests } from '@hubra/api-client'
 import { Modal, Field } from '@/components/ui'
 import { useToast } from '@/context/AppContext'
 import { useT } from '@/locales/i18n'
@@ -52,6 +53,10 @@ function ReportForm({ initialKind, initialArea }: { initialKind: CaseKind; initi
   const [sending, setSending] = useState(false)
   // Read once, when the dialog opens: the window the problem happened in.
   const [device] = useState<DeviceInfo>(() => currentDeviceInfo())
+  // The last API calls before the dialog opened, so staff find the request
+  // ids (and the error behind a failed one).
+  const [requests] = useState(() => recentRequests())
+  const failed = requests.filter((r) => r.status >= 400).length
   const page = location.pathname
 
   const areaOptions = useMemo(
@@ -82,6 +87,7 @@ function ReportForm({ initialKind, initialArea }: { initialKind: CaseKind; initi
         area,
         page,
         fingerprint: device,
+        requests,
       })
       await queryClient.invalidateQueries({ queryKey: qk.support.mine })
       close()
@@ -286,6 +292,19 @@ function ReportForm({ initialKind, initialArea }: { initialKind: CaseKind; initi
                 {value}
               </Text>
             ))}
+            {requests.length > 0 && (
+              <Text size="xs">
+                <Text span c="dimmed" size="xs">
+                  {t('support.device.requests', 'Letzte Anfragen an Hubra')}:
+                </Text>{' '}
+                {failed
+                  ? t('support.device.requestsFailed', '{{count}}, davon {{failed}} mit Fehler', {
+                      count: requests.length,
+                      failed,
+                    })
+                  : requests.length}
+              </Text>
+            )}
             <Text size="xs" c="dimmed" mt={4}>
               {t('support.device.only', 'Nur das. Keine Adresse, keine weiteren Merkmale des Geräts.')}
             </Text>

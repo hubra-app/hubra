@@ -192,6 +192,7 @@ def _capture(exc, route, tenant_id) -> None:
             conn.execute(
                 update(ErrorGroup).where(ErrorGroup.id == row.id).values(**values)
             )
+    _remember_request(fp)
     if event is not None:
         platform_monitor.record(
             "system",
@@ -208,6 +209,66 @@ def _capture(exc, route, tenant_id) -> None:
             },
             tenant_id=tenant_id,
         )
+
+
+# Request id -> error group fingerprint, so a problem report that names the
+# request ids of the session (support.clean_requests) links to the error.
+_REQUEST_KEY = "hubra:errreq:"
+REQUEST_TTL = 14 * 24 * 3600
+
+
+def _remember_request(fp: str) -> None:
+    from hubra.core import request_id
+    from hubra.core.redis_client import get_redis_client, mark_redis_down
+
+    rid = request_id.current()
+    client = get_redis_client()
+    if not rid or client is None:
+        return
+    try:
+        client.set(_REQUEST_KEY + rid, fp, ex=REQUEST_TTL)
+    except Exception:  # noqa: BLE001
+        mark_redis_down()
+
+
+def groups_for_requests(ids: list[str]) -> dict[str, dict]:
+    """The error group each of these request ids ran into, if any (and if
+    it happened within REQUEST_TTL): ``{request_id: {id, type, route, status}}``."""
+    from hubra.core.extensions import db
+    from hubra.core.redis_client import get_redis_client, mark_redis_down
+
+    client = get_redis_client()
+    if not ids or client is None:
+        return {}
+    try:
+        values = client.mget([_REQUEST_KEY + rid for rid in ids])
+    except Exception:  # noqa: BLE001
+        mark_redis_down()
+        return {}
+    by_id = {
+        rid: (v.decode() if isinstance(v, bytes) else v)
+        for rid, v in zip(ids, values, strict=True)
+        if v
+    }
+    if not by_id:
+        return {}
+    groups = {
+        g.fingerprint: g
+        for g in db.session.scalars(
+            select(ErrorGroup).where(ErrorGroup.fingerprint.in_(set(by_id.values())))
+        )
+    }
+    out = {}
+    for rid, fp in by_id.items():
+        group = groups.get(fp)
+        if group is not None:
+            out[rid] = {
+                "id": group.id,
+                "type": group.exc_type,
+                "route": group.route,
+                "status": group.status,
+            }
+    return out
 
 
 def resolve_after_upgrade(build: str) -> int:

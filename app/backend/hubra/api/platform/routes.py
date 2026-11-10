@@ -919,7 +919,11 @@ def list_errors():
     query = select(ErrorGroup)
     if status != "all":
         query = query.where(ErrorGroup.status == status)
-    if q := (request.args.get("q") or "").strip()[:100]:
+    q = (request.args.get("q") or "").strip()[:100]
+    if q.startswith("#") and q[1:].isdigit():
+        # "#12": one group by id (links from support cases).
+        query = query.where(ErrorGroup.id == int(q[1:]))
+    elif q:
         like = f"%{q.lower()}%"
         query = query.where(
             or_(
