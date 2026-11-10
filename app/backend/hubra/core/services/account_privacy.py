@@ -215,6 +215,9 @@ def delete_account(user: User, password: str) -> None:
         if hasattr(user, field):
             setattr(user, field, None)
     user.end_sessions()
+    from hubra.core.services import google_wallet
+
+    google_wallet.queue_sync(user.id)  # the Wallet pass goes inactive
     db.session.add(
         GlobalAuditEntry(
             actor_id=user.id,

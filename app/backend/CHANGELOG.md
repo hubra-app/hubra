@@ -7,6 +7,10 @@ section and position, or the apps show that version in English.
 
 ## [Unreleased]
 
+### Added
+
+- **Member badge in Google Wallet** (sso › My account › Profile): an "Add to Google Wallet" button under the member badge saves it as a pass with the name, the badge number as QR code and the clubs. Hubra is the one issuer for every club; the pass follows joins, leaves and name changes and goes inactive when the account is deleted. Set it up in manage › Services › Google Wallet (docs/google-wallet.md). Operators: run `flask db upgrade` (new columns `users.google_wallet_object`, `users.google_wallet_hash`).
+
 ## [0.2.5] - 2026-11-10
 
 ### Added

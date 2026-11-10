@@ -1536,6 +1536,26 @@ def get_account_badge():
     return jsonify(member_badge.badge_for(_signed_in_user())), 200
 
 
+@account_bp.post("/badge/google-wallet")
+@jwt_required()
+@limiter.limit("10 per minute")
+def add_badge_to_google_wallet():
+    """Write the person's badge pass to Google Wallet and return the link
+    that saves it on their phone: ``{url}``. 404 while Wallet isn't set up."""
+    from hubra.core.services import google_wallet
+
+    refuse_during_impersonation()
+    if not google_wallet.enabled():
+        raise_error(404, "NOT_FOUND", "Google Wallet is not set up")
+    try:
+        url = google_wallet.save_url(_signed_in_user())
+    except google_wallet.WalletError as err:
+        db.session.rollback()
+        current_app.logger.warning("Google Wallet pass failed: %s", err)
+        raise_error(502, "GOOGLE_WALLET_FAILED", "Google Wallet is not reachable right now")
+    return jsonify({"url": url}), 200
+
+
 # ── /account/notifications (every club's, for the account page) ───────────────
 
 
@@ -1743,6 +1763,9 @@ def update_account_profile():
     }
     user = _signed_in_user()
     account_svc.update_profile(user, {k: v for k, v in body.items() if k in allowed})
+    from hubra.core.services import google_wallet
+
+    google_wallet.queue_sync(user.id)  # the name or language on the pass
     db.session.commit()
     response = make_response(jsonify(account_svc.profile(user)), 200)
     if "theme" in body:

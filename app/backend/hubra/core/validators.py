@@ -96,6 +96,14 @@ def _validate_iso_datetime(value: str) -> str | None:
     return None
 
 
+def _validate_google_service_account(v: str) -> str | None:
+    from hubra.core.services.google_wallet import parse_service_account
+
+    if parse_service_account(v) is None:
+        return "Paste the whole JSON key of the service account"
+    return None
+
+
 VALIDATORS: dict[str, Callable[[str], str | None]] = {
     "email": (
         lambda v: (
@@ -161,6 +169,15 @@ VALIDATORS: dict[str, Callable[[str], str | None]] = {
     "discord_public_key": lambda v: (
         None if re.fullmatch(r"[0-9a-fA-F]{64}", v) else "Must be 64 hex characters"
     ),
+    "google_issuer_id": lambda v: (
+        None if re.fullmatch(r"\d{10,25}", v) else "The issuer id is a long number"
+    ),
+    "google_wallet_class": lambda v: (
+        None
+        if re.fullmatch(r"(\d{10,25}\.)?[A-Za-z0-9._-]{1,100}", v)
+        else "Letters, digits, '.', '_' and '-' only"
+    ),
+    "google_service_account": lambda v: _validate_google_service_account(v),
     "text": lambda v: None,
     "non_empty": (
         lambda v: (

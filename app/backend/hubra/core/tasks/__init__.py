@@ -154,6 +154,7 @@ def make_celery(app: Flask) -> Celery:
             "hubra.core.tasks.quota_tasks",
             "hubra.core.tasks.upgrade_tasks",
             "hubra.core.tasks.billing_tasks",
+            "hubra.core.tasks.wallet_tasks",
             *_module_task_imports(),
         ],
     )
@@ -305,6 +306,12 @@ def make_celery(app: Flask) -> Celery:
             "reconcile-billing-hourly": {
                 "task": "hubra.core.tasks.billing_tasks.reconcile_billing",
                 "schedule": crontab(minute=35),
+            },
+            # Google Wallet passes of the member badge whose content changed
+            # without an event (a club renamed); unchanged ones cost nothing.
+            "google-wallet-passes-nightly": {
+                "task": "hubra.core.tasks.wallet_tasks.refresh_google_wallet_passes",
+                "schedule": crontab(hour=3, minute=50),
             },
         },
         "broker_connection_retry_on_startup": False,

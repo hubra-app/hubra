@@ -86,6 +86,13 @@ class User(db.Model):
     badge_code: Mapped[str | None] = mapped_column(
         db.String(16), unique=True, nullable=True
     )
+    # The badge's pass in Google Wallet (core/services/google_wallet.py): the
+    # object id once the person saved it, and a hash of what it shows, so
+    # the pass is only patched when that changes.
+    google_wallet_object: Mapped[str | None] = mapped_column(
+        db.String(128), nullable=True
+    )
+    google_wallet_hash: Mapped[str | None] = mapped_column(db.String(64), nullable=True)
 
     # Two-factor sign-in (hubra/core/auth/mfa.py).  Secrets are Fernet
     # encrypted; recovery codes are kept as SHA-256 hashes, used ones removed.

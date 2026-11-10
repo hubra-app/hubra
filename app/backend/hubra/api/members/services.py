@@ -370,8 +370,13 @@ def _active_member_with_email(email: str) -> bool:
 def _tell(event: str, member_id: int) -> None:
     """member.joined / member.left for the club's webhooks and modules."""
     from hubra.core.modules.events import emit
+    from hubra.core.services import google_wallet
 
     emit(event, member_id=member_id)
+    # The clubs on the person's Google Wallet badge changed.
+    google_wallet.queue_sync(
+        db.session.scalar(select(Member.user_id).where(Member.id == member_id))
+    )
 
 
 def _free_club_address(local: str, domain: str) -> tuple[str, str | None]:

@@ -63,6 +63,9 @@ class ApplicationService:
         from hubra.core.modules.events import MEMBER_JOINED, emit
 
         emit(MEMBER_JOINED, member_id=member.id)
+        from hubra.core.services import google_wallet
+
+        google_wallet.queue_sync(member.user_id)
 
         log_audit(
             actor_id=actor_id,

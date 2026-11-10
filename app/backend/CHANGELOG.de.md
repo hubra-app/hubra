@@ -9,6 +9,10 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ## [Unreleased]
 
+### Added
+
+- **Mitgliederausweis in Google Wallet** (sso › Mein Konto › Profil): Der Knopf «Zu Google Wallet hinzufügen» unter dem Mitgliederausweis speichert ihn als Pass mit Name, Ausweisnummer als QR-Code und den Vereinen. Hubra stellt für alle Vereine aus; der Pass folgt Ein- und Austritten und Namensänderungen und wird inaktiv, wenn das Konto gelöscht wird. Einrichten unter manage › Dienste › Google Wallet (docs/google-wallet.md). Betrieb: `flask db upgrade` ausführen (neue Spalten `users.google_wallet_object`, `users.google_wallet_hash`).
+
 ## [0.2.5] - 2026-11-10
 
 ### Added
