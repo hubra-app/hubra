@@ -72,6 +72,7 @@ module = Module(
         "event_registrations",
         "event_attendance",
         "trial_signups",
+        "event_templates",
     ),
     # What plugins use instead of the events services (docs/contracts.md).
     provides=(

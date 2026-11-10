@@ -234,6 +234,49 @@ export async function reinstateEvent(id: string): Promise<ClubEvent> {
   return adapt(b);
 }
 
+/** A saved event to start new ones from: its fields without a date
+ * (``days`` is the length of a multi-day event). */
+export interface EventTemplateData {
+  title?: string;
+  time?: string | null;
+  location?: string | null;
+  type?: string;
+  description?: string | null;
+  meeting_url?: string | null;
+  all_day?: boolean;
+  category?: string;
+  max_attendees?: number | null;
+  requires_approval?: boolean;
+  is_public?: boolean;
+  federation_shared?: boolean;
+  trial_spots?: number | null;
+  cover_image_url?: string | null;
+  color?: string | null;
+  group_id?: number | null;
+  days?: number;
+}
+
+export interface EventTemplate {
+  id: number;
+  name: string;
+  data: EventTemplateData;
+}
+
+export async function listEventTemplates(): Promise<EventTemplate[]> {
+  return apiFetch<EventTemplate[]>("/app/events/templates");
+}
+
+export async function saveEventTemplate(eventId: string, name: string): Promise<EventTemplate> {
+  return apiFetch<EventTemplate>("/app/events/templates", {
+    method: "POST",
+    body: JSON.stringify({ event_id: Number(eventId), name }),
+  });
+}
+
+export async function deleteEventTemplate(id: number): Promise<void> {
+  await apiFetch(`/app/events/templates/${id}`, { method: "DELETE" });
+}
+
 // The signed-in member signs up or gives up their place. This goes through
 // registration (capacity, waitlist, deadlines) and needs only the member's
 // own "register" right; /attendees/<id> is the organisers' list. The member

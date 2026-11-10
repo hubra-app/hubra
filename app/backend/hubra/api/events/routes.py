@@ -101,6 +101,45 @@ def create_event():
     return jsonify(_event_schema.dump(event)), 201
 
 
+# ── /events/templates — save an event as a template, start from one ─────────
+
+
+@events_bp.get("/templates")
+@permission_required("events", "create", "Create events")
+def list_event_templates():
+    from hubra.api.events import templates
+
+    return jsonify([templates.to_dict(t) for t in templates.list_templates()]), 200
+
+
+@events_bp.post("/templates")
+@permission_required("events", "create", "Create events")
+def create_event_template():
+    """Save an event as a template: ``{"event_id": 1, "name": "Training"}``."""
+    from hubra.api.events import templates
+
+    body = request.get_json(silent=True) or {}
+    try:
+        event_id = int(body.get("event_id"))
+    except (TypeError, ValueError):
+        return api_error("VALIDATION_ERROR", "event_id is required", 400)
+    template = templates.save(
+        event_id, str(body.get("name") or ""), get_current_member().id
+    )
+    db.session.commit()
+    return jsonify(templates.to_dict(template)), 201
+
+
+@events_bp.delete("/templates/<int:template_id>")
+@permission_required("events", "create", "Create events")
+def delete_event_template(template_id: int):
+    from hubra.api.events import templates
+
+    templates.delete(template_id, get_current_member().id)
+    db.session.commit()
+    return "", 204
+
+
 # ── PATCH /events/<id> ────────────────────────────────────────────────────────
 
 

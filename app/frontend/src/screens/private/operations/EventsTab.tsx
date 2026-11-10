@@ -36,6 +36,7 @@ import {
   IconUserPlus,
   IconCalendarOff,
   IconCalendarCheck,
+  IconTemplate,
 } from '@tabler/icons-react'
 import { useToast, useAuth, useData } from '@/context/AppContext'
 import { qk } from '@/data/keys'
@@ -70,6 +71,9 @@ import { CalendarSubscribeButton } from './CalendarSubscribeButton'
 import { PendingSignUpsModal } from './PendingSignUpsModal'
 import { AttendanceModal } from './AttendanceModal'
 import { CancelEventModal } from './CancelEventModal'
+import { SaveTemplateModal, TemplateMenu } from './EventTemplates'
+import { templateExtras } from './templateExtras'
+import type { EventTemplate, EventTemplateData } from '@/api/events'
 import { RecurrenceFields } from './RecurrenceFields'
 import { GroupField } from './ContentGroupFields'
 import { useContentGroups } from './contentGroups'
@@ -148,6 +152,8 @@ export function EventsTab() {
   const createScope = useContentGroups('events.events.create')
   const updateScope = useContentGroups('events.events.update')
   const canCreate = createScope.canAny
+  // Templates are club-wide: saving and listing them takes the club-wide right.
+  const canTemplates = hasPermission('events.events.create')
   const { moduleList, modules } = useData()
   const federationOn = Boolean(modules.federation)
   const eventTypes = clubEventTypes(
@@ -174,6 +180,9 @@ export function EventsTab() {
     hasPermission('events.events.add_attendee') || groups.some((g) => hasPermission('events.events.add_attendee', g.id))
   const [rollFor, setRollFor] = useState<ClubEvent | null>(null)
   const [cancelFor, setCancelFor] = useState<ClubEvent | null>(null)
+  const [templateFor, setTemplateFor] = useState<ClubEvent | null>(null)
+  // The template a new event was started from (fields the form doesn't show).
+  const [fromTemplate, setFromTemplate] = useState<EventTemplateData | null>(null)
   const reinstate = async (ev: ClubEvent) => {
     try {
       await reinstateEvent(ev.id)
@@ -265,7 +274,26 @@ export function EventsTab() {
       trialSpots: '',
     })
     setRepeat(defaultRepeat(new Date().toISOString().slice(0, 10)))
+    setFromTemplate(null)
     setAddOpen(true)
+  }
+  const openFromTemplate = (tpl: EventTemplate) => {
+    openAdd()
+    const d = tpl.data
+    form.setValues({
+      title: d.title ?? '',
+      time: d.time ?? '',
+      location: d.location ?? '',
+      type: d.type && eventTypes.includes(d.type) ? d.type : eventTypes[0],
+      maxAttendees: d.max_attendees ? String(d.max_attendees) : '',
+      requiresApproval: d.requires_approval ?? false,
+      groupId: d.group_id != null ? String(d.group_id) : createScope.defaultGroup,
+      description: d.description ?? '',
+      isPublic: d.is_public ?? false,
+      federationShared: d.federation_shared ?? false,
+      trialSpots: d.trial_spots ? String(d.trial_spots) : '',
+    })
+    setFromTemplate(d)
   }
   // ?new=1 (the dashboard's "Neuer Anlass") opens the form right away.
   const [params, setParams] = useSearchParams()
@@ -335,6 +363,7 @@ export function EventsTab() {
         isPublic: data.isPublic,
         federationShared: data.federationShared,
         trialSpots: limitOf(data.trialSpots),
+        ...templateExtras(fromTemplate, data.date),
         recurrence: repeat.on
           ? {
               until: repeat.until,
@@ -622,6 +651,7 @@ export function EventsTab() {
             {t('events.trials.button', 'Schnuppern')}
           </Button>
         )}
+        {canTemplates && <TemplateMenu onPick={openFromTemplate} />}
         {canCreate && (
           <Button variant="filled" onClick={openAdd}>
             <IconPlus size={16} />
@@ -711,7 +741,7 @@ export function EventsTab() {
                 </span>
                 {ev.cancelledAt && (
                   <Tooltip label={ev.cancelReason || t('events.cancel.badge', 'Abgesagt')} multiline maw={260}>
-                    <Badge color="red" variant="light" data-testid="event-cancelled">
+                    <Badge color="red" variant="light" data-testid="event-cancelled" style={{ flexShrink: 0 }}>
                       {t('events.cancel.badge', 'Abgesagt')}
                     </Badge>
                   </Tooltip>
@@ -936,6 +966,20 @@ export function EventsTab() {
                       </ActionIcon>
                     </Tooltip>
                   )}
+                  {canTemplates && (
+                    <Tooltip label={t('events.templates.saveTitle', 'Als Vorlage speichern')}>
+                      <ActionIcon
+                        variant="subtle"
+                        color="gray"
+                        size="lg"
+                        aria-label={t('events.templates.saveTitle', 'Als Vorlage speichern')}
+                        data-testid="save-template"
+                        onClick={() => setTemplateFor(ev)}
+                      >
+                        <IconTemplate size={18} />
+                      </ActionIcon>
+                    </Tooltip>
+                  )}
                   <ActionButtons
                     onEdit={canUpdate(ev) ? () => openEdit(ev) : undefined}
                     onDelete={canDelete(ev) ? () => setDeleteTarget(ev) : undefined}
@@ -1032,6 +1076,7 @@ export function EventsTab() {
       />
       <AttendanceModal event={rollFor} onClose={() => setRollFor(null)} />
       <CancelEventModal event={cancelFor} onClose={() => setCancelFor(null)} />
+      <SaveTemplateModal event={templateFor} onClose={() => setTemplateFor(null)} />
       <Modal
         open={!!deleteTarget?.seriesId}
         onClose={() => setDeleteTarget(null)}

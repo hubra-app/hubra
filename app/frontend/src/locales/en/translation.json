@@ -919,6 +919,17 @@
       "reinstated": "Event takes place",
       "reinstatedMsg": "Everyone signed up has been told.",
       "reinstateFailed": "That didn't work"
+    },
+    "templates": {
+      "fromTemplate": "From template",
+      "delete": "Delete template",
+      "deleteFailed": "Template not deleted",
+      "saved": "Template saved",
+      "savedMsg": "\"{{name}}\" is ready under \"From template\".",
+      "saveFailed": "Template not saved",
+      "saveTitle": "Save as template",
+      "saveSubtitle": "Place, time, places, settings and description are saved, the date is not.",
+      "name": "Template name"
     }
   },
   "finance": {

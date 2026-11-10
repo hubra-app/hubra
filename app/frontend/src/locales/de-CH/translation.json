@@ -919,6 +919,17 @@
       "reinstated": "Anlass findet statt",
       "reinstatedMsg": "Die Angemeldeten wurden benachrichtigt.",
       "reinstateFailed": "Das hat nicht geklappt"
+    },
+    "templates": {
+      "fromTemplate": "Aus Vorlage",
+      "delete": "Vorlage löschen",
+      "deleteFailed": "Vorlage nicht gelöscht",
+      "saved": "Vorlage gespeichert",
+      "savedMsg": "«{{name}}» steht unter «Aus Vorlage» bereit.",
+      "saveFailed": "Vorlage nicht gespeichert",
+      "saveTitle": "Als Vorlage speichern",
+      "saveSubtitle": "Ort, Zeit, Plätze, Einstellungen und Beschreibung werden gespeichert, das Datum nicht.",
+      "name": "Name der Vorlage"
     }
   },
   "finance": {
