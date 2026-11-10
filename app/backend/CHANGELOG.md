@@ -7,6 +7,8 @@ section and position, or the apps show that version in English.
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-11-10
+
 ### Added
 
 - **Standard roles and module access** (Settings › Roles, docs/roles.md): every club has Mitglied, Vorstand, Aktuar/in and Kassier/in, and the functions Präsident/in and Vizepräsident/in (Admin and Vorstand), Aktuar/in (Vorstand and Aktuar/in) and Kassier/in (Vorstand and Kassier/in). A function can now give several roles. Each role has one level per module; "None" hides the module from its holders everywhere (sidebar, pages, tabs, widgets, search, API `403 MODULE_ACCESS`), while their own invoices, claims and items stay on their profile. Plugins can give the standard roles access when a club first switches them on (`role_defaults`). Operators: run `flask db upgrade` and `flask seed`; the first `flask seed` adds the standard set to every club and keeps every role's modules.
