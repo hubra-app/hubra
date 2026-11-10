@@ -133,6 +133,22 @@ describe('buildNav', () => {
     ])
   })
 
+  it('keeps plugin pages in Kommunikation next to Mail, after Betrieb', () => {
+    const mail = mod('mail', [navItem('/app/mail', [], { section: 'communication' })])
+    const letters = mod('letters', [navItem('/app/letters', [], { section: 'communication' })], {
+      plugin: { id: 'letters' } as ModuleInfo['plugin'],
+    })
+    const { nav } = buildNav(counts, t, [members, codes, letters, mail, inbox])
+    expect(nav.map((s) => s.section)).toEqual([
+      'workspace',
+      'operations',
+      'communication',
+      'plugins',
+      'all',
+    ])
+    expect(nav[2].items.map((i) => i.path).sort()).toEqual(['/app/letters', '/app/mail'])
+  })
+
   it('moves entries across sections and in and out of Weitere', () => {
     const events = mod('events', [navItem('/app/events', [], { section: 'activities' })])
     const all = [members, groups, events, codes]

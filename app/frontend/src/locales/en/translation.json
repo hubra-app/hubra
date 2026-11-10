@@ -2585,7 +2585,8 @@
       "workspace": "Club",
       "activities": "Club life",
       "favourites": "Favourites",
-      "plugins": "Add-ons"
+      "plugins": "Add-ons",
+      "communication": "Communication"
     },
     "tooltips": {
       "dismiss": "Dismiss",
@@ -4294,7 +4295,7 @@
     "private": "Private",
     "remove": "Remove",
     "rename": "Rename",
-    "settings": "Settings",
+    "settings": "Name and visibility",
     "share": "Share with the club",
     "shared": "Shared with the club",
     "sharedDone": "Shared with the club",
@@ -4348,7 +4349,17 @@
     "moveHint": "Drag to move, or use the arrow keys",
     "resize": "Resize ({{name}})",
     "resizeHint": "Drag for width and height, or use the arrow keys",
-    "autoHeight": "Height from content"
+    "autoHeight": "Height from content",
+    "newHint2": "Put together from widgets what you want to keep an eye on.",
+    "visibility": "Who sees it",
+    "visClub": "Whole club",
+    "visGroups": "Groups",
+    "visGroupsPick": "Choose groups",
+    "visGroupsNone": "Choose at least one group.",
+    "visPrivateHint": "Only you see it.",
+    "visClubHint": "All members see it, each only with the widgets they may see.",
+    "visGroupsHint": "Only the members of these groups see it, each only with the widgets they may see.",
+    "sharedGroups": "Shared with {{groups}}"
   },
   "subscription": {
     "cancelled": "Payment cancelled, nothing was charged.",

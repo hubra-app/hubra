@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocation, useParams } from 'react-router-dom'
-import { Button, Group, Text, TextInput } from '@mantine/core'
+import { Button, Group, Stack, Text, TextInput } from '@mantine/core'
 import { IconPlus } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { useAuth, useNav, useToast } from '@/context/AppContext'
 import { useModules } from '@/modules/useModules'
 import { Modal, PageHead, Tabs } from '@/components/ui'
 import { qk } from '@/data/keys'
-import { createDashboard, listDashboards } from '@/api/dashboards'
+import { createDashboard, listDashboards, shareDashboard } from '@/api/dashboards'
+import { SharingField } from './SharingField'
+import { sharingBody, sharingValid, type Sharing } from './sharing'
 import { HomeDashboard } from '@/screens/private/dashboard/HomeDashboard'
 import { CustomDashboard } from '@/screens/private/dashboard/CustomDashboard'
 
@@ -22,10 +24,12 @@ export function DashboardScreen() {
   const modules = useModules()
   const { isAdmin, hasPermission } = useAuth()
   const [creating, setCreating] = useState<string | null>(null)
+  const [sharing, setSharing] = useState<Sharing>({ visibility: 'private', groupIds: [] })
   const [fresh, setFresh] = useState<number | null>(null)
   const own = modules.has('dashboards')
   const { data } = useQuery({ queryKey: qk.dashboards, queryFn: listDashboards, enabled: own })
   const dashboards = data?.items ?? []
+  const canShare = data?.canShare ?? false
   // People who run the club start on the club overview, everyone else on
   // their own events and polls; both tabs have their own address too.
   const runsClub =
@@ -40,12 +44,22 @@ export function DashboardScreen() {
         : 'overview'
   const current = id ? dashboards.find((d) => String(d.id) === id) : undefined
 
+  const openNew = () => {
+    setCreating('')
+    setSharing({ visibility: 'private', groupIds: [] })
+  }
+
   const create = async () => {
     const name = (creating ?? '').trim()
-    if (!name) return
+    if (!name || !sharingValid(sharing)) return
     setCreating(null)
     try {
       const d = await createDashboard(name)
+      // A new dashboard starts private; share it right away when asked.
+      if (canShare && sharing.visibility !== 'private') {
+        const body = sharingBody(sharing)
+        await shareDashboard(d.id, body.shared, body.groupIds)
+      }
       await queryClient.invalidateQueries({ queryKey: qk.dashboards })
       setFresh(d.id)
       go(`/app/dashboard/d/${d.id}`)
@@ -75,7 +89,7 @@ export function DashboardScreen() {
         activeTab={activeTab}
         onTabChange={(tab) =>
           tab === 'new'
-            ? setCreating('')
+            ? openNew()
             : go(
                 tab === 'overview'
                   ? '/app/dashboard/global'
@@ -109,8 +123,8 @@ export function DashboardScreen() {
         onClose={() => setCreating(null)}
         title={t('dashboards.new', 'Neues Dashboard')}
         subtitle={t(
-          'dashboards.newHint',
-          'Stell dir aus Widgets zusammen, was du im Blick haben willst. Es bleibt privat, bis du es mit dem Verein teilst.',
+          'dashboards.newHint2',
+          'Stell dir aus Widgets zusammen, was du im Blick haben willst.',
         )}
         onSubmit={(e) => {
           e?.preventDefault()
@@ -121,20 +135,23 @@ export function DashboardScreen() {
             <Button variant="default" onClick={() => setCreating(null)}>
               {t('common.cancel', 'Abbrechen')}
             </Button>
-            <Button type="submit" disabled={!(creating ?? '').trim()}>
+            <Button type="submit" disabled={!(creating ?? '').trim() || !sharingValid(sharing)}>
               {t('dashboards.create', 'Erstellen')}
             </Button>
           </Group>
         }
       >
-        <TextInput
-          label={t('dashboards.name', 'Name')}
-          placeholder={t('dashboards.namePlaceholder', 'z. B. Vorstand, Training, Finanzen')}
-          maxLength={100}
-          data-autofocus
-          value={creating ?? ''}
-          onChange={(e) => setCreating(e.currentTarget.value)}
-        />
+        <Stack gap="md">
+          <TextInput
+            label={t('dashboards.name', 'Name')}
+            placeholder={t('dashboards.namePlaceholder', 'z. B. Vorstand, Training, Finanzen')}
+            maxLength={100}
+            data-autofocus
+            value={creating ?? ''}
+            onChange={(e) => setCreating(e.currentTarget.value)}
+          />
+          {canShare && <SharingField value={sharing} onChange={setSharing} />}
+        </Stack>
       </Modal>
     </div>
   )
