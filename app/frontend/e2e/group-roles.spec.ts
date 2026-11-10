@@ -60,7 +60,7 @@ test('a group function is filled on the group page and counts there', async ({ p
     await page.getByRole('tab', { name: 'Funktionen' }).click()
     const list = page.getByTestId('group-functions')
     await expect(list.getByText(fn.name)).toBeVisible()
-    await expect(list.getByText(member.name)).toBeVisible()
+    await expect(list.getByText(member.name, { exact: true })).toBeVisible()
     await list.getByRole('button', { name: 'Entfernen' }).click()
     await expect(list.getByText(fn.name)).toHaveCount(0)
   } finally {
