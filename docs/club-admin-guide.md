@@ -76,6 +76,15 @@ confirm under Members › Applications. With it off, they leave at once.
 Leaving keeps their invoices and entries with the club; their account and
 other clubs stay.
 
+**Notice period.** Settings › Mitgliedschaft › **Kündigungsfrist (Monate)**
+and **Austritt auf** hold the rule from your statutes, for example three
+months' notice to the end of the year. A member who wants to leave then
+sees the earliest exit date and their invoices still open (these remain
+due), and you see both on the request under Members › Applications. Asked
+on 10 November with three months to the end of the year, the earliest exit
+is 31 December of the next year. Hubra shows the date; approving the request
+still ends the membership on the day you approve it.
+
 ### Member data
 
 - The member list can be exported as CSV (Members › All members).
@@ -291,7 +300,7 @@ a year.
 | Branding | Primary, secondary and accent colour |
 | Localization | Time zone, the club's default language, date format |
 | Privacy | Whether all members see the member directory; whether groups are listed publicly |
-| Membership | Leaving needs approval (see [Leaving](#leaving)) |
+| Membership | Leaving needs approval, notice period (see [Leaving](#leaving)) |
 | Announcement Banner | A line shown at the top of every page, for example for the general meeting |
 
 ### Domains

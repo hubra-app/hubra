@@ -468,14 +468,25 @@ export function setMyNotifications(
 
 // ── Leaving the club ──────────────────────────────────────────────────────────
 
-export interface LeaveState {
+export type LeaveAt = "any" | "month_end" | "quarter_end" | "half_year_end" | "year_end";
+
+/** What leaving means: the club's notice rule, the earliest exit date and
+ * the member's invoices still open. */
+export interface LeaveTerms {
+  notice: { months: number; at: LeaveAt };
+  /** ISO date; null when the club has no notice rule. */
+  earliestExit: string | null;
+  openInvoices: { id: number; due: string; amount: string; overdue: boolean; description: string | null }[];
+}
+
+export interface LeaveState extends LeaveTerms {
   /** The club approves requests to leave (club setting). */
   requiresApproval: boolean;
   /** Set while this member's request waits for a club admin. */
   requestedAt: string | null;
 }
 
-export interface LeaveRequest {
+export interface LeaveRequest extends LeaveTerms {
   id: string;
   name: string;
   email: string;

@@ -2163,7 +2163,21 @@
       "approve": "Confirm leaving",
       "decline": "Decline",
       "approved": "Leaving confirmed",
-      "declined": "Request declined"
+      "declined": "Request declined",
+      "at": {
+        "any": "at any time",
+        "monthEnd": "to the end of a month",
+        "quarterEnd": "to the end of a quarter",
+        "halfYearEnd": "to the end of a half-year",
+        "yearEnd": "to the end of the year"
+      },
+      "noticeRule": "{{months}} months' notice, {{period}}",
+      "earliestExit": "Earliest exit: {{date}}",
+      "ownOpenInvoices": "These invoices are still open and remain due:",
+      "openInvoices": "Invoices still open:",
+      "invoice": "Invoice",
+      "due": "due {{date}}",
+      "overdue": "overdue"
     },
     "noMembersFilterHint": "Change the search or the filter.",
     "invite": {
@@ -3087,7 +3101,15 @@
       "website": "Club website",
       "link": "Your page:",
       "widgetHint": "Your public events on your own website: you find the code under Events › Subscribe to calendar."
-    }
+    },
+    "leaveNoticeMonths": "Notice period (months)",
+    "leaveAt": "Leaving takes effect at",
+    "leaveAtAny": "Any day",
+    "leaveAtMonth": "End of a month",
+    "leaveAtQuarter": "End of a quarter",
+    "leaveAtHalfYear": "End of a half-year",
+    "leaveAtYear": "End of the year",
+    "leaveNoticeHint": "As in your statutes. Members who want to leave see the earliest exit date and the invoices still open; you see both on the request to leave."
   },
   "domains": {
     "added": "Domain added",

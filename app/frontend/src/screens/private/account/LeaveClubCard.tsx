@@ -9,6 +9,7 @@ import { Modal } from '@/components/ui'
 import { getMyLeave, leaveClub, withdrawLeaveRequest } from '@/api/members'
 import { formatDate } from '@/format'
 import { qk } from '@/data/keys'
+import { LeaveTermsNote } from '@/screens/private/members/LeaveTermsNote'
 
 /** Leave the club, or ask to leave when the club approves it. */
 export function LeaveClubCard() {
@@ -94,6 +95,11 @@ export function LeaveClubCard() {
           </Button>
         )}
       </Group>
+      {(leave.earliestExit || leave.openInvoices.length > 0) && (
+        <div style={{ padding: '0 var(--mantine-spacing-md) var(--mantine-spacing-md)' }}>
+          <LeaveTermsNote terms={leave} own />
+        </div>
+      )}
 
       <Modal
         open={confirming}
@@ -118,6 +124,7 @@ export function LeaveClubCard() {
             'Du verlierst den Zugang zu den Seiten des Vereins. Deine Rechnungen und Einträge bleiben beim Verein. Möchtest du später zurück, kannst du wieder um Aufnahme bitten.',
           )}
         </Text>
+        <LeaveTermsNote terms={leave} own />
       </Modal>
     </Paper>
   )

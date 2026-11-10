@@ -22,6 +22,7 @@ section and position, or the apps show that version in English.
 - **Share a dashboard with groups**: the form to create a dashboard and ⋯ › Name und Sichtbarkeit set who sees it: Privat, Ganzer Verein or chosen Gruppen. A dashboard shared with groups shows only for their members. Needs `flask db upgrade` (new column `dashboards.group_ids`, runs by itself after the deploy).
 - **Scheduled and expiring posts**: the post form has **Publish at** (the post stays hidden from members and goes out, with its notification, within five minutes of that time) and **Hide after** (members no longer see it after that time). Authors and whoever may edit the post still see both kinds, marked. Needs `flask db upgrade` (runs by itself after the deploy).
 - **Must-read posts**: tick **Lesebestätigung verlangen** on a post and members confirm it with one tap; whoever may edit the post sees who confirmed and who has not, and those missing get one reminder after a number of days (posts setting, 7 by default, 0 for none). Needs `flask db upgrade` (runs by itself after the deploy).
+- **Notice periods from the statutes**: Settings › Mitgliedschaft takes a notice period in months and the period end leaving takes effect at (month, quarter, half-year or year). A member who wants to leave sees the earliest exit date and their invoices still open; the board sees both on the request to leave.
 
 ### Changed
 
