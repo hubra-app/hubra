@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
-import { Anchor, Badge, Group, Paper, Text, Title } from '@mantine/core'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { Anchor, Badge, Button, Code, Group, Paper, Stack, Text, Title } from '@mantine/core'
 import { tr } from '@/lang'
-import type { BuildReport, HealthDetail } from '@/api/platform'
+import { runPostDeploySteps, type BuildReport, type HealthDetail, type PostDeployStep } from '@/api/platform'
 import { SSO_URL } from '@hubra/api-client'
 import { Row } from './StatusRow'
 import { eventText } from './eventLabels'
@@ -168,6 +168,81 @@ export function BuildsPanel({ health }: { health: HealthDetail }) {
           {formatDateTime(upgrade.time)}
         </Text>
       )}
+      <PostDeploy health={health} />
     </Paper>
+  )
+}
+
+const STEP_COLOR = { done: 'teal', failed: 'red', skipped: 'gray' } as const
+
+/** The last run of the post-deploy steps (migrations, seeds, permission
+ * sync) and a button to run them again. */
+function PostDeploy({ health }: { health: HealthDetail }) {
+  const run = health.post_deploy
+  const start = useMutation({ mutationFn: runPostDeploySteps })
+  const steps = (run?.details.steps as PostDeployStep[] | undefined) ?? []
+  const failed = run?.details.state === 'failed'
+  return (
+    <Stack gap={6} mt={14}>
+      <Group justify="space-between" wrap="wrap">
+        <Text fw={600} size="sm">
+          {tr('Schritte nach dem Deploy', 'Post-deploy steps')}
+        </Text>
+        <Group gap={8}>
+          {health.post_deploy_enabled === false && (
+            <Badge variant="light" color="gray" size="sm">
+              {tr('Automatisch: aus', 'Automatic: off')}
+            </Badge>
+          )}
+          <Button
+            size="xs"
+            variant="default"
+            loading={start.isPending}
+            disabled={start.isSuccess}
+            onClick={() => start.mutate()}
+          >
+            {start.isSuccess ? tr('Gestartet', 'Started') : tr('Jetzt ausführen', 'Run now')}
+          </Button>
+        </Group>
+      </Group>
+      {!run ? (
+        <Text size="sm" c="dimmed">
+          {tr('Noch nicht gelaufen.', 'Not run yet.')}
+        </Text>
+      ) : (
+        <>
+          <Text size="sm" c={failed ? 'red' : 'dimmed'}>
+            {eventText(run)} · {formatDateTime(run.time)}
+          </Text>
+          {steps.map((step) => (
+            <Group key={step.key} gap={8} wrap="nowrap" align="flex-start">
+              <Badge variant="light" color={STEP_COLOR[step.state]} size="sm" miw={84}>
+                {step.state === 'done'
+                  ? tr('Erledigt', 'Done')
+                  : step.state === 'failed'
+                    ? tr('Fehler', 'Failed')
+                    : tr('Ausgelassen', 'Skipped')}
+              </Badge>
+              <Stack gap={2} style={{ minWidth: 0 }}>
+                <Text size="sm" ff={MONO}>
+                  {step.label}
+                  {step.seconds !== undefined && (
+                    <Text span size="xs" c="dimmed">
+                      {' '}
+                      · {step.seconds} s
+                    </Text>
+                  )}
+                </Text>
+                {step.state === 'failed' && step.output && (
+                  <Code block style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                    {step.output}
+                  </Code>
+                )}
+              </Stack>
+            </Group>
+          ))}
+        </>
+      )}
+    </Stack>
   )
 }

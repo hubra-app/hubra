@@ -73,6 +73,14 @@ export function eventText(e: PlatformEvent): string {
       return tr(`Update abgeschlossen: ${buildLabel(e.details.from)} → ${buildLabel(e.details.to)}`, e.message)
     case 'upgrade.stuck':
       return tr(`Update auf ${buildLabel(e.details.to)} nach 30 Min. nicht fertig`, e.message)
+    case 'upgrade.steps': {
+      const failed = e.details.state === 'failed'
+      const how = e.details.trigger === 'manual' ? 'von Hand' : 'nach dem Deploy'
+      return tr(
+        `Schritte nach dem Deploy für ${buildLabel(e.details.to)} ${failed ? 'fehlgeschlagen' : 'erledigt'} (${how})`,
+        e.message,
+      )
+    }
     default:
       return e.message
   }

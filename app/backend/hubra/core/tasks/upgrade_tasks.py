@@ -12,4 +12,12 @@ def check_upgrades() -> dict:
 
     result = upgrades.check()
     db.session.commit()
+    if result.get("state") in ("done", "baseline"):
+        # Every process runs the new build: run migrations, seeds and the
+        # permission sync once (services/post_deploy.py).
+        from hubra.core.services import post_deploy
+        from hubra.core.tasks.post_deploy_tasks import run_post_deploy_steps
+
+        if post_deploy.enabled():
+            run_post_deploy_steps.delay(upgrades.build_key(result["build"]))
     return result

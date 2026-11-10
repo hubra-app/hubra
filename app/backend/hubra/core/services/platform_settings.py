@@ -670,6 +670,16 @@ SPECS: tuple[Spec, ...] = (
         "on_off",
     ),
     Spec(
+        "upgrades.post_deploy_steps",
+        "Post-deploy steps",
+        "on: once every backend process runs a new build, a worker runs "
+        "flask db upgrade, sync-tenant-schemas, sync-permissions, seed and "
+        "plugins sync (services.post_deploy) and reports on System health. "
+        "off: run them yourself, or start them in manage",
+        lambda cfg: "on",
+        "on_off",
+    ),
+    Spec(
         "limits.warn_percent",
         "Limit warning",
         "Club owners and the platform are warned when a club reaches this "

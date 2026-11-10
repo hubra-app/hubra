@@ -50,6 +50,11 @@ def _key(build: dict) -> str:
     return build.get("commit") or f"v{build.get('version')}"
 
 
+def build_key(build: dict) -> str:
+    """What tells two builds apart: the commit, else ``v<version>``."""
+    return _key(build)
+
+
 def label(build: dict) -> str:
     """``0.3.0 (abc1234)``, or just the version for a build without a commit."""
     version = build.get("version") or "?"

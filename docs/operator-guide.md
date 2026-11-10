@@ -96,6 +96,18 @@ flask plugins sync      # installed plugins: unpack and migrate
 
 So an upgrade is: take a backup, switch to the new images, restart.
 
+If the backend starts without that init step (for example a cluster that runs
+the image's plain `gunicorn` command), the worker runs the steps itself: once
+every backend process reports the new build, a club worker takes the init
+lock and runs `flask db upgrade`, `sync-tenant-schemas`, `sync-permissions`,
+`seed --skip-migrate` and `plugins sync`, once per build
+(`hubra.core.services.post_deploy`). The result, with the output of a step
+that failed, is on manage › Diagnostics › System health › Builds, where
+**Run now** starts them again; a failure also sends an `upgrades` alert.
+Where an init step already holds the lock, the worker leaves it to it. The
+platform setting **Run the post-deploy steps** (Diagnostics › Settings)
+turns the automatic run off.
+
 For a release with longer migrations, put the platform in maintenance
 first (`flask maintenance on --minutes 15`, or the card on manage ›
 Alerts): members see a maintenance page instead of errors and no alerts

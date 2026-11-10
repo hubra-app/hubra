@@ -73,6 +73,10 @@ export interface HealthDetail {
   processes_unknown?: boolean
   /** The newest upgrade event (started, completed or stuck). */
   last_upgrade?: PlatformEvent | null
+  /** The newest post-deploy run (migrations, seeds, permission sync). */
+  post_deploy?: PlatformEvent | null
+  /** Whether the worker runs them after each deploy (platform setting). */
+  post_deploy_enabled?: boolean
   stale?: boolean
   checked_at?: number
 }
@@ -625,6 +629,21 @@ export interface EncryptionStatus {
 
 export async function getEncryption() {
   return apiFetch<EncryptionStatus>(`${P}/encryption`)
+}
+
+export interface PostDeployStep {
+  key: string
+  label: string
+  state: 'done' | 'failed' | 'skipped'
+  seconds?: number
+  output?: string
+}
+
+/** Queue the post-deploy steps by hand (a worker runs them). */
+export async function runPostDeploySteps() {
+  return withStepUp(() =>
+    apiFetch<{ queued: boolean }>(`${P}/upgrades/post-deploy`, { method: 'POST' }),
+  )
 }
 
 /** Without `newKeys`: move everything onto the current keys. With it, new data keys too. */
