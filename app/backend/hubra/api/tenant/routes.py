@@ -780,6 +780,23 @@ def impersonate_tenant_user(tenant_id: int):
             }
         ), 422
 
+    from hubra.core.services import support_access
+
+    approved = None
+    if support_access.requires_approval(tenant):
+        # The club approves first: the session runs as the club approved it.
+        try:
+            approved = support_access.take_approval(
+                tenant, g.system_user.id, data.get("request_id")
+            )
+        except support_access.SupportAccessError as exc:
+            return jsonify({"error": exc.code, "message": str(exc)}), exc.status
+        reason, minutes, allow_changes = (
+            approved.reason,
+            approved.minutes,
+            approved.allow_changes,
+        )
+
     # The platform user from the account token (require_global_permission).
     # get_jwt() only works when a standard access cookie came along too,
     # which a manage session signed in through SSO does not always send.
@@ -889,8 +906,17 @@ def impersonate_tenant_user(tenant_id: int):
                 "session": session_id,
                 "minutes": minutes,
                 "expires_at": expires_at.isoformat(),
+                "approval": approved.id if approved is not None else None,
             },
         )
+    )
+    support_access.log_start(
+        tenant,
+        g.system_user,
+        target_member_id,
+        minutes=minutes,
+        reason=reason,
+        allow_changes=allow_changes,
     )
     db.session.commit()
 
@@ -976,6 +1002,11 @@ def stop_impersonation():
                     "session": claims.get("impersonation_session"),
                 },
             )
+        )
+        from hubra.core.services import support_access
+
+        support_access.log_end(
+            tenant, admin_user, claims.get("sub"), ended_by_platform=False
         )
         db.session.commit()
 
@@ -1205,8 +1236,77 @@ def end_support_session(session_id: str):
             ip_address=request.remote_addr,
         )
     )
+    club = db.session.get(Tenant, start.tenant_id) if start.tenant_id else None
+    if club is not None:
+        from hubra.core.services import support_access
+
+        support_access.log_end(
+            club,
+            db.session.get(User, start.actor_id) if start.actor_id else None,
+            start.target_id,
+            ended_by_platform=True,
+        )
     db.session.commit()
     return jsonify({"ended": session_id})
+
+
+# ── Asking the club first (club setting support_requires_approval) ──────────
+
+
+@tenant_admin_bp.route("/tenants/<int:tenant_id>/support-access", methods=["GET"])
+@require_global_permission("impersonate")
+def get_support_access(tenant_id: int):
+    """Whether the club approves support sessions first, and your latest
+    request to it."""
+    from hubra.core.services import support_access
+
+    tenant = TenantService.get_by_id(tenant_id)
+    if tenant is None:
+        raise_error(404, "NOT_FOUND", "Tenant not found")
+    latest = support_access.latest_for(tenant, g.system_user.id)
+    return jsonify(
+        {
+            "requiresApproval": support_access.requires_approval(tenant),
+            "approvalHours": support_access.APPROVAL_HOURS,
+            "request": support_access.as_dict(latest, staff=g.system_user)
+            if latest is not None
+            else None,
+        }
+    )
+
+
+@tenant_admin_bp.route("/tenants/<int:tenant_id>/support-access", methods=["POST"])
+@require_global_permission("impersonate")
+def ask_support_access(tenant_id: int):
+    """Ask the club's admins to approve a support session
+    ``{reason, minutes, allow_changes}``."""
+    from hubra.core.services import support_access
+
+    tenant = TenantService.get_by_id(tenant_id)
+    if tenant is None:
+        raise_error(404, "NOT_FOUND", "Tenant not found")
+    data = request.get_json(silent=True) or {}
+    reason = str(data.get("reason") or "").strip()
+    minutes = data.get("minutes", _IMPERSONATION_TIMEOUT_MINUTES)
+    if not reason:
+        raise_error(422, "VALIDATION_ERROR", "A reason is required")
+    if minutes not in _SUPPORT_MINUTES or isinstance(minutes, bool):
+        raise_error(
+            422,
+            "VALIDATION_ERROR",
+            "minutes must be one of " + ", ".join(str(m) for m in _SUPPORT_MINUTES),
+        )
+    try:
+        req = support_access.ask(
+            tenant,
+            g.system_user,
+            reason=reason,
+            minutes=minutes,
+            allow_changes=data.get("allow_changes") is True,
+        )
+    except support_access.SupportAccessError as exc:
+        raise_error(exc.status, exc.code, str(exc))
+    return jsonify(support_access.as_dict(req, staff=g.system_user)), 201
 
 
 # ── Tenant Requests ──────────────────────────────────────────────────────────

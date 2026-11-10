@@ -108,7 +108,7 @@ export async function archiveTenant(id: number): Promise<{ tenant: Tenant }> {
 
 export async function impersonateTenant(
   id: number,
-  body: { reason: string; user_id?: number; allow_changes?: boolean; minutes?: number },
+  body: { reason: string; user_id?: number; allow_changes?: boolean; minutes?: number; request_id?: number },
 ): Promise<{
   impersonating: boolean
   tenant_slug: string
@@ -122,6 +122,40 @@ export async function impersonateTenant(
       body: JSON.stringify(body),
     }),
   )
+}
+
+/** A request to the club to approve a support session. */
+export interface SupportAccessRequest {
+  id: number
+  staff: string | null
+  reason: string
+  minutes: number
+  allowChanges: boolean
+  status: 'pending' | 'approved' | 'declined' | 'used' | 'expired'
+  decidedBy: string | null
+  decidedAt: string | null
+  createdAt: string | null
+}
+
+export interface SupportAccessState {
+  requiresApproval: boolean
+  approvalHours: number
+  request: SupportAccessRequest | null
+}
+
+/** Whether the club approves support sessions first, and your last request. */
+export function getSupportAccess(id: number): Promise<SupportAccessState> {
+  return apiFetch(`/platform/system/tenants/${id}/support-access`)
+}
+
+export function askSupportAccess(
+  id: number,
+  body: { reason: string; allow_changes: boolean; minutes: number },
+): Promise<SupportAccessRequest> {
+  return apiFetch(`/platform/system/tenants/${id}/support-access`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
 }
 
 export interface GlobalAuditEntry {

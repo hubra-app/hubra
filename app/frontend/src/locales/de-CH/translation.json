@@ -2759,7 +2759,8 @@
         "feeConfirmed": "Grund für eigenen Beitrag bestätigt",
         "memberFeeEnded": "Eigener Beitrag eines Mitglieds abgelaufen",
         "eventReinstated": "Anlass findet doch statt",
-        "confirmRead": "Bitte Lesen bestätigen"
+        "confirmRead": "Bitte Lesen bestätigen",
+        "supportAsksAccess": "Hubra-Support bittet um Zugriff"
       }
     },
     "notifPanel": {
@@ -3478,7 +3479,14 @@
       "leave_declined": "Austritt abgelehnt",
       "approve_registration": "Anmeldung bestätigt",
       "delete_application": "Antrag gelöscht",
-      "create_member": "Mitglied erstellt"
+      "create_member": "Mitglied erstellt",
+      "support_session_view": "Support-Zugriff (ansehen)",
+      "support_session_change": "Support-Zugriff (mit Änderungen)",
+      "support_session_end": "Support-Zugriff beendet",
+      "support_access_request": "Support bittet um Zugriff",
+      "support_access_approve": "Support-Zugriff freigegeben",
+      "support_access_decline": "Support-Zugriff abgelehnt",
+      "support_session_revoked": "Support-Zugriff vorzeitig beendet"
     },
     "systemActor": "System (automatisch)",
     "backToLog": "Zurück zum Protokoll",
@@ -4797,6 +4805,29 @@
       "notePlaceholder": "z. B. «Studium bis Sommer 2027, Legi sende ich per Mail»",
       "noteLabel": "Deine Bestätigung",
       "confirm": "Grund trifft noch zu"
+    }
+  },
+  "supportAccess": {
+    "title": "Hubra-Support",
+    "requireApproval": "Support-Zugriff nur mit Freigabe",
+    "requireApprovalHint": "Ein: Bevor der Hubra-Support euren Verein öffnet, fragt er hier an, und eine Admin-Person gibt den Zugriff frei (einmal, innerhalb von 24 Stunden). Jeder Zugriff steht im Audit-Log.",
+    "none": "Noch keine Anfragen vom Hubra-Support.",
+    "staff": "Hubra-Support",
+    "minutes": "{{count}} Min.",
+    "mayChange": "darf Änderungen machen",
+    "lookOnly": "nur ansehen",
+    "decidedBy": "entschieden von {{name}}",
+    "approve": "Freigeben",
+    "decline": "Ablehnen",
+    "approved": "Zugriff freigegeben",
+    "declined": "Zugriff abgelehnt",
+    "failed": "Nicht gespeichert",
+    "status": {
+      "pending": "Offen",
+      "approved": "Freigegeben",
+      "declined": "Abgelehnt",
+      "used": "Genutzt",
+      "expired": "Abgelaufen"
     }
   }
 }
