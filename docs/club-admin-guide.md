@@ -153,6 +153,18 @@ and those signed up hear that it takes place after all.
 Right: `events.events.update`, or the person who put the event up, or a role
 held for the event's group.
 
+### One calendar for all clubs
+
+Members who are in several clubs find **Kalender aller Vereine** in their
+account (sign-in › My account › Profile). It is one link for Google, Apple
+or Outlook calendars with the events of every club they are an active
+member of, each named with its club, from 90 days back on. **Nur meine
+Anmeldungen** gives a second link with only the events they signed up for
+(or wait for). A cancelled event stays in the calendar, marked cancelled.
+Anyone with the link sees the events, so **Neuen Link erstellen** makes new
+links and stops the old ones. A club with events switched off, or one the
+person left or is blocked in, drops out of the calendar.
+
 ### Event templates
 
 An event you hold again and again (the weekly training, the club evening)
