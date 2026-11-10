@@ -122,6 +122,28 @@ nothing, and uses the same planning as the run itself.
 
 Right: `finance.invoices.bulk_create`.
 
+## Events
+
+### Calling an event off
+
+When an event can't take place (rain, the pitch is closed, too few sign-ups),
+**Absagen** in its row (the calendar with a cross) calls it off. Pick one of
+the common reasons or write your own; a reason is required. The event stays
+in the calendar, struck through and marked **Abgesagt**, with the reason,
+and nobody can sign up any more.
+
+Everyone signed up or on the waitlist, and the members of the event's group,
+are told with the reason in the bell, by push and in the messengers they
+turned on; those signed up also get a mail. Plugins that listen to
+`event.changed` (Discord, messengers) get `cancelled` and the reason too. No
+reminder goes out for a cancelled event.
+
+**Doch durchführen** (the calendar with a tick) undoes it: sign-ups are kept
+and those signed up hear that it takes place after all.
+
+Right: `events.events.update`, or the person who put the event up, or a role
+held for the event's group.
+
 ## Roles and permissions
 
 Permissions (Berechtigungen) lists the club's roles. Each role grants

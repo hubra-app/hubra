@@ -22,6 +22,7 @@ section and position, or the apps show that version in English.
 ### Fixed
 
 - Customising Dashboard › Verein failed, and "Offene Rechnungen" couldn't be added to a dashboard: widget types with capital letters were refused.
+- **Call an event off with a reason**: Anlässe › **Absagen** cancels an event with a reason (one tap on a common one, or your own). It stays in the calendar, marked and struck through; sign-ups close, no reminder goes out, and everyone signed up or waiting plus the event's group hear it with the reason (bell, push, messengers; a mail to those signed up). `event.changed` carries `cancelled` and `reason` for plugins and webhooks. **Doch durchführen** undoes it. Needs `flask db upgrade` (runs by itself after the deploy).
 
 ## [0.2.5] - 2026-11-10
 

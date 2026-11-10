@@ -897,7 +897,29 @@
       }
     },
     "federationShared": "Share with member clubs",
-    "federationSharedHint": "Your member clubs see the event under Events › From your association."
+    "federationSharedHint": "Your member clubs see the event under Events › From your association.",
+    "cancel": {
+      "action": "Cancel event",
+      "reinstate": "Hold it after all",
+      "badge": "Cancelled",
+      "title": "Cancel {{title}}",
+      "subtitle": "The event stays in the calendar, marked as cancelled. Everyone signed up and the event's group hear it with the reason (bell, push, mail, messengers).",
+      "quickLabel": "Common reasons",
+      "quick": {
+        "weather": "Bad weather",
+        "venue": "Venue closed",
+        "few": "Too few sign-ups",
+        "ill": "Leader ill"
+      },
+      "reason": "Reason",
+      "confirm": "Cancel event",
+      "done": "Event cancelled",
+      "doneMsg": "Everyone signed up has been told.",
+      "failed": "Cancelling failed",
+      "reinstated": "Event takes place",
+      "reinstatedMsg": "Everyone signed up has been told.",
+      "reinstateFailed": "That didn't work"
+    }
   },
   "finance": {
     "addCategory": "Add Category",
@@ -2523,7 +2545,8 @@
         "feeEndsSoon": "Your own fee ends soon",
         "feeEnded": "Your own fee has ended",
         "feeConfirmed": "Reason for an own fee confirmed",
-        "memberFeeEnded": "A member's own fee has ended"
+        "memberFeeEnded": "A member's own fee has ended",
+        "eventReinstated": "Event takes place after all"
       }
     },
     "notifPanel": {

@@ -1,0 +1,9 @@
+{{ t('mail.email.event_cancelled.body', event_title=event_title, when=when) }}
+
+{{ t('mail.email.event_cancelled.reason') }}: {{ reason }}
+{% if location %}
+{{ t('mail.email.event_reminder.where') }}: {{ location }}
+{% endif %}
+{% if portal_url %}
+{{ t('mail.email.event_reminder.button') }}: {{ portal_url }}
+{% endif %}

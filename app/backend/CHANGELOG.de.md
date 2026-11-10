@@ -24,6 +24,7 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 ### Fixed
 
 - Dashboard › Verein anpassen schlug fehl, und «Offene Rechnungen» liess sich keinem Dashboard hinzufügen: Widget-Typen mit Grossbuchstaben wurden abgelehnt.
+- **Anlass mit Grund absagen**: Anlässe › **Absagen** sagt einen Anlass mit Grund ab (ein Tipp auf einen häufigen Grund oder ein eigener). Er bleibt im Kalender, markiert und durchgestrichen; Anmeldungen schliessen, es geht keine Erinnerung mehr raus, und alle Angemeldeten und Wartenden sowie die Gruppe des Anlasses erfahren es mit dem Grund (Glocke, Push, Messenger; Mail an die Angemeldeten). `event.changed` bringt `cancelled` und `reason` für Plugins und Webhooks mit. **Doch durchführen** macht es rückgängig. Braucht `flask db upgrade` (läuft nach dem Deploy von selbst).
 
 ## [0.2.5] - 2026-11-10
 

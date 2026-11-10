@@ -31,6 +31,11 @@ TITLES: dict[str, tuple[str, str, str]] = {
         "Anlass abgesagt",
         "Event cancelled",
     ),
+    "Event takes place": (
+        "shell.notif.text.eventReinstated",
+        "Anlass findet doch statt",
+        "Event takes place after all",
+    ),
     "Sign-up to approve": (
         "shell.notif.text.signUpToApprove",
         "Anmeldung bestätigen",

@@ -66,6 +66,53 @@ def _tell_registered(event, title: str, skip_member_id: int | None = None) -> No
             )
 
 
+def _tell_cancelled(event, reason: str, skip_member_id: int | None = None) -> None:
+    """Tell everyone the cancellation concerns: those signed up or waiting
+    (bell, push, app messages and a mail) and the members of the event's
+    group (bell, push, app messages), each once."""
+    from hubra.core.models.group import GroupMembership
+    from hubra.core.notifications.services import notify_member
+    from hubra.core.tasks.reminder_tasks import _active_members, _club_url, _mail
+
+    if (event.end_date or event.date) < date.today():
+        return
+    signed_up = {reg.member_id for reg in event.registrations if reg.status in _OPEN}
+    signed_up |= set(
+        db.session.scalars(
+            select(event_attendees.c.member_id).where(
+                event_attendees.c.event_id == event.id
+            )
+        ).all()
+    )
+    group = set()
+    if event.group_id is not None:
+        group = set(
+            db.session.scalars(
+                select(GroupMembership.member_id).where(
+                    GroupMembership.group_id == event.group_id
+                )
+            ).all()
+        )
+    link = event_link(event.id)
+    line = f"{_event_line(event)}: {reason}"
+    for member in _active_members(signed_up | group):
+        if member.id == skip_member_id:
+            continue
+        notify_member(
+            member.id, "warning", "Event cancelled", line, link=link, topic="my_events"
+        )
+        if member.id in signed_up:
+            _mail(
+                member,
+                "event_cancelled",
+                event_title=event.title,
+                when=_event_line(event).split(" · ", 1)[1],
+                location=event.location or "",
+                reason=reason,
+                portal_url=_club_url(link),
+            )
+
+
 # The member's own sign-up, by its status: (title, topic). A booking
 # confirmation is quiet in the bell until the member turns it on; the
 # waitlist is its own topic.
@@ -235,6 +282,47 @@ class EventService:
         db.session.delete(event)
 
     @staticmethod
+    def cancel(event: ClubEvent, actor_id: int, reason: str) -> ClubEvent:
+        """Call the event off: it stays in the calendar, marked, with the
+        reason. Everyone signed up or waiting, and the members of the
+        event's group, hear it on their channels (bell, push, app
+        messages); those signed up also get a mail. ``event.changed`` with
+        ``cancelled=True`` lets plugins (Discord, messengers) post it."""
+        if event.cancelled_at is not None:
+            raise_error(409, "CONFLICT", "The event is already cancelled")
+        event.cancelled_at = datetime.now(timezone.utc)
+        event.cancel_reason = reason
+        log_audit(
+            actor_id=actor_id,
+            action="cancel_event",
+            target_type="Event",
+            target_id=event.id,
+            target_label=event.title,
+        )
+        _tell_cancelled(event, reason, skip_member_id=actor_id)
+        emit(EVENT_CHANGED, event_id=event.id, cancelled=True, reason=reason)
+        return event
+
+    @staticmethod
+    def reinstate(event: ClubEvent, actor_id: int) -> ClubEvent:
+        """Undo a cancellation: the event takes place after all. Those signed
+        up keep their places and hear that it is on again."""
+        if event.cancelled_at is None:
+            raise_error(409, "CONFLICT", "The event is not cancelled")
+        event.cancelled_at = None
+        event.cancel_reason = None
+        log_audit(
+            actor_id=actor_id,
+            action="reinstate_event",
+            target_type="Event",
+            target_id=event.id,
+            target_label=event.title,
+        )
+        _tell_registered(event, "Event takes place", skip_member_id=actor_id)
+        emit(EVENT_CHANGED, event_id=event.id, cancelled=False)
+        return event
+
+    @staticmethod
     def add_attendee(event_id: int, member: Member) -> None:
         """Add a member as an event attendee. Raises 409 if already attending."""
         already = db.session.scalar(
@@ -303,6 +391,8 @@ class EventService:
         """
         event = EventService.get(event_id)
         EventService._lock(event_id)
+        if event.cancelled_at is not None:
+            raise_error(409, "EVENT_CANCELLED", "This event has been cancelled")
         if own:
             last_day = event.end_date or event.date
             if _passed(event.registration_deadline) or last_day < date.today():

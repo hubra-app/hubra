@@ -34,6 +34,8 @@ import {
   IconClipboardCheck,
   IconChartBar,
   IconUserPlus,
+  IconCalendarOff,
+  IconCalendarCheck,
 } from '@tabler/icons-react'
 import { useToast, useAuth, useData } from '@/context/AppContext'
 import { qk } from '@/data/keys'
@@ -54,6 +56,7 @@ import {
   createEvent,
   updateEvent,
   deleteEvent,
+  reinstateEvent,
   type EventUpdate,
   type SeriesScope,
 } from '@/api/events'
@@ -66,6 +69,7 @@ import {
 import { CalendarSubscribeButton } from './CalendarSubscribeButton'
 import { PendingSignUpsModal } from './PendingSignUpsModal'
 import { AttendanceModal } from './AttendanceModal'
+import { CancelEventModal } from './CancelEventModal'
 import { RecurrenceFields } from './RecurrenceFields'
 import { GroupField } from './ContentGroupFields'
 import { useContentGroups } from './contentGroups'
@@ -169,6 +173,20 @@ export function EventsTab() {
   const seesAttendance =
     hasPermission('events.events.add_attendee') || groups.some((g) => hasPermission('events.events.add_attendee', g.id))
   const [rollFor, setRollFor] = useState<ClubEvent | null>(null)
+  const [cancelFor, setCancelFor] = useState<ClubEvent | null>(null)
+  const reinstate = async (ev: ClubEvent) => {
+    try {
+      await reinstateEvent(ev.id)
+      eventCache.patch(ev.id, (e) => ({ ...e, cancelledAt: null, cancelReason: null }))
+      notify(
+        'success',
+        t('events.cancel.reinstated', 'Anlass findet statt'),
+        t('events.cancel.reinstatedMsg', 'Die Angemeldeten wurden benachrichtigt.'),
+      )
+    } catch {
+      notify('error', t('events.cancel.reinstateFailed', 'Das hat nicht geklappt'))
+    }
+  }
   const [repeat, setRepeat] = useState<RepeatState>(() => defaultRepeat(''))
   const [ruleAtOpen, setRuleAtOpen] = useState<RepeatState | null>(null)
   const [editScope, setEditScope] = useState<SeriesScope>('this')
@@ -682,7 +700,22 @@ export function EventsTab() {
                   gap: 6,
                 }}
               >
-                {ev.title}
+                <span
+                  style={
+                    ev.cancelledAt
+                      ? { textDecoration: 'line-through', color: 'var(--hb-text-3)' }
+                      : undefined
+                  }
+                >
+                  {ev.title}
+                </span>
+                {ev.cancelledAt && (
+                  <Tooltip label={ev.cancelReason || t('events.cancel.badge', 'Abgesagt')} multiline maw={260}>
+                    <Badge color="red" variant="light" data-testid="event-cancelled">
+                      {t('events.cancel.badge', 'Abgesagt')}
+                    </Badge>
+                  </Tooltip>
+                )}
                 {ev.isPublic && (
                   <Tooltip label={t('events.isPublic', 'Öffentlicher Anlass')}>
                     <IconWorld
@@ -794,7 +827,18 @@ export function EventsTab() {
                     alignItems: 'center',
                   }}
                 >
-                  {over ? (
+                  {ev.cancelledAt && !over ? (
+                    <span
+                      style={{
+                        fontSize: 'var(--mantine-font-size-sm)',
+                        color: 'var(--mantine-color-red-7)',
+                        minWidth: 120,
+                      }}
+                    >
+                      {t('events.cancel.badge', 'Abgesagt')}
+                      {ev.cancelReason ? `: ${ev.cancelReason}` : ''}
+                    </span>
+                  ) : over ? (
                     <span
                       style={{
                         fontSize: 'var(--mantine-font-size-sm)',
@@ -836,7 +880,7 @@ export function EventsTab() {
                     )}
                   </Button>
                   )}
-                  {!over && !joined && (
+                  {!over && !joined && !ev.cancelledAt && (
                     <Tooltip
                       label={
                         ev.myStatus === 'maybe'
@@ -865,6 +909,30 @@ export function EventsTab() {
                         onClick={() => setRollFor(ev)}
                       >
                         <IconClipboardCheck size={18} />
+                      </ActionIcon>
+                    </Tooltip>
+                  )}
+                  {canUpdate(ev) && !over && (
+                    <Tooltip
+                      label={
+                        ev.cancelledAt
+                          ? t('events.cancel.reinstate', 'Doch durchführen')
+                          : t('events.cancel.action', 'Absagen')
+                      }
+                    >
+                      <ActionIcon
+                        variant="subtle"
+                        color={ev.cancelledAt ? 'green' : 'red'}
+                        size="lg"
+                        aria-label={
+                          ev.cancelledAt
+                            ? t('events.cancel.reinstate', 'Doch durchführen')
+                            : t('events.cancel.action', 'Absagen')
+                        }
+                        data-testid={ev.cancelledAt ? 'reinstate-event' : 'cancel-event'}
+                        onClick={() => (ev.cancelledAt ? void reinstate(ev) : setCancelFor(ev))}
+                      >
+                        {ev.cancelledAt ? <IconCalendarCheck size={18} /> : <IconCalendarOff size={18} />}
                       </ActionIcon>
                     </Tooltip>
                   )}
@@ -963,6 +1031,7 @@ export function EventsTab() {
         }
       />
       <AttendanceModal event={rollFor} onClose={() => setRollFor(null)} />
+      <CancelEventModal event={cancelFor} onClose={() => setCancelFor(null)} />
       <Modal
         open={!!deleteTarget?.seriesId}
         onClose={() => setDeleteTarget(null)}
