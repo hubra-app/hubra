@@ -10,6 +10,7 @@ section and position, or the apps show that version in English.
 ### Added
 
 - **Member badge in Google Wallet** (sso › My account › Profile): an "Add to Google Wallet" button under the member badge saves it as a pass with the name, the badge number as QR code and the clubs. Hubra is the one issuer for every club; the pass follows joins, leaves and name changes and goes inactive when the account is deleted. Set it up in manage › Services › Google Wallet (docs/google-wallet.md). Operators: run `flask db upgrade` (new columns `users.google_wallet_object`, `users.google_wallet_hash`).
+- **Post-deploy steps run themselves**: once every backend process runs a new build, a worker runs `flask db upgrade`, `sync-tenant-schemas`, `sync-permissions`, `seed` and `plugins sync` once for that build, unless an init step is already doing it. manage › Diagnostics › System health › Builds shows each step and the output of one that failed, with **Run now** to start them again; a failure also sends an upgrades alert. A platform setting (Diagnostics › Settings) turns it off. Operators no longer need to run these by hand after a release.
 
 ### Changed
 

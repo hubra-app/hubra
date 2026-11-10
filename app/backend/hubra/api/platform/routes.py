@@ -209,6 +209,10 @@ def health_detailed():
         # Redis did not answer: unknown, not "no process reports".
         payload["processes_unknown"] = True
     payload["last_upgrade"] = upgrades.last_upgrade()
+    from hubra.core.services import post_deploy
+
+    payload["post_deploy"] = post_deploy.last_run()
+    payload["post_deploy_enabled"] = post_deploy.enabled()
 
     if cached is not None and "checked_at" in cached:
         payload["stale"] = time.time() - cached["checked_at"] > _STALE_THRESHOLD
@@ -216,6 +220,21 @@ def health_detailed():
     else:
         payload["stale"] = True
     return jsonify(payload), 200
+
+
+@platform_bp.post("/upgrades/post-deploy")
+@require_global_permission(_PERM)
+@require_step_up
+def post_deploy_run():
+    """Queue the post-deploy steps (migrations, seeds, permission sync) by
+    hand, e.g. after fixing what made the automatic run fail."""
+    from hubra.core.tasks.post_deploy_tasks import run_post_deploy_steps
+
+    actor = getattr(g, "system_user", None)
+    run_post_deploy_steps.delay(None, "manual", getattr(actor, "id", None))
+    _audit("platform.upgrades.post_deploy", "build", "current")
+    db.session.commit()
+    return jsonify({"queued": True}), 202
 
 
 @platform_bp.get("/discord/status")
