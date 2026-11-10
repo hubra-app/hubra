@@ -253,6 +253,40 @@ export async function createBulkInvoices(input: {
   return { created: r.created, invoices: r.invoices.map(adaptInvoice) };
 }
 
+export type FeeRunLine = {
+  memberId: number;
+  name: string;
+  tier: string;
+  amount: number;
+  periodStart: string;
+  periodEnd: string;
+  prorated: boolean;
+  ownCycle: string | null;
+  noEmail: boolean;
+};
+
+export type FeeRunPreview = {
+  on: string;
+  count: number;
+  total: number;
+  dueOn: string;
+  mailed: boolean;
+  tiers: { tierId: number; tier: string; count: number; total: number }[];
+  lines: FeeRunLine[];
+  truncated: boolean;
+  noEmail: number;
+  ownCycle: number;
+  prorated: number;
+  skipped: Record<string, number>;
+  lastTwelveMonths: { count: number; total: number };
+};
+
+/** What the daily invoice run would bill on `on` (YYYY-MM-DD). Writes nothing. */
+export async function getFeeRunPreview(on?: string): Promise<FeeRunPreview> {
+  const q = on ? `?on=${encodeURIComponent(on)}` : "";
+  return apiFetch<FeeRunPreview>(`/app/finance/invoices/fee-run-preview${q}`);
+}
+
 export async function updateInvoice(
   id: string,
   input: { status?: string },

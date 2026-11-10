@@ -1337,6 +1337,37 @@
       "bookings": "Buchungen",
       "planning": "Budget & Beiträge",
       "billing": "Abrechnung"
+    },
+    "feeRun": {
+      "open": "Vorschau Beitragslauf",
+      "title": "Vorschau Beitragslauf",
+      "subtitle": "Was der tägliche Rechnungslauf an diesem Tag ausstellen würde. Es wird nichts erstellt.",
+      "on": "Lauf am",
+      "failed": "Die Vorschau konnte nicht geladen werden.",
+      "invoices": "Rechnungen",
+      "mailed": "Werden per E-Mail verschickt",
+      "notMailed": "Werden nicht verschickt",
+      "total": "Total",
+      "due": "Fällig am {{date}}",
+      "lastYear": "Letzte 12 Monate",
+      "lastYearCount": "{{count}} Beitragsrechnungen",
+      "nothing": "An diesem Tag würde keine Rechnung ausgestellt.",
+      "noEmail": "{{count}} ohne E-Mail-Adresse",
+      "proratedCount": "{{count}} anteilig (Eintritt)",
+      "ownCycleCount": "{{count}} mit Zahlungsplan",
+      "tier": "Stufe",
+      "member": "Mitglied",
+      "period": "Periode",
+      "prorated": "anteilig",
+      "noEmailShort": "keine E-Mail",
+      "truncated": "Die ersten {{shown}} von {{count}} Rechnungen.",
+      "skippedTitle": "Nicht verrechnet",
+      "skip": {
+        "notJoinedYet": "Noch nicht eingetreten",
+        "invoiceExists": "Rechnung für die Periode schon ausgestellt",
+        "amountZero": "Betrag 0 (z. B. befreit)",
+        "noBillableTier": "Stufe ohne Abrechnung"
+      }
     }
   },
   "functions": {

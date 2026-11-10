@@ -96,6 +96,8 @@ export const qk = {
     one: (id: string | undefined) => ['invoice', id] as const,
     mine: ['my-invoices'] as const,
     member: (id: string | undefined) => ['invoices', 'member', id] as const,
+    /** Fee run preview for a day; under 'invoices' so new invoices refresh it. */
+    feeRun: (on: string) => ['invoices', 'fee-run', on] as const,
   },
   transactions: {
     all: ['transactions'] as const,

@@ -108,6 +108,20 @@ ending soonest first.
 Rights: `tiers.fee_adjustments.read` and `tiers.fee_adjustments.update`
 (new clubs give both to the Treasurer role; admins always have them).
 
+### Fee run preview
+
+Every day the invoice run bills each member whose billing period has started
+and who has no membership invoice for it yet. Finanzen › Rechnungen ›
+**Vorschau Beitragslauf** shows what that run would issue on a day you pick,
+before it does: how many invoices, the total and the due date, a total per
+tier, every member with their period and amount (pro rata for a first fee,
+on a payment plan, without an email address), and why members were left out
+(not joined yet, invoice already issued, fee 0). The last twelve months of
+membership invoices are shown for comparison. The preview creates and sends
+nothing, and uses the same planning as the run itself.
+
+Right: `finance.invoices.bulk_create`.
+
 ## Roles and permissions
 
 Permissions (Berechtigungen) lists the club's roles. Each role grants

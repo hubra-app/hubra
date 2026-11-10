@@ -220,6 +220,86 @@ def _membership_invoice_in(
     return None
 
 
+def plan_fee_run(today: date) -> tuple[list[dict], list[dict]]:
+    """What the invoice run on *today* would bill, without writing anything:
+    ``(planned, skipped)``. Each planned line has the member, tier, cycle,
+    the billed period and the amount (``prorated`` for a first fee that
+    covers only part of the period); each skipped one the member and why.
+    The run (_generate_invoices) and its preview (Finanzen › Rechnungen)
+    both use it, so the preview shows exactly what the run will do."""
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
+    from hubra.core.models.member import Member
+    from hubra.api.finance.services import billing_settings
+
+    billing = billing_settings()
+    planned: list[dict] = []
+    skipped: list[dict] = []
+
+    def skip(member, reason: str, **extra) -> None:
+        logger.info(
+            "invoice_generation_skipped member_id=%s reason=%s%s",
+            member.id,
+            reason,
+            "".join(f" {k}={v}" for k, v in extra.items()),
+        )
+        skipped.append({"member": member, "reason": reason, **extra})
+
+    active_members: list[Member] = db.session.scalars(  # type: ignore[assignment]
+        select(Member)
+        .options(selectinload(Member.fee_adjustment))
+        .where(Member.status == "active")
+        .where(Member.archived_at.is_(None))
+        .where(Member.tier_id.isnot(None))
+    ).all()
+
+    # Each formula tier deducts the yearly fees of its own deduct_tier_ids.
+    deducted_for = deductions_by_tier(db.session)
+
+    for member in active_members:
+        tier = member.tier
+        if tier is None or not tier.billing_cycle:
+            skip(member, "no_billable_tier")
+            continue
+        if member.joined is not None and member.joined > today:
+            skip(member, "not_joined_yet")
+            continue
+
+        cycle = billing_cycle_for(member, tier)
+        period_start, period_end = membership_period(member, today, cycle, billing)
+
+        existing = _membership_invoice_in(member.id, period_start, period_end, cycle)
+        if existing is not None:
+            skip(member, "invoice_exists_for_period", invoice_id=existing)
+            continue
+
+        amount = calculate_invoice_amount(
+            member, tier, deducted_for(tier), on=period_start
+        )
+        billed_from = period_start
+        prorated = False
+        share = first_fee_share(member, period_start, period_end, billing)
+        if share is not None:
+            billed_from, months = share
+            amount = prorate(amount, months)
+            prorated = True
+        if amount <= 0:
+            skip(member, "amount_zero_or_negative")
+            continue
+        planned.append(
+            {
+                "member": member,
+                "tier": tier,
+                "cycle": cycle,
+                "period_start": billed_from,
+                "period_end": period_end,
+                "amount": amount,
+                "prorated": prorated,
+            }
+        )
+    return planned, skipped
+
+
 @celery_app.task(
     name="hubra.core.tasks.finance_tasks.generate_invoices_task",
     bind=True,
@@ -255,8 +335,6 @@ def _generate_invoices(today: date | None = None) -> dict:
 
     Returns a summary dict with counts for created/skipped invoices.
     """
-    from sqlalchemy import select
-    from sqlalchemy.orm import selectinload
     from hubra.core.models.finance import Invoice
     from hubra.core.models.member import Member, MembershipTier
     from hubra.api.finance.services import billing_settings
@@ -264,70 +342,17 @@ def _generate_invoices(today: date | None = None) -> dict:
 
     billing = billing_settings()
     today = today or date.today()
-    created = 0
-    skipped = 0
     portal_url = club_app_url(MY_INVOICES_PATH) or "the member portal"
+    planned, skipped_rows = plan_fee_run(today)
+    created = 0
+    skipped = len(skipped_rows)
 
-    active_members: list[Member] = db.session.scalars(  # type: ignore[assignment]
-        select(Member)
-        .options(selectinload(Member.fee_adjustment))
-        .where(Member.status == "active")
-        .where(Member.archived_at.is_(None))
-        .where(Member.tier_id.isnot(None))
-    ).all()
-
-    # Each formula tier deducts the yearly fees of its own deduct_tier_ids.
-    deducted_for = deductions_by_tier(db.session)
-
-    # Generate invoices
-    for member in active_members:
-        tier: MembershipTier | None = member.tier
-
-        if tier is None or not tier.billing_cycle:
-            logger.info(
-                "invoice_generation_skipped member_id=%s reason=no_billable_tier",
-                member.id,
-            )
-            skipped += 1
-            continue
-
-        if member.joined is not None and member.joined > today:
-            logger.info(
-                "invoice_generation_skipped member_id=%s reason=not_joined_yet",
-                member.id,
-            )
-            skipped += 1
-            continue
-
-        cycle = billing_cycle_for(member, tier)
-        period_start, period_end = membership_period(member, today, cycle, billing)
-
-        existing = _membership_invoice_in(member.id, period_start, period_end, cycle)
-        if existing is not None:
-            logger.info(
-                "invoice_generation_skipped member_id=%s reason=invoice_exists_for_period invoice_id=%s",
-                member.id,
-                existing,
-            )
-            skipped += 1
-            continue
-
-        amount = calculate_invoice_amount(
-            member, tier, deducted_for(tier), on=period_start
-        )
-        billed_from = period_start
-        share = first_fee_share(member, period_start, period_end, billing)
-        if share is not None:
-            billed_from, months = share
-            amount = prorate(amount, months)
-        if amount <= 0:
-            logger.info(
-                "invoice_generation_skipped member_id=%s reason=amount_zero_or_negative",
-                member.id,
-            )
-            skipped += 1
-            continue
-
+    for line in planned:
+        member: Member = line["member"]
+        tier: MembershipTier = line["tier"]
+        amount = line["amount"]
+        billed_from = line["period_start"]
+        period_end = line["period_end"]
         due_date = today + timedelta(days=billing["payment_term_days"])
         invoice = Invoice(
             member_id=member.id,

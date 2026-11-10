@@ -1337,6 +1337,37 @@
       "bookings": "Bookings",
       "planning": "Budget & fees",
       "billing": "Billing"
+    },
+    "feeRun": {
+      "open": "Preview fee run",
+      "title": "Fee run preview",
+      "subtitle": "What the daily invoice run would issue on this day. Nothing is created.",
+      "on": "Run on",
+      "failed": "The preview could not be loaded.",
+      "invoices": "Invoices",
+      "mailed": "Sent by email",
+      "notMailed": "Not sent by email",
+      "total": "Total",
+      "due": "Due on {{date}}",
+      "lastYear": "Last 12 months",
+      "lastYearCount": "{{count}} fee invoices",
+      "nothing": "No invoice would be issued on this day.",
+      "noEmail": "{{count}} without an email address",
+      "proratedCount": "{{count}} pro rata (joined)",
+      "ownCycleCount": "{{count}} on a payment plan",
+      "tier": "Tier",
+      "member": "Member",
+      "period": "Period",
+      "prorated": "pro rata",
+      "noEmailShort": "no email",
+      "truncated": "The first {{shown}} of {{count}} invoices.",
+      "skippedTitle": "Not billed",
+      "skip": {
+        "notJoinedYet": "Not joined yet",
+        "invoiceExists": "Invoice for the period already issued",
+        "amountZero": "Amount 0 (e.g. exempt)",
+        "noBillableTier": "Tier not billed"
+      }
     }
   },
   "functions": {
