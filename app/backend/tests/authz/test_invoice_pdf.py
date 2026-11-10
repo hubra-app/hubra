@@ -144,6 +144,7 @@ def test_the_payment_slip_is_printed_at_full_size(
     resp = _pdf(client, _invoice(db, member_id=admin.id), auth_headers)
     assert resp.status_code == 200, resp.get_json()
 
-    svg = seen["qr_svg"]
+    # The letterhead layout (pdf/base.html) puts it at the bottom edge.
+    svg = seen["bottom"]
     assert 'width="210mm"' in svg and 'height="106mm"' in svg
     assert seen["reference_display"].count(" ") == 5  # 2 + 5 x 5 digits

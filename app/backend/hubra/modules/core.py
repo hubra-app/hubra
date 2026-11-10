@@ -1,5 +1,6 @@
 """Core: sign-in, accounts, settings, dashboard, audit and platform admin."""
 
+from hubra.core.contracts import action_contract
 from hubra.core.modules import Blueprint, Module, NavItem
 
 module = Module(
@@ -220,5 +221,15 @@ module = Module(
         "sessions",
         "password_reset_tokens",
         "internal_keys",
+    ),
+    # One letterhead for every PDF (hubra/core/services/pdf.py).
+    provides=(
+        action_contract(
+            "pdf.render",
+            "hubra.core.services.pdf:render_action",
+            input="hubra.core.services.pdf:PdfIn",
+            output="hubra.core.services.pdf:PdfOut",
+            description="HTML under the club's letterhead, as a PDF (base64)",
+        ),
     ),
 )
