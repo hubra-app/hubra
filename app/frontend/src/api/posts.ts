@@ -21,6 +21,9 @@ interface BackendPost {
   translations?: Partial<Record<ContentLanguage, PostText>> | null;
   publish_at?: string | null;
   hide_after?: string | null;
+  must_read?: boolean;
+  read_count?: number;
+  read_by_me?: boolean;
 }
 
 interface BackendComment {
@@ -95,6 +98,9 @@ function adaptPost(b: BackendPost): Post {
     translations: b.translations ?? {},
     publishAt: b.publish_at ?? null,
     hideAfter: b.hide_after ?? null,
+    mustRead: b.must_read ?? false,
+    readCount: b.read_count ?? 0,
+    readByMe: b.read_by_me ?? false,
   };
   return postIn(post, readerLanguage());
 }
@@ -133,6 +139,8 @@ export interface PostCreate {
   publishAt?: string | null;
   /** Hidden from members after this time (ISO). */
   hideAfter?: string | null;
+  /** Members confirm they read it. */
+  mustRead?: boolean;
 }
 
 export async function createPost(input: PostCreate): Promise<Post> {
@@ -146,6 +154,7 @@ export async function createPost(input: PostCreate): Promise<Post> {
       ...(input.translations !== undefined ? { translations: input.translations } : {}),
       ...(input.publishAt ? { publish_at: input.publishAt } : {}),
       ...(input.hideAfter ? { hide_after: input.hideAfter } : {}),
+      ...(input.mustRead ? { must_read: true } : {}),
       ...(input.groupId !== undefined
         ? { group_id: input.groupId ? Number(input.groupId) : null }
         : {}),
@@ -164,6 +173,7 @@ export interface PostUpdate {
   /** A scheduled post only; null: out now. */
   publishAt?: string | null;
   hideAfter?: string | null;
+  mustRead?: boolean;
 }
 
 /** Whether the platform set up machine translation. */
@@ -187,11 +197,12 @@ export async function updatePost(
   id: string,
   input: PostUpdate,
 ): Promise<Post> {
-  const { groupId, publishAt, hideAfter, ...rest } = input;
+  const { groupId, publishAt, hideAfter, mustRead, ...rest } = input;
   const body: Record<string, unknown> = { ...rest };
   if (groupId !== undefined) body.group_id = groupId ? Number(groupId) : null;
   if (publishAt !== undefined) body.publish_at = publishAt;
   if (hideAfter !== undefined) body.hide_after = hideAfter;
+  if (mustRead !== undefined) body.must_read = mustRead;
   const data = await apiFetch<BackendPost>(`/app/posts/${id}`, {
     method: "PATCH",
     body: JSON.stringify(body),
@@ -240,4 +251,21 @@ export async function deleteComment(
   await apiFetch(`/app/posts/${postId}/comments/${commentId}`, {
     method: "DELETE",
   });
+}
+
+/** The member confirms they read a must-read post. */
+export async function confirmRead(id: string): Promise<Post> {
+  const data = await apiFetch<BackendPost>(`/app/posts/${id}/read`, { method: "POST" });
+  return adaptPost(data);
+}
+
+export interface ReadStatus {
+  confirmed: { member_id: number; name: string; read_at: string }[];
+  missing: { member_id: number; name: string }[];
+  reminder_sent_at: string | null;
+}
+
+/** Who confirmed a must-read post and who has not (those who manage it). */
+export async function getReadStatus(id: string): Promise<ReadStatus> {
+  return apiFetch<ReadStatus>(`/app/posts/${id}/reads`);
 }

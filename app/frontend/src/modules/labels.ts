@@ -87,7 +87,20 @@ const DE: Record<string, { name: string; description: string; settings?: Record<
       ],
     },
   },
-  posts: { name: 'Beiträge', description: 'Vereinsmitteilungen und Beiträge aus der Community' },
+  posts: {
+    name: 'Beiträge',
+    description: 'Vereinsmitteilungen und Beiträge aus der Community',
+    settings: {
+      notify_members: [
+        'Mitglieder über neue Beiträge informieren',
+        'Eine Mitteilung in der App an alle Mitglieder, sobald ein Beitrag veröffentlicht ist',
+      ],
+      must_read_reminder_days: [
+        'Erinnerung bei Lesebestätigung (Tage)',
+        'Wer einen Beitrag mit Lesebestätigung so lange nach dem Erscheinen noch nicht bestätigt hat, bekommt eine Erinnerung. 0: keine Erinnerung',
+      ],
+    },
+  },
   roles: { name: 'Rollen und Berechtigungen', description: 'Rollen und die Berechtigungen, die sie vergeben' },
   // Plugins shipped with Hubra
   'finance.bank': {

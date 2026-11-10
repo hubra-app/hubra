@@ -2377,6 +2377,19 @@
       "badge": "Scheduled for {{when}}",
       "hidden": "Hidden",
       "submit": "Schedule"
+    },
+    "mustRead": {
+      "statusTitle": "Read confirmations",
+      "statusFailed": "The list could not be loaded.",
+      "reminded": "Reminder sent on {{when}}.",
+      "notReminded": "Whoever has not confirmed gets a reminder after the set number of days.",
+      "missing": "Not confirmed yet",
+      "confirmed": "Confirmed",
+      "field": "Ask members to confirm they read it",
+      "fieldHint": "For safety rules, rule changes or AGM papers: members confirm with one tap, and you see who is missing.",
+      "done": "Read, confirmed",
+      "confirm": "I read it",
+      "count": "{{count}} confirmed"
     }
   },
   "settings": {
@@ -2607,7 +2620,8 @@
         "feeEnded": "Your own fee has ended",
         "feeConfirmed": "Reason for an own fee confirmed",
         "memberFeeEnded": "A member's own fee has ended",
-        "eventReinstated": "Event takes place after all"
+        "eventReinstated": "Event takes place after all",
+        "confirmRead": "Please confirm you read this"
       }
     },
     "notifPanel": {

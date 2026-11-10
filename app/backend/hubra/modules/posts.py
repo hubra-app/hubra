@@ -23,6 +23,13 @@ module = Module(
             label="Notify members about new posts",
             description="An in-app notification for every member when a post is published",
         ),
+        SettingField(
+            "must_read_reminder_days",
+            "int",
+            default=7,
+            label="Reminder for must-read posts (days)",
+            description="Members who have not confirmed a must-read post this long after it went out get one reminder. 0: no reminder",
+        ),
     ),
     nav=(
         NavItem(
@@ -33,7 +40,7 @@ module = Module(
             order=32,
         ),
     ),
-    tables=("posts", "post_likes", "post_comments"),
+    tables=("posts", "post_likes", "post_comments", "post_reads"),
     tasks=("hubra.api.posts.tasks",),
     schedule=(
         # Scheduled posts go out within five minutes of their time.
@@ -41,6 +48,11 @@ module = Module(
             "publish-scheduled-posts",
             "hubra.api.posts.tasks.publish_scheduled_posts_task",
             300,
+        ),
+        Schedule(
+            "must-read-reminders",
+            "hubra.api.posts.tasks.remind_unread_posts_task",
+            3600,
         ),
     ),
 )

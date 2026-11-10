@@ -118,6 +118,8 @@ class PostCreateSchema(ma.Schema):
     hide_after = fields.AwareDateTime(
         allow_none=True, load_default=None, default_timezone=timezone.utc
     )
+    # Members confirm they read it ("please confirm").
+    must_read = fields.Bool(load_default=False)
 
     @post_load
     def _translations(self, data, **_kwargs):
@@ -141,6 +143,7 @@ class PostUpdateSchema(ma.Schema):
     translations = fields.Dict(allow_none=True)
     publish_at = fields.AwareDateTime(allow_none=True, default_timezone=timezone.utc)
     hide_after = fields.AwareDateTime(allow_none=True, default_timezone=timezone.utc)
+    must_read = fields.Bool()
 
 
 class CommentCreateSchema(ma.Schema):
