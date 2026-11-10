@@ -836,7 +836,7 @@ export const MY_HOME = [
   w('payments', 'me.payments', 'l'),
   w('summary', 'me.summary', 'l'),
   // Booking's "Heute vor Ort"; left out where Booking is off (see OPTIONAL_HOME).
-  w('onsite', 'booking.onsite_today', 'l'),
+  w('onsite', 'w:booking.onsite_today', 'l'),
   w('events', 'me.events', 'l'),
   w('votes', 'me.votes', 'l'),
   w('attendance', 'me.attendance', 'l'),
@@ -849,7 +849,7 @@ export const MY_HOME = [
  * only while the catalogue offers them to this member, instead of an
  * "this widget is gone" box in clubs without the plugin.
  */
-export const OPTIONAL_HOME = new Set(['booking.onsite_today'])
+export const OPTIONAL_HOME = new Set(['w:booking.onsite_today'])
 
 /** The built-in start page without plugin widgets this member can't use. */
 export function useDefaultHome(widgets: DashboardWidget[]): DashboardWidget[] {
