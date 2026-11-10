@@ -14,6 +14,7 @@ import { MaintenanceNotice } from './MaintenanceNotice'
 import { ClubBranding } from './ClubBranding'
 import { CustomizeSidebarModal } from './CustomizeSidebar'
 import { ReportDialog } from '@/screens/private/support/ReportDialog'
+import { StepUpDialog } from '@/components/StepUpDialog'
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const { currentUser } = useAuth()
@@ -72,6 +73,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <NotificationPanel />
       <CustomizeSidebarModal />
       <ReportDialog />
+      <StepUpDialog />
       {currentUser?.mustChangePassword && <ForcedPasswordChangeModal />}
     </AppShell>
   )

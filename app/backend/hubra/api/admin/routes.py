@@ -462,8 +462,10 @@ def get_bank_settings():
 @require_admin
 def update_bank_settings():
     """Save the club's IBAN and creditor address (Settings > Verein)."""
+    from hubra.core.auth.account_token import ensure_club_step_up
     from hubra.core.services.settings import SettingService
 
+    ensure_club_step_up()
     body = request.get_json(silent=True) or {}
     values = {}
     for field, _key, _label in _BANK_FIELDS:

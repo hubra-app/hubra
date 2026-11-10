@@ -1,5 +1,6 @@
 import { apiFetch, apiFetchRaw } from '@hubra/api-client';
 import { getLookups } from "@/api/lookups";
+import { withStepUp } from "@/api/stepUp";
 import { API_PAGE_SIZE, fetchPages } from "@/api/pages";
 import type { Member } from "@/types";
 
@@ -258,10 +259,13 @@ export async function updateMember(
     body.membership_until = input.membershipUntil;
   if (input.customFields !== undefined) body.custom_fields = input.customFields;
 
-  const b = await apiFetch<BackendMember>(`/app/members/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify(body),
-  });
+  // Giving an admin role needs a confirmed sign-in (step-up).
+  const b = await withStepUp(() =>
+    apiFetch<BackendMember>(`/app/members/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  );
   return adapt(b, lookups.groups);
 }
 
@@ -278,7 +282,7 @@ export async function unarchiveMember(id: string): Promise<Member> {
 }
 
 export async function hardDeleteMember(id: string): Promise<void> {
-  await apiFetch(`/app/members/${id}`, { method: "DELETE" });
+  await withStepUp(() => apiFetch(`/app/members/${id}`, { method: "DELETE" }));
 }
 
 export async function disableMember(id: string): Promise<Member> {

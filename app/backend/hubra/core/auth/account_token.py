@@ -226,3 +226,23 @@ def require_step_up(fn):
     # API tokens never pass a step-up route (hubra.core.auth.api_tokens).
     wrapper._step_up = True
     return wrapper
+
+
+def ensure_club_step_up() -> None:
+    """Risky club actions (bank details, deleting a member for good, giving
+    admin rights): the sign-in must have confirmed the password, code or a
+    passkey in the last ``SUDO_MINUTES`` minutes, as manage asks for its
+    platform actions. The club token carries the same account session
+    (``account_sid``), so confirming in the club app or on SSO counts for
+    both. API tokens have no account session and never pass.
+    ``STEP_UP_ENFORCED`` switches it off (tests)."""
+    from flask_jwt_extended import get_jwt
+
+    if not current_app.config.get("STEP_UP_ENFORCED", True):
+        return
+    try:
+        claims = get_jwt()
+    except RuntimeError:
+        claims = {}
+    if not claims or not sudo_active(claims):
+        raise_error(403, "STEP_UP_REQUIRED", "Confirm your password to do this")

@@ -1988,6 +1988,55 @@ def step_up():
     return jsonify({"sudoUntil": until.isoformat()}), 200
 
 
+# ── Step-up in the club app (account_token.ensure_club_step_up) ───────────────
+
+
+@auth_bp.get("/step-up")
+@jwt_required()
+def club_step_up_status():
+    """Whether this sign-in is confirmed right now, and what the confirm
+    dialog in the club app offers (the passkey runs on SSO)."""
+    claims = get_jwt()
+    user = _signed_in_user()
+    until = None
+    if account_token.sudo_active(claims):
+        from hubra.core.models.account_session import AccountSession
+
+        session = db.session.get(AccountSession, int(claims["account_sid"]))
+        until = session.sudo_until.isoformat() if session else None
+    return jsonify(
+        {
+            "sudoUntil": until,
+            "passkey": passkeys.available() and mfa.has_passkeys(user),
+            "code": mfa.totp_enabled(user),
+        }
+    ), 200
+
+
+@auth_bp.post("/step-up")
+@jwt_required()
+@limiter.limit("5 per minute")
+def club_step_up():
+    """Confirm the password (and the code, with two-factor on) before a
+    risky club action; holds for a few minutes on this sign-in."""
+    _not_while_impersonating()
+    claims = get_jwt()
+    user = _signed_in_user()
+    body = request.get_json(silent=True) or {}
+    if not user.check_password(str(body.get("password") or "")):
+        _count_failed_login(user)
+        raise_error(400, "INVALID_PASSWORD", "The password is not correct")
+    if mfa.enabled(user):
+        if mfa.verify(user, str(body.get("code") or "")) is None:
+            _count_failed_login(user)
+            raise_error(400, "MFA_INVALID", "The code is not correct")
+    user.failed_login_count = 0
+    until = account_token.grant_sudo(claims)
+    db.session.commit()
+    _log.info("club step_up user_id=%s until=%s", user.id, until.isoformat())
+    return jsonify({"sudoUntil": until.isoformat()}), 200
+
+
 def _step_up_sid(claims: dict) -> int:
     sid = claims.get("account_sid")
     if sid is None:

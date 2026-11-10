@@ -4906,5 +4906,23 @@
     "confirmTitle": "Switch to {{name}}?",
     "newPrice": "New: {{price}} per month.",
     "switch": "Switch"
+  },
+  "stepUp": {
+    "titleAction": "Confirm this action",
+    "titlePassword": "Confirm your password",
+    "hintPasskey": "This action is hard to undo (bank details, admin rights, deleting for good). Confirm with your passkey or your password; it then counts for ten minutes.",
+    "hintPassword": "This action is hard to undo (bank details, admin rights, deleting for good). Confirm your password; it then counts for ten minutes.",
+    "popupBlocked": "The passkey window was blocked. Allow pop-ups for this page or confirm with your password.",
+    "alsoCode": "Also enter the code from your authenticator app.",
+    "alsoRecovery": "Also enter a recovery code.",
+    "failed": "Confirmation failed",
+    "waiting": "Confirm in the passkey window …",
+    "openAgain": "Open again",
+    "withPasskey": "Confirm with passkey",
+    "orPassword": "or with password",
+    "password": "Password",
+    "code": "Code from the authenticator app",
+    "recovery": "Recovery code",
+    "withPassword": "Confirm with password"
   }
 }
