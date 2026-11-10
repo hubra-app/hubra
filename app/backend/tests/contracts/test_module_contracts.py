@@ -261,3 +261,25 @@ def test_set_status_with_book_announces_an_unbooked_invoice(app, seeded_db):
             actor=SYSTEM,
         )
     assert link.call_count == 1
+
+
+def test_badge_lookup_finds_the_member_in_this_club(app, seeded_db):
+    from hubra.core.services import member_badge
+
+    admin = seeded_db["admin"]
+    code = member_badge.ensure_code(admin.user)
+    for typed in (
+        code,
+        code.lower(),
+        code.replace("-", ""),
+        code[3:].replace("-", " "),
+    ):
+        found = query("members.badge.lookup", code=typed, actor=SYSTEM)
+        assert found == {"member_id": admin.id}
+
+
+def test_badge_lookup_refuses_unknown_numbers(app, seeded_db):
+    for code in ("HB-0000-0000", "nonsense", ""):
+        with pytest.raises(Refused) as exc:
+            query("members.badge.lookup", code=code, actor=SYSTEM)
+        assert exc.value.code == "NOT_FOUND"

@@ -219,6 +219,7 @@ and switch it on. Emitters and handlers don't change.
 | `polls.proxies.held` | query | `{poll_id, member_id}` → `[{poll_id, grantor_id, holder_id}]`; needs `polls.polls.read` |
 | `groups.self_join.list` | query | `{member_id}` → `[{id, name, description, color, icon_name, type, member_count, joined}]`, the open groups |
 | `groups.self_join.set` | action | `{group_id, member_id, joined}`: join or leave an open group |
+| `members.badge.lookup` | query | `{code}` → `{member_id}`: who in this club has that member badge number (the badge on My Account and in Google Wallet; `HB-7K3M-Q9TX`, case, dashes and the `HB` are optional); `Refused` `NOT_FOUND` when nobody has |
 
 The handlers wrap Hubra's own services, so they keep their rules and their
 error codes: an `ApiError` a service raises (`REGISTRATION_CLOSED`,

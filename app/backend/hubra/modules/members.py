@@ -1,6 +1,9 @@
 """Members: directory, membership applications and tiers."""
 
+from hubra.core.contracts import query_contract
 from hubra.core.modules import Blueprint, Module, NavItem, Schedule
+
+_C = "hubra.api.members.contracts"
 
 module = Module(
     code="members",
@@ -73,6 +76,16 @@ module = Module(
             "privacy-retention",
             "hubra.core.tasks.privacy_tasks.purge_former_members_task",
             86400,
+        ),
+    ),
+    # What plugins use instead of the members services (docs/contracts.md).
+    provides=(
+        query_contract(
+            "members.badge.lookup",
+            f"{_C}:lookup",
+            input=f"{_C}:BadgeRef",
+            output=f"{_C}:BadgeMember",
+            description="The club member behind a member badge number",
         ),
     ),
 )
