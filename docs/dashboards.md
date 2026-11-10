@@ -55,7 +55,8 @@ the row and a wider one the whole row (the corner then only changes the
 height); on a phone every widget takes the whole row.
 
 **Fertig** leaves edit mode; every change is saved as it is made. The `⋯`
-menu renames, shares or deletes the dashboard.
+menu opens **Name und Sichtbarkeit** (rename and who sees it) or deletes
+the dashboard.
 
 ![Edit mode](screenshots/dashboard-grid/2-edit-desktop.png)
 
@@ -84,10 +85,13 @@ it so it can be removed.
 
 ## Private and shared
 
-A new dashboard is private: only its owner sees it. The owner shares it with
-the club from the `⋯` menu, which needs the permission **Dashboards mit dem
-Verein teilen** (`dashboards.dashboards.share`, Rollen › Berechtigungen). A
-shared dashboard shows up as a tab for every member, who each see only the
+A new dashboard is private: only its owner sees it. **Wer sieht es** in the
+create form and in `⋯` › Name und Sichtbarkeit offers **Privat**, **Ganzer
+Verein** or **Gruppen** (one or more groups). Sharing needs the permission
+**Dashboards mit dem Verein teilen** (`dashboards.dashboards.share`, Rollen ›
+Berechtigungen); without it the form shows only the name. A dashboard shared
+with the club shows up as a tab for every member; one shared with groups only
+for their members (and its owner and admins). Each viewer sees only the
 widgets their own rights allow, so sharing a board dashboard doesn't show
 finances to members without finance rights.
 
@@ -102,11 +106,11 @@ shared ones. Changes to a shared dashboard are written to the audit log.
 
 | Call | Does |
 | --- | --- |
-| `GET /` | `{items, canShare, max}`: the member's own and the shared dashboards |
+| `GET /` | `{items, canShare, max}`: the member's own and the ones shared with the club or one of the member's groups |
 | `POST /` | `{name, widgets?}`, a new private dashboard (`409 LIMIT_REACHED` past the limit) |
 | `GET /<id>` | one, if it is the member's own or shared |
 | `PATCH /<id>` | `{name?, widgets?}` (owner or admin) |
-| `PUT /<id>/sharing` | `{shared: bool}` (owner with the share permission; an admin may unshare any) |
+| `PUT /<id>/sharing` | `{shared: bool, groupIds?: [id]}`: no or empty `groupIds` = the whole club (owner with the share permission; an admin may unshare any). Dashboards carry `groups: [{id, name}]` |
 | `DELETE /<id>` | remove it (owner or admin) |
 | `GET /home` | the start pages: `{club: {widgets, updatedAt, canEdit}, me: {…}}`; `widgets` is `null` while the built-in layout shows |
 | `PUT /home/club` | `{widgets}`, needs `dashboards.home.update` |

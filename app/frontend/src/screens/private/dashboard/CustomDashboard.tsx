@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { ActionIcon, Badge, Button, Group, Menu, Text, TextInput } from '@mantine/core'
+import { ActionIcon, Badge, Button, Group, Menu, Stack, Text, TextInput } from '@mantine/core'
 import { IconDots, IconPencil, IconPlus, IconTrash, IconUsers } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { useNav, useToast } from '@/context/AppContext'
@@ -14,11 +14,13 @@ import {
   type DashboardWidget,
 } from '@/api/dashboards'
 import { WidgetBoard } from './WidgetBoard'
+import { SharingField } from './SharingField'
+import { sharingBody, sharingOf, sharingValid, type Sharing } from './sharing'
 
 /**
  * A member's own dashboard: widgets in a grid. Its owner edits it (add,
  * order, size, settings, remove) and, with the right to, shares it with
- * the club; everyone sees only the widgets they may.
+ * the club or chosen groups; everyone sees only the widgets they may.
  */
 export function CustomDashboard({
   dashboard,
@@ -38,7 +40,8 @@ export function CustomDashboard({
   const [picking, setPicking] = useState(
     startEditing && dashboard.canEdit && dashboard.widgets.length === 0,
   )
-  const [renaming, setRenaming] = useState<string | null>(null)
+  // Name and who sees it, edited together ("Name und Sichtbarkeit").
+  const [settings, setSettings] = useState<{ name: string; sharing: Sharing } | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [busy, setBusy] = useState(false)
   const widgets = dashboard.widgets
@@ -65,6 +68,31 @@ export function CustomDashboard({
   const save = (next: DashboardWidget[]) =>
     run(() => updateDashboard(dashboard.id, { widgets: next }))
 
+  // Sharing needs the right; an admin may only stop sharing someone else's.
+  const mayShare = (canShare && dashboard.mine) || dashboard.shared
+  const groupNames = (dashboard.groups ?? []).map((g) => g.name).join(', ')
+
+  const saveSettings = () => {
+    if (!settings) return
+    const name = settings.name.trim()
+    const now = sharingOf(dashboard)
+    const next = settings.sharing
+    const shareChanged =
+      mayShare &&
+      (now.visibility !== next.visibility ||
+        now.groupIds.slice().sort().join() !== next.groupIds.slice().sort().join())
+    setSettings(null)
+    run(async () => {
+      let d: Dashboard | undefined
+      if (name && name !== dashboard.name) d = await updateDashboard(dashboard.id, { name })
+      if (shareChanged) {
+        const body = sharingBody(next)
+        d = await shareDashboard(dashboard.id, body.shared, body.groupIds)
+      }
+      return d
+    })
+  }
+
   return (
     <div>
       <Group justify="space-between" mb="md" gap="xs" className="page-actions">
@@ -74,9 +102,11 @@ export function CustomDashboard({
             color={dashboard.shared ? 'blue' : 'gray'}
             leftSection={dashboard.shared ? <IconUsers size={12} /> : undefined}
           >
-            {dashboard.shared
-              ? t('dashboards.shared', 'Mit dem Verein geteilt')
-              : t('dashboards.private', 'Privat')}
+            {!dashboard.shared
+              ? t('dashboards.private', 'Privat')
+              : groupNames
+                ? t('dashboards.sharedGroups', 'Geteilt mit {{groups}}', { groups: groupNames })
+                : t('dashboards.shared', 'Mit dem Verein geteilt')}
           </Badge>
           {!dashboard.mine && dashboard.owner.name && (
             <Text fz="xs" c="dimmed">
@@ -109,26 +139,16 @@ export function CustomDashboard({
                 </ActionIcon>
               </Menu.Target>
               <Menu.Dropdown>
-                <Menu.Item onClick={() => setRenaming(dashboard.name)}>
-                  {t('dashboards.rename', 'Umbenennen')}
+                <Menu.Item
+                  leftSection={<IconUsers size={14} />}
+                  onClick={() =>
+                    setSettings({ name: dashboard.name, sharing: sharingOf(dashboard) })
+                  }
+                >
+                  {mayShare
+                    ? t('dashboards.settings', 'Name und Sichtbarkeit')
+                    : t('dashboards.rename', 'Umbenennen')}
                 </Menu.Item>
-                {((canShare && dashboard.mine) || dashboard.shared) && (
-                  <Menu.Item
-                    leftSection={<IconUsers size={14} />}
-                    onClick={() =>
-                      run(
-                        () => shareDashboard(dashboard.id, !dashboard.shared),
-                        dashboard.shared
-                          ? t('dashboards.unsharedDone', 'Nicht mehr geteilt')
-                          : t('dashboards.sharedDone', 'Mit dem Verein geteilt'),
-                      )
-                    }
-                  >
-                    {dashboard.shared
-                      ? t('dashboards.unshare', 'Nicht mehr teilen')
-                      : t('dashboards.share', 'Mit dem Verein teilen')}
-                  </Menu.Item>
-                )}
                 <Menu.Item
                   color="red"
                   leftSection={<IconTrash size={14} />}
@@ -175,31 +195,51 @@ export function CustomDashboard({
         }
       />
       <Modal
-        open={renaming !== null}
-        onClose={() => setRenaming(null)}
-        title={t('dashboards.rename', 'Umbenennen')}
+        open={settings !== null}
+        onClose={() => setSettings(null)}
+        title={
+          mayShare
+            ? t('dashboards.settings', 'Name und Sichtbarkeit')
+            : t('dashboards.rename', 'Umbenennen')
+        }
         onSubmit={(e) => {
           e?.preventDefault()
-          const name = (renaming ?? '').trim()
-          setRenaming(null)
-          if (name) run(() => updateDashboard(dashboard.id, { name }))
+          saveSettings()
         }}
         footer={
           <Group justify="flex-end">
-            <Button variant="default" onClick={() => setRenaming(null)}>
+            <Button variant="default" onClick={() => setSettings(null)}>
               {t('common.cancel', 'Abbrechen')}
             </Button>
-            <Button type="submit">{t('common.save', 'Speichern')}</Button>
+            <Button
+              type="submit"
+              disabled={
+                !settings?.name.trim() || (settings ? !sharingValid(settings.sharing) : false)
+              }
+            >
+              {t('common.save', 'Speichern')}
+            </Button>
           </Group>
         }
       >
-        <TextInput
-          label={t('dashboards.name', 'Name')}
-          maxLength={100}
-          data-autofocus
-          value={renaming ?? ''}
-          onChange={(e) => setRenaming(e.currentTarget.value)}
-        />
+        {settings && (
+          <Stack gap="md">
+            <TextInput
+              label={t('dashboards.name', 'Name')}
+              maxLength={100}
+              data-autofocus
+              value={settings.name}
+              onChange={(e) => setSettings({ ...settings, name: e.currentTarget.value })}
+            />
+            {mayShare && (
+              <SharingField
+                value={settings.sharing}
+                onChange={(sharing) => setSettings({ ...settings, sharing })}
+                onlyStop={!dashboard.mine}
+              />
+            )}
+          </Stack>
+        )}
       </Modal>
 
       <ConfirmModal

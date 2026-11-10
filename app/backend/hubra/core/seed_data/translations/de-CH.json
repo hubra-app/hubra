@@ -703,7 +703,7 @@
   "dashboards.private": "Privat",
   "dashboards.remove": "Entfernen",
   "dashboards.rename": "Umbenennen",
-  "dashboards.settings": "Einstellungen",
+  "dashboards.settings": "Name und Sichtbarkeit",
   "dashboards.share": "Mit dem Verein teilen",
   "dashboards.shared": "Mit dem Verein geteilt",
   "dashboards.sharedDone": "Mit dem Verein geteilt",
@@ -4177,5 +4177,15 @@
   "dashboards.resize": "Grösse ändern ({{name}})",
   "dashboards.resizeHint": "Ziehen für Breite und Höhe, oder Pfeiltasten",
   "dashboards.autoHeight": "Höhe nach Inhalt",
-  "shell.sections.communication": "Kommunikation"
+  "shell.sections.communication": "Kommunikation",
+  "dashboards.newHint2": "Stell dir aus Widgets zusammen, was du im Blick haben willst.",
+  "dashboards.visibility": "Wer sieht es",
+  "dashboards.visClub": "Ganzer Verein",
+  "dashboards.visGroups": "Gruppen",
+  "dashboards.visGroupsPick": "Gruppen wählen",
+  "dashboards.visGroupsNone": "Wähle mindestens eine Gruppe.",
+  "dashboards.visPrivateHint": "Nur du siehst es.",
+  "dashboards.visClubHint": "Alle Mitglieder sehen es, jedes nur mit den Widgets, die es sehen darf.",
+  "dashboards.visGroupsHint": "Nur die Mitglieder dieser Gruppen sehen es, jedes nur mit den Widgets, die es sehen darf.",
+  "dashboards.sharedGroups": "Geteilt mit {{groups}}"
 }

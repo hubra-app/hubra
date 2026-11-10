@@ -4295,7 +4295,7 @@
     "private": "Privat",
     "remove": "Entfernen",
     "rename": "Umbenennen",
-    "settings": "Einstellungen",
+    "settings": "Name und Sichtbarkeit",
     "share": "Mit dem Verein teilen",
     "shared": "Mit dem Verein geteilt",
     "sharedDone": "Mit dem Verein geteilt",
@@ -4349,7 +4349,17 @@
     "moveHint": "Ziehen zum Verschieben, oder Pfeiltasten",
     "resize": "Grösse ändern ({{name}})",
     "resizeHint": "Ziehen für Breite und Höhe, oder Pfeiltasten",
-    "autoHeight": "Höhe nach Inhalt"
+    "autoHeight": "Höhe nach Inhalt",
+    "newHint2": "Stell dir aus Widgets zusammen, was du im Blick haben willst.",
+    "visibility": "Wer sieht es",
+    "visClub": "Ganzer Verein",
+    "visGroups": "Gruppen",
+    "visGroupsPick": "Gruppen wählen",
+    "visGroupsNone": "Wähle mindestens eine Gruppe.",
+    "visPrivateHint": "Nur du siehst es.",
+    "visClubHint": "Alle Mitglieder sehen es, jedes nur mit den Widgets, die es sehen darf.",
+    "visGroupsHint": "Nur die Mitglieder dieser Gruppen sehen es, jedes nur mit den Widgets, die es sehen darf.",
+    "sharedGroups": "Geteilt mit {{groups}}"
   },
   "subscription": {
     "cancelled": "Zahlung abgebrochen, es wurde nichts belastet.",
