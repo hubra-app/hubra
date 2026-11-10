@@ -315,3 +315,30 @@ class TrialSignup(db.Model):
 
     def __repr__(self) -> str:
         return f"<TrialSignup id={self.id} event={self.event_id}>"
+
+
+# ── EventTemplate ─────────────────────────────────────────────────────────────
+
+
+class EventTemplate(db.Model):
+    """A saved event to start new ones from ("New from template"): its
+    place, times, capacity, settings and description, without a date."""
+
+    __tablename__ = "event_templates"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    # The event's fields as the create endpoint takes them (title, time,
+    # location, type, max_attendees, ...), plus ``days`` for its length.
+    data: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    created_by: Mapped[int | None] = mapped_column(
+        db.Integer, ForeignKey("members.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    def __repr__(self) -> str:
+        return f"<EventTemplate id={self.id} name={self.name!r}>"

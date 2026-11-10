@@ -144,6 +144,19 @@ and those signed up hear that it takes place after all.
 Right: `events.events.update`, or the person who put the event up, or a role
 held for the event's group.
 
+### Event templates
+
+An event you hold again and again (the weekly training, the club evening)
+can be kept as a template: the **template** icon in its row saves its place,
+time, places, settings (approval, public, trial places, group) and
+description under a name, without the date. **Aus Vorlage** next to
+**Anlass hinzufügen** lists the templates; picking one opens the new-event
+form filled in, and you only choose the date. A multi-day event keeps its
+length. The bin next to a template in that list deletes it.
+
+Templates belong to the club. Saving, listing and deleting them takes the
+club-wide right `events.events.create`.
+
 ## Roles and permissions
 
 Permissions (Berechtigungen) lists the club's roles. Each role grants
