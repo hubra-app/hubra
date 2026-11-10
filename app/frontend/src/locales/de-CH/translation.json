@@ -2366,7 +2366,18 @@
     "summaryPlaceholder": "Ein kurzer Anriss für die Liste",
     "titleLabel": "Titel",
     "titlePlaceholder": "Neue Absauganlage installiert!",
-    "likeFailed": "Das Like konnte nicht gespeichert werden."
+    "likeFailed": "Das Like konnte nicht gespeichert werden.",
+    "schedule": {
+      "scheduled": "Beitrag geplant",
+      "scheduledMsg": "Er erscheint am {{when}}. Bis dahin siehst nur du ihn (und wer ihn bearbeiten darf).",
+      "publishAt": "Veröffentlichen am (optional)",
+      "publishAtHint": "Leer: sofort. Die Mitglieder werden dann benachrichtigt.",
+      "hideAfter": "Ausblenden nach (optional)",
+      "hideAfterHint": "Danach sehen ihn die Mitglieder nicht mehr, z. B. eine Platzsperre.",
+      "badge": "Geplant für {{when}}",
+      "hidden": "Ausgeblendet",
+      "submit": "Planen"
+    }
   },
   "settings": {
     "changePassword": "Passwort ändern",

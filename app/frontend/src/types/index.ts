@@ -244,6 +244,10 @@ export interface Post {
   original: PostText;
   /** The other languages. */
   translations: Partial<Record<ContentLanguage, PostText>>;
+  /** Scheduled: members see the post from this time (ISO); null: out. */
+  publishAt: string | null;
+  /** Members no longer see the post after this time (ISO). */
+  hideAfter: string | null;
 }
 
 export type ContentLanguage = "de" | "fr" | "it" | "en";

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from flask import Blueprint, g, jsonify, request
 from hubra.core.auth.helpers import get_current_member
 from marshmallow import ValidationError
@@ -16,7 +18,7 @@ from hubra.core.permissions import (
     scoped_permission_keys,
 )
 from hubra.api.posts.services import PostService, PostsService
-from hubra.core.errors import api_error, validation_error
+from hubra.core.errors import api_error, raise_error, validation_error
 from hubra.core.extensions import db, limiter
 from hubra.core.schemas.post import (
     CommentCreateSchema,
@@ -79,13 +81,27 @@ def _may_move(post: Post, member_id: int, data: dict) -> bool:
     return "posts.posts.update" in keys or _MODERATE in keys
 
 
+def _may_see_hidden(post: Post) -> bool:
+    """A scheduled or expired post: only those who may edit it see it."""
+    return _may_manage(post, get_current_member().id, "update")
+
+
+def _shown_post(post_id: int) -> Post:
+    """The post, or 404 when it is scheduled or expired and the member may
+    not edit it (to them it does not exist)."""
+    post = PostService.get(post_id)
+    if not post.is_shown(datetime.now(timezone.utc)) and not _may_see_hidden(post):
+        raise_error(404, "NOT_FOUND", f"Post {post_id} not found")
+    return post
+
+
 # ── GET /posts ────────────────────────────────────────────────────────────────
 
 
 @posts_bp.get("/")
 @permission_required("posts", "read", "View posts")
 def list_posts():
-    return jsonify(_posts_schema.dump(PostsService.list())), 200
+    return jsonify(_posts_schema.dump(PostsService.list(_may_see_hidden))), 200
 
 
 # ── Machine translation for the editor ──────────────────────────────────────
@@ -132,7 +148,7 @@ def translate_post_text():
 @posts_bp.get("/<int:post_id>")
 @permission_required("posts", "read", "View posts")
 def get_post(post_id: int):
-    post = PostService.get(post_id)
+    post = _shown_post(post_id)
     return jsonify(_post_schema.dump(post)), 200
 
 
@@ -222,7 +238,7 @@ def delete_post(post_id: int):
 @posts_bp.post("/<int:post_id>/like")
 @permission_required("posts", "like", "Like posts")
 def like_post(post_id: int):
-    PostService.get(post_id)  # 404 if not found
+    _shown_post(post_id)  # 404 if not found
     member_id = get_current_member().id
 
     PostService.like(post_id, member_id)
@@ -263,7 +279,7 @@ def unlike_post(post_id: int):
 @posts_bp.get("/<int:post_id>/comments")
 @permission_required("posts", "read", "View posts")
 def list_comments(post_id: int):
-    PostService.get(post_id)  # 404 if not found
+    _shown_post(post_id)  # 404 if not found
     comments = PostService.list_comments(post_id)
     return jsonify(_comments_schema.dump(comments)), 200
 
@@ -274,7 +290,7 @@ def list_comments(post_id: int):
 @posts_bp.post("/<int:post_id>/comments")
 @permission_required("posts", "comment", "Comment on posts")
 def add_comment(post_id: int):
-    PostService.get(post_id)  # 404 if not found
+    _shown_post(post_id)  # 404 if not found
     member_id = get_current_member().id
 
     body = request.get_json(silent=True) or {}

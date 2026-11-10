@@ -141,6 +141,7 @@ class DashboardService:
         """Return the most recent posts ordered by created_at DESC."""
         return db.session.scalars(  # type: ignore[return-value]
             select(Post)
+            .where(Post.shown(datetime.now(timezone.utc)))
             .options(selectinload(Post.author), selectinload(Post.likes))
             .order_by(Post.created_at.desc())
             .limit(limit)

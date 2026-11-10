@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, useCallback } from 'react'
-import { Button, Group, Loader, TextInput, Paper } from '@mantine/core'
+import { Badge, Button, Group, Loader, SimpleGrid, TextInput, Paper } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
@@ -11,6 +11,8 @@ import {
   IconHeart,
   IconMessage2,
   IconArrowBackUp,
+  IconClock,
+  IconEyeOff,
 } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
 import { qk } from '@/data/keys'
@@ -42,6 +44,8 @@ import {
 import { GroupBadge, GroupField } from './ContentGroupFields'
 import { PostLanguagesField } from './PostLanguagesField'
 import { useContentGroups } from './contentGroups'
+import { fromLocalInput, toLocalInput } from './localInput'
+import { formatDateTime } from '@/format'
 
 // The editor is large and only needed while writing a post.
 const RichTextEditor = lazy(() =>
@@ -55,6 +59,9 @@ const postSchema = z.object({
   groupId: z.string(),
   language: z.enum(['de', 'fr', 'it', 'en']),
   translations: z.record(z.string(), z.object({ title: z.string(), summary: z.string().nullable(), body: z.string() })),
+  // datetime-local values; empty: now / never.
+  publishAt: z.string(),
+  hideAfter: z.string(),
 })
 type PostForm = z.infer<typeof postSchema>
 
@@ -103,7 +110,7 @@ export function PostsTab() {
 
   const form = useForm<PostForm>({
     validate: zod4Resolver(postSchema),
-    initialValues: { title: '', summary: '', body: '', groupId: '', language: readerLanguage(), translations: {} },
+    initialValues: { title: '', summary: '', body: '', groupId: '', language: readerLanguage(), translations: {}, publishAt: '', hideAfter: '' },
   })
   const formScope = editTarget ? updateScope : createScope
 
@@ -115,6 +122,8 @@ export function PostsTab() {
       groupId: createScope.defaultGroup,
       language: readerLanguage(),
       translations: {},
+      publishAt: '',
+      hideAfter: '',
     })
     setAddOpen(true)
   }
@@ -128,6 +137,8 @@ export function PostsTab() {
       groupId: post.groupId ?? '',
       language: post.language ?? readerLanguage(),
       translations: post.translations as PostForm['translations'],
+      publishAt: toLocalInput(post.publishAt),
+      hideAfter: toLocalInput(post.hideAfter),
     })
   }
 
@@ -140,17 +151,28 @@ export function PostsTab() {
         groupId: data.groupId || null,
         language: data.language,
         translations: filledTranslations(data),
+        publishAt: fromLocalInput(data.publishAt),
+        hideAfter: fromLocalInput(data.hideAfter),
       })
       postCache.prepend(post)
       setAddOpen(false)
-      notify(
-        'success',
-        t('posts.post.published', 'Beitrag veröffentlicht'),
-        t(
-          'posts.post.publishedMsg',
-          'Dein Beitrag ist jetzt für alle Mitglieder sichtbar.',
-        ),
-      )
+      if (post.publishAt)
+        notify(
+          'success',
+          t('posts.schedule.scheduled', 'Beitrag geplant'),
+          t('posts.schedule.scheduledMsg', 'Er erscheint am {{when}}. Bis dahin siehst nur du ihn (und wer ihn bearbeiten darf).', {
+            when: formatDateTime(post.publishAt),
+          }),
+        )
+      else
+        notify(
+          'success',
+          t('posts.post.published', 'Beitrag veröffentlicht'),
+          t(
+            'posts.post.publishedMsg',
+            'Dein Beitrag ist jetzt für alle Mitglieder sichtbar.',
+          ),
+        )
     } catch (err: unknown) {
       notify(
         'error',
@@ -173,6 +195,14 @@ export function PostsTab() {
         groupId: data.groupId || null,
         language: data.language,
         translations: filledTranslations(data),
+        // Only what changed: a post that is out cannot be scheduled again,
+        // and an expired one keeps its past date until it gets a new one.
+        ...(editTarget.publishAt && data.publishAt !== toLocalInput(editTarget.publishAt)
+          ? { publishAt: fromLocalInput(data.publishAt) }
+          : {}),
+        ...(data.hideAfter !== toLocalInput(editTarget.hideAfter)
+          ? { hideAfter: fromLocalInput(data.hideAfter) }
+          : {}),
       })
       postCache.replace(post)
       setEditTarget(null)
@@ -359,6 +389,23 @@ export function PostsTab() {
           />
         </Suspense>
       </Field>
+      {/* A post that is out cannot be scheduled again. */}
+      <SimpleGrid cols={{ base: 1, sm: !editTarget || editTarget.publishAt ? 2 : 1 }}>
+        {(!editTarget || editTarget.publishAt) && (
+          <Field
+            label={t('posts.schedule.publishAt', 'Veröffentlichen am (optional)')}
+            hint={t('posts.schedule.publishAtHint', 'Leer: sofort. Die Mitglieder werden dann benachrichtigt.')}
+          >
+            <TextInput type="datetime-local" data-testid="post-publish-at" {...form.getInputProps('publishAt')} />
+          </Field>
+        )}
+        <Field
+          label={t('posts.schedule.hideAfter', 'Ausblenden nach (optional)')}
+          hint={t('posts.schedule.hideAfterHint', 'Danach sehen ihn die Mitglieder nicht mehr, z. B. eine Platzsperre.')}
+        >
+          <TextInput type="datetime-local" data-testid="post-hide-after" {...form.getInputProps('hideAfter')} />
+        </Field>
+      </SimpleGrid>
       <PostLanguagesField
         language={form.values.language}
         translations={form.values.translations as Post['translations']}
@@ -464,6 +511,16 @@ export function PostsTab() {
                     >
                       <span className="num">{post.time}</span>
                       <GroupBadge name={createScope.groupName(post.groupId)} />
+                      {post.publishAt && (
+                        <Badge variant="light" color="violet" size="sm" leftSection={<IconClock size={12} />} style={{ textTransform: 'none' }}>
+                          {t('posts.schedule.badge', 'Geplant für {{when}}', { when: formatDateTime(post.publishAt) })}
+                        </Badge>
+                      )}
+                      {!post.publishAt && post.hideAfter && new Date(post.hideAfter) <= new Date() && (
+                        <Badge variant="light" color="gray" size="sm" leftSection={<IconEyeOff size={12} />} style={{ textTransform: 'none' }}>
+                          {t('posts.schedule.hidden', 'Ausgeblendet')}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 6 }}>
@@ -706,7 +763,9 @@ export function PostsTab() {
               {t('common.cancel')}
             </Button>
             <Button variant="filled" type="submit" loading={adding}>
-              {t('posts.publish', 'Veröffentlichen')}
+              {form.values.publishAt && new Date(form.values.publishAt) > new Date()
+                ? t('posts.schedule.submit', 'Planen')
+                : t('posts.publish', 'Veröffentlichen')}
             </Button>
           </>
         }

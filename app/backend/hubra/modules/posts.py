@@ -1,6 +1,6 @@
 """Posts: announcements with likes and comments."""
 
-from hubra.core.modules import Blueprint, Module, NavItem, SettingField
+from hubra.core.modules import Blueprint, Module, NavItem, Schedule, SettingField
 
 module = Module(
     code="posts",
@@ -34,4 +34,13 @@ module = Module(
         ),
     ),
     tables=("posts", "post_likes", "post_comments"),
+    tasks=("hubra.api.posts.tasks",),
+    schedule=(
+        # Scheduled posts go out within five minutes of their time.
+        Schedule(
+            "publish-scheduled-posts",
+            "hubra.api.posts.tasks.publish_scheduled_posts_task",
+            300,
+        ),
+    ),
 )

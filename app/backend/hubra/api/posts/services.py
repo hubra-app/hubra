@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import selectinload
 
@@ -12,6 +14,40 @@ from hubra.core.extensions import db
 from hubra.core.models.post import Post, PostComment, PostLike
 from hubra.core.modules import emit
 from hubra.core.modules.events import POST_PUBLISHED
+from hubra.core.timeutil import as_utc
+
+# How far ahead a post can be scheduled.
+SCHEDULE_MAX = timedelta(days=366)
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _check_times(publish_at: datetime | None, hide_after: datetime | None) -> None:
+    """400 unless *publish_at* is within a year and *hide_after* comes after
+    the post is out (and is still ahead)."""
+    now = _now()
+    if publish_at is not None and publish_at > now + SCHEDULE_MAX:
+        raise_error(400, "VALIDATION_ERROR", "publish_at: at most a year ahead")
+    if hide_after is not None and hide_after <= max(now, publish_at or now):
+        raise_error(
+            400, "VALIDATION_ERROR", "hide_after: must be after the post is out"
+        )
+
+
+def announce(post: Post, skip_member_id: int | None = None) -> None:
+    """Tell the club a post is out: the bell (unless switched off) and
+    ``post.published`` for webhooks, Discord and the messengers."""
+    notify_on_publish(
+        "posts",
+        "info",
+        "New post",
+        post.title,
+        skip_member_id=skip_member_id,
+        link=f"/app/operations/posts/{post.id}",
+    )
+    emit(POST_PUBLISHED, post_id=post.id)
 
 
 class PostService:
@@ -48,6 +84,21 @@ class PostService:
         for field in ("title", "summary", "body", "group_id", "language", "translations"):
             if field in data:
                 setattr(post, field, data[field])
+        go_out = False
+        if "publish_at" in data:
+            if post.publish_at is None:
+                raise_error(409, "POST_ALREADY_OUT", "The post is already out")
+            when = data["publish_at"]
+            if when is None or when <= _now():
+                go_out = True
+            else:
+                post.publish_at = when
+        if "hide_after" in data or "publish_at" in data:
+            hide_after = data.get("hide_after", as_utc(post.hide_after))
+            _check_times(None if go_out else as_utc(post.publish_at), hide_after)
+            post.hide_after = hide_after
+        if go_out:
+            PostService.publish(post)
 
         log_audit(
             actor_id=actor_id,
@@ -57,6 +108,14 @@ class PostService:
             target_label=post.title,
         )
         return post
+
+    @staticmethod
+    def publish(post: Post) -> None:
+        """A scheduled post goes out now: at the top of the list, announced."""
+        post.publish_at = None
+        post.created_at = _now()
+        db.session.flush()
+        announce(post, skip_member_id=post.author_id)
 
     @staticmethod
     def delete(post_id: int, actor_id: int) -> None:
@@ -174,18 +233,33 @@ class PostsService:
     """Operations on the post collection."""
 
     @staticmethod
-    def list() -> list[Post]:
-        """Return all posts ordered by created_at descending."""
-        return db.session.scalars(  # type: ignore[return-value]
+    def list(may_see_hidden=None) -> list[Post]:
+        """Posts newest first: those members see, plus scheduled and expired
+        ones for which ``may_see_hidden(post)`` holds (who manages them)."""
+        now = _now()
+        query = (
             select(Post)
             .options(selectinload(Post.author), selectinload(Post.likes))
-            .order_by(Post.created_at.desc())
-        ).all()
+            .order_by(Post.publish_at.is_(None), Post.created_at.desc())
+        )
+        if may_see_hidden is None:
+            return db.session.scalars(query.where(Post.shown(now))).all()  # type: ignore[return-value]
+        return [
+            post
+            for post in db.session.scalars(query)
+            if post.is_shown(now) or may_see_hidden(post)
+        ]
 
     @staticmethod
     def create(data: dict, author_id: int) -> Post:
         """Create a new post. Returns the post."""
+        publish_at = data.get("publish_at")
+        if publish_at is not None and publish_at <= _now():
+            publish_at = None
+        _check_times(publish_at, data.get("hide_after"))
         post = Post(
+            publish_at=publish_at,
+            hide_after=data.get("hide_after"),
             author_id=author_id,
             title=data["title"],
             summary=data.get("summary"),
@@ -197,15 +271,8 @@ class PostsService:
         db.session.add(post)
         db.session.flush()
 
-        notify_on_publish(
-            "posts",
-            "info",
-            "New post",
-            post.title,
-            skip_member_id=author_id,
-            link=f"/app/operations/posts/{post.id}",
-        )
-        emit(POST_PUBLISHED, post_id=post.id)
+        if publish_at is None:
+            announce(post, skip_member_id=author_id)
 
         log_audit(
             actor_id=author_id,
@@ -217,3 +284,17 @@ class PostsService:
 
         db.session.refresh(post)
         return PostService.get(post.id)
+
+
+def publish_due_posts(now: datetime | None = None) -> int:
+    """Scheduled posts whose time has come go out (the beat, every few
+    minutes). Returns how many."""
+    now = now or _now()
+    due = db.session.scalars(
+        select(Post)
+        .where(Post.publish_at.is_not(None), Post.publish_at <= now)
+        .order_by(Post.publish_at, Post.id)
+    ).all()
+    for post in due:
+        PostService.publish(post)
+    return len(due)

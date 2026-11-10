@@ -107,6 +107,7 @@ def _posts(since: datetime) -> list:
     return db.session.scalars(
         select(Post)
         .where(Post.created_at >= since)
+        .where(Post.shown(datetime.now(timezone.utc)))
         .order_by(Post.created_at.desc(), Post.id.desc())
     ).all()
 
