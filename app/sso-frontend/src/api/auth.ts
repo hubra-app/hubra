@@ -777,8 +777,15 @@ export interface MemberBadge {
   avatarColor: string
   since: string | null
   memberships: BadgeMembership[]
+  /** The platform has Google Wallet set up: offer "Add to Google Wallet". */
+  googleWallet?: boolean
 }
 
 export async function getBadge(): Promise<MemberBadge> {
   return apiFetch<MemberBadge>('/global/account/badge')
+}
+
+/** Writes the badge's pass to Google Wallet; the link saves it on the phone. */
+export async function addBadgeToGoogleWallet(): Promise<{ url: string }> {
+  return apiFetch<{ url: string }>('/global/account/badge/google-wallet', { method: 'POST' })
 }

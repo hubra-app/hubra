@@ -96,6 +96,12 @@ const OAUTH = ['oauth.dynamic_clients', 'oauth.dynamic_redirect_hosts']
 const SUPPORT = ['support.url']
 const LEGAL = ['legal.privacy_url', 'legal.terms_url', 'legal.imprint_url']
 const TRANSLATE = ['translate.deepl_key', 'translate.deepl_url']
+const WALLET = [
+  'wallet.google.issuer_id',
+  'wallet.google.class_id',
+  'wallet.google.service_account',
+  'wallet.google.logo_url',
+]
 const BUILT_IN = [
   'domains.serving',
   'domains.cluster_issuer',
@@ -133,6 +139,7 @@ export type SettingsSectionId =
   | 'support'
   | 'legal'
   | 'translate'
+  | 'wallet'
 /** The keys each section saves. */
 const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
   relay: [...RELAY, ...FALLBACK],
@@ -152,6 +159,7 @@ const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
   support: SUPPORT,
   legal: LEGAL,
   translate: TRANSLATE,
+  wallet: WALLET,
 }
 
 function SourceBadge({ s }: { s: PlatformSetting }) {
@@ -330,6 +338,22 @@ const FIELD_DE: Record<string, [string, string]> = {
   'translate.deepl_url': [
     'DeepL-API-Adresse',
     'https://api-free.deepl.com für einen kostenlosen Schlüssel, https://api.deepl.com für einen bezahlten',
+  ],
+  'wallet.google.issuer_id': [
+    'Aussteller-ID',
+    'Die lange Nummer in der Google Pay & Wallet Console. Leer: kein Knopf «Zu Google Wallet hinzufügen»',
+  ],
+  'wallet.google.class_id': [
+    'Klassen-ID',
+    'Die ID der generischen Klasse aus der Console, mit oder ohne Aussteller-ID davor',
+  ],
+  'wallet.google.service_account': [
+    'Schlüssel des Dienstkontos',
+    'Der ganze JSON-Schlüssel eines Google-Cloud-Dienstkontos mit der Rolle Developer im Aussteller-Konto. Wird verschlüsselt gespeichert',
+  ],
+  'wallet.google.logo_url': [
+    'Logo auf dem Pass',
+    'Öffentliche https-Adresse eines quadratischen PNG (660 px empfohlen). Standard: das App-Symbol der Anmeldeseite',
   ],
   'legal.imprint_url': ['Impressum', 'Hubras Impressum, verlinkt in den Fussleisten. Leer: kein Link'],
   'alerts.manage_url': [
@@ -750,6 +774,22 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                 )}
               </Text>
               <Stack gap="sm">{TRANSLATE.map(field)}</Stack>
+            </Paper>
+          )}
+
+          {section === 'wallet' && (
+            <Paper withBorder p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Google Wallet', 'Google Wallet')}</Title>
+                {resetButton(WALLET)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Mit allen drei Angaben zeigt «Mein Konto» unter dem Mitgliederausweis den Knopf «Zu Google Wallet hinzufügen». Der Pass zeigt Name, Ausweisnummer mit QR-Code und die Vereine und wird bei Änderungen nachgeführt. Solange das Aussteller-Konto im Demo-Modus ist, können nur Testkonten aus der Console den Pass speichern.',
+                  'With all three set, My Account shows "Add to Google Wallet" under the member badge. The pass shows the name, badge number with QR code and the clubs, and follows changes. While the issuer account is in demo mode, only test accounts from the console can save it.',
+                )}
+              </Text>
+              <Stack gap="sm">{WALLET.map(field)}</Stack>
             </Paper>
           )}
 
