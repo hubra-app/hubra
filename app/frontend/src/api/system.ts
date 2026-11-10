@@ -26,9 +26,26 @@ export interface ChangelogResponse {
   entries: ChangelogEntry[];
 }
 
-export async function getChangelog(lang?: string): Promise<ChangelogResponse> {
-  const q = lang ? `?lang=${encodeURIComponent(lang)}` : "";
-  return apiFetch<ChangelogResponse>(`/global/version/changelog${q}`);
+/** Who reads the notes: the modules they can use in this club, and whether
+ *  they are an admin. Items marked for other modules or for admins only are
+ *  left out (`<!-- for: ... -->` in CHANGELOG.md). */
+export interface ChangelogReader {
+  modules: string[];
+  admin: boolean;
+}
+
+export async function getChangelog(
+  lang?: string,
+  reader?: ChangelogReader,
+): Promise<ChangelogResponse> {
+  const q = new URLSearchParams();
+  if (lang) q.set("lang", lang);
+  if (reader) {
+    q.set("modules", reader.modules.join(","));
+    if (reader.admin) q.set("admin", "1");
+  }
+  const qs = q.toString();
+  return apiFetch<ChangelogResponse>(`/global/version/changelog${qs ? `?${qs}` : ""}`);
 }
 
 // ── Health ──────────────────────────────────────────────────────────

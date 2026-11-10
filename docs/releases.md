@@ -60,6 +60,27 @@ To write the release text yourself, create a **draft** release for the tag
 before pushing it; the run fills it in and publishes it, keeping your text
 on top. A published release is never changed: release a new version.
 
+## Who a change is for
+
+What's new in the club app shows a reader only what concerns them. Mark a
+changelog item in `app/backend/CHANGELOG.md` at the end of its bullet:
+
+```markdown
+- **Event templates**: save an event as a template … <!-- for: events -->
+- **Support access in the club's log**: … <!-- for: admins -->
+- **Post-deploy steps run themselves**: … <!-- for: staff -->
+```
+
+The words are module codes (shown when the club has one of them on and the
+reader's roles may use it), `admins` (club admins only) or `staff` (Hubra's
+own team: never in the club app; manage, the support site and Discord still
+show it). Several words mean all of it, so `members, admins` is for admins in
+clubs with Members. An item without a mark is for everyone. Only the English
+file needs the marks; the German version follows by position. The marks are
+HTML comments, so GitHub release notes don't show them, and the API strips
+them (`GET /global/version/changelog?modules=…&admin=1` filters for one
+reader).
+
 ## What the run checks
 
 | Job | What happens |

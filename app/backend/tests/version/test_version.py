@@ -6,6 +6,8 @@ import re
 import tomllib
 from pathlib import Path
 
+import pytest
+
 from hubra.core.services.version import VersionService
 
 _PYPROJECT = Path(__file__).resolve().parents[2] / "pyproject.toml"
@@ -42,7 +44,11 @@ def test_changelog_parses_sample_file(tmp_path, monkeypatch):
     monkeypatch.setattr("hubra.core.services.version._CHANGELOG_PATH", sample)
     monkeypatch.setattr("hubra.core.services.version._changelog_cache", {})
 
-    entries = VersionService.get_changelog()
+    # "tags" (who each item is for) stays inside; the endpoint drops it.
+    entries = [
+        {k: v for k, v in e.items() if k != "tags"}
+        for e in VersionService.get_changelog()
+    ]
 
     assert entries == [
         {"version": "Unreleased", "date": None, "sections": {}, "lang": "en"},
@@ -265,3 +271,112 @@ def test_instance_lists_the_legal_pages(client, db):
     body = client.get("/api/v1/instance").get_json()
     assert body["legal"]["termsUrl"] == "https://example.test/agb"
     assert body["legal"]["imprintUrl"] is None
+
+
+# ── Who an item is for (<!-- for: ... -->) ─────────────────────────────────
+
+MARKED = """# Changelog
+
+## [Unreleased]
+
+### Added
+
+- For everyone.
+- Event templates. <!-- for: events -->
+- Posters for the club.
+  <!-- for: members, admins -->
+- Deploy steps. <!-- for: staff -->
+- Support access. <!-- FOR: Admins -->
+"""
+
+MARKED_DE = """# Changelog
+
+## [Unreleased]
+
+### Added
+
+- Für alle.
+- Anlass-Vorlagen.
+- Plakate.
+- Deploy.
+- Support-Zugriff.
+"""
+
+
+@pytest.fixture
+def marked(tmp_path, monkeypatch):
+    en, de = tmp_path / "CHANGELOG.md", tmp_path / "CHANGELOG.de.md"
+    en.write_text(MARKED)
+    de.write_text(MARKED_DE)
+    monkeypatch.setattr("hubra.core.services.version._CHANGELOG_PATH", en)
+    monkeypatch.setattr("hubra.core.services.version._CHANGELOG_DE_PATH", de)
+    monkeypatch.setattr("hubra.core.services.version._changelog_cache", {})
+
+
+def _added(entries):
+    return entries[0]["sections"]["Added"]
+
+
+def test_marks_are_stripped_from_the_text(marked):
+    items = _added(VersionService.get_changelog("en"))
+    assert items == [
+        "For everyone.",
+        "Event templates.",
+        "Posters for the club.",
+        "Deploy steps.",
+        "Support access.",
+    ]
+
+
+def test_a_member_sees_their_modules_only(marked):
+    entries = VersionService.for_reader(
+        VersionService.get_changelog("en"), {"posts"}, admin=False
+    )
+    assert _added(entries) == ["For everyone."]
+    entries = VersionService.for_reader(
+        VersionService.get_changelog("en"), {"events"}, admin=False
+    )
+    assert _added(entries) == ["For everyone.", "Event templates."]
+
+
+def test_an_admin_sees_admin_items_but_never_staff_ones(marked):
+    entries = VersionService.for_reader(
+        VersionService.get_changelog("en"), {"events", "members"}, admin=True
+    )
+    assert _added(entries) == [
+        "For everyone.",
+        "Event templates.",
+        "Posters for the club.",
+        "Support access.",
+    ]
+
+
+def test_german_follows_the_english_marks(marked):
+    entries = VersionService.for_reader(
+        VersionService.get_changelog("de"), {"events"}, admin=False
+    )
+    assert entries[0]["lang"] == "de"
+    assert _added(entries) == ["Für alle.", "Anlass-Vorlagen."]
+
+
+def test_the_endpoint_filters_for_one_reader(client, marked):
+    resp = client.get("/api/v1/global/version/changelog?modules=events&admin=0")
+    assert resp.status_code == 200
+    entry = resp.get_json()["entries"][0]
+    assert "tags" not in entry
+    assert entry["sections"]["Added"] == ["For everyone.", "Event templates."]
+    # Without a reader (support site, manage): everything, marks stripped.
+    unfiltered = client.get("/api/v1/global/version/changelog").get_json()
+    assert len(unfiltered["entries"][0]["sections"]["Added"]) == 5
+
+
+def test_the_shipped_changelog_marks_name_known_modules(monkeypatch):
+    from hubra.core.modules import registry
+    from hubra.core.services.version import AUDIENCES
+
+    monkeypatch.setattr("hubra.core.services.version._changelog_cache", {})
+    known = set(registry._modules) | set(AUDIENCES)
+    for entry in VersionService.get_changelog("en"):
+        for marks in (entry.get("tags") or {}).values():
+            for words in marks:
+                assert not set(words or []) - known, words
