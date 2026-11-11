@@ -1,5 +1,8 @@
 import { lazy, Suspense, useState, useCallback } from 'react'
-import { Badge, Button, Checkbox, Group, Loader, SimpleGrid, TextInput, Paper } from '@mantine/core'
+import { ActionIcon, Alert, Anchor, Badge, Button, Checkbox, Group, Loader, Menu, SimpleGrid, Text, TextInput, Paper } from '@mantine/core'
+import { Link } from 'react-router-dom'
+import { FilterBar } from '@hubra/ui'
+import { filterLabels } from '@/components/filterLabels'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
@@ -15,6 +18,10 @@ import {
   IconEyeOff,
   IconChecks,
   IconCircleCheck,
+  IconAlertCircle,
+  IconDotsVertical,
+  IconNews,
+  IconPencil,
 } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
 import { qk } from '@/data/keys'
@@ -26,7 +33,7 @@ import {
   usePagination,
   Pagination,
   ConfirmModal,
-  ActionButtons,
+  EmptyState,
   useSubmitOnce,
 } from '@/components/ui'
 import { MarkdownRenderer } from '@/components/MarkdownRenderer'
@@ -112,7 +119,23 @@ export function PostsTab() {
   const [commentInput, setCommentInput] = useState('')
   const [submittingComment, setSubmittingComment] = useState(false)
 
-  const pg = usePagination(posts, 10)
+  const [search, setSearch] = useState('')
+  const [show, setShow] = useState<'all' | 'unread' | 'scheduled'>('all')
+  // What still waits for the member's read confirmation, shown on top.
+  const unreadMust = (p: Post) => p.mustRead && !p.readByMe && !p.publishAt
+  const unreadCount = posts.filter(unreadMust).length
+  const scheduledCount = posts.filter((p) => p.publishAt).length
+  const shown = posts
+    .filter((p) => {
+      const q = search.trim().toLowerCase()
+      const matchSearch =
+        !q || p.title.toLowerCase().includes(q) || p.body.toLowerCase().includes(q) || p.author.toLowerCase().includes(q)
+      const matchShow = show === 'all' || (show === 'unread' ? unreadMust(p) : !!p.publishAt)
+      return matchSearch && matchShow
+    })
+    // Unconfirmed must-read posts first; otherwise the order the API gives (newest first).
+    .sort((a, b) => Number(unreadMust(b)) - Number(unreadMust(a)))
+  const pg = usePagination(shown, 10)
 
   const form = useForm<PostForm>({
     validate: zod4Resolver(postSchema),
@@ -475,9 +498,61 @@ export function PostsTab() {
           </Button>
         </Group>
       )}
+      {unreadCount > 0 && show !== 'unread' && (
+        <Alert
+          variant="light"
+          color="orange"
+          mb="md"
+          icon={<IconAlertCircle size={18} />}
+          data-testid="must-read-banner"
+        >
+          <Group justify="space-between" gap="xs">
+            <Text size="sm">
+              {t('posts.mustRead.banner', '{{count}} Pflicht-Beitrag wartet auf deine Lesebestätigung.', {
+                count: unreadCount,
+              })}
+            </Text>
+            <Button size="xs" variant="light" color="orange" onClick={() => setShow('unread')}>
+              {t('posts.mustRead.showUnread', 'Anzeigen')}
+            </Button>
+          </Group>
+        </Alert>
+      )}
       <Paper withBorder>
-        <Pagination {...pg} top />
-        {pg.paged.length === 0 ? (
+        <FilterBar
+          padded
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder={t('posts.search', 'Beiträge durchsuchen …')}
+          labels={filterLabels()}
+          groups={[
+            {
+              key: 'show',
+              label: t('posts.filter.show', 'Anzeigen'),
+              value: show,
+              defaultValue: 'all',
+              options: [
+                { value: 'all', label: t('common.all', 'Alle') },
+                { value: 'unread', label: t('posts.filter.unread', 'Noch nicht bestätigt') },
+                ...(canCreate || scheduledCount > 0
+                  ? [{ value: 'scheduled', label: t('posts.filter.scheduled', 'Geplant') }]
+                  : []),
+              ],
+              onChange: (v) => setShow(v as 'all' | 'unread' | 'scheduled'),
+            },
+          ]}
+        />
+        {pg.total > pg.perPage && <Pagination {...pg} top />}
+        {pg.paged.length === 0 && (search || show !== 'all') ? (
+          <EmptyState
+            icon={<IconNews size={36} />}
+            title={
+              show === 'unread'
+                ? t('posts.filter.noneUnread', 'Alles gelesen und bestätigt.')
+                : t('posts.noMatch', 'Keine Beiträge gefunden.')
+            }
+          />
+        ) : pg.paged.length === 0 ? (
           <div
             style={{ padding: '48px', textAlign: 'center', color: 'var(--hb-text-3)' }}
           >
@@ -508,39 +583,36 @@ export function PostsTab() {
             return (
               <div
                 key={post.id}
-                style={{
-                  padding: '20px 24px',
-                  borderBottom: '1px solid var(--hb-border)',
-                }}
+                className="hb-post-card"
+                data-testid="post-card"
+                data-unread={unreadMust(post) || undefined}
               >
-                <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-                  <Avatar
-                    name={post.author}
-                    color={post.avatarColor}
-                    size={38}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <div
-                      style={{
-                        fontSize: 'var(--mantine-font-size-sm)',
-                        fontWeight: 600,
-                        color: 'var(--hb-text)',
-                      }}
-                    >
-                      {post.author}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 'var(--mantine-font-size-xs)',
-                        color: 'var(--hb-text-3)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      <span className="num">{post.time}</span>
-                      <GroupBadge name={createScope.groupName(post.groupId)} />
+                <div className="hb-post-head">
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Group gap={8} wrap="wrap" mb={4}>
+                      <Anchor
+                        component={Link}
+                        to={`/app/operations/posts/${post.id}`}
+                        c="var(--hb-text)"
+                        fw={700}
+                        fz="lg"
+                        underline="hover"
+                        data-testid="post-title"
+                      >
+                        {post.title}
+                      </Anchor>
+                      {post.mustRead && (
+                        <Badge
+                          variant="light"
+                          color={post.readByMe ? 'green' : 'orange'}
+                          size="sm"
+                          style={{ textTransform: 'none' }}
+                        >
+                          {post.readByMe
+                            ? t('posts.mustRead.done', 'Gelesen bestätigt')
+                            : t('posts.mustRead.badge', 'Pflicht')}
+                        </Badge>
+                      )}
                       {post.publishAt && (
                         <Badge variant="light" color="violet" size="sm" leftSection={<IconClock size={12} />} style={{ textTransform: 'none' }}>
                           {t('posts.schedule.badge', 'Geplant für {{when}}', { when: formatDateTime(post.publishAt) })}
@@ -551,30 +623,50 @@ export function PostsTab() {
                           {t('posts.schedule.hidden', 'Ausgeblendet')}
                         </Badge>
                       )}
+                    </Group>
+                    <div className="hb-post-byline">
+                      <Avatar name={post.author} color={post.avatarColor} size={22} />
+                      <span style={{ fontWeight: 600, color: 'var(--hb-text-2)' }}>{post.author}</span>
+                      <span>·</span>
+                      <span>{post.time}</span>
+                      <GroupBadge name={createScope.groupName(post.groupId)} />
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <ActionButtons
-                      onEdit={
-                        canEditPost(post) ? () => openEdit(post) : undefined
-                      }
-                      onDelete={
-                        canDeletePost(post)
-                          ? () => setDeleteTarget(post)
-                          : undefined
-                      }
-                    />
-                  </div>
-                </div>
-                <div
-                  style={{
-                    fontSize: 'var(--mantine-font-size-md)',
-                    fontWeight: 700,
-                    color: 'var(--hb-text)',
-                    marginBottom: 8,
-                  }}
-                >
-                  {post.title}
+                  {(canEditPost(post) || canDeletePost(post)) && (
+                    <Menu position="bottom-end" withinPortal>
+                      <Menu.Target>
+                        <ActionIcon
+                          variant="subtle"
+                          color="gray"
+                          size="lg"
+                          aria-label={t('common.moreActions', 'Weitere Aktionen')}
+                          data-testid="post-menu"
+                        >
+                          <IconDotsVertical size={18} />
+                        </ActionIcon>
+                      </Menu.Target>
+                      <Menu.Dropdown>
+                        {canEditPost(post) && (
+                          <Menu.Item leftSection={<IconPencil size={16} />} onClick={() => openEdit(post)}>
+                            {t('common.edit', 'Bearbeiten')}
+                          </Menu.Item>
+                        )}
+                        {canEditPost(post) && post.mustRead && (
+                          <Menu.Item leftSection={<IconChecks size={16} />} onClick={() => setReadsFor(post)}>
+                            {t('posts.mustRead.who', 'Wer hat bestätigt?')}
+                          </Menu.Item>
+                        )}
+                        {canDeletePost(post) && (
+                          <>
+                            {canEditPost(post) && <Menu.Divider />}
+                            <Menu.Item color="red" leftSection={<IconTrash size={16} />} onClick={() => setDeleteTarget(post)}>
+                              {t('common.delete', 'Löschen')}
+                            </Menu.Item>
+                          </>
+                        )}
+                      </Menu.Dropdown>
+                    </Menu>
+                  )}
                 </div>
                 <div
                   style={{

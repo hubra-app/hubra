@@ -11,14 +11,17 @@ test('a vote is still shown after the page reloads', async ({ page }) => {
   })
   try {
     await page.reload()
-    // The list is a Paper too: the card is the innermost match.
-    const card = page.locator('.mantine-Paper-root', { hasText: question }).last()
-    await card.getByRole('button', { name: /^Nein/ }).click()
+    const card = page.getByTestId('poll-card').filter({ hasText: question })
+    await card.getByRole('button', { name: 'Nein' }).click()
     await expect(card.getByText('Abgestimmt')).toBeVisible()
 
     await page.reload()
     await expect(card.getByText('Abgestimmt')).toBeVisible()
-    await expect(card.getByRole('button', { name: /^Nein ✓/ })).toBeVisible()
+    await expect(card.getByLabel('Deine Stimme')).toBeVisible()
+    // The vote can be changed while the poll is open.
+    await card.getByTestId('change-vote').click()
+    await card.getByRole('button', { name: 'Ja' }).click()
+    await expect(card.locator('p', { hasText: /^Ja$/ }).getByLabel('Deine Stimme')).toBeVisible()
   } finally {
     await api(page, 'DELETE', `/polls/${poll.id}`)
   }

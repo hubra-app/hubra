@@ -729,7 +729,9 @@
       "past": "Past",
       "type": "Type",
       "upcoming": "Upcoming",
-      "when": "When"
+      "when": "When",
+      "mine": "Sign-up",
+      "mineOnly": "Only mine"
     },
     "join": "Join",
     "joined": "Joined event",
@@ -930,7 +932,23 @@
       "saveTitle": "Save as template",
       "saveSubtitle": "Place, time, places, settings and description are saved, the date is not.",
       "name": "Template name"
-    }
+    },
+    "status": {
+      "pending": "Requested",
+      "waitlisted": "Waiting list",
+      "joined": "Signed up"
+    },
+    "pending": {
+      "open": "Open sign-ups"
+    },
+    "allDay": "All day",
+    "places": "{{taken}} of {{max}}",
+    "signedUp": "{{count}} signed up",
+    "full": "Full",
+    "joinWaitlist": "Join the waiting list",
+    "noMine": "You haven't signed up for any event.",
+    "emptyHint": "Plan the next event; members can sign up for it right here.",
+    "emptyMember": "Once an event is planned, you can sign up for it here."
   },
   "finance": {
     "addCategory": "Add Category",
@@ -2320,7 +2338,28 @@
     "resolutionAbstain": "Abstain",
     "resolutionTemplate": "As a circular resolution",
     "autoClose": "Close once everyone has voted",
-    "autoCloseHint": "For the groups and functions picked. The result is then final right away, even before the end date."
+    "autoCloseHint": "For the groups and functions picked. The result is then final right away, even before the end date.",
+    "closedOn": "ended {{date}}",
+    "noEnd": "no end date",
+    "closesToday": "ends today",
+    "closesTomorrow": "ends tomorrow",
+    "closesInDays": "ends in {{count}} days",
+    "closesOn": "ends {{date}}",
+    "remindOpen": "Remind to vote",
+    "notVotedYet": "Not voted yet",
+    "optionVotes_one": "{{count}} vote",
+    "optionVotes_other": "{{count}} votes",
+    "yourVote": "Your vote",
+    "votesCount_one": "{{count}} vote",
+    "votesCount_other": "{{count}} votes",
+    "changeVote": "Change vote",
+    "search": "Search polls …",
+    "filter": {
+      "status": "Status",
+      "open": "Open ({{count}})"
+    },
+    "noneOpen": "No poll is running right now.",
+    "noMatch": "No polls found."
   },
   "posts": {
     "backToPosts": "Back to posts",
@@ -2389,8 +2428,21 @@
       "fieldHint": "For safety rules, rule changes or AGM papers: members confirm with one tap, and you see who is missing.",
       "done": "Read, confirmed",
       "confirm": "I read it",
-      "count": "{{count}} confirmed"
-    }
+      "count": "{{count}} confirmed",
+      "banner_one": "{{count}} must-read post is waiting for your confirmation.",
+      "banner_other": "{{count}} must-read posts are waiting for your confirmation.",
+      "showUnread": "Show",
+      "badge": "Must read",
+      "who": "Who confirmed?"
+    },
+    "search": "Search posts …",
+    "filter": {
+      "show": "Show",
+      "unread": "Not confirmed yet",
+      "scheduled": "Scheduled",
+      "noneUnread": "All read and confirmed."
+    },
+    "noMatch": "No posts found."
   },
   "settings": {
     "changePassword": "Change Password",

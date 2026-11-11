@@ -8,3 +8,8 @@ export function isPastEvent(ev: Pick<ClubEvent, 'date' | 'endDate'>): boolean {
   const d = String(today.getDate()).padStart(2, '0')
   return (ev.endDate || ev.date) < `${y}-${m}-${d}`
 }
+
+/** The month an event falls in, "2026-11", to group the list by. */
+export function monthKey(date: string) {
+  return date.slice(0, 7)
+}
