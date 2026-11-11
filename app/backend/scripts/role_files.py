@@ -14,6 +14,8 @@ path could import is left out:
 
 - all of ``hubra.core`` (sign-in, models, services, tasks, CLI: every role
   runs them) and the module manifests (``hubra.modules``);
+- the Celery task modules the manifests declare (``tasks=``), which every
+  role's worker imports;
 - the blueprint modules of the role's API area, read from the manifests the
   same way ``hubra.core.roles.registers`` picks them at start-up, plus the
   shared ones (probes, version, OAuth metadata);
@@ -194,6 +196,27 @@ def manifest_blueprints(root: Path) -> list[tuple[str, str, str, bool]]:
     return out
 
 
+def manifest_tasks(root: Path) -> set[str]:
+    """The Celery task modules Hubra's own module manifests declare
+    (``tasks=(...)``): every role's worker and beat import them."""
+    out: set[str] = set()
+    for path in sorted((root / "hubra" / "modules").rglob("*.py")):
+        tree = ast.parse(path.read_text(), filename=str(path))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            for keyword in node.keywords:
+                if keyword.arg == "tasks" and isinstance(keyword.value, (ast.Tuple, ast.List)):
+                    out.update(
+                        e.value
+                        for e in keyword.value.elts
+                        if isinstance(e, ast.Constant)
+                        and isinstance(e.value, str)
+                        and e.value.startswith("hubra.")
+                    )
+    return out
+
+
 def role_blueprints(role: str, root: Path) -> list[tuple[str, str, str, bool]]:
     return [
         bp
@@ -211,6 +234,8 @@ def role_modules(role: str, root: Path) -> set[str]:
     starts.update(n for n in modules if n == "hubra.core" or n.startswith("hubra.core."))
     starts.update(n for n in modules if n == "hubra.modules" or n.startswith("hubra.modules."))
     starts.update(bp[0] for bp in role_blueprints(role, root))
+    # Celery imports the manifests' task modules in every role.
+    starts.update(manifest_tasks(root))
     # Plugins import these; Hubra itself doesn't.
     starts.update(n for n in modules if _is_shim(modules[n]))
     return _closure(starts, modules)

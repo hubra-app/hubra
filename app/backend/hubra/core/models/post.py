@@ -34,6 +34,17 @@ class Post(db.Model):
         db.Integer, ForeignKey("groups.id", ondelete="SET NULL"), nullable=True, index=True
     )
 
+    # Scheduled: members see the post from this time on; until then only
+    # those who manage it do. Cleared when the post goes out (then
+    # ``created_at`` becomes that time, so it lands at the top).
+    publish_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+    # Members no longer see the post after this (an outdated notice).
+    hide_after: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -58,6 +69,21 @@ class Post(db.Model):
         cascade="all, delete-orphan",
         order_by="PostComment.created_at",
     )
+
+    @staticmethod
+    def shown(now: datetime):
+        """SQL clause: posts members see at *now* (out and not expired)."""
+        return Post.publish_at.is_(None) & (
+            Post.hide_after.is_(None) | (Post.hide_after > now)
+        )
+
+    def is_shown(self, now: datetime) -> bool:
+        """Whether members see the post at *now* (``shown`` in Python)."""
+        from hubra.core.timeutil import as_utc
+
+        return self.publish_at is None and (
+            self.hide_after is None or as_utc(self.hide_after) > now
+        )
 
     def __repr__(self) -> str:
         return f"<Post id={self.id} title={self.title!r:.40}>"

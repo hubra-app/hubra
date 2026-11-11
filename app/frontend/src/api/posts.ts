@@ -19,6 +19,8 @@ interface BackendPost {
   group_id?: number | null;
   language?: ContentLanguage | null;
   translations?: Partial<Record<ContentLanguage, PostText>> | null;
+  publish_at?: string | null;
+  hide_after?: string | null;
 }
 
 interface BackendComment {
@@ -91,6 +93,8 @@ function adaptPost(b: BackendPost): Post {
     language: b.language ?? null,
     original,
     translations: b.translations ?? {},
+    publishAt: b.publish_at ?? null,
+    hideAfter: b.hide_after ?? null,
   };
   return postIn(post, readerLanguage());
 }
@@ -125,6 +129,10 @@ export interface PostCreate {
   groupId?: string | null;
   language?: ContentLanguage | null;
   translations?: Partial<Record<ContentLanguage, PostText>> | null;
+  /** Scheduled: out at this time (ISO). */
+  publishAt?: string | null;
+  /** Hidden from members after this time (ISO). */
+  hideAfter?: string | null;
 }
 
 export async function createPost(input: PostCreate): Promise<Post> {
@@ -136,6 +144,8 @@ export async function createPost(input: PostCreate): Promise<Post> {
       body: input.body,
       ...(input.language !== undefined ? { language: input.language } : {}),
       ...(input.translations !== undefined ? { translations: input.translations } : {}),
+      ...(input.publishAt ? { publish_at: input.publishAt } : {}),
+      ...(input.hideAfter ? { hide_after: input.hideAfter } : {}),
       ...(input.groupId !== undefined
         ? { group_id: input.groupId ? Number(input.groupId) : null }
         : {}),
@@ -151,6 +161,9 @@ export interface PostUpdate {
   groupId?: string | null;
   language?: ContentLanguage | null;
   translations?: Partial<Record<ContentLanguage, PostText>> | null;
+  /** A scheduled post only; null: out now. */
+  publishAt?: string | null;
+  hideAfter?: string | null;
 }
 
 /** Whether the platform set up machine translation. */
@@ -174,9 +187,11 @@ export async function updatePost(
   id: string,
   input: PostUpdate,
 ): Promise<Post> {
-  const { groupId, ...rest } = input;
+  const { groupId, publishAt, hideAfter, ...rest } = input;
   const body: Record<string, unknown> = { ...rest };
   if (groupId !== undefined) body.group_id = groupId ? Number(groupId) : null;
+  if (publishAt !== undefined) body.publish_at = publishAt;
+  if (hideAfter !== undefined) body.hide_after = hideAfter;
   const data = await apiFetch<BackendPost>(`/app/posts/${id}`, {
     method: "PATCH",
     body: JSON.stringify(body),

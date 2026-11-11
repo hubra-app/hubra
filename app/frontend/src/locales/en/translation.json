@@ -2366,7 +2366,18 @@
     "summaryPlaceholder": "A short teaser shown in the list",
     "titleLabel": "Title",
     "titlePlaceholder": "New dust extractor installed!",
-    "likeFailed": "Could not save the like."
+    "likeFailed": "Could not save the like.",
+    "schedule": {
+      "scheduled": "Post scheduled",
+      "scheduledMsg": "It goes out on {{when}}. Until then only you (and whoever may edit it) can see it.",
+      "publishAt": "Publish at (optional)",
+      "publishAtHint": "Empty: now. Members are notified when it goes out.",
+      "hideAfter": "Hide after (optional)",
+      "hideAfterHint": "After this members no longer see it, e.g. a closed pitch.",
+      "badge": "Scheduled for {{when}}",
+      "hidden": "Hidden",
+      "submit": "Schedule"
+    }
   },
   "settings": {
     "changePassword": "Change Password",

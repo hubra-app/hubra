@@ -157,6 +157,24 @@ length. The bin next to a template in that list deletes it.
 Templates belong to the club. Saving, listing and deleting them takes the
 club-wide right `events.events.create`.
 
+## Posts
+
+### Scheduled and expiring posts
+
+**Veröffentlichen am** in the post form holds a post back until a time of
+your choice (at most a year ahead); the button then reads **Planen**. Until
+then only the author and whoever may edit the post see it, marked **Geplant
+für …**; within five minutes of that time it goes out at the top of the list
+and members are notified as for any new post (bell, push, messengers,
+`post.published`). To send a scheduled post at once, clear the date and save.
+Once a post is out it cannot be scheduled again.
+
+**Ausblenden nach** hides a post from members after a time, for a notice
+that goes stale (the pitch is closed this weekend). The author and whoever
+may edit it still see it, marked **Ausgeblendet**, and can give it a later
+date or clear the field to show it again. The dashboard and the weekly
+digest only show posts members can see.
+
 ## Roles and permissions
 
 Permissions (Berechtigungen) lists the club's roles. Each role grants

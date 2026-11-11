@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import timezone
+
 from marshmallow import EXCLUDE, RAISE, fields, post_load, validate
 from sqlalchemy import func, select
 
@@ -108,6 +110,14 @@ class PostCreateSchema(ma.Schema):
         allow_none=True, load_default=None, validate=validate.OneOf(CONTENT_LANGUAGES)
     )
     translations = fields.Dict(allow_none=True, load_default=None)
+    # Scheduled: out at this time (empty or past: now). Expiring: hidden
+    # from members after this time.
+    publish_at = fields.AwareDateTime(
+        allow_none=True, load_default=None, default_timezone=timezone.utc
+    )
+    hide_after = fields.AwareDateTime(
+        allow_none=True, load_default=None, default_timezone=timezone.utc
+    )
 
     @post_load
     def _translations(self, data, **_kwargs):
@@ -129,6 +139,8 @@ class PostUpdateSchema(ma.Schema):
     group_id = fields.Int(allow_none=True, validate=valid_group_id)
     language = fields.Str(allow_none=True, validate=validate.OneOf(CONTENT_LANGUAGES))
     translations = fields.Dict(allow_none=True)
+    publish_at = fields.AwareDateTime(allow_none=True, default_timezone=timezone.utc)
+    hide_after = fields.AwareDateTime(allow_none=True, default_timezone=timezone.utc)
 
 
 class CommentCreateSchema(ma.Schema):
