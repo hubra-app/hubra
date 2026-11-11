@@ -12,7 +12,7 @@
 {% endif %}
 {% if comment %}
 {% call ui.p() %}<strong>{{ t('mail.email.support_case.answer') }}</strong>{% endcall %}
-<div style="margin: 0 0 20px; padding: 14px 18px; border-left: 3px solid #7441e0; font-family: {{ ui.font_body }}; font-size: 15px; line-height: 24px; color: #1a1625; white-space: pre-wrap;">{{ comment }}</div>
+<div style="margin: 0 0 20px; padding: 14px 18px; border-left: 3px solid {{ brand_color }}; font-family: {{ ui.font_body }}; font-size: 15px; line-height: 24px; color: #1a1625; white-space: pre-wrap;">{{ comment }}</div>
 {% endif %}
 {% if cases_url %}
 {{ ui.button(cases_url, t('mail.email.support_case.button')) }}

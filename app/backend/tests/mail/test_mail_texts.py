@@ -126,3 +126,16 @@ def test_the_subject_shows_the_club_name_as_typed(app, db):
             invite_url="https://sso.example/invite#token=x",
         )
     assert subject == "[Müller & Söhne] You're invited"
+
+
+def test_the_seeded_hubra_club_name_never_names_a_club(app, db):
+    # Clubs from before their own schema kept club.name = "Hubra" (the seed).
+    db.session.merge(Setting(key="club.name", value="Hubra"))
+    db.session.commit()
+    g.tenant = Tenant(
+        name="alpha", slug="alpha", settings={"branding": {"club_name": "Alpha Club"}}
+    )
+    try:
+        assert club_display_name() == "Alpha Club"
+    finally:
+        g.tenant = None

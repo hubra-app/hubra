@@ -39,6 +39,7 @@ section and position, or the apps show that version in English.
 
 ### Fixed
 
+- **Club mail shows the club, account mail shows Hubra**: club mails (invites, events, polls, invoices, reminders, weekly digest, trial bookings, statements) now take the club's name, logo and main colour from Settings › Verein: buttons, links and the info box are in the club's colour (with dark button text on a light colour), and the inbox shows the club's name as sender. Some clubs got "Hubra" as their name because of an old seeded `club.name` setting; that value no longer names a club. Mails about the person's Hubra account (password, email confirmation, new sign-in, an existing account, club requests, closed account) and platform alerts and support answers always look like Hubra, even when a club's page sent them.
 - Customising Dashboard › Verein failed, and "Offene Rechnungen" couldn't be added to a dashboard: widget types with capital letters were refused.
 - **Forms pass**: dropdowns no longer empty themselves when the chosen entry is clicked again (the page-size picker under lists could go to 0); searchable dropdowns say "Keine Ergebnisse." when nothing matches; "Kategorie wählen …"-style entries are placeholders, not choices. Dialogs share one footer (Abbrechen, then the main action; delete at the left) and save on Enter, in the club app and in manage. Money fields use one style (CHF, two decimals, no arrows), event places are number fields, and Settings › Erweitert uses the app's own checkboxes and filter.
 
