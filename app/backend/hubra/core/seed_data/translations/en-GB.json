@@ -4386,5 +4386,12 @@
     "editInvoice": "Edit invoice",
     "invoiceSaved": "Invoice saved",
     "invoiceSavedMsg": "Invoice {{id}} was changed."
-  }
+  },
+  "events.view.list": "List",
+  "events.view.month": "Month",
+  "events.month.prev": "Previous month",
+  "events.month.next": "Next month",
+  "events.month.today": "Today",
+  "events.month.more": "+{{count}} more",
+  "events.month.none": "No events on this day."
 }

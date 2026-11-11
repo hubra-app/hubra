@@ -24,6 +24,8 @@ import i18n from 'i18next'
 import {
   IconPlus,
   IconCalendarEvent,
+  IconList,
+  IconCalendarMonth,
 } from '@tabler/icons-react'
 import { useToast, useAuth, useData } from '@/context/AppContext'
 import { qk } from '@/data/keys'
@@ -55,6 +57,7 @@ import {
 } from '@/screens/private/operations/useEventActions'
 import { CalendarSubscribeButton } from './CalendarSubscribeButton'
 import { EventCard, MonthHeading } from './EventCard'
+import { EventsMonth } from './EventsMonth'
 import { fromLocalInput, toLocalInput } from './localInput'
 import { filterLabels } from '@/components/filterLabels'
 import { PendingSignUpsModal } from './PendingSignUpsModal'
@@ -204,6 +207,22 @@ export function EventsTab() {
   const [pendingFor, setPendingFor] = useState<ClubEvent | null>(null)
   const [typeFilter, setTypeFilter] = useState('All')
   const [when, setWhen] = useState<'upcoming' | 'past' | 'all'>('upcoming')
+  // List or month; remembered on this device.
+  const [view, setViewState] = useState<'list' | 'month'>(() => {
+    try {
+      return localStorage.getItem('hubra.events.view') === 'month' ? 'month' : 'list'
+    } catch {
+      return 'list'
+    }
+  })
+  const setView = (v: 'list' | 'month') => {
+    setViewState(v)
+    try {
+      localStorage.setItem('hubra.events.view', v)
+    } catch {
+      // Private window: the choice lasts until the page is left.
+    }
+  }
   const [search, setSearch] = useState('')
   const [mineOnly, setMineOnly] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
@@ -725,15 +744,42 @@ export function EventsTab() {
 
   return (
     <div>
-      <Group justify="flex-end" mb={16} gap="xs" className="page-actions">
-        <CalendarSubscribeButton />
-        {canTemplates && <TemplateMenu onPick={openFromTemplate} />}
-        {canCreate && (
-          <Button variant="filled" onClick={openAdd}>
-            <IconPlus size={16} />
-            {t('events.addEvent')}
-          </Button>
-        )}
+      <Group justify="space-between" mb={16} gap="xs" className="page-actions">
+        <SegmentedControl
+          value={view}
+          onChange={(v) => setView(v as 'list' | 'month')}
+          data-testid="events-view"
+          data={[
+            {
+              value: 'list',
+              label: (
+                <Group gap={6} wrap="nowrap">
+                  <IconList size={16} />
+                  {t('events.view.list', 'Liste')}
+                </Group>
+              ),
+            },
+            {
+              value: 'month',
+              label: (
+                <Group gap={6} wrap="nowrap">
+                  <IconCalendarMonth size={16} />
+                  {t('events.view.month', 'Monat')}
+                </Group>
+              ),
+            },
+          ]}
+        />
+        <Group gap="xs" wrap="wrap">
+          <CalendarSubscribeButton />
+          {canTemplates && <TemplateMenu onPick={openFromTemplate} />}
+          {canCreate && (
+            <Button variant="filled" onClick={openAdd}>
+              <IconPlus size={16} />
+              {t('events.addEvent')}
+            </Button>
+          )}
+        </Group>
       </Group>
       {linked.id && (
         <LinkedEntryBar
@@ -746,6 +792,16 @@ export function EventsTab() {
         />
       )}
       {!linked.id && <AssociationEventsCard />}
+      {view === 'month' && !linked.id ? (
+        // The month shows every date, so only the type and "mine" filters apply.
+        <EventsMonth
+          events={events.filter(
+            (e) =>
+              (typeFilter === 'All' || e.type === typeFilter) &&
+              (!mineOnly || hasOpenSignUp(e, myJoinedEvents.has(e.id))),
+          )}
+        />
+      ) : (
       <Paper withBorder>
         <FilterBar
           padded
@@ -854,6 +910,7 @@ export function EventsTab() {
         )}
         <Pagination {...pg} />
       </Paper>
+      )}
       <Modal
         onSubmit={form.onSubmit(submitAdd)}
         open={addOpen}

@@ -961,7 +961,18 @@
     "joinWaitlist": "Auf die Warteliste",
     "noMine": "Du bist für keinen Anlass angemeldet.",
     "emptyHint": "Plane den nächsten Anlass, die Mitglieder können sich hier gleich anmelden.",
-    "emptyMember": "Sobald ein Anlass geplant ist, kannst du dich hier anmelden."
+    "emptyMember": "Sobald ein Anlass geplant ist, kannst du dich hier anmelden.",
+    "view": {
+      "list": "Liste",
+      "month": "Monat"
+    },
+    "month": {
+      "prev": "Vorheriger Monat",
+      "next": "Nächster Monat",
+      "today": "Heute",
+      "more": "+{{count}} weitere",
+      "none": "Keine Anlässe an diesem Tag."
+    }
   },
   "finance": {
     "addCategory": "Kategorie hinzufügen",
