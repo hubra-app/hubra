@@ -17,6 +17,7 @@ export interface PluginRoute extends Gated {
 
 /** A tab on a screen of the app, such as `finance`. */
 export interface PluginTab extends Gated {
+  /** The page it goes on: `finance` (Finanzen) or `events` (Anlässe, /app/operations/events/<id>). */
   screen: string
   id: string
   /** A translation key. */

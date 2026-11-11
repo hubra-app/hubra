@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
 import {
   ActionIcon,
   Badge,
@@ -13,7 +12,6 @@ import {
   Text,
 } from '@mantine/core'
 import {
-  IconArrowLeft,
   IconCheck,
   IconCopy,
   IconDots,
@@ -25,7 +23,7 @@ import { useAuth, useToast } from '@/context/AppContext'
 import { useInstance } from '@/context/InstanceContext'
 import { URL_CLUB } from '@/clubBase'
 import { qk } from '@/data/keys'
-import { Card, ConfirmModal, EmptyState, ErrorBanner, LoadingSpinner, PageHead } from '@/components/ui'
+import { Card, ConfirmModal, EmptyState, ErrorBanner, LoadingSpinner } from '@/components/ui'
 import {
   deleteTrial,
   inviteTrial,
@@ -57,10 +55,10 @@ function age(birth: string | null): number | null {
  * club's public trial page. The trainer marks who came and invites them as
  * a trial member with one click.
  */
+/** The trial bookings, a tab of Anlässe (EventsPage has the page head). */
 export function TrialsScreen() {
   const { t, i18n } = useT()
   const { notify } = useToast()
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { hasPermission } = useAuth()
   const { ssoUrl } = useInstance()
@@ -115,18 +113,13 @@ export function TrialsScreen() {
 
   return (
     <div>
-      <PageHead
-        title={t('events.trials.title', 'Schnuppertrainings')}
-        desc={t(
+      <Text size="sm" c="dimmed" mb="md">
+        {t(
           'events.trials.subtitle',
           'Wer noch nicht Mitglied ist, bucht ein Training auf der Schnupperseite. Schnupperplätze gibst du im Anlass an.',
         )}
-      />
-      <Group justify="space-between" mb={16} gap="xs" className="page-actions">
-        <Button variant="subtle" onClick={() => navigate('/app/operations/events')}>
-          <IconArrowLeft size={16} />
-          {t('shell.nav.events')}
-        </Button>
+      </Text>
+      <Group justify="flex-end" mb={16} gap="xs" className="page-actions">
         <SegmentedControl
           value={past ? 'past' : 'upcoming'}
           onChange={(v) => setPast(v === 'past')}

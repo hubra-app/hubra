@@ -1,8 +1,6 @@
-import { colorText } from '@hubra/ui'
-import { EVENT_TYPE_COLORS } from '@/constants'
-import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { Fragment, useState } from 'react'
+import { FilterBar } from '@hubra/ui'
+import { useSearchParams } from 'react-router-dom'
 import {
   Button,
   Group,
@@ -10,34 +8,22 @@ import {
   TextInput,
   Textarea,
   Select,
-  Badge,
   Checkbox,
   SimpleGrid,
   SegmentedControl,
+  Paper,
   Divider,
-  ActionIcon,
-  Tooltip,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useT, zmsg } from '@/locales/i18n'
-import { isPastEvent } from './eventDates'
+import { isPastEvent, monthKey } from './eventDates'
 import { AssociationEventsCard } from './AssociationEventsCard'
 import i18n from 'i18next'
 import {
   IconPlus,
-  IconUserCheck,
-  IconLogin,
-  IconLogout as Leave,
-  IconRepeat,
-  IconWorld,
-  IconClipboardCheck,
-  IconChartBar,
-  IconUserPlus,
-  IconCalendarOff,
-  IconCalendarCheck,
-  IconTemplate,
+  IconCalendarEvent,
 } from '@tabler/icons-react'
 import { useToast, useAuth, useData } from '@/context/AppContext'
 import { qk } from '@/data/keys'
@@ -47,8 +33,8 @@ import {
   Field,
   usePagination,
   ConfirmModal,
-  DataTable,
-  ActionButtons,
+  EmptyState,
+  Pagination,
   useSubmitOnce,
   useLinkedId,
   LinkedEntryBar,
@@ -62,20 +48,21 @@ import {
   type EventUpdate,
   type SeriesScope,
 } from '@/api/events'
-import { listGroups } from '@/api/groups'
 import {
   hasOpenSignUp,
   useToggleJoinEvent,
   useMaybeEvent,
 } from '@/screens/private/operations/useEventActions'
 import { CalendarSubscribeButton } from './CalendarSubscribeButton'
+import { EventCard, MonthHeading } from './EventCard'
+import { fromLocalInput, toLocalInput } from './localInput'
+import { filterLabels } from '@/components/filterLabels'
 import { PendingSignUpsModal } from './PendingSignUpsModal'
 import { AttendanceModal } from './AttendanceModal'
 import { CancelEventModal } from './CancelEventModal'
 import { SaveTemplateModal, TemplateMenu } from './EventTemplates'
 import { templateExtras } from './templateExtras'
 import { joinTime, splitTime } from './eventTime'
-import { formatDate, formatDateTime } from '@/format'
 import type { EventTemplate, EventTemplateData } from '@/api/events'
 import { RecurrenceFields } from './RecurrenceFields'
 import { GroupField } from './ContentGroupFields'
@@ -129,18 +116,6 @@ const eventSchema = z.object({
     ...zmsg('events.timeToBeforeFrom', 'Das Ende liegt vor dem Beginn'),
   })
 type EventForm = z.infer<typeof eventSchema>
-
-/** An ISO date-time as a datetime-local value in the viewer's time. */
-function toLocalInput(iso: string | null | undefined): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
-/** A datetime-local value as an ISO date-time (null: no deadline). */
-const fromLocalInput = (value: string) => (value ? new Date(value).toISOString() : null)
 
 const limitOf = (value: string) => (value.trim() ? Number(value) : null)
 
@@ -202,18 +177,9 @@ export function EventsTab() {
   const canUpdate = (ev: ClubEvent) => inScope('events.events.update', ev) || hosts(ev)
   const canDelete = (ev: ClubEvent) => inScope('events.events.delete', ev) || hosts(ev)
   const canApprove = (ev: ClubEvent) => inScope('events.events.add_attendee', ev) || hosts(ev)
-  const navigate = useNavigate()
-  const mayGroups = moduleList.some((m) => m.code === 'groups')
-  const { data: groups = [] } = useQuery({
-    queryKey: qk.groups.all,
-    queryFn: listGroups,
-    enabled: mayGroups,
-  })
   // Club-wide, or a trainer holding the right for one group.
   const canTakeRoll = (ev: ClubEvent) =>
     hasPermission('events.events.add_attendee', ev.groupId ?? undefined)
-  const seesAttendance =
-    hasPermission('events.events.add_attendee') || groups.some((g) => hasPermission('events.events.add_attendee', g.id))
   const [rollFor, setRollFor] = useState<ClubEvent | null>(null)
   const [cancelFor, setCancelFor] = useState<ClubEvent | null>(null)
   const [templateFor, setTemplateFor] = useState<ClubEvent | null>(null)
@@ -239,6 +205,7 @@ export function EventsTab() {
   const [typeFilter, setTypeFilter] = useState('All')
   const [when, setWhen] = useState<'upcoming' | 'past' | 'all'>('upcoming')
   const [search, setSearch] = useState('')
+  const [mineOnly, setMineOnly] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<ClubEvent | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ClubEvent | null>(null)
@@ -291,13 +258,14 @@ export function EventsTab() {
             !q ||
             e.title.toLowerCase().includes(q) ||
             (e.location || '').toLowerCase().includes(q)
-          return matchType && matchWhen && matchSearch
+          const matchMine = !mineOnly || hasOpenSignUp(e, myJoinedEvents.has(e.id))
+          return matchType && matchWhen && matchSearch && matchMine
         })
         // Past events read newest first; what is coming reads soonest first.
         .sort((a, b) =>
           when === 'past' ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date),
         )
-  const pg = usePagination(filtered, 10)
+  const pg = usePagination(filtered, 20)
 
   const openAdd = () => {
     form.setValues({
@@ -765,18 +733,6 @@ export function EventsTab() {
     <div>
       <Group justify="flex-end" mb={16} gap="xs" className="page-actions">
         <CalendarSubscribeButton />
-        {seesAttendance && (
-          <Button variant="default" onClick={() => navigate('/app/operations/events/attendance')}>
-            <IconChartBar size={16} />
-            {t('events.attendance.overview', 'Anwesenheit')}
-          </Button>
-        )}
-        {hasPermission('events.trials.read') && (
-          <Button variant="default" onClick={() => navigate('/app/operations/events/trials')}>
-            <IconUserPlus size={16} />
-            {t('events.trials.button', 'Schnuppern')}
-          </Button>
-        )}
         {canTemplates && <TemplateMenu onPick={openFromTemplate} />}
         {canCreate && (
           <Button variant="filled" onClick={openAdd}>
@@ -796,375 +752,114 @@ export function EventsTab() {
         />
       )}
       {!linked.id && <AssociationEventsCard />}
-      <DataTable
-        breakpoint="wide"
-        columns={[
-          {
-            key: 'date',
-            header: t('common.date', 'Datum'),
-            width: 64,
-            render: (ev) => {
-              const d = new Date(ev.date)
-              return (
-                <div
-                  style={{
-                    textAlign: 'center',
-                    minWidth: 48,
-                    background: 'var(--hb-surface-2)',
-                    borderRadius: 10,
-                    padding: '8px 0',
-                  }}
-                >
-                  <div
-                    className="num"
-                    style={{
-                      fontSize: 'var(--mantine-font-size-xl)',
-                      fontWeight: 700,
-                      color: 'var(--hb-text)',
-                      lineHeight: 1,
-                    }}
-                  >
-                    {d.getDate()}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 'var(--mantine-font-size-xs)',
-                      fontWeight: 600,
-                      color: 'var(--hb-text-3)',
-                      letterSpacing: '0.08em',
-                    }}
-                  >
-                    {d
-                      .toLocaleString(i18n.language, { month: 'short' })
-                      .toUpperCase()}
-                  </div>
-                </div>
-              )
+      <Paper withBorder>
+        <FilterBar
+          padded
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder={t('events.search', 'Suchen …')}
+          labels={filterLabels()}
+          groups={[
+            {
+              key: 'when',
+              label: t('events.filter.when', 'Zeitraum'),
+              value: when,
+              defaultValue: 'upcoming',
+              options: [
+                { value: 'upcoming', label: t('events.filter.upcoming', 'Kommende') },
+                { value: 'past', label: t('events.filter.past', 'Vergangene') },
+                { value: 'all', label: t('common.all', 'Alle') },
+              ],
+              onChange: (v) => setWhen(v as 'upcoming' | 'past' | 'all'),
             },
-          },
-          {
-            key: 'title',
-            header: t('events.event.title', 'Titel'),
-            render: (ev) => (
-              <span
-                style={{
-                  fontSize: 'var(--mantine-font-size-sm)',
-                  fontWeight: 600,
-                  color: 'var(--hb-text)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                }}
-              >
-                <span
-                  style={
-                    ev.cancelledAt
-                      ? { textDecoration: 'line-through', color: 'var(--hb-text-3)' }
-                      : undefined
-                  }
-                >
-                  {ev.title}
-                </span>
-                {ev.cancelledAt && (
-                  <Tooltip label={ev.cancelReason || t('events.cancel.badge', 'Abgesagt')} multiline maw={260}>
-                    <Badge color="red" variant="light" data-testid="event-cancelled" style={{ flexShrink: 0 }}>
-                      {t('events.cancel.badge', 'Abgesagt')}
-                    </Badge>
-                  </Tooltip>
-                )}
-                {ev.isPublic && (
-                  <Tooltip label={t('events.isPublic', 'Öffentlicher Anlass')}>
-                    <IconWorld
-                      size={14}
-                      aria-label={t('events.isPublic', 'Öffentlicher Anlass')}
-                      style={{ color: 'var(--hb-text-3)' }}
-                    />
-                  </Tooltip>
-                )}
-                {ev.seriesId && (
-                  <Tooltip label={t('events.series.badge', 'Wiederkehrender Termin')}>
-                    <IconRepeat
-                      size={14}
-                      aria-label={t('events.series.badge', 'Wiederkehrender Termin')}
-                      style={{ color: 'var(--hb-text-3)' }}
-                    />
-                  </Tooltip>
-                )}
-              </span>
-            ),
-          },
-          {
-            key: 'timeLocation',
-            header: t('events.time', 'Zeit'),
-            render: (ev) => (
-              <span
-                style={{
-                  fontSize: 'var(--mantine-font-size-sm)',
-                  color: 'var(--hb-text-2)',
-                }}
-              >
-                {ev.endDate && ev.endDate !== ev.date && (
-                  <>{t('events.untilDate', 'bis {{date}}', { date: formatDate(ev.endDate) })} · </>
-                )}
-                {ev.time && <>{ev.time} · </>}
-                {ev.location || t('events.noLocation', 'Kein Ort')}
-                {ev.registrationDeadline && (
-                  <>
-                    <br />
-                    {t('events.registrationDeadlineAt', 'Anmeldeschluss {{when}}', {
-                      when: formatDateTime(ev.registrationDeadline),
-                    })}
-                  </>
-                )}
-              </span>
-            ),
-          },
-          {
-            key: 'attendees',
-            header: t('events.attendees', 'Teilnehmende'),
-            width: 130,
-            render: (ev) => (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                }}
-              >
-                <IconUserCheck size={14} style={{ color: 'var(--hb-text-2)' }} />
-                <span
-                  className="num"
-                  style={{
-                    fontSize: 'var(--mantine-font-size-xs)',
-                    color: 'var(--hb-text-2)',
-                  }}
-                >
-                  {ev.placesTaken ?? ev.attendees.length}
-                  {ev.maxAttendees ? ` / ${ev.maxAttendees}` : ''}
-                </span>
-                {(ev.maybeCount ?? 0) > 0 && (
-                  <span style={{ fontSize: 'var(--mantine-font-size-xs)', color: 'var(--hb-text-3)' }}>
-                    {t('events.maybeCount', '+{{count}} vielleicht', { count: ev.maybeCount })}
-                  </span>
-                )}
-                {canApprove(ev) && (ev.pendingCount ?? 0) > 0 && (
-                  <Badge
-                    variant="light"
-                    color="orange"
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => setPendingFor(ev)}
-                  >
-                    {t('events.pendingCount', '{{count}} offen', {
-                      count: ev.pendingCount,
-                    })}
-                  </Badge>
-                )}
-              </div>
-            ),
-          },
-          {
-            key: 'type',
-            header: t('common.type', 'Typ'),
-            width: 120,
-            render: (ev) => (
-              <Badge
-                variant="light"
-                style={{
-                  borderColor: `color-mix(in srgb, ${EVENT_TYPE_COLORS[ev.type]} 40%, transparent)`,
-                  color: colorText(EVENT_TYPE_COLORS[ev.type]),
-                  background: `color-mix(in srgb, ${EVENT_TYPE_COLORS[ev.type]} 10%, transparent)`,
-                }}
-              >
-                {eventTypeLabel(ev.type)}
-              </Badge>
-            ),
-          },
-          {
-            key: 'actions',
-            header: '',
-            width: 300,
-            render: (ev) => {
+            {
+              key: 'mine',
+              label: t('events.filter.mine', 'Anmeldung'),
+              value: mineOnly ? 'mine' : 'all',
+              defaultValue: 'all',
+              options: [
+                { value: 'all', label: t('common.all', 'Alle') },
+                { value: 'mine', label: t('events.filter.mineOnly', 'Nur meine') },
+              ],
+              onChange: (v) => setMineOnly(v === 'mine'),
+            },
+            {
+              key: 'type',
+              label: t('events.filter.type', 'Typ'),
+              value: typeFilter,
+              defaultValue: 'All',
+              hidden: eventTypes.length === 0,
+              options: types.map((typeItem) => ({
+                value: typeItem,
+                label: typeItem === 'All' ? t('common.all', 'Alle') : eventTypeLabel(typeItem),
+              })),
+              onChange: setTypeFilter,
+            },
+          ]}
+        />
+        {pg.total > pg.perPage && <Pagination {...pg} top />}
+        {pg.paged.length === 0 ? (
+          <EmptyState
+            icon={<IconCalendarEvent size={36} />}
+            title={
+              mineOnly
+                ? t('events.noMine', 'Du bist für keinen Anlass angemeldet.')
+                : t('events.noEvents', 'Keine Anlässe gefunden.')
+            }
+            description={
+              when === 'upcoming' && !search && !mineOnly
+                ? canCreate
+                  ? t('events.emptyHint', 'Plane den nächsten Anlass, die Mitglieder können sich hier gleich anmelden.')
+                  : t('events.emptyMember', 'Sobald ein Anlass geplant ist, kannst du dich hier anmelden.')
+                : undefined
+            }
+            action={
+              canCreate && when === 'upcoming' && !search && !mineOnly
+                ? { label: t('events.addEvent'), onClick: openAdd }
+                : undefined
+            }
+          />
+        ) : (
+          <div className="hb-event-list">
+            {pg.paged.map((ev, i) => {
               const joined = hasOpenSignUp(ev, myJoinedEvents.has(ev.id))
               const over = isPastEvent(ev)
+              const newMonth = i === 0 || monthKey(pg.paged[i - 1].date) !== monthKey(ev.date)
               return (
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: 4,
-                    alignItems: 'center',
-                  }}
-                >
-                  {ev.cancelledAt && !over ? (
-                    <span
-                      style={{
-                        fontSize: 'var(--mantine-font-size-sm)',
-                        color: 'var(--mantine-color-red-7)',
-                        minWidth: 120,
-                      }}
-                    >
-                      {t('events.cancel.badge', 'Abgesagt')}
-                      {ev.cancelReason ? `: ${ev.cancelReason}` : ''}
-                    </span>
-                  ) : over ? (
-                    <span
-                      style={{
-                        fontSize: 'var(--mantine-font-size-sm)',
-                        color: 'var(--hb-text-3)',
-                        minWidth: 120,
-                      }}
-                    >
-                      {joined
-                        ? t('events.attended', 'Teilgenommen')
-                        : t('events.over', 'Vorbei')}
-                    </span>
-                  ) : (
-                  <Button
-                    size="sm"
-                    variant={joined ? 'default' : 'filled'}
-                    disabled={joinEventMutation.isPending}
-                    onClick={() =>
-                      joinEventMutation.mutate({
-                        eventId: ev.id,
-                        eventTitle: ev.title,
-                        memberId: currentUser?.id ?? '',
-                      })
-                    }
-                  >
-                    {joined ? (
-                      <>
-                        <Leave size={16} />
-                        {ev.myStatus === 'pending'
-                          ? t('events.withdrawRequest', 'Anfrage zurückziehen')
-                          : ev.myStatus === 'waitlisted'
-                            ? t('events.leaveWaitlist', 'Warteliste verlassen')
-                            : t('events.leave', 'Abmelden')}
-                      </>
-                    ) : (
-                      <>
-                        <IconLogin size={16} />
-                        {t('events.join', 'Teilnehmen')}
-                      </>
-                    )}
-                  </Button>
-                  )}
-                  {!over && !joined && !ev.cancelledAt && (
-                    <Tooltip
-                      label={
-                        ev.myStatus === 'maybe'
-                          ? t('events.maybeUndo', 'Vielleicht zurücknehmen')
-                          : t('events.maybeHint', 'Vielleicht: ohne Platz, die Organisatoren sehen es')
-                      }
-                    >
-                      <Button
-                        size="sm"
-                        variant={ev.myStatus === 'maybe' ? 'light' : 'subtle'}
-                        color={ev.myStatus === 'maybe' ? undefined : 'gray'}
-                        disabled={maybeMutation.isPending}
-                        onClick={() => maybeMutation.mutate({ eventId: ev.id, eventTitle: ev.title })}
-                      >
-                        {t('events.maybe', 'Vielleicht')}
-                      </Button>
-                    </Tooltip>
-                  )}
-                  {canTakeRoll(ev) && (
-                    <Tooltip label={t('events.attendance.take', 'Anwesenheit erfassen')}>
-                      <ActionIcon
-                        variant="subtle"
-                        color="gray"
-                        size="lg"
-                        aria-label={t('events.attendance.take', 'Anwesenheit erfassen')}
-                        onClick={() => setRollFor(ev)}
-                      >
-                        <IconClipboardCheck size={18} />
-                      </ActionIcon>
-                    </Tooltip>
-                  )}
-                  {canUpdate(ev) && !over && (
-                    <Tooltip
-                      label={
-                        ev.cancelledAt
-                          ? t('events.cancel.reinstate', 'Doch durchführen')
-                          : t('events.cancel.action', 'Absagen')
-                      }
-                    >
-                      <ActionIcon
-                        variant="subtle"
-                        color={ev.cancelledAt ? 'green' : 'red'}
-                        size="lg"
-                        aria-label={
-                          ev.cancelledAt
-                            ? t('events.cancel.reinstate', 'Doch durchführen')
-                            : t('events.cancel.action', 'Absagen')
-                        }
-                        data-testid={ev.cancelledAt ? 'reinstate-event' : 'cancel-event'}
-                        onClick={() => (ev.cancelledAt ? void reinstate(ev) : setCancelFor(ev))}
-                      >
-                        {ev.cancelledAt ? <IconCalendarCheck size={18} /> : <IconCalendarOff size={18} />}
-                      </ActionIcon>
-                    </Tooltip>
-                  )}
-                  {canTemplates && (
-                    <Tooltip label={t('events.templates.saveTitle', 'Als Vorlage speichern')}>
-                      <ActionIcon
-                        variant="subtle"
-                        color="gray"
-                        size="lg"
-                        aria-label={t('events.templates.saveTitle', 'Als Vorlage speichern')}
-                        data-testid="save-template"
-                        onClick={() => setTemplateFor(ev)}
-                      >
-                        <IconTemplate size={18} />
-                      </ActionIcon>
-                    </Tooltip>
-                  )}
-                  <ActionButtons
-                    onEdit={canUpdate(ev) ? () => openEdit(ev) : undefined}
-                    onDelete={canDelete(ev) ? () => setDeleteTarget(ev) : undefined}
+                <Fragment key={ev.id}>
+                  {newMonth && <MonthHeading month={monthKey(ev.date)} locale={i18n.language} />}
+                  <EventCard
+                    ev={ev}
+                    joined={joined}
+                    over={over}
+                    groupName={createScope.groupName(ev.groupId)}
+                    typeLabel={eventTypeLabel(ev.type)}
+                    actions={{
+                      busy: joinEventMutation.isPending || maybeMutation.isPending,
+                      onJoin: () =>
+                        joinEventMutation.mutate({
+                          eventId: ev.id,
+                          eventTitle: ev.title,
+                          memberId: currentUser?.id ?? '',
+                        }),
+                      onMaybe: () => maybeMutation.mutate({ eventId: ev.id, eventTitle: ev.title }),
+                      onRoll: canTakeRoll(ev) ? () => setRollFor(ev) : undefined,
+                      onPending:
+                        canApprove(ev) && (ev.pendingCount ?? 0) > 0 ? () => setPendingFor(ev) : undefined,
+                      onEdit: canUpdate(ev) ? () => openEdit(ev) : undefined,
+                      onTemplate: canTemplates ? () => setTemplateFor(ev) : undefined,
+                      onCancel: canUpdate(ev) && !over && !ev.cancelledAt ? () => setCancelFor(ev) : undefined,
+                      onReinstate: canUpdate(ev) && !over && ev.cancelledAt ? () => void reinstate(ev) : undefined,
+                      onDelete: canDelete(ev) ? () => setDeleteTarget(ev) : undefined,
+                    }}
                   />
-                </div>
+                </Fragment>
               )
-            },
-          },
-        ]}
-        data={pg.paged}
-        emptyMessage={t('events.noEvents', 'Keine Anlässe gefunden.')}
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder={t('events.search', 'Suchen …')}
-        filterGroups={[
-          {
-            key: 'when',
-            label: t('events.filter.when', 'Zeitraum'),
-            value: when,
-            defaultValue: 'upcoming',
-            options: [
-              { value: 'upcoming', label: t('events.filter.upcoming', 'Kommende') },
-              { value: 'past', label: t('events.filter.past', 'Vergangene') },
-              { value: 'all', label: t('common.all', 'Alle') },
-            ],
-            onChange: (v) => setWhen(v as 'upcoming' | 'past' | 'all'),
-          },
-          {
-            key: 'type',
-            label: t('events.filter.type', 'Typ'),
-            value: typeFilter,
-            defaultValue: 'All',
-            hidden: eventTypes.length === 0,
-            options: types.map((typeItem) => ({
-              value: typeItem,
-              label: typeItem === 'All' ? t('common.all', 'Alle') : eventTypeLabel(typeItem),
-            })),
-            onChange: setTypeFilter,
-          },
-        ]}
-        page={pg.page}
-        perPage={pg.perPage}
-        total={pg.total}
-        totalPages={pg.totalPages}
-        onPageChange={pg.goPage}
-        onPerPageChange={pg.setPerPage}
-        getRowKey={(ev) => ev.id}
-      />
+            })}
+          </div>
+        )}
+        <Pagination {...pg} />
+      </Paper>
       <Modal
         onSubmit={form.onSubmit(submitAdd)}
         open={addOpen}
