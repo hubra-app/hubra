@@ -4292,7 +4292,20 @@
     "joinWaitlist": "Auf die Warteliste",
     "noMine": "Du bist für keinen Anlass angemeldet.",
     "emptyHint": "Plane den nächsten Anlass, die Mitglieder können sich hier gleich anmelden.",
-    "emptyMember": "Sobald ein Anlass geplant ist, kannst du dich hier anmelden."
+    "emptyMember": "Sobald ein Anlass geplant ist, kannst du dich hier anmelden.",
+    "endDate": "Enddatum",
+    "timeFrom": "Beginn",
+    "timeTo": "Ende",
+    "timeTextHint": "Bisher: {{text}}",
+    "registrationDeadline": "Anmeldeschluss",
+    "cancellationDeadline": "Abmeldeschluss",
+    "cancellationDeadlineHint": "Danach kann man sich nicht mehr selbst abmelden.",
+    "perDateHint": "Gilt nur für diesen Termin.",
+    "endDateBeforeStart": "Das Enddatum liegt vor dem Datum",
+    "timeToBeforeFrom": "Das Ende liegt vor dem Beginn",
+    "untilDate": "bis {{date}}",
+    "registrationDeadlineAt": "Anmeldeschluss {{when}}",
+    "timeToWithoutFrom": "Bitte auch den Beginn angeben"
   },
   "polls": {
     "closedOn": "beendet am {{date}}",
@@ -4333,5 +4346,25 @@
       "noneUnread": "Alles gelesen und bestätigt."
     },
     "noMatch": "Keine Beiträge gefunden."
+  },
+  "finance": {
+    "externalParty": {
+      "pick": "Externe Partei wählen …"
+    },
+    "invoice": {
+      "no": "Nr. {{n}}"
+    },
+    "validation": {
+      "amountPositive": "Der Betrag muss grösser als 0 sein",
+      "dueBeforeIssued": "Fällig liegt vor dem Rechnungsdatum"
+    },
+    "annual": {
+      "renameAccount": "Umbenennen",
+      "deleteAccountTitle": "«{{name}}» löschen?",
+      "deleteAccountBody": "Ein Konto, auf das noch Kategorien oder Abschlüsse zählen, bleibt."
+    },
+    "editInvoice": "Rechnung bearbeiten",
+    "invoiceSaved": "Rechnung gespeichert",
+    "invoiceSavedMsg": "Rechnung {{id}} wurde geändert."
   }
 }
