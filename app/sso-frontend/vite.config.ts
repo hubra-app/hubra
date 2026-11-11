@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react(), themeScript()],
   resolve: {
     // packages/ui imports these; take them from this app's node_modules.
-    dedupe: ['react', 'react-dom', '@mantine/core', '@tabler/icons-react'],
+    dedupe: ['react', 'react-dom', '@mantine/core', '@mantine/dates', 'dayjs', '@tabler/icons-react'],
     alias: {
       '@': resolve(__dirname, 'src'),
       '@hubra/api-client': resolve(__dirname, '../../packages/api-client/src'),

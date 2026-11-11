@@ -14,8 +14,8 @@ set in the manager portal, defaults from SMTP_* / MAIL_FROM in env):
 
 * System mail (``system=True``: password reset, verification, password
   changed, new sign-in, account deleted) is sent from the platform sender.
-* Club mail is sent from the platform sender with the club's
-  ``club.notification_sender_email`` as Reply-To.  A club with its own sender
+* Club mail is sent from the platform sender, under the club's name, with
+  the club's ``club.notification_sender_email`` as Reply-To.  A club with its own sender
   mailbox (InternalKey ``mail.smtp.user`` / ``mail.smtp.password``, from the
   mail module) sends as that mailbox, through the mail module's own server
   (``ZONEMTA_SMTP_HOST``) or else the platform relay.
@@ -72,17 +72,20 @@ def _get_setting(key: str, default: str = "") -> str:
 
 def club_display_name(default: str = "Hubra") -> str:
     """The club's name for mail and invoices: the ``club.name`` setting when
-    the club set one, otherwise its name on the platform."""
-    name = _get_setting("club.name", "")
-    if name:
-        return name
-    try:
-        from hubra.core.tenant.context import current_tenant
+    the club set one, otherwise the name in Settings > Verein
+    (``branding.club_name``, else the club's name on the platform).
 
-        tenant = current_tenant()
-    except Exception:
-        tenant = None
-    return (tenant.name if tenant is not None else "") or default
+    ``club.name`` was seeded as "Hubra" before clubs had their own schema,
+    and clubs that kept that row named themselves "Hubra" in every mail:
+    in a club, "Hubra" there is the seed, never the club's choice.
+    """
+    from hubra.core.services.mail_i18n import PLATFORM_NAME, club_mail_name
+
+    name = _get_setting("club.name", "").strip()
+    club = club_mail_name()
+    if club and name.casefold() == PLATFORM_NAME.casefold():
+        name = ""
+    return name or club or default
 
 
 def _get_base_url() -> str:
@@ -409,6 +412,13 @@ def _monitor(**kwargs) -> None:
         logger.warning("mail_monitor_failed", exc_info=True)
 
 
+def _club_sender_name() -> str:
+    """The club's name for the From line, or "" outside a club."""
+    from hubra.core.services.mail_i18n import club_mail_name
+
+    return club_mail_name()
+
+
 def _send(
     to_email: str,
     to_name: str,
@@ -437,8 +447,11 @@ def _send(
         route = _mailbox_route(platform, mailbox)
     elif platform.sender_email:
         sender_email = platform.sender_email
+        # Club mail carries the club's name in the inbox, not the platform's.
         sender_name = (
-            platform.sender_name if system else club_name or platform.sender_name
+            platform.sender_name
+            if system
+            else club_name or _club_sender_name() or platform.sender_name
         )
         reply_to = None if system else club_sender or None
     elif club_sender:
@@ -498,13 +511,12 @@ def send_password_reset(
     lang: str = DEFAULT_LANG,
 ) -> None:
     """Send a password reset link. Token expires in 1 hour."""
-    club_name = club_display_name()
 
     body_html, body_text, subject = render_mail_template(
         "password_reset",
         locale=lang,
         name=name,
-        club_name=club_name,
+        platform_mail=True,
         reset_url=reset_url,
     )
     _send(to_address, name, subject, body_html, body_text, system=True)
@@ -518,13 +530,12 @@ def send_email_verification(
     lang: str = DEFAULT_LANG,
 ) -> None:
     """Send a private email verification link. Token expires in 24 hours."""
-    club_name = club_display_name()
 
     body_html, body_text, subject = render_mail_template(
         "verify_email",
         locale=lang,
         name=name,
-        club_name=club_name,
+        platform_mail=True,
         verify_url=verify_url,
     )
     _send(to_address, name, subject, body_html, body_text, system=True)
@@ -534,14 +545,13 @@ def send_password_changed(
     to_address: str, name: str, *, lang: str = DEFAULT_LANG
 ) -> None:
     """Notify a member that their password was successfully changed."""
-    club_name = club_display_name()
     support_url = support_site_url("/kontakt")
 
     body_html, body_text, subject = render_mail_template(
         "password_changed",
         locale=lang,
         name=name,
-        club_name=club_name,
+        platform_mail=True,
         support_url=support_url,
     )
     _send(to_address, name, subject, body_html, body_text, system=True)
@@ -550,7 +560,7 @@ def send_password_changed(
 def send_account_closed(to_address: str, name: str, *, lang: str = DEFAULT_LANG) -> bool:
     """Confirm to the old login address that the account was deleted."""
     body_html, body_text, subject = render_mail_template(
-        "account_closed", locale=lang, name=name, club_name="Hubra"
+        "account_closed", locale=lang, name=name, platform_mail=True
     )
     return _send(to_address, name, subject, body_html, body_text, system=True)
 
@@ -581,7 +591,7 @@ def send_new_device_login(
         "new_device_login",
         locale=lang,
         name=name,
-        club_name=club_display_name(),
+        platform_mail=True,
         timestamp=timestamp,
         ip=ip or "?",
         browser_family=browser_family or "",
@@ -610,7 +620,7 @@ def send_signup_existing_account(
         "signup_existing",
         locale=lang,
         name=name,
-        club_name=club_display_name(),
+        platform_mail=True,
         login_url=f"{sso}/login" if sso else "",
         reset_url=f"{sso}/forgot-password" if sso else "",
     )
@@ -645,7 +655,7 @@ def send_club_request_approved(
         "club_request_approved",
         locale=lang,
         name=name,
-        club_name=club_display_name(),
+        platform_mail=True,
         request_name=request_name,
         clubs_url=f"{sso}/clubs" if sso else "",
     )
@@ -668,7 +678,7 @@ def send_club_request_rejected(
         "club_request_rejected",
         locale=lang,
         name=name,
-        club_name=club_display_name(),
+        platform_mail=True,
         request_name=request_name,
         request_slug=request_slug,
         note=note or "",
@@ -746,7 +756,7 @@ def send_support_case_update(
         "support_case_update",
         locale=lang,
         name=name,
-        club_name="Hubra",
+        platform_mail=True,
         case_id=case_id,
         case_kind=t(f"mail.email.support_case.kind_{kind}"),
         case_title=title,

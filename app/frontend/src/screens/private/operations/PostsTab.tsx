@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState, useCallback } from 'react'
 import { ActionIcon, Alert, Anchor, Badge, Button, Checkbox, Group, Loader, Menu, SimpleGrid, Text, TextInput, Paper } from '@mantine/core'
 import { Link } from 'react-router-dom'
-import { FilterBar } from '@hubra/ui'
+import { DateTimeField, FilterBar } from '@hubra/ui'
 import { filterLabels } from '@/components/filterLabels'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
@@ -440,14 +440,14 @@ export function PostsTab() {
             label={t('posts.schedule.publishAt', 'Veröffentlichen am (optional)')}
             hint={t('posts.schedule.publishAtHint', 'Leer: sofort. Die Mitglieder werden dann benachrichtigt.')}
           >
-            <TextInput type="datetime-local" data-testid="post-publish-at" {...form.getInputProps('publishAt')} />
+            <DateTimeField data-testid="post-publish-at" {...form.getInputProps('publishAt')} />
           </Field>
         )}
         <Field
           label={t('posts.schedule.hideAfter', 'Ausblenden nach (optional)')}
           hint={t('posts.schedule.hideAfterHint', 'Danach sehen ihn die Mitglieder nicht mehr, z. B. eine Platzsperre.')}
         >
-          <TextInput type="datetime-local" data-testid="post-hide-after" {...form.getInputProps('hideAfter')} />
+          <DateTimeField data-testid="post-hide-after" {...form.getInputProps('hideAfter')} />
         </Field>
       </SimpleGrid>
       <Checkbox

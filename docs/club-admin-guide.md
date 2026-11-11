@@ -74,7 +74,10 @@ booking a trial. Give each poster a tag, for example `bahnhof` or
 `turnhalle`: the QR code carries it, and each request and trial booking
 remembers where the person came from. The table above the button counts
 requests and trials per tag over the last year, so you can see which poster
-works. Print straight from the dialog; only the poster is printed.
+works. The poster carries the club's logo and colours from Settings › Verein ›
+Erscheinungsbild (Hubra violet and gold while the club has none); the QR code
+stays black on white so it scans. Print straight from the dialog; only the
+poster is printed.
 
 ### Leaving
 

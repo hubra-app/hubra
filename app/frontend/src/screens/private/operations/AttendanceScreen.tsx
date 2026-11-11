@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Button, Group, Select, Text, TextInput } from '@mantine/core'
+import { Button, Group, Select, Text } from '@mantine/core'
 import { IconDownload } from '@tabler/icons-react'
+import { DateField } from '@hubra/ui'
 import { useT } from '@/locales/i18n'
 import { useAuth, useToast } from '@/context/AppContext'
 import { qk } from '@/data/keys'
@@ -84,10 +85,10 @@ export function AttendanceScreen() {
       </Group>
       <Group align="flex-end" gap={12} mb={16} wrap="wrap">
         <Field label={t('events.attendance.from', 'Von')}>
-          <TextInput type="date" value={from} onChange={(e) => setFrom(e.currentTarget.value)} />
+          <DateField value={from} onChange={(v) => setFrom(v)} />
         </Field>
         <Field label={t('events.attendance.to', 'Bis')}>
-          <TextInput type="date" value={to} onChange={(e) => setTo(e.currentTarget.value)} />
+          <DateField value={to} onChange={(v) => setTo(v)} />
         </Field>
         <Field label={t('events.group', 'Gruppe')}>
           <Select

@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, TextInput, Paper, Loader, Center, SegmentedControl } from '@mantine/core'
+import { Badge, Button, Group, TextInput, Paper, Loader, Center, SegmentedControl } from '@mantine/core'
 import {
-  IconArrowLeft,
+  IconChecks,
+  IconCircleCheck,
+  IconClock,
   IconHeart,
   IconMessage2,
   IconTrash,
@@ -11,6 +13,10 @@ import {
 import { useT } from '@/locales/i18n'
 import { useToast, useAuth } from '@/context/AppContext'
 import { PageHead, Avatar } from '@/components/ui'
+import { DetailBack } from '@/components/detail'
+import { formatDateTime } from '@/format'
+import { useListCache } from '@/data/lists'
+import { PostReadsModal } from './PostReadsModal'
 import { MarkdownRenderer } from '@/components/MarkdownRenderer'
 import type { ContentLanguage, Post, PostComment as PostCommentType } from '@/types'
 import { useLanguageNames } from './contentLanguages'
@@ -23,12 +29,12 @@ import {
   deleteComment,
   postIn,
   postLanguages,
+  confirmRead,
 } from '@/api/posts'
 import { qk } from '@/data/keys'
 
 export function PostDetailScreen() {
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
   const { t } = useT()
   const { notify } = useToast()
   const { currentUser, isAdmin, hasPermission } = useAuth()
@@ -55,6 +61,23 @@ export function PostDetailScreen() {
   const canLike = hasPermission('posts.posts.like')
   const canComment = hasPermission('posts.posts.comment')
   const canModerate = hasPermission('posts.posts.moderate')
+  const postCache = useListCache<Post>(qk.posts.all)
+  const [readsOpen, setReadsOpen] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+
+  const confirm = async () => {
+    if (!id) return
+    setConfirming(true)
+    try {
+      const updated = await confirmRead(id)
+      queryClient.setQueryData<Post>(qk.posts.one(id), updated)
+      postCache.replace(updated)
+    } catch (err: unknown) {
+      notify('error', t('common.error'), err instanceof Error ? err.message : '')
+    } finally {
+      setConfirming(false)
+    }
+  }
 
   const toggleLike = async () => {
     if (!post) return
@@ -128,18 +151,8 @@ export function PostDetailScreen() {
   if (!post || isError) {
     return (
       <div>
-        <PageHead
-          title={t('posts.notFound', 'Beitrag nicht gefunden')}
-          actions={
-            <Button
-              variant="default"
-              onClick={() => navigate('/app/operations/posts')}
-            >
-              <IconArrowLeft size={16} />
-              {t('common.back', 'Zurück')}
-            </Button>
-          }
-        />
+        <DetailBack to="/app/operations/posts" label={t('shell.nav.posts', 'Beiträge')} />
+        <PageHead title={t('posts.notFound', 'Beitrag nicht gefunden')} />
       </div>
     )
   }
@@ -152,18 +165,8 @@ export function PostDetailScreen() {
 
   return (
     <div>
-      <PageHead
-        title={view.title}
-        actions={
-          <Button
-            variant="default"
-            onClick={() => navigate('/app/operations/posts')}
-          >
-            <IconArrowLeft size={16} />
-            {t('posts.backToPosts', 'Zurück zu den Beiträgen')}
-          </Button>
-        }
-      />
+      <DetailBack to="/app/operations/posts" label={t('shell.nav.posts', 'Beiträge')} />
+      <PageHead title={view.title} desc={view.summary ?? undefined} />
       <Paper withBorder style={{ padding: '24px' }}>
         <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
           <Avatar name={post.author} color={post.avatarColor} size={38} />
@@ -209,6 +212,31 @@ export function PostDetailScreen() {
           )}
           <MarkdownRenderer content={view.body} />
         </div>
+        {post.publishAt && (
+          <Badge variant="light" color="violet" mb="md" leftSection={<IconClock size={12} />} style={{ textTransform: 'none' }}>
+            {t('posts.schedule.badge', 'Geplant für {{when}}', { when: formatDateTime(post.publishAt) })}
+          </Badge>
+        )}
+        {post.mustRead && (
+          <Group gap="xs" mb="md" data-testid="must-read-row">
+            {post.readByMe ? (
+              <Badge color="green" variant="light" leftSection={<IconCircleCheck size={12} />} style={{ textTransform: 'none' }}>
+                {t('posts.mustRead.done', 'Gelesen bestätigt')}
+              </Badge>
+            ) : (
+              !post.publishAt && (
+                <Button size="sm" leftSection={<IconCircleCheck size={16} />} loading={confirming} onClick={() => void confirm()} data-testid="confirm-read">
+                  {t('posts.mustRead.confirm', 'Gelesen, bestätigen')}
+                </Button>
+              )
+            )}
+            {(isAdmin || hasPermission('posts.posts.update') || post.authorId === currentUser?.id) && (
+              <Button size="sm" variant="subtle" leftSection={<IconChecks size={16} />} onClick={() => setReadsOpen(true)} data-testid="read-status">
+                {t('posts.mustRead.count', '{{count}} bestätigt', { count: post.readCount })}
+              </Button>
+            )}
+          </Group>
+        )}
         <div
           style={{
             display: 'flex',
@@ -238,6 +266,7 @@ export function PostDetailScreen() {
         </div>
       </Paper>
 
+      <PostReadsModal post={readsOpen ? post : null} onClose={() => setReadsOpen(false)} />
       <Paper
         withBorder
         style={{ marginTop: 16, padding: '24px' }}

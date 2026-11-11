@@ -961,7 +961,18 @@
     "joinWaitlist": "Join the waiting list",
     "noMine": "You haven't signed up for any event.",
     "emptyHint": "Plan the next event; members can sign up for it right here.",
-    "emptyMember": "Once an event is planned, you can sign up for it here."
+    "emptyMember": "Once an event is planned, you can sign up for it here.",
+    "view": {
+      "list": "List",
+      "month": "Month"
+    },
+    "month": {
+      "prev": "Previous month",
+      "next": "Next month",
+      "today": "Today",
+      "more": "+{{count}} more",
+      "none": "No events on this day."
+    }
   },
   "finance": {
     "addCategory": "Add Category",

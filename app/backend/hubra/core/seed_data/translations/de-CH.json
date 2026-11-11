@@ -4390,5 +4390,12 @@
     "editInvoice": "Rechnung bearbeiten",
     "invoiceSaved": "Rechnung gespeichert",
     "invoiceSavedMsg": "Rechnung {{id}} wurde geändert."
-  }
+  },
+  "events.view.list": "Liste",
+  "events.view.month": "Monat",
+  "events.month.prev": "Vorheriger Monat",
+  "events.month.next": "Nächster Monat",
+  "events.month.today": "Heute",
+  "events.month.more": "+{{count}} weitere",
+  "events.month.none": "Keine Anlässe an diesem Tag."
 }

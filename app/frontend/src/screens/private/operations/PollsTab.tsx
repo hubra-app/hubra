@@ -11,6 +11,7 @@ import {
   Alert,
   Text,
 } from "@mantine/core";
+import { DateTimeField } from '@hubra/ui'
 import { useForm } from "@mantine/form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useT } from "@/locales/i18n";
@@ -483,8 +484,7 @@ export function PollsTab() {
               'Automatisch beenden am (optional)',
             )}
           >
-            <TextInput
-              type="datetime-local"
+            <DateTimeField
               {...form.getInputProps("closesAt")}
             />
           </Field>

@@ -8,7 +8,7 @@
   <meta name="supported-color-schemes" content="light dark" />
   <title>{{ subject }}</title>
   <style>
-    a { color: #7441e0; }
+    a { color: {{ brand_link }}; }
     @media (max-width: 600px) {
       .hb-card { padding: 28px 22px !important; }
       .hb-outer { padding: 20px 12px !important; }
@@ -17,10 +17,10 @@
       .hb-page { background: #14111c !important; }
       .hb-card { background: #1e1a2a !important; border-color: #2e2840 !important; }
       .hb-card p, .hb-card td, .hb-title, .hb-club { color: #ece9f5 !important; }
-      .hb-card a { color: #bba3fd !important; }
-      .hb-facts { background: #2e2840 !important; }
-      .hb-button { background: #9f7cf8 !important; }
-      .hb-button a { color: #14111c !important; }
+      .hb-card a { color: {{ brand_dark_link }} !important; }
+      .hb-facts { background: {{ brand_dark_tint }} !important; }
+      .hb-button { background: {{ brand_color }} !important; }
+      .hb-button a { color: {{ brand_on }} !important; }
       .hb-foot, .hb-foot td { color: #a39db8 !important; }
       .hb-word { color: #bba3fd !important; }
     }
@@ -63,6 +63,7 @@
               <a href="{{ report_url }}" style="color: #5e5873; text-decoration: underline;">{{ footer_texts[0] }}</a><br />
               <a href="{{ unsubscribe_url }}" style="color: #5e5873; text-decoration: underline;">{{ footer_texts[1] }}</a><br />
               {%- endif %}
+              {#- The "hubra" word stays Hubra violet: it names the platform. -#}
               {{ t('mail.email.sent_with') }}
               <span class="hb-word" style="font-family: 'Bricolage Grotesque', {{ ui.font_body }}; font-weight: 800; letter-spacing: -0.2px; color: #7441e0;">hubra</span>
             </td>
