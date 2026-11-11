@@ -674,6 +674,10 @@ class BackupService:
             from hubra.core.tenant.migration import apply_migrations_to_tenant
 
             apply_migrations_to_tenant(record.tenant_id)
+            # The restored schema is new: give the club's role its rights.
+            from hubra.core.tenant import db_roles
+
+            db_roles.ensure_club(db.session.connection(), record.tenant_id)
         except Exception as exc:
             logger.error("Restore of backup %s failed: %s", record_id, exc)
             db.session.rollback()

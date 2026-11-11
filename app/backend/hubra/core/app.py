@@ -153,7 +153,7 @@ def create_app(config_name: str | None = None) -> Flask:
     from hubra.core.tenant.context import install_search_path_guard
     from hubra.core.tenant.middleware import TenantPathMiddleware, resolve_tenant
 
-    install_search_path_guard()
+    install_search_path_guard(app)
     from hubra.core.modules.events import install_after_commit_delivery
 
     install_after_commit_delivery()
@@ -827,6 +827,19 @@ def _register_cli(app: Flask) -> None:
                 )
         if not results:
             click.echo("Club schemas match public.")
+
+        # Every club its own database role (hubra/core/tenant/db_roles.py).
+        from hubra.core.tenant import db_roles
+
+        with db.engine.begin() as conn:
+            if db_roles.available(conn):
+                roles = db_roles.sync_all(conn, tables_to_clone())
+                click.echo(f"Club database roles: {len(roles)} in place.")
+            elif conn.dialect.name == "postgresql":
+                click.echo(
+                    "Club database roles: off (the app role lacks CREATEROLE; "
+                    "docs/club-db-roles.md)."
+                )
 
     @app.cli.command("sync-permissions")
     def sync_permissions():
