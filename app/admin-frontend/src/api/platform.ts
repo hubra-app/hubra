@@ -926,7 +926,13 @@ export interface Plan {
   builds_on: string | null
   /** A custom plan: these clubs can pick it themselves although it is not selectable. */
   club_ids: number[]
-  limits: { members: number | null; mail_month: number | null; storage_mb: number | null }
+  limits: {
+    members: number | null
+    mail_month: number | null
+    storage_mb: number | null
+    /** Largest file in MB; null: the platform default (files.max_mb). */
+    file_mb?: number | null
+  }
   highlighted: boolean
   sort: number
   /** Shown on the website (public pricing API). */
@@ -970,6 +976,7 @@ export interface PlanInput {
   limit_members?: number | null
   limit_mail_month?: number | null
   limit_storage_mb?: number | null
+  limit_file_mb?: number | null
   public?: boolean
   selectable?: boolean
   highlighted?: boolean

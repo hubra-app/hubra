@@ -288,7 +288,7 @@ restart, and take a fresh backup right away.
 
 **Changing the backup key pair:** new backups use the new public key at
 once. Keep the old private key until the last backup made with it has
-expired (6 months with the default retention).
+expired (12 months with the default retention).
 
 **Prevention:**
 
@@ -302,13 +302,17 @@ expired (6 months with the default retention).
 
 | Schedule | Frequency              | Retention |
 | -------- | ---------------------- | --------- |
-| Daily    | Every day at 03:00 UTC | 7 days    |
-| Weekly   | Sunday at 03:15 UTC    | 4 weeks   |
-| Monthly  | 1st of month at 03:30  | 6 months  |
-| Manual   | On demand              | Unlimited |
+| Daily    | Every day at 03:00 UTC | 7 days (`backup.keep_daily`)     |
+| Weekly   | Sunday at 03:15 UTC    | 4 weeks (`backup.keep_weekly`)   |
+| Monthly  | 1st of month at 03:30  | 12 months (`backup.keep_monthly`) |
+| Manual   | On demand              | 90 days (`backup.keep_manual_days`, 0 = until deleted) |
 
 Each scheduled run backs up the global schema and every active club.
 Retention counts per set: the global backups and each club's backups are
 kept separately (7 daily for the global data, 7 daily for each club, and so
-on). Manual backups are never automatically deleted. Scheduled backups are
-cleaned up after each scheduled run according to the retention policy.
+on). The numbers are platform settings (manage › Backups › Einstellungen ›
+Aufbewahrung). Manual backups are deleted after `backup.keep_manual_days`
+days (90 by default; 0: never). The backups of a club deleted for good are
+deleted `backup.keep_deleted_club_days` days after each was made (30 by
+default; 0: they follow the counts like any club's). Pruning runs after each
+scheduled run and deletes the S3 object too.

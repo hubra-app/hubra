@@ -16,6 +16,8 @@
 #      sign-in, account, public data, and its old paths) to a global backend.
 #      REAL_IP_FROM (a CIDR, comma-separated list
 #      allowed) trusts X-Forwarded-For from a proxy in front of this nginx.
+#      MAX_UPLOAD_MB (default 100) is the largest request body, as for the
+#      backend's file uploads; give both the same value.
 #
 # An image built with real VITE_* build args has no placeholders left, so
 # step 1 changes nothing for it.
@@ -23,6 +25,11 @@ set -eu
 
 src=/opt/spa
 html=/usr/share/nginx/html
+
+max_upload_mb="${MAX_UPLOAD_MB:-100}"
+case "$max_upload_mb" in
+  ''|*[!0-9]*) max_upload_mb=100 ;;
+esac
 
 rm -rf "${html:?}"/*
 cp -a "$src"/. "$html"/
@@ -127,7 +134,7 @@ server {
     server_name _;
     root ${html};
     index index.html;
-    client_max_body_size 25m;
+    client_max_body_size ${max_upload_mb}m;
 ${real_ip}
 ${api}
     # The commit this image was built from, for manage on another host.

@@ -526,10 +526,25 @@ export interface LimitRow {
   level: 'ok' | 'warning' | 'over'
 }
 
+/** The largest file the club can upload, in MB. */
+export interface FileLimit {
+  /** What applies: wanted, capped at the server's ceiling. */
+  limit: number
+  wanted: number
+  source: 'club' | 'plan' | 'default'
+  custom: boolean
+  plan_limit: number | null
+  /** files.max_mb, for plans without their own. */
+  default: number
+  /** MAX_UPLOAD_MB: no upload is larger. */
+  ceiling: number
+}
+
 export interface TenantLimits {
   plan: string
   warn_percent: number
   limits: Record<LimitKind, LimitRow>
+  file?: FileLimit
 }
 
 export async function getTenantLimits(tenantId: number) {
@@ -539,7 +554,7 @@ export async function getTenantLimits(tenantId: number) {
 /** A number, null for no limit, or "plan" to follow the plan again. */
 export async function setTenantLimits(
   tenantId: number,
-  values: Partial<Record<LimitKind, number | null | 'plan'>>,
+  values: Partial<Record<LimitKind, number | null | 'plan'>> & { file_mb?: number | 'plan' },
 ) {
   return apiFetch<TenantLimits>(`/platform/system/tenants/${tenantId}/limits`, {
     method: 'PUT',

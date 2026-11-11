@@ -3,7 +3,9 @@ Tarife), and the public pricing the website reads.
 
 * A **plan** (``PlatformPlan``) is what ``tenants.plan`` names: name and
   description in German and English, price per month and per year (empty:
-  on request), a feature list, the limits ``services.quotas`` enforces, its
+  on request), a feature list, the limits ``services.quotas`` enforces
+  (members, mails per month, storage, and the largest file a club can
+  upload; empty: no limit, for the file: the platform's ``files.max_mb``), its
   place in the list, whether it is **public** (on the website) and whether
   it is **selectable** (every club can pick it itself).  The two are apart
   (hubra#261): only public plans that are not hidden appear in ``GET
@@ -48,7 +50,10 @@ MAX_PRICE = Decimal("100000")
 MAX_FEATURES = 30
 MAX_PLANS = 30
 DEFAULTS = (("starter", "Starter"), ("growth", "Growth"), ("enterprise", "Enterprise"))
-LIMIT_KINDS = ("members", "mail_month", "storage_mb")
+LIMIT_KINDS = ("members", "mail_month", "storage_mb", "file_mb")
+# The largest file a plan can allow, in MB (the server's upload ceiling,
+# MAX_UPLOAD_MB, caps it further).
+MAX_FILE_MB = 10240
 UNITS = ("flat", "member", "license")
 MAX_PLAN_MODULES = 50
 MAX_PLAN_CLUBS = 500
@@ -85,6 +90,19 @@ def _count(value, field: str) -> int | None:
         return None
     if not isinstance(value, int) or isinstance(value, bool) or not 0 <= value <= 10**9:
         _bad(f"{field} is a whole number, or empty for no limit")
+    return value
+
+
+def file_mb(value, field: str = "file_mb") -> int | None:
+    """Largest file in MB, 1 to MAX_FILE_MB; empty: the platform default."""
+    if value is None or value == "":
+        return None
+    if (
+        not isinstance(value, int)
+        or isinstance(value, bool)
+        or not 1 <= value <= MAX_FILE_MB
+    ):
+        _bad(f"{field} is a whole number of MB from 1 to {MAX_FILE_MB}, or empty")
     return value
 
 
@@ -310,6 +328,7 @@ _PLAN_FIELDS = {
     "limit_members",
     "limit_mail_month",
     "limit_storage_mb",
+    "limit_file_mb",
     "public",
     "selectable",
     "highlighted",
@@ -337,6 +356,8 @@ def _apply(plan: PlatformPlan, body: dict) -> None:
             plan.builds_on = _builds_on(plan, value)
         elif key == "club_ids":
             plan.club_ids = _club_ids(value)
+        elif key == "limit_file_mb":
+            plan.limit_file_mb = file_mb(value, key)
         elif key.startswith("limit_"):
             setattr(plan, key, _count(value, key))
         elif key in ("public", "selectable", "highlighted"):

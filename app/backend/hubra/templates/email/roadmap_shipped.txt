@@ -1,0 +1,9 @@
+{{ t('mail.email.roadmap_shipped.intro', version=version) | striptags }}
+
+{{ item_title }}
+{% if item_summary %}{{ item_summary }}
+{% endif %}
+{{ t('mail.email.roadmap_shipped.thanks') }}
+{% if roadmap_url %}
+{{ t('mail.email.roadmap_shipped.button') }}: {{ roadmap_url }}
+{% endif %}

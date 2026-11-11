@@ -60,11 +60,31 @@ logger = logging.getLogger(__name__)
 
 _BACKUP_TYPES = ("manual", "scheduled_daily", "scheduled_weekly", "scheduled_monthly")
 
-_RETENTION: dict[str, int] = {
-    "scheduled_daily": 7,
-    "scheduled_weekly": 4,
-    "scheduled_monthly": 6,
+# Retention per scheduled type: (platform setting, default copies kept per
+# set).  Manage › Backups › Einstellungen changes them.
+_RETENTION: dict[str, tuple[str, int]] = {
+    "scheduled_daily": ("backup.keep_daily", 7),
+    "scheduled_weekly": ("backup.keep_weekly", 4),
+    "scheduled_monthly": ("backup.keep_monthly", 12),
 }
+
+
+def retention_policy() -> dict[str, int]:
+    """How many backups of each scheduled type a set keeps, and how many
+    days manual backups and the backups of deleted clubs are kept (0: no
+    time limit)."""
+    from hubra.core.services import platform_settings as ps
+
+    policy = {}
+    for backup_type, (key, default) in _RETENTION.items():
+        value = ps.int_setting(key, default)
+        policy[backup_type] = value if value >= 1 else default
+    for name, key, default in (
+        ("manual_days", "backup.keep_manual_days", 90),
+        ("deleted_club_days", "backup.keep_deleted_club_days", 30),
+    ):
+        policy[name] = max(0, ps.int_setting(key, default))
+    return policy
 
 
 def _get_s3_config() -> dict[str, str]:
@@ -742,53 +762,90 @@ class BackupService:
 
     @staticmethod
     def run_retention_cleanup() -> dict:
-        """Delete backups exceeding retention policy per type.
+        """Delete the backups the retention policy (``retention_policy``)
+        no longer keeps.
 
-        Retention counts per backup set: the global backups, and each club's
-        own.  Manual backups are never auto-deleted.
+        * Scheduled backups: each set (the global backups, and each club's
+          own) keeps its newest *n* of each type.
+        * Manual backups: kept for ``backup.keep_manual_days`` days (0: until
+          someone deletes them).
+        * A club deleted for good (its backups have no club any more): each
+          of its backups is kept for ``backup.keep_deleted_club_days`` days
+          from the day it was made (0: like any other club's).
+
+        Only completed backups count; a failed one has nothing to restore.
+        A backup that was restored from is pruned like any other; the safety
+        copy the restore made stays in the database until someone drops it.
 
         Returns:
-            Summary dict with counts of deleted records per type.
+            Counts of deleted records per type.
         """
+        policy = retention_policy()
+        now = datetime.now(timezone.utc)
+        doomed: list[BackupRecord] = []
+
+        def _older_than(record: BackupRecord, days: int) -> bool:
+            created = record.created_at
+            if created is None:
+                return False
+            if created.tzinfo is None:  # SQLite in tests
+                created = created.replace(tzinfo=timezone.utc)
+            return (now - created).total_seconds() > days * 86400
+
+        completed = db.session.scalars(
+            select(BackupRecord)
+            .where(BackupRecord.status == "completed")  # type: ignore[arg-type]
+            .order_by(BackupRecord.created_at.desc(), BackupRecord.id.desc())  # type: ignore[attr-defined]
+        ).all()
+
+        sets: dict[tuple, list[BackupRecord]] = {}
+        for record in completed:
+            if (
+                policy["deleted_club_days"]
+                and record.scope == "club"
+                and record.tenant_id is None
+                and _older_than(record, policy["deleted_club_days"])
+            ):
+                doomed.append(record)
+                continue
+            if record.type == "manual":
+                if policy["manual_days"] and _older_than(record, policy["manual_days"]):
+                    doomed.append(record)
+                continue
+            if record.type not in _RETENTION:
+                continue
+            key = (
+                record.type,
+                record.scope or "global",
+                record.tenant_id,
+                record.tenant_slug,
+            )
+            sets.setdefault(key, []).append(record)
+
+        for (backup_type, *_), kept in sets.items():
+            doomed.extend(kept[policy[backup_type] :])
+
         deleted: dict[str, int] = {}
+        if not doomed:
+            return deleted
         s3_client = _get_s3_client()
         cfg = _get_s3_config()
+        for record in doomed:
+            if record.s3_key and s3_client is not None:
+                try:
+                    s3_client.delete_object(Bucket=cfg["bucket"], Key=record.s3_key)
+                except Exception as exc:
+                    logger.warning(
+                        "Retention: failed to delete S3 object %s: %s",
+                        record.s3_key,
+                        exc,
+                    )
+            db.session.delete(record)
+            deleted[record.type] = deleted.get(record.type, 0) + 1
 
-        for backup_type, keep_count in _RETENTION.items():
-            records = db.session.scalars(
-                select(BackupRecord)
-                .where(BackupRecord.type == backup_type)  # type: ignore[arg-type]
-                .where(BackupRecord.status == "completed")  # type: ignore[arg-type]
-                .order_by(BackupRecord.created_at.desc(), BackupRecord.id.desc())  # type: ignore[attr-defined]
-            ).all()
+        db.session.commit()
+        logger.info("Retention cleanup deleted: %s", deleted)
+        from hubra.core.services import platform_monitor
 
-            sets: dict[tuple, list[BackupRecord]] = {}
-            for record in records:
-                key = (record.scope or "global", record.tenant_id, record.tenant_slug)
-                sets.setdefault(key, []).append(record)
-
-            for kept in sets.values():
-                for record in kept[keep_count:]:
-                    if record.s3_key:
-                        try:
-                            if s3_client is not None:
-                                s3_client.delete_object(
-                                    Bucket=cfg["bucket"], Key=record.s3_key
-                                )
-                        except Exception as exc:
-                            logger.warning(
-                                "Retention: failed to delete S3 object %s: %s",
-                                record.s3_key,
-                                exc,
-                            )
-                    db.session.delete(record)
-                    deleted[backup_type] = deleted.get(backup_type, 0) + 1
-
-        if deleted:
-            db.session.commit()
-            logger.info("Retention cleanup deleted: %s", deleted)
-            from hubra.core.services import platform_monitor
-
-            platform_monitor.backups_pruned(deleted)
-
+        platform_monitor.backups_pruned(deleted)
         return deleted

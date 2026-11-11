@@ -141,6 +141,19 @@ def post_changelog(kind: str, payload: dict, nonce: str = "") -> None:
 
 
 @celery_app.task(
+    name="hubra.core.tasks.platform_bot_tasks.send_shipped_mails", ignore_result=True
+)
+def send_shipped_mails(item_id: str, version: str, user_ids: list) -> None:
+    """The "shipped" mails of one roadmap item (``services.shipped``)."""
+    from hubra.core.services import shipped
+
+    try:
+        shipped.send_mails(item_id, version, [int(u) for u in user_ids])
+    except Exception as exc:  # noqa: BLE001
+        _log.warning("shipped mails for %s not sent: %s", item_id, exc)
+
+
+@celery_app.task(
     name="hubra.core.tasks.platform_bot_tasks.post_security", ignore_result=True
 )
 def post_security(title: str, lines: list, level: str = "warning") -> None:

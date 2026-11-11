@@ -13,7 +13,7 @@ import os
 import time
 
 import click
-from flask import Flask, jsonify, request
+from flask import Flask, current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity
 from sqlalchemy import select
 
@@ -65,6 +65,16 @@ def _resolve_rate_limit_storage(app: Flask) -> str:
             )
             return "memory://"
     return uri
+
+
+def _upload_body_limit():
+    """File uploads (multipart) may be larger than other requests: up to
+    ``MAX_UPLOAD_MB``.  Which size a club may store is checked by
+    ``hubra.core.files.put`` (its plan or its own limit)."""
+    if request.mimetype == "multipart/form-data":
+        request.max_content_length = (
+            current_app.config.get("MAX_UPLOAD_MB", 100) * 1024 * 1024
+        )
 
 
 def _reject_scalar_json():
@@ -204,6 +214,7 @@ def create_app(config_name: str | None = None) -> Flask:
 
     status_page.install(app)
 
+    app.before_request(_upload_body_limit)
     app.before_request(_reject_scalar_json)
     app.before_request(resolve_tenant)
     maintenance.install_club_gate(app)
