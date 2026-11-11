@@ -280,6 +280,12 @@ def create_app(config_name: str | None = None) -> Flask:
             "max-age=63072000; includeSubDomains; preload"
         )
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        # The API answers with data, never with a page to render: a response
+        # opened in a browser tab runs no script and loads nothing. Routes
+        # that set their own policy (the club logo) keep it.
+        response.headers.setdefault(
+            "Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'"
+        )
         return response
 
     # ── CORS ──────────────────────────────────────────────────────────────

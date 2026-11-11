@@ -13,7 +13,10 @@
 # ── Shared base: Python packages and system tools ──────────────────────────
 FROM python:3.13-slim-bookworm@sha256:fcbd8dfc2605ba7c2eca646846c5e892b2931e41f6227985154a596f26ab8ed7 AS base
 
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+# Production unless a deployment says otherwise: without FLASK_ENV the app
+# would start with the development config (debug on, random per-process
+# secrets, a SQLite fallback and cookies without the Secure flag).
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 FLASK_ENV=production
 
 WORKDIR /app
 
@@ -28,6 +31,8 @@ RUN pip install --no-cache-dir --no-deps --require-hashes -r requirements.lock
 # Postgres images in docker-compose.yml and deploy/ are covered.
 # Pango is what WeasyPrint draws invoice PDFs with, and Liberation Sans is a
 # font the Swiss QR bill allows (the slim image has no fonts at all).
+# curl and lsb-release only fetch the PGDG key and name the release, so they
+# leave again; wget stays for the Compose health checks.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl wget ca-certificates gnupg age lsb-release \
     libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-liberation \
@@ -39,6 +44,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
        postgresql-client-16 postgresql-client-17 postgresql-client-18 \
+    && apt-get purge -y curl lsb-release \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN adduser --disabled-password --gecos "" appuser

@@ -534,6 +534,7 @@
   "common.enabled": "Aktiviert",
   "common.error": "Fehler",
   "common.export": "Exportieren",
+  "common.externalImage": "Bild von {{host}} anzeigen",
   "common.filter": "Filter",
   "common.firstName": "Vorname",
   "common.goHome": "Zur Startseite",

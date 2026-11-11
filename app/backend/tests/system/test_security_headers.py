@@ -1,7 +1,7 @@
 """Tests for security headers (HSTS, X-Frame-Options, X-Content-Type-Options).
 
-CSP, Permissions-Policy, and Accept-CH are set by Caddy on frontend HTML,
-not on API JSON responses.
+The frontends' CSP, Permissions-Policy and Accept-CH are set by Caddy on
+their HTML. API responses carry only a policy that renders nothing.
 """
 
 from hubra.core.services.health_cache import HealthCache
@@ -26,11 +26,14 @@ def test_hsts_header_present(client):
     assert "max-age" in resp.headers["Strict-Transport-Security"]
 
 
-def test_csp_not_on_api_responses(client):
-    """Content-Security-Policy is NOT set on API JSON responses (moved to Caddy)."""
+def test_api_csp_renders_nothing(client):
+    """An API response opened in a tab runs no script and loads nothing; the
+    frontends' own policy comes from Caddy, not from here."""
     HealthCache.set({"status": "ok", "services": {}, "checked_at": 0})
     resp = client.get("/api/v1/health")
-    assert "Content-Security-Policy" not in resp.headers
+    assert resp.headers["Content-Security-Policy"] == (
+        "default-src 'none'; frame-ancestors 'none'"
+    )
 
 
 def test_health_exempt_from_rate_limiting(client):
