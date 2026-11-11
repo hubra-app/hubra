@@ -14,6 +14,7 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
+import { DateTimeField } from '@hubra/ui'
 import { Modal as SharedModal } from '@/components/ui'
 import { IconCalendarTime } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
@@ -274,18 +275,16 @@ function PlanModal({
     >
       <Stack gap="md">
         <Group grow align="flex-start" wrap="wrap">
-          <TextInput
-            type="datetime-local"
+          <DateTimeField
             label={tr('Beginn', 'Start')}
             value={start}
-            onChange={(e) => setStart(e.currentTarget.value)}
+            onChange={(v) => setStart(v)}
             miw={200}
           />
-          <TextInput
-            type="datetime-local"
+          <DateTimeField
             label={tr('Ende', 'End')}
             value={end}
-            onChange={(e) => setEnd(e.currentTarget.value)}
+            onChange={(v) => setEnd(v)}
             error={endAt <= startAt ? tr('Nach dem Beginn', 'After the start') : undefined}
             miw={200}
           />

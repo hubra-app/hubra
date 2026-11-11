@@ -10,8 +10,8 @@ import {
   SimpleGrid,
   Table,
   Text,
-  TextInput,
 } from '@mantine/core'
+import { DateField } from '@hubra/ui'
 import { useT } from '@/locales/i18n'
 import { qk } from '@/data/keys'
 import { Modal, LoadingSpinner } from '@/components/ui'
@@ -83,11 +83,10 @@ export function FeeRunPreviewModal({ open, onClose }: { open: boolean; onClose: 
         </Button>
       }
     >
-      <TextInput
-        type="date"
+      <DateField
         label={t('finance.feeRun.on', 'Lauf am')}
         value={on}
-        onChange={(e) => setOn(e.currentTarget.value)}
+        onChange={(v) => setOn(v)}
         maw={220}
         data-testid="fee-run-date"
       />

@@ -13,6 +13,7 @@ import {
   UnstyledButton,
   useMatches,
 } from '@mantine/core'
+import { DateField } from './dates'
 import { IconAdjustmentsHorizontal, IconSearch, IconX } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 
@@ -82,14 +83,16 @@ function GroupControl({ group }: { group: FilterGroup }) {
   const options = group.options ?? []
   if (group.kind === 'date') {
     return (
-      <TextInput
-        type="date"
+      <DateField
         size="sm"
         aria-label={group.label}
         value={group.value}
         min={group.min}
         max={group.max}
-        onChange={(e) => group.onChange(e.currentTarget.value)}
+        onChange={(v) => group.onChange(v)}
+        // The filter already sits in a popover; a second one in a portal
+        // would count as a click outside and close it.
+        popoverProps={{ withinPortal: false }}
         rightSection={
           group.value ? (
             <CloseButton size="sm" aria-label={group.label} onClick={() => group.onChange('')} />

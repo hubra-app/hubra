@@ -1,5 +1,5 @@
 import { Fragment, useState } from 'react'
-import { FilterBar } from '@hubra/ui'
+import { DateField, DateTimeField, FilterBar, TimeField } from '@hubra/ui'
 import { useSearchParams } from 'react-router-dom'
 import {
   Button,
@@ -567,8 +567,7 @@ export function EventsTab() {
       </Field>
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
         <Field label={t('common.date', 'Datum')}>
-          <TextInput
-            type="date"
+          <DateField
             {...form.getInputProps('date')}
             disabled={followingScope}
           />
@@ -577,8 +576,7 @@ export function EventsTab() {
           label={t('events.endDate', 'Enddatum') + ' (optional)'}
           hint={followingScope ? t('events.perDateHint', 'Gilt nur für diesen Termin.') : undefined}
         >
-          <TextInput
-            type="date"
+          <DateField
             min={form.values.date || undefined}
             {...form.getInputProps('endDate')}
             disabled={followingScope}
@@ -593,19 +591,17 @@ export function EventsTab() {
               : undefined
           }
         >
-          <TextInput
-            type="time"
+          <TimeField
             {...form.getInputProps('timeFrom')}
-            onChange={(e) => {
-              form.setFieldValue('timeFrom', e.currentTarget.value)
+            onChange={(v) => {
+              form.setFieldValue('timeFrom', v)
               // A picked time replaces the old text for good.
               form.setFieldValue('timeText', '')
             }}
           />
         </Field>
         <Field label={t('events.timeTo', 'Ende') + ' (optional)'}>
-          <TextInput
-            type="time"
+          <TimeField
             {...form.getInputProps('timeTo')}
           />
         </Field>
@@ -659,8 +655,7 @@ export function EventsTab() {
           label={t('events.registrationDeadline', 'Anmeldeschluss') + ' (optional)'}
           hint={followingScope ? t('events.perDateHint', 'Gilt nur für diesen Termin.') : undefined}
         >
-          <TextInput
-            type="datetime-local"
+          <DateTimeField
             {...form.getInputProps('registrationDeadline')}
             disabled={followingScope}
           />
@@ -673,8 +668,7 @@ export function EventsTab() {
               : t('events.cancellationDeadlineHint', 'Danach kann man sich nicht mehr selbst abmelden.')
           }
         >
-          <TextInput
-            type="datetime-local"
+          <DateTimeField
             {...form.getInputProps('cancellationDeadline')}
             disabled={followingScope}
           />
