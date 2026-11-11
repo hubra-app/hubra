@@ -6,7 +6,7 @@
 {%- endmacro -%}
 {%- macro item(url, title, detail) -%}
 <p style="margin: 0 0 12px; font-family: {{ font_body }}; font-size: 15px; line-height: 22px; color: #1a1625;">
-  {% if url %}<a href="{{ url }}" target="_blank" style="color: #7441e0; font-weight: 600; text-decoration: none;">{{ title }}</a>{% else %}<strong>{{ title }}</strong>{% endif %}
+  {% if url %}<a href="{{ url }}" target="_blank" style="color: {{ brand_link }}; font-weight: 600; text-decoration: none;">{{ title }}</a>{% else %}<strong>{{ title }}</strong>{% endif %}
   {%- if detail %}<br /><span style="font-size: 13px; line-height: 20px; color: #5e5873;">{{ detail }}</span>{% endif %}
 </p>
 {%- endmacro -%}

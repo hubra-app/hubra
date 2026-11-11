@@ -82,6 +82,16 @@ A plugin's frontend can put a component into these places of the club app
 | `invoice.actions` | next to an invoice's buttons: the member's open invoices and the invoice page | `invoice`, `onChange` |
 | `dashboard.stats` | the club overview's numbers row (Dashboard › Übersicht); render a `StatTile` | none |
 
+## Tabs
+
+A plugin can add a tab to a screen of the club app (`tabs` in
+`registerPlugin`, typed as `PluginTab`):
+
+| Screen | Where | Notes |
+| --- | --- | --- |
+| `finance` | Finanzen, `/app/finance/<id>` | `group` puts it under a page tab: `overview`, `invoices`, `bookings`, `planning`, `annual` or `setup` |
+| `events` | Anlässe, `/app/operations/events/<id>` | after the event list, before Anwesenheit; Booking's Vor Ort lives here |
+
 ## Route paths
 
 Write new plugins with `/api/v1/app/<name>`. A plugin that names the old

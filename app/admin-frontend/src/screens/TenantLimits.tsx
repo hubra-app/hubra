@@ -4,7 +4,6 @@ import {
   Badge,
   Button,
   Group,
-  Modal,
   NumberInput,
   Paper,
   Progress,
@@ -14,6 +13,7 @@ import {
   Text,
   Title,
 } from '@mantine/core'
+import { Modal as SharedModal } from '@/components/ui'
 import { IconAdjustments } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
 import { tr } from '@/lang'
@@ -212,7 +212,45 @@ function LimitsModal({
   }
 
   return (
-    <Modal opened onClose={onClose} title={tr('Limits anpassen', 'Adjust limits')} size="lg">
+    <SharedModal
+      open
+      onClose={onClose}
+      title={tr('Limits anpassen', 'Adjust limits')}
+      wide
+      onSubmit={async (e) => {
+        e?.preventDefault()
+        // Enter submits too, so the button's rule applies here as well.
+        if (invalid) return
+        setSaving(true)
+        try {
+          await onSave({
+            ...(Object.fromEntries(
+              KINDS.map((k) => [
+                k,
+                mode[k] === 'plan' ? 'plan' : mode[k] === 'none' ? null : Number(value[k]),
+              ]),
+            ) as Record<LimitKind, number | null | 'plan'>),
+            ...(file ? { file_mb: fileMode === 'plan' ? 'plan' : Number(fileValue) } : {}),
+          })
+        } finally {
+          setSaving(false)
+        }
+      }}
+      footer={
+        <>
+          <Button variant="default" onClick={onClose}>
+            {tr('Abbrechen', 'Cancel')}
+          </Button>
+          <Button
+            loading={saving}
+            disabled={invalid}
+            type="submit"
+          >
+            {tr('Speichern', 'Save')}
+          </Button>
+        </>
+      }
+    >
       <Stack gap="lg">
         {KINDS.map((k) => (
           <Stack key={k} gap={6}>
@@ -283,34 +321,7 @@ function LimitsModal({
             )}
           </Stack>
         )}
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose}>
-            {tr('Abbrechen', 'Cancel')}
-          </Button>
-          <Button
-            loading={saving}
-            disabled={invalid}
-            onClick={async () => {
-              setSaving(true)
-              try {
-                await onSave({
-                  ...(Object.fromEntries(
-                    KINDS.map((k) => [
-                      k,
-                      mode[k] === 'plan' ? 'plan' : mode[k] === 'none' ? null : Number(value[k]),
-                    ]),
-                  ) as Record<LimitKind, number | null | 'plan'>),
-                  ...(file ? { file_mb: fileMode === 'plan' ? 'plan' : Number(fileValue) } : {}),
-                })
-              } finally {
-                setSaving(false)
-              }
-            }}
-          >
-            {tr('Speichern', 'Save')}
-          </Button>
-        </Group>
       </Stack>
-    </Modal>
+    </SharedModal>
   )
 }

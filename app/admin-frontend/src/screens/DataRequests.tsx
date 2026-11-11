@@ -5,7 +5,6 @@ import {
   Badge,
   Button,
   Group,
-  Modal,
   Paper,
   SegmentedControl,
   Select,
@@ -16,6 +15,8 @@ import {
   Textarea,
   Title,
 } from '@mantine/core'
+import { DateField } from '@hubra/ui'
+import { Modal as SharedModal } from '@/components/ui'
 import {
   IconAlertTriangle,
   IconCheck,
@@ -397,7 +398,49 @@ function NewRequestModal({
   const ok = clubId != null && (member || name.trim() || email.trim())
 
   return (
-    <Modal opened onClose={onClose} title={tr('Anfrage erfassen', 'Record a request')} size="lg">
+    <SharedModal
+      open
+      onClose={onClose}
+      title={tr('Anfrage erfassen', 'Record a request')}
+      wide
+      onSubmit={async (e) => {
+        e?.preventDefault()
+        // Enter submits too, so the button's rule applies here as well.
+        if (!ok) return
+        setSaving(true)
+        try {
+          await createDataRequest(clubId!, {
+            kind,
+            member_id: member ? Number(member) : null,
+            subject_name: name,
+            subject_email: email,
+            received_on: received,
+            received_via: via,
+            note,
+          })
+          notify('success', tr('Anfrage erfasst', 'Request recorded'))
+          onSaved()
+        } catch (err) {
+          notify('error', tr('Speichern fehlgeschlagen', 'Could not save'), errorText(err))
+        } finally {
+          setSaving(false)
+        }
+      }}
+      footer={
+        <>
+          <Button variant="default" onClick={onClose}>
+            {tr('Abbrechen', 'Cancel')}
+          </Button>
+          <Button
+            loading={saving}
+            disabled={!ok}
+            type="submit"
+          >
+            {tr('Erfassen', 'Record')}
+          </Button>
+        </>
+      }
+    >
       <Stack gap="md">
         {!tenantId && (
           <Select
@@ -455,15 +498,14 @@ function NewRequestModal({
             value={email}
             onChange={(e) => setEmail(e.currentTarget.value)}
           />
-          <TextInput
-            type="date"
+          <DateField
             label={tr('Eingegangen am', 'Received on')}
             description={tr(
               'Die Frist von 30 Tagen läuft ab hier',
               'The 30-day deadline starts here',
             )}
             value={received}
-            onChange={(e) => setReceived(e.currentTarget.value)}
+            onChange={(v) => setReceived(v)}
           />
           <TextInput
             label={tr('Eingegangen über', 'Received via')}
@@ -481,39 +523,8 @@ function NewRequestModal({
           value={note}
           onChange={(e) => setNote(e.currentTarget.value)}
         />
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose}>
-            {tr('Abbrechen', 'Cancel')}
-          </Button>
-          <Button
-            loading={saving}
-            disabled={!ok}
-            onClick={async () => {
-              setSaving(true)
-              try {
-                await createDataRequest(clubId!, {
-                  kind,
-                  member_id: member ? Number(member) : null,
-                  subject_name: name,
-                  subject_email: email,
-                  received_on: received,
-                  received_via: via,
-                  note,
-                })
-                notify('success', tr('Anfrage erfasst', 'Request recorded'))
-                onSaved()
-              } catch (err) {
-                notify('error', tr('Speichern fehlgeschlagen', 'Could not save'), errorText(err))
-              } finally {
-                setSaving(false)
-              }
-            }}
-          >
-            {tr('Erfassen', 'Record')}
-          </Button>
-        </Group>
       </Stack>
-    </Modal>
+    </SharedModal>
   )
 }
 
@@ -529,7 +540,27 @@ function PickMemberModal({
   const { options } = useMemberOptions(r.tenant_id)
   const [member, setMember] = useState<string | null>(null)
   return (
-    <Modal opened onClose={onClose} title={tr('Mitglied zuordnen', 'Find the member')}>
+    <SharedModal
+      open
+      onClose={onClose}
+      title={tr('Mitglied zuordnen', 'Find the member')}
+      onSubmit={(e) => {
+        e?.preventDefault()
+        // Enter submits too, so the button's rule applies here as well.
+        if (!member) return
+        onSave(Number(member))
+      }}
+      footer={
+        <>
+          <Button variant="default" onClick={onClose}>
+            {tr('Abbrechen', 'Cancel')}
+          </Button>
+          <Button disabled={!member} type="submit">
+            {tr('Zuordnen', 'Set')}
+          </Button>
+        </>
+      }
+    >
       <Stack gap="md">
         <Text size="sm" c="dimmed">
           {tr(
@@ -544,16 +575,8 @@ function PickMemberModal({
           onChange={setMember}
           aria-label={tr('Mitglied', 'Member')}
         />
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose}>
-            {tr('Abbrechen', 'Cancel')}
-          </Button>
-          <Button disabled={!member} onClick={() => onSave(Number(member))}>
-            {tr('Zuordnen', 'Set')}
-          </Button>
-        </Group>
       </Stack>
-    </Modal>
+    </SharedModal>
   )
 }
 
@@ -570,13 +593,39 @@ function CloseModal({
   const [saving, setSaving] = useState(false)
   const reject = status === 'rejected'
   return (
-    <Modal
-      opened
+    <SharedModal
+      open
       onClose={onClose}
       title={
         reject
           ? tr('Anfrage ablehnen', 'Reject the request')
           : tr('Als erledigt vermerken', 'Mark as done')
+      }
+      onSubmit={async (e) => {
+        e?.preventDefault()
+        // Enter submits too, so the button's rule applies here as well.
+        if (reject && !outcome.trim()) return
+        setSaving(true)
+        try {
+          await onSave(outcome)
+        } finally {
+          setSaving(false)
+        }
+      }}
+      footer={
+        <>
+          <Button variant="default" onClick={onClose}>
+            {tr('Abbrechen', 'Cancel')}
+          </Button>
+          <Button
+            loading={saving}
+            color={reject ? 'gray' : 'green'}
+            disabled={reject && !outcome.trim()}
+            type="submit"
+          >
+            {reject ? tr('Ablehnen', 'Reject') : tr('Erledigt', 'Done')}
+          </Button>
+        </>
       }
     >
       <Stack gap="md">
@@ -600,28 +649,8 @@ function CloseModal({
           value={outcome}
           onChange={(e) => setOutcome(e.currentTarget.value)}
         />
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose}>
-            {tr('Abbrechen', 'Cancel')}
-          </Button>
-          <Button
-            loading={saving}
-            color={reject ? 'gray' : 'green'}
-            disabled={reject && !outcome.trim()}
-            onClick={async () => {
-              setSaving(true)
-              try {
-                await onSave(outcome)
-              } finally {
-                setSaving(false)
-              }
-            }}
-          >
-            {reject ? tr('Ablehnen', 'Reject') : tr('Erledigt', 'Done')}
-          </Button>
-        </Group>
       </Stack>
-    </Modal>
+    </SharedModal>
   )
 }
 
@@ -640,29 +669,13 @@ function DeleteModal({
   const [confirm, setConfirm] = useState('')
   const [saving, setSaving] = useState(false)
   return (
-    <Modal
-      opened
+    <SharedModal
+      open
       onClose={onClose}
       title={tr('Daten im Verein löschen', 'Delete the data in the club')}
-      size="lg"
-    >
-      <Stack gap="md">
-        <Alert color="red" variant="light" icon={<IconAlertTriangle size={18} />}>
-          {tr(
-            `Mitglied #${r.member_id} verlässt ${r.tenant_name} und wird gelöscht: Profil im Verein, Anmeldungen, Gruppen, Mitteilungen, Mailbox. Rechnungen und Buchungen bleiben ohne Namen (Aufbewahrungspflicht), Audit-Einträge ohne Person. Das lässt sich nicht rückgängig machen. Das Hubra-Konto bleibt; es gehört der Person.`,
-            `Member #${r.member_id} leaves ${r.tenant_name} and is deleted: club profile, registrations, groups, notifications, mailbox. Invoices and bookings stay without the name (records must be kept), audit entries without the person. This cannot be undone. The Hubra account stays; it belongs to the person.`,
-          )}
-        </Alert>
-        <TextInput
-          label={tr(
-            'Zum Bestätigen den Kurznamen des Vereins eintippen',
-            'Type the club’s short name to confirm',
-          )}
-          placeholder={slug}
-          value={confirm}
-          onChange={(e) => setConfirm(e.currentTarget.value)}
-        />
-        <Group justify="flex-end">
+      wide
+      footer={
+        <>
           <Button variant="default" onClick={onClose}>
             {tr('Abbrechen', 'Cancel')}
           </Button>
@@ -685,8 +698,26 @@ function DeleteModal({
           >
             {tr('Endgültig löschen', 'Delete for good')}
           </Button>
-        </Group>
+        </>
+      }
+    >
+      <Stack gap="md">
+        <Alert color="red" variant="light" icon={<IconAlertTriangle size={18} />}>
+          {tr(
+            `Mitglied #${r.member_id} verlässt ${r.tenant_name} und wird gelöscht: Profil im Verein, Anmeldungen, Gruppen, Mitteilungen, Mailbox. Rechnungen und Buchungen bleiben ohne Namen (Aufbewahrungspflicht), Audit-Einträge ohne Person. Das lässt sich nicht rückgängig machen. Das Hubra-Konto bleibt; es gehört der Person.`,
+            `Member #${r.member_id} leaves ${r.tenant_name} and is deleted: club profile, registrations, groups, notifications, mailbox. Invoices and bookings stay without the name (records must be kept), audit entries without the person. This cannot be undone. The Hubra account stays; it belongs to the person.`,
+          )}
+        </Alert>
+        <TextInput
+          label={tr(
+            'Zum Bestätigen den Kurznamen des Vereins eintippen',
+            'Type the club’s short name to confirm',
+          )}
+          placeholder={slug}
+          value={confirm}
+          onChange={(e) => setConfirm(e.currentTarget.value)}
+        />
       </Stack>
-    </Modal>
+    </SharedModal>
   )
 }

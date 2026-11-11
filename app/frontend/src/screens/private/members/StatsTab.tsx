@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Group, NumberInput, Paper, SimpleGrid, Stack, Text, TextInput } from "@mantine/core";
+import { Button, Group, NumberInput, Paper, SimpleGrid, Stack, Text } from "@mantine/core";
+import { DateField } from '@hubra/ui'
 import { IconDownload } from "@tabler/icons-react";
 import { useT } from "@/locales/i18n";
 import { useToast } from "@/context/AppContext";
@@ -81,12 +82,11 @@ export function StatsTab() {
     <Stack gap="md">
       <Group align="flex-end" justify="space-between" wrap="wrap">
         <Group align="flex-end" gap="sm">
-          <TextInput
-            type="date"
+          <DateField
             label={t("members.stats.on", "Stichtag")}
             description={t("members.stats.onHint", "Wer an diesem Tag Mitglied war")}
             value={on}
-            onChange={(e) => setOn(e.currentTarget.value)}
+            onChange={(v) => setOn(v)}
           />
           <NumberInput
             w={120}

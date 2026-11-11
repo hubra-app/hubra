@@ -7,7 +7,6 @@ import {
   Badge,
   Button,
   Group,
-  Modal,
   NumberInput,
   Paper,
   Select,
@@ -20,6 +19,8 @@ import {
   Textarea,
   Title,
 } from '@mantine/core'
+import { DateField } from '@hubra/ui'
+import { Modal as SharedModal } from '@/components/ui'
 import {
   IconExternalLink,
   IconInfoCircle,
@@ -476,7 +477,37 @@ function BillingModal({
   )
 
   return (
-    <Modal opened onClose={onClose} title={tr('Abrechnung bearbeiten', 'Edit billing')} size="xl">
+    <SharedModal
+      open
+      onClose={onClose}
+      title={tr('Abrechnung bearbeiten', 'Edit billing')}
+      wide
+      onSubmit={async (e) => {
+        e?.preventDefault()
+        // Enter submits too, so the button's rule applies here as well.
+        if (invalid) return
+        setSaving(true)
+        try {
+          await onSave(t, plan)
+        } finally {
+          setSaving(false)
+        }
+      }}
+      footer={
+        <>
+          <Button variant="default" onClick={onClose}>
+            {tr('Abbrechen', 'Cancel')}
+          </Button>
+          <Button
+            loading={saving}
+            disabled={invalid}
+            type="submit"
+          >
+            {tr('Speichern', 'Save')}
+          </Button>
+        </>
+      }
+    >
       <Stack gap="md">
         <SimpleGrid cols={{ base: 1, sm: 2 }}>
           <Select
@@ -512,18 +543,16 @@ function BillingModal({
             }))}
           />
           {t.status === 'trialing' ? (
-            <TextInput
-              type="date"
+            <DateField
               label={tr('Testphase bis', 'Trial until')}
               value={t.trial_ends ?? ''}
-              onChange={(e) => set('trial_ends', e.currentTarget.value || null)}
+              onChange={(v) => set('trial_ends', v || null)}
             />
           ) : (
-            <TextInput
-              type="date"
+            <DateField
               label={tr('Periode bis', 'Period ends')}
               value={t.period_end ?? ''}
-              onChange={(e) => set('period_end', e.currentTarget.value || null)}
+              onChange={(v) => set('period_end', v || null)}
             />
           )}
           <NumberInput
@@ -601,12 +630,11 @@ function BillingModal({
                 }
                 onChange={(e) => set('sponsor_name', e.currentTarget.value)}
               />
-              <TextInput
-                type="date"
+              <DateField
                 label={tr('Gesponsert bis', 'Sponsored until')}
                 description={tr('Leer: offen', 'Empty: open-ended')}
                 value={t.sponsored_until ?? ''}
-                onChange={(e) => set('sponsored_until', e.currentTarget.value || null)}
+                onChange={(v) => set('sponsored_until', v || null)}
               />
               <TextInput
                 label={tr('Notiz zum Sponsoring', 'Sponsorship note')}
@@ -771,27 +799,7 @@ function BillingModal({
           value={t.note}
           onChange={(e) => set('note', e.currentTarget.value)}
         />
-
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose}>
-            {tr('Abbrechen', 'Cancel')}
-          </Button>
-          <Button
-            loading={saving}
-            disabled={invalid}
-            onClick={async () => {
-              setSaving(true)
-              try {
-                await onSave(t, plan)
-              } finally {
-                setSaving(false)
-              }
-            }}
-          >
-            {tr('Speichern', 'Save')}
-          </Button>
-        </Group>
       </Stack>
-    </Modal>
+    </SharedModal>
   )
 }

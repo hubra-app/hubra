@@ -5,7 +5,6 @@ import {
   Button,
   Group,
   Loader,
-  Modal,
   NumberInput,
   Paper,
   PasswordInput,
@@ -20,6 +19,7 @@ import {
 import { IconBulb, IconSettings } from '@tabler/icons-react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { moduleNavIcon } from '@/components/Shell/nav'
+import { Modal as FormModal } from '@/components/ui'
 import { useT } from '@/locales/i18n'
 import { useAuth, useToast } from '@/context/AppContext'
 import { PluginSlot } from '@/plugins'
@@ -390,17 +390,16 @@ function ModuleSettingsModal({
   }
 
   return (
-    <Modal opened onClose={onClose} title={module.name} centered>
-      <Stack gap="md">
-        {module.settings.map((field) => (
-          <SettingInput
-            key={field.key}
-            field={field}
-            value={values[field.key] ?? null}
-            onChange={(v) => setValues((prev) => ({ ...prev, [field.key]: v }))}
-          />
-        ))}
-        <Group justify="flex-end">
+    <FormModal
+      open
+      onClose={onClose}
+      title={module.name}
+      onSubmit={(e) => {
+        e?.preventDefault()
+        if (!busy) void save()
+      }}
+      footer={
+        <>
           <PluginSlot
             name="settings.module.actions"
             props={{ code: module.code, configured: module.configured, name: module.name }}
@@ -408,12 +407,21 @@ function ModuleSettingsModal({
           <Button variant="default" onClick={onClose}>
             {t('common.cancel', 'Abbrechen')}
           </Button>
-          <Button onClick={save} loading={busy}>
+          <Button type="submit" loading={busy}>
             {t('common.save', 'Speichern')}
           </Button>
-        </Group>
-      </Stack>
-    </Modal>
+        </>
+      }
+    >
+      {module.settings.map((field) => (
+        <SettingInput
+          key={field.key}
+          field={field}
+          value={values[field.key] ?? null}
+          onChange={(v) => setValues((prev) => ({ ...prev, [field.key]: v }))}
+        />
+      ))}
+    </FormModal>
   )
 }
 

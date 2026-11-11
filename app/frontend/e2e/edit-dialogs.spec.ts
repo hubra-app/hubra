@@ -8,7 +8,7 @@ const DIALOGS = [
   { path: 'groups', button: 'Gruppe hinzufügen', pair: ['Name der Gruppe', 'Gruppenleitung'] },
   { path: 'members/functions', button: 'Hinzufügen', pair: ['Name', 'Max. Anzahl Personen'] },
   { path: 'members/tiers', button: 'Neue Stufe', pair: ['Abrechnung', 'Preis (CHF)'] },
-  { path: 'operations/events', module: 'events', button: 'Anlass hinzufügen', pair: ['Datum', 'Zeit (optional)'] },
+  { path: 'operations/events', module: 'events', button: 'Anlass hinzufügen', pair: ['Datum', 'Enddatum (optional)'] },
   { path: 'finance/external-parties', button: 'Neue Partei', pair: ['Name', 'E-Mail'] },
   { path: 'finance/invoices', button: 'Rechnung ausstellen', pair: ['Empfängertyp', 'Mitglied'] },
 ]

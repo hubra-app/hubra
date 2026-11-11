@@ -50,6 +50,7 @@ export const qk = {
   memberClubs: ['federation', 'clubs'] as const,
   eventPending: (id: string) => ['events', id, 'pending'] as const,
   eventRoll: (id: string) => ['events', id, 'roll'] as const,
+  eventParticipants: (id: string) => ['events', id, 'participants'] as const,
   attendance: ['attendance'] as const,
   trialsAll: ['trials'] as const,
   trials: (past: boolean) => ['trials', past] as const,
@@ -77,6 +78,8 @@ export const qk = {
     fee: (id: string) => ['member-fee', id] as const,
   },
   applications: ['applications'] as const,
+  poster: (kind: string, source: string) => ['poster', kind, source] as const,
+  signupSources: ['signup-sources'] as const,
   leaveRequests: ['leave-requests'] as const,
   groups: {
     all: ['groups'] as const,

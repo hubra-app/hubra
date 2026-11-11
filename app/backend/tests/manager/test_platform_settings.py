@@ -131,6 +131,26 @@ def test_club_mail_uses_the_platform_sender_with_club_reply_to(db):
     assert kwargs["route"] is None
 
 
+def test_club_mail_without_a_sender_name_carries_the_clubs_name(db):
+    from flask import g
+
+    from hubra.core.models.tenant import Tenant
+
+    platform_settings.set_many(
+        {
+            "mail.system.sender_email": "noreply@hubra.example",
+            "mail.system.sender_name": "Hubra",
+        }
+    )
+    db.session.commit()
+    g.tenant = Tenant(name="Alpha Club", slug="alpha")
+    try:
+        assert _send().call_args.args[3] == "Alpha Club"
+        assert _send(system=True).call_args.args[3] == "Hubra"
+    finally:
+        g.tenant = None
+
+
 def test_club_with_its_own_mailbox_keeps_sending_as_itself(db):
     _club_sender(db)
     platform_settings.set_many({"mail.system.sender_email": "noreply@hubra.example"})

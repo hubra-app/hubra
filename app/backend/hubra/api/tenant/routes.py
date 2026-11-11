@@ -1732,7 +1732,12 @@ def join_club(slug: str):
             403, "JOIN_REQUESTS_CLOSED", "This club takes new members by invite only"
         )
 
-    wants_tier_id = (request.get_json(silent=True) or {}).get("wantsTierId")
+    from hubra.core.services import signup_source
+
+    body = request.get_json(silent=True) or {}
+    wants_tier_id = body.get("wantsTierId")
+    # The join poster's tag (?src= on the club page), if they came from one.
+    source = signup_source.clean(body.get("source"))
     if wants_tier_id is not None and wants_tier_id not in {
         t["id"] for t in _club_tiers(tenant.id)
     }:
@@ -1745,6 +1750,7 @@ def join_club(slug: str):
             user.last_name or "",
             user.email,
             wants_tier_id,
+            source=source,
         )
         db.session.commit()
     finally:

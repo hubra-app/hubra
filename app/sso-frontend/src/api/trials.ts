@@ -1,4 +1,5 @@
 import { apiFetch } from '@hubra/api-client'
+import { posterSource } from '@/posterSource'
 
 /** A training that takes trial bookings, as the club's trial page lists it. */
 export interface TrialEvent {
@@ -41,11 +42,14 @@ export interface TrialInput {
 const base = (slug: string) => `/app/events/public/${encodeURIComponent(slug)}/trials`
 
 export function getTrialPage(slug: string): Promise<TrialPage> {
+  posterSource(slug) // keep a poster's ?src= for the booking
   return apiFetch(base(slug))
 }
 
 export function bookTrial(slug: string, input: TrialInput): Promise<{ status: 'pending' }> {
-  return apiFetch(base(slug), { method: 'POST', body: JSON.stringify(input) })
+  // The trial poster the person came from, if any.
+  const source = posterSource(slug)
+  return apiFetch(base(slug), { method: 'POST', body: JSON.stringify(source ? { ...input, source } : input) })
 }
 
 export function confirmTrial(slug: string, token: string): Promise<TrialBooking> {

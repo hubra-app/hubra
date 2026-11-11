@@ -323,3 +323,35 @@ def test_list_invoices_for_one_member(client, auth_headers, seeded_db, db):
 
     bad = client.get("/api/v1/finance/invoices?member_id=x", headers=auth_headers)
     assert bad.status_code == 400
+
+
+def test_open_invoice_can_be_edited_paid_one_is_locked(client, auth_headers, seeded_db):
+    """An open invoice takes a new amount, due date and text; once paid it
+    is fixed until the payment is taken back."""
+    created = client.post(
+        "/api/v1/finance/invoices",
+        json=_invoice_payload(seeded_db["admin"].id),
+        headers=auth_headers,
+    )
+    url = f"/api/v1/finance/invoices/{created.get_json()['id']}"
+    due = (date.today() + timedelta(days=30)).isoformat()
+    resp = client.patch(
+        url,
+        json={"amount": 60.5, "due": due, "description": "Kurs Holz"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200, resp.json
+    assert resp.json["amount"] == 60.5
+    assert resp.json["due"] == due
+    assert resp.json["description"] == "Kurs Holz"
+
+    client.patch(url, json={"status": "Paid"}, headers=auth_headers)
+    resp = client.patch(url, json={"amount": 10}, headers=auth_headers)
+    assert resp.status_code == 409
+    assert client.get(url, headers=auth_headers).json["amount"] == 60.5
+
+    resp = client.patch(
+        url, json={"status": "Open", "amount": 10}, headers=auth_headers
+    )
+    assert resp.status_code == 200
+    assert resp.json["amount"] == 10

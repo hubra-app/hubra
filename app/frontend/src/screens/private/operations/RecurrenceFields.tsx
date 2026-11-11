@@ -1,4 +1,5 @@
-import { Checkbox, Chip, Group, Select, Text, TextInput, UnstyledButton } from '@mantine/core'
+import { Checkbox, Chip, Group, Select, Text, UnstyledButton } from '@mantine/core'
+import { DateField } from '@hubra/ui'
 import { useT } from '@/locales/i18n'
 import { Field } from '@/components/ui'
 import { defaultRepeat, ruleDates, type RepeatState } from './recurrence'
@@ -88,11 +89,10 @@ export function RecurrenceFields({
               />
             </Field>
             <Field label={t('events.repeat.until', 'Bis')}>
-              <TextInput
-                type="date"
+              <DateField
                 value={value.until}
                 min={start}
-                onChange={(e) => set({ until: e.currentTarget.value })}
+                onChange={(v) => set({ until: v })}
               />
             </Field>
           </Group>

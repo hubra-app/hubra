@@ -12,7 +12,6 @@ import {
   Text,
   Title,
   Alert,
-  Modal,
   Table,
   TextInput,
 } from '@mantine/core'
@@ -36,7 +35,7 @@ import {
   addTenantMember,
 } from '@/api/tenants'
 import { useAdmin } from '@/context/AdminContext'
-import { EmptyState, StatGrid, StatTile } from '@/components/ui'
+import { EmptyState, StatGrid, StatTile, Modal as SharedModal } from '@/components/ui'
 import { ImpersonateModal } from '@/screens/ImpersonateModal'
 import { TenantModules } from '@/screens/TenantModules'
 import { ClubAdminsPanel } from '@/screens/ClubAdmins'
@@ -355,26 +354,12 @@ export function TenantDetail() {
         )}
       </Paper>
 
-      <Modal
-        opened={deleteOpen}
+      <SharedModal
+        open={deleteOpen}
         onClose={() => setDeleteOpen(false)}
         title={tr('Verein löschen', 'Delete club')}
-        size="md"
-      >
-        <Stack gap={16}>
-          <Alert color="red" variant="light" icon={<IconTrash size={16} />}>
-            {tr(
-              `«${tenant.name}» wird archiviert und aus den Listen ausgeblendet. Die Daten bleiben erhalten.`,
-              `"${tenant.name}" will be archived and hidden from the lists. Its data is kept.`,
-            )}
-          </Alert>
-          <Text size="sm" c="dimmed">
-            {tr(
-              'Endgültig löschen entfernt den Verein mit allen Daten. Das kann nicht rückgängig gemacht werden.',
-              'Delete permanently removes the club with all its data. This cannot be undone.',
-            )}
-          </Text>
-          <Group justify="flex-end" gap={8}>
+        footer={
+          <>
             <Button variant="default" onClick={() => setDeleteOpen(false)}>
               {tr('Abbrechen', 'Cancel')}
             </Button>
@@ -396,9 +381,24 @@ export function TenantDetail() {
             >
               {tr('Endgültig löschen', 'Delete permanently')}
             </Button>
-          </Group>
+          </>
+        }
+      >
+        <Stack gap={16}>
+          <Alert color="red" variant="light" icon={<IconTrash size={16} />}>
+            {tr(
+              `«${tenant.name}» wird archiviert und aus den Listen ausgeblendet. Die Daten bleiben erhalten.`,
+              `"${tenant.name}" will be archived and hidden from the lists. Its data is kept.`,
+            )}
+          </Alert>
+          <Text size="sm" c="dimmed">
+            {tr(
+              'Endgültig löschen entfernt den Verein mit allen Daten. Das kann nicht rückgängig gemacht werden.',
+              'Delete permanently removes the club with all its data. This cannot be undone.',
+            )}
+          </Text>
         </Stack>
-      </Modal>
+      </SharedModal>
 
       <ImpersonateModal
         opened={impersonateOpen}
@@ -407,15 +407,39 @@ export function TenantDetail() {
         tenantName={tenant.name}
       />
 
-      <Modal
-        opened={addMemberOpen}
+      <SharedModal
+        open={addMemberOpen}
         onClose={() => {
           setAddMemberOpen(false)
           setMemberError('')
           setMemberEmail('')
         }}
         title={tr('Person zum Verein hinzufügen', 'Add a person to the club')}
-        size="md"
+        onSubmit={(e) => {
+          e?.preventDefault()
+          if (!memberEmail.trim()) {
+            setMemberError(tr('E-Mail-Adresse ist erforderlich', 'Email is required'))
+            return
+          }
+          addMemberMutation.mutate()
+        }}
+        footer={
+          <>
+            <Button
+              variant="default"
+              onClick={() => {
+                setAddMemberOpen(false)
+                setMemberError('')
+                setMemberEmail('')
+              }}
+            >
+              {tr('Abbrechen', 'Cancel')}
+            </Button>
+            <Button type="submit" loading={addMemberMutation.isPending}>
+              {tr('Hinzufügen', 'Add')}
+            </Button>
+          </>
+        }
       >
         <Stack gap={16}>
           {memberError && (
@@ -431,32 +455,8 @@ export function TenantDetail() {
             placeholder="name@example.ch"
             description={tr('Die Person braucht bereits ein Hubra-Konto. Sie wird als Mitglied mit der Standardrolle hinzugefügt.', 'The person needs a Hubra account already. They are added as a member with the default role.')}
           />
-          <Group justify="flex-end">
-            <Button
-              variant="default"
-              onClick={() => {
-                setAddMemberOpen(false)
-                setMemberError('')
-                setMemberEmail('')
-              }}
-            >
-              {tr('Abbrechen', 'Cancel')}
-            </Button>
-            <Button
-              loading={addMemberMutation.isPending}
-              onClick={() => {
-                if (!memberEmail.trim()) {
-                  setMemberError(tr('E-Mail-Adresse ist erforderlich', 'Email is required'))
-                  return
-                }
-                addMemberMutation.mutate()
-              }}
-            >
-              {tr('Hinzufügen', 'Add')}
-            </Button>
-          </Group>
         </Stack>
-      </Modal>
+      </SharedModal>
     </div>
   )
 }

@@ -11,6 +11,7 @@ import {
   Alert,
   Text,
 } from "@mantine/core";
+import { DateTimeField } from '@hubra/ui'
 import { useForm } from "@mantine/form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useT } from "@/locales/i18n";
@@ -374,6 +375,10 @@ export function PollsTab() {
         wide
         title={editTarget ? t("polls.editTitle", "Umfrage bearbeiten") : t("polls.createPoll", "Neue Umfrage")}
         subtitle={editTarget?.question}
+        onSubmit={(e) => {
+          e?.preventDefault();
+          if (!saving) void savePoll();
+        }}
         footer={
           <>
             <Button
@@ -385,7 +390,7 @@ export function PollsTab() {
             >
               {t("common.cancel")}
             </Button>
-            <Button variant="filled" onClick={savePoll} disabled={saving}>
+            <Button variant="filled" type="submit" loading={saving}>
               {editTarget
                 ? t("common.save", 'Speichern')
                 : t("polls.createPoll", 'Neue Umfrage')}
@@ -479,8 +484,7 @@ export function PollsTab() {
               'Automatisch beenden am (optional)',
             )}
           >
-            <TextInput
-              type="datetime-local"
+            <DateTimeField
               {...form.getInputProps("closesAt")}
             />
           </Field>
