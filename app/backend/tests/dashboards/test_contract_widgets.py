@@ -172,3 +172,17 @@ def test_widget_contracts_are_checked(tmp_path):
         provides=(widget_contract("demo.x", "hubra_demo.w:x", label="X"),),
     )
     assert check(ok, spec, {}, set())
+
+
+def test_widgets_follow_module_access(client, plain_member_token, demo, monkeypatch):  # noqa: F811
+    """A club that hides a module from some roles hides its widgets too: not
+    offered, and their data refused (like the module's own API)."""
+    from hubra.core import module_access
+
+    monkeypatch.setattr(module_access, "may_use", lambda member, code: code != "demo")
+    items = client.get(URL, headers=plain_member_token).get_json()["items"]
+    assert not any(w["module"] == "demo" for w in items)
+    resp = client.post(
+        f"{URL}/demo.lent/data", json={"config": {}}, headers=plain_member_token
+    )
+    assert resp.status_code == 403
