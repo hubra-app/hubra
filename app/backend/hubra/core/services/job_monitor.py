@@ -432,11 +432,41 @@ def _shown(value, key: str = ""):
     return value
 
 
+def _param_names(task: str) -> list[str]:
+    """The parameter names of *task*'s positional arguments, so a secret
+    passed by position (``approve_request(1, 2, "<token>")``) is hidden
+    like one passed by keyword. Empty when the task is unknown here."""
+    import inspect
+
+    try:
+        from hubra.core.tasks import celery_app
+
+        fn = celery_app.tasks[task].run
+        params = list(inspect.signature(fn).parameters.values())
+    except Exception:  # noqa: BLE001 - unknown task: nothing to name
+        return []
+    return [
+        p.name
+        for p in params
+        if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD) and p.name != "self"
+    ]
+
+
+def _shown_args(task: str, args: list) -> list:
+    names = _param_names(task)
+    return [
+        _shown(v, names[i] if i < len(names) else "")
+        for i, v in enumerate(list(args)[:20])
+    ]
+
+
 def failure_to_json(entry: dict, names: dict[int, str] | None = None) -> dict:
     payload = entry.get("payload")
     out = {k: v for k, v in entry.items() if k != "payload"}
     out["can_retry"] = payload is not None
-    out["args"] = _shown(payload["args"]) if payload else None
+    out["args"] = (
+        _shown_args(entry.get("task", ""), payload["args"]) if payload else None
+    )
     out["kwargs"] = _shown(payload["kwargs"]) if payload else None
     out["club"] = (names or {}).get(entry.get("tenant_id"))
     return out
