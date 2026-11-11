@@ -76,6 +76,15 @@ confirm under Members › Applications. With it off, they leave at once.
 Leaving keeps their invoices and entries with the club; their account and
 other clubs stay.
 
+**Notice period.** Settings › Mitgliedschaft › **Kündigungsfrist (Monate)**
+and **Austritt auf** hold the rule from your statutes, for example three
+months' notice to the end of the year. A member who wants to leave then
+sees the earliest exit date and their invoices still open (these remain
+due), and you see both on the request under Members › Applications. Asked
+on 10 November with three months to the end of the year, the earliest exit
+is 31 December of the next year. Hubra shows the date; approving the request
+still ends the membership on the day you approve it.
+
 ### Member data
 
 - The member list can be exported as CSV (Members › All members).
@@ -143,6 +152,18 @@ and those signed up hear that it takes place after all.
 
 Right: `events.events.update`, or the person who put the event up, or a role
 held for the event's group.
+
+### One calendar for all clubs
+
+Members who are in several clubs find **Kalender aller Vereine** in their
+account (sign-in › My account › Profile). It is one link for Google, Apple
+or Outlook calendars with the events of every club they are an active
+member of, each named with its club, from 90 days back on. **Nur meine
+Anmeldungen** gives a second link with only the events they signed up for
+(or wait for). A cancelled event stays in the calendar, marked cancelled.
+Anyone with the link sees the events, so **Neuen Link erstellen** makes new
+links and stops the old ones. A club with events switched off, or one the
+person left or is blocked in, drops out of the calendar.
 
 ### Event templates
 
@@ -291,7 +312,7 @@ a year.
 | Branding | Primary, secondary and accent colour |
 | Localization | Time zone, the club's default language, date format |
 | Privacy | Whether all members see the member directory; whether groups are listed publicly |
-| Membership | Leaving needs approval (see [Leaving](#leaving)) |
+| Membership | Leaving needs approval, notice period (see [Leaving](#leaving)) |
 | Announcement Banner | A line shown at the top of every page, for example for the general meeting |
 
 ### Domains

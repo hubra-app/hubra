@@ -624,11 +624,25 @@ def _leave_needs_approval() -> bool:
     return bool(branding.get("leave_requires_approval"))
 
 
+def _leave_terms(member) -> dict:
+    """Notice rule, earliest exit and open invoices, counted from the day
+    the member asked (today when they have not yet)."""
+    from datetime import date
+
+    from hubra.core.services.notice_period import leave_terms
+    from hubra.core.tenant.context import current_tenant
+
+    requested = member.leave_requested_at
+    asked_on = requested.date() if requested else date.today()
+    return leave_terms(member.id, asked_on, current_tenant())
+
+
 def _leave_state(member) -> dict:
     requested = member.leave_requested_at
     return {
         "requiresApproval": _leave_needs_approval(),
         "requestedAt": requested.isoformat() if requested else None,
+        **_leave_terms(member),
     }
 
 
@@ -733,6 +747,7 @@ def list_leave_requests():
                 "email": m.email,
                 "avatarColor": m.avatar_color,
                 "requestedAt": m.leave_requested_at.isoformat(),
+                **_leave_terms(m),
             }
             for m in rows
         ]

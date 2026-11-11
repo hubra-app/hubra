@@ -366,6 +366,38 @@ function ClubSettingsForm({
               checked={form.leave_requires_approval ?? false}
               onChange={(e) => update('leave_requires_approval', e.currentTarget.checked)}
             />
+            <Group mt={14} gap="md" align="flex-end" wrap="wrap">
+              <NumberInput
+                maw={240}
+                label={t('clubSettings.leaveNoticeMonths', 'Kündigungsfrist (Monate)')}
+                min={0}
+                max={24}
+                value={form.leave_notice_months ?? 0}
+                onChange={(v) => typeof v === 'number' && update('leave_notice_months', v)}
+                data-testid="leave-notice-months"
+              />
+              <Select
+                maw={260}
+                label={t('clubSettings.leaveAt', 'Austritt auf')}
+                data={[
+                  { value: 'any', label: t('clubSettings.leaveAtAny', 'Jeden Tag') },
+                  { value: 'month_end', label: t('clubSettings.leaveAtMonth', 'Ende Monat') },
+                  { value: 'quarter_end', label: t('clubSettings.leaveAtQuarter', 'Ende Quartal') },
+                  { value: 'half_year_end', label: t('clubSettings.leaveAtHalfYear', 'Ende Halbjahr') },
+                  { value: 'year_end', label: t('clubSettings.leaveAtYear', 'Ende Jahr') },
+                ]}
+                value={form.leave_at ?? 'any'}
+                onChange={(v) => v && update('leave_at', v as NonNullable<typeof form.leave_at>)}
+                allowDeselect={false}
+                data-testid="leave-at"
+              />
+            </Group>
+            <Text size="xs" c="dimmed" mt={4}>
+              {t(
+                'clubSettings.leaveNoticeHint',
+                'Wie in euren Statuten. Wer austreten möchte, sieht den frühesten Austritt und die noch offenen Rechnungen, ihr seht beides beim Austrittsgesuch.',
+              )}
+            </Text>
             <Switch
               mt={14}
               label={t('clubSettings.joinRequestsOpen', 'Beitrittsanfragen annehmen')}
