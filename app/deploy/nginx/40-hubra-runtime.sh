@@ -77,7 +77,7 @@ if [ "$hsts" = "off" ]; then hsts=""; fi
   echo 'add_header Permissions-Policy "camera=(self), microphone=(), geolocation=(), payment=(), usb=(), serial=(), hid=(), bluetooth=()" always;'
   # HSTS only on HTTPS requests (directly or behind a TLS proxy). The value
   # comes from the map in default.conf and is empty, so not sent, over HTTP.
-  echo 'add_header Strict-Transport-Security $hubra_hsts always;'
+  echo "add_header Strict-Transport-Security \$hubra_hsts always;"
   if [ "$csp" != "off" ]; then
     echo "add_header Content-Security-Policy \"$csp\" always;"
   fi
