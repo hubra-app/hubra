@@ -2163,7 +2163,21 @@
       "approve": "Austritt bestätigen",
       "decline": "Ablehnen",
       "approved": "Austritt bestätigt",
-      "declined": "Austritt abgelehnt"
+      "declined": "Austritt abgelehnt",
+      "at": {
+        "any": "jederzeit",
+        "monthEnd": "auf Ende Monat",
+        "quarterEnd": "auf Ende Quartal",
+        "halfYearEnd": "auf Ende Halbjahr",
+        "yearEnd": "auf Ende Jahr"
+      },
+      "noticeRule": "{{months}} Monate Kündigungsfrist, {{period}}",
+      "earliestExit": "Frühester Austritt: {{date}}",
+      "ownOpenInvoices": "Diese Rechnungen sind noch offen und bleiben geschuldet:",
+      "openInvoices": "Noch offene Rechnungen:",
+      "invoice": "Rechnung",
+      "due": "fällig {{date}}",
+      "overdue": "überfällig"
     },
     "noMembersFilterHint": "Ändere die Suche oder den Filter.",
     "invite": {
@@ -3087,7 +3101,15 @@
       "website": "Website des Vereins",
       "link": "Eure Seite:",
       "widgetHint": "Eure öffentlichen Anlässe auf der eigenen Website: den Code dafür findet ihr unter Anlässe › Kalender abonnieren."
-    }
+    },
+    "leaveNoticeMonths": "Kündigungsfrist (Monate)",
+    "leaveAt": "Austritt auf",
+    "leaveAtAny": "Jeden Tag",
+    "leaveAtMonth": "Ende Monat",
+    "leaveAtQuarter": "Ende Quartal",
+    "leaveAtHalfYear": "Ende Halbjahr",
+    "leaveAtYear": "Ende Jahr",
+    "leaveNoticeHint": "Wie in euren Statuten. Wer austreten möchte, sieht den frühesten Austritt und die noch offenen Rechnungen, ihr seht beides beim Austrittsgesuch."
   },
   "domains": {
     "added": "Domain hinzugefügt",

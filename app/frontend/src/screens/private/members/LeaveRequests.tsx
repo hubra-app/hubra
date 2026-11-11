@@ -6,6 +6,7 @@ import { Avatar } from '@/components/ui'
 import { listLeaveRequests, approveLeave, declineLeave } from '@/api/members'
 import { formatDateTime } from '@/format'
 import { qk } from '@/data/keys'
+import { LeaveTermsNote } from './LeaveTermsNote'
 
 /* ── Requests to leave (clubs that approve them) ───────── */
 export function LeaveRequests() {
@@ -63,6 +64,9 @@ export function LeaveRequests() {
             <div style={{ fontSize: 'var(--mantine-font-size-sm)', fontWeight: 600 }}>{r.name}</div>
             <div style={{ fontSize: 'var(--mantine-font-size-xs)', color: 'var(--hb-text-2)' }}>
               {r.email} · {t('members.leave.wantsToLeave', 'möchte austreten')}
+            </div>
+            <div style={{ marginTop: 6 }}>
+              <LeaveTermsNote terms={r} own={false} />
             </div>
           </div>
           <span className="num" style={{ fontSize: 'var(--mantine-font-size-xs)', color: 'var(--hb-text-3)' }}>

@@ -4,6 +4,10 @@ export interface ClubSettings {
   club_name?: string
   /** Members ask to leave and an admin approves (off: they leave at once). */
   leave_requires_approval?: boolean
+  /** Notice period from the statutes, in months (0: none). */
+  leave_notice_months?: number | null
+  /** Leaving takes effect at the end of this period. */
+  leave_at?: 'any' | 'month_end' | 'quarter_end' | 'half_year_end' | 'year_end' | null
   /** Off: the club takes new members by invite only. */
   join_requests_open?: boolean
   /** The club's public page on the join portal (off by default). */
