@@ -4,7 +4,6 @@ import {
   Badge,
   Button,
   Group,
-  Modal,
   MultiSelect,
   Paper,
   SegmentedControl,
@@ -15,6 +14,7 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
+import { Modal as SharedModal } from '@/components/ui'
 import { IconCalendarTime } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
 import { formatDateTime } from '@/format'
@@ -250,7 +250,28 @@ function PlanModal({
   }
 
   return (
-    <Modal opened onClose={onClose} title={tr('Wartung planen', 'Plan maintenance')} size="lg">
+    <SharedModal
+      open
+      onClose={onClose}
+      title={tr('Wartung planen', 'Plan maintenance')}
+      wide
+      onSubmit={(e) => {
+        e?.preventDefault()
+        // Enter submits too, so the button's rule applies here as well.
+        if (invalid) return
+        void save()
+      }}
+      footer={
+        <>
+          <Button variant="default" onClick={onClose}>
+            {tr('Abbrechen', 'Cancel')}
+          </Button>
+          <Button color="orange" loading={saving} disabled={invalid} type="submit">
+            {tr('Planen', 'Plan')}
+          </Button>
+        </>
+      }
+    >
       <Stack gap="md">
         <Group grow align="flex-start" wrap="wrap">
           <TextInput
@@ -312,15 +333,7 @@ function PlanModal({
           onChange={(e) => setMessage(e.currentTarget.value)}
           maxLength={500}
         />
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose}>
-            {tr('Abbrechen', 'Cancel')}
-          </Button>
-          <Button color="orange" loading={saving} disabled={invalid} onClick={save}>
-            {tr('Planen', 'Plan')}
-          </Button>
-        </Group>
       </Stack>
-    </Modal>
+    </SharedModal>
   )
 }

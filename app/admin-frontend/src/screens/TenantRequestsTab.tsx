@@ -7,12 +7,12 @@ import {
   Button,
   Group,
   Text,
-  Modal,
   TextInput,
   Stack,
   Anchor,
   SegmentedControl,
 } from '@mantine/core'
+import { Modal as SharedModal } from '@/components/ui'
 import { SSO_URL } from '@hubra/api-client'
 import {
   listTenantRequests,
@@ -214,11 +214,24 @@ export function TenantRequestsTab() {
         )}
       </Paper>
 
-      <Modal
-        opened={!!rejectTarget}
+      <SharedModal
+        open={!!rejectTarget}
         onClose={() => { setRejectTarget(null); setRejectNote('') }}
         title={tr('Anfrage ablehnen', 'Reject request')}
-        size="md"
+        footer={
+          <>
+            <Button variant="default" onClick={() => { setRejectTarget(null); setRejectNote('') }}>
+              {tr('Abbrechen', 'Cancel')}
+            </Button>
+            <Button
+              color="red"
+              loading={rejectMutation.isPending}
+              onClick={() => rejectTarget && rejectMutation.mutate({ id: rejectTarget.id, note: rejectNote || undefined })}
+            >
+              {tr('Anfrage ablehnen', 'Reject request')}
+            </Button>
+          </>
+        }
       >
         <Stack gap={16}>
           <Text size="sm" c="dimmed">
@@ -233,20 +246,8 @@ export function TenantRequestsTab() {
             onChange={(e) => setRejectNote(e.target.value)}
             placeholder={tr('Grund für die Ablehnung', 'Reason for rejection')}
           />
-          <Group justify="flex-end" mt={8}>
-            <Button variant="default" onClick={() => { setRejectTarget(null); setRejectNote('') }}>
-              {tr('Abbrechen', 'Cancel')}
-            </Button>
-            <Button
-              color="red"
-              loading={rejectMutation.isPending}
-              onClick={() => rejectTarget && rejectMutation.mutate({ id: rejectTarget.id, note: rejectNote || undefined })}
-            >
-              {tr('Anfrage ablehnen', 'Reject request')}
-            </Button>
-          </Group>
         </Stack>
-      </Modal>
+      </SharedModal>
     </div>
   )
 }

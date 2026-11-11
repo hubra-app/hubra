@@ -14,7 +14,6 @@ import {
   Group,
   Loader,
   Menu,
-  Modal,
   Paper,
   SegmentedControl,
   Select,
@@ -75,7 +74,7 @@ import {
   type RepositoryPreview,
 } from '@/api/plugins'
 import { tr } from '@/lang'
-import { EmptyState } from '@/components/ui'
+import { EmptyState, Modal as SharedModal } from '@/components/ui'
 import { useConfirm } from '@/components/useConfirm'
 import { PLUGIN_DE } from '@/moduleLabels'
 
@@ -806,7 +805,12 @@ function DetailsModal({
   onInstall: (version: string) => void
 }) {
   return (
-    <Modal opened onClose={onClose} title={p.name} size="lg" centered>
+    <SharedModal
+      open
+      onClose={onClose}
+      title={p.name}
+      wide
+    >
       <Stack gap="sm">
         <Text size="sm">{p.description}</Text>
         <Group gap={6}>
@@ -898,7 +902,7 @@ function DetailsModal({
           </>
         )}
       </Stack>
-    </Modal>
+    </SharedModal>
   )
 }
 
@@ -942,7 +946,25 @@ function StagedModal({
   }
 
   return (
-    <Modal opened onClose={cancel} title={tr(`${s.name} ${s.version} installieren?`, `Install ${s.name} ${s.version}?`)} centered>
+    <SharedModal
+      open
+      onClose={cancel}
+      title={tr(`${s.name} ${s.version} installieren?`, `Install ${s.name} ${s.version}?`)}
+      footer={
+        <>
+          <Button variant="default" onClick={cancel}>
+            {tr('Abbrechen', 'Cancel')}
+          </Button>
+          <Button
+            onClick={confirm}
+            loading={busy}
+            disabled={!s.installable || (s.needsConfirmation && !accept)}
+          >
+            {tr('Installieren', 'Install')}
+          </Button>
+        </>
+      }
+    >
       <Stack gap="sm">
         <Text size="sm">{s.description}</Text>
         <Group gap={6}>
@@ -1000,20 +1022,8 @@ function StagedModal({
             </Stack>
           </Alert>
         )}
-        <Group justify="flex-end">
-          <Button variant="default" onClick={cancel}>
-            {tr('Abbrechen', 'Cancel')}
-          </Button>
-          <Button
-            onClick={confirm}
-            loading={busy}
-            disabled={!s.installable || (s.needsConfirmation && !accept)}
-          >
-            {tr('Installieren', 'Install')}
-          </Button>
-        </Group>
       </Stack>
-    </Modal>
+    </SharedModal>
   )
 }
 
@@ -1040,7 +1050,21 @@ function UninstallModal({
     }
   }
   return (
-    <Modal opened onClose={onClose} title={tr(`${p.name} deinstallieren?`, `Uninstall ${p.name}?`)} centered>
+    <SharedModal
+      open
+      onClose={onClose}
+      title={tr(`${p.name} deinstallieren?`, `Uninstall ${p.name}?`)}
+      footer={
+        <>
+          <Button variant="default" onClick={onClose}>
+            {tr('Abbrechen', 'Cancel')}
+          </Button>
+          <Button color="red" onClick={remove} loading={busy}>
+            {tr('Deinstallieren', 'Uninstall')}
+          </Button>
+        </>
+      }
+    >
       <Stack gap="sm">
         <Text size="sm">
           {tr(
@@ -1054,16 +1078,8 @@ function UninstallModal({
           checked={deleteData}
           onChange={(e) => setDeleteData(e.currentTarget.checked)}
         />
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose}>
-            {tr('Abbrechen', 'Cancel')}
-          </Button>
-          <Button color="red" onClick={remove} loading={busy}>
-            {tr('Deinstallieren', 'Uninstall')}
-          </Button>
-        </Group>
       </Stack>
-    </Modal>
+    </SharedModal>
   )
 }
 

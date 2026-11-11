@@ -8,7 +8,6 @@ import {
   Checkbox,
   Group,
   Loader,
-  Modal,
   MultiSelect,
   Paper,
   Select,
@@ -38,7 +37,7 @@ import {
   IconUserPlus,
   IconX,
 } from '@tabler/icons-react'
-import { EmptyState, PageHead, Pagination, Tabs } from '@/components/ui'
+import { EmptyState, PageHead, Pagination, Tabs, Modal as SharedModal } from '@/components/ui'
 import { useAdmin } from '@/context/AdminContext'
 import { formatDate, formatDateTime } from '@/format'
 import { getLang, tr } from '@/lang'
@@ -892,7 +891,26 @@ function AddPeopleModal({
   }
 
   return (
-    <Modal opened onClose={onClose} title={tr('Personen hinzufügen', 'Add people')}>
+    <SharedModal
+      open
+      onClose={onClose}
+      title={tr('Personen hinzufügen', 'Add people')}
+      onSubmit={(e) => {
+        e?.preventDefault()
+        if (Object.keys(picked).length === 0) return
+        void save()
+      }}
+      footer={
+        <>
+          <Button variant="default" onClick={onClose}>
+            {tr('Abbrechen', 'Cancel')}
+          </Button>
+          <Button type="submit" loading={saving} disabled={Object.keys(picked).length === 0}>
+            {tr('Hinzufügen', 'Add')}
+          </Button>
+        </>
+      }
+    >
       <Stack gap="md">
         <MultiSelect
           label={tr('Konten', 'Accounts')}
@@ -917,16 +935,8 @@ function AddPeopleModal({
             'With Discord linked they join the case’s thread; anyone not on the platform server gets an invite as a direct message.',
           )}
         </Text>
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose}>
-            {tr('Abbrechen', 'Cancel')}
-          </Button>
-          <Button onClick={() => void save()} loading={saving} disabled={Object.keys(picked).length === 0}>
-            {tr('Hinzufügen', 'Add')}
-          </Button>
-        </Group>
       </Stack>
-    </Modal>
+    </SharedModal>
   )
 }
 
@@ -1024,7 +1034,37 @@ function EditModal({
   const [description, setDescription] = useState(c.description)
   const [saving, setSaving] = useState(false)
   return (
-    <Modal opened onClose={onClose} title={tr('Fall bearbeiten', 'Edit case')} size="lg">
+    <SharedModal
+      open
+      onClose={onClose}
+      title={tr('Fall bearbeiten', 'Edit case')}
+      wide
+      onSubmit={async (e) => {
+        e?.preventDefault()
+        // Enter submits too, so the button's rule applies here as well.
+        if (!title.trim() || !description.trim()) return
+        setSaving(true)
+        try {
+          await onSave({ title: title.trim(), description: description.trim() })
+        } finally {
+          setSaving(false)
+        }
+      }}
+      footer={
+        <>
+          <Button variant="default" onClick={onClose}>
+            {tr('Abbrechen', 'Cancel')}
+          </Button>
+          <Button
+            loading={saving}
+            disabled={!title.trim() || !description.trim()}
+            type="submit"
+          >
+            {tr('Speichern', 'Save')}
+          </Button>
+        </>
+      }
+    >
       <Stack gap={12}>
         <Text size="xs" c="dimmed">
           {tr(
@@ -1042,27 +1082,8 @@ function EditModal({
           maxRows={14}
           maxLength={5000}
         />
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose}>
-            {tr('Abbrechen', 'Cancel')}
-          </Button>
-          <Button
-            loading={saving}
-            disabled={!title.trim() || !description.trim()}
-            onClick={async () => {
-              setSaving(true)
-              try {
-                await onSave({ title: title.trim(), description: description.trim() })
-              } finally {
-                setSaving(false)
-              }
-            }}
-          >
-            {tr('Speichern', 'Save')}
-          </Button>
-        </Group>
       </Stack>
-    </Modal>
+    </SharedModal>
   )
 }
 
@@ -1087,7 +1108,41 @@ function MergeModal({
   const options = (query.data?.items ?? []).filter((i) => i.id !== c.id && !i.mergedInto)
 
   return (
-    <Modal opened onClose={onClose} title={tr('Zusammenführen', 'Merge')} size="lg">
+    <SharedModal
+      open
+      onClose={onClose}
+      title={tr('Zusammenführen', 'Merge')}
+      wide
+      onSubmit={async (e) => {
+        e?.preventDefault()
+        if (!target) return
+        setSaving(true)
+        try {
+          const merged = await mergeCase(c.id, target.id)
+          notify('success', tr(`In #${target.id} zusammengeführt`, `Merged into #${target.id}`))
+          await onMerged(merged)
+        } catch (err) {
+          notify('error', tr('Zusammenführen fehlgeschlagen', 'Merge failed'), (err as Error).message)
+        } finally {
+          setSaving(false)
+        }
+      }}
+      footer={
+        <>
+          <Button variant="default" onClick={onClose}>
+            {tr('Abbrechen', 'Cancel')}
+          </Button>
+          <Button
+            leftSection={<IconGitMerge size={16} />}
+            disabled={!target}
+            loading={saving}
+            type="submit"
+          >
+            {target ? tr(`In #${target.id} zusammenführen`, `Merge into #${target.id}`) : tr('Zusammenführen', 'Merge')}
+          </Button>
+        </>
+      }
+    >
       <Stack gap={12}>
         <Text size="sm">
           {tr(
@@ -1128,33 +1183,8 @@ function MergeModal({
             </Text>
           )}
         </Stack>
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose}>
-            {tr('Abbrechen', 'Cancel')}
-          </Button>
-          <Button
-            leftSection={<IconGitMerge size={16} />}
-            disabled={!target}
-            loading={saving}
-            onClick={async () => {
-              if (!target) return
-              setSaving(true)
-              try {
-                const merged = await mergeCase(c.id, target.id)
-                notify('success', tr(`In #${target.id} zusammengeführt`, `Merged into #${target.id}`))
-                await onMerged(merged)
-              } catch (err) {
-                notify('error', tr('Zusammenführen fehlgeschlagen', 'Merge failed'), (err as Error).message)
-              } finally {
-                setSaving(false)
-              }
-            }}
-          >
-            {target ? tr(`In #${target.id} zusammenführen`, `Merge into #${target.id}`) : tr('Zusammenführen', 'Merge')}
-          </Button>
-        </Group>
       </Stack>
-    </Modal>
+    </SharedModal>
   )
 }
 
