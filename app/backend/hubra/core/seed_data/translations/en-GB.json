@@ -4291,5 +4291,67 @@
   "dashboards.visPrivateHint": "Only you see it.",
   "dashboards.visClubHint": "All members see it, each only with the widgets they may see.",
   "dashboards.visGroupsHint": "Only the members of these groups see it, each only with the widgets they may see.",
-  "dashboards.sharedGroups": "Shared with {{groups}}"
+  "dashboards.sharedGroups": "Shared with {{groups}}",
+  "events": {
+    "filter": {
+      "mine": "Sign-up",
+      "mineOnly": "Only mine"
+    },
+    "status": {
+      "pending": "Requested",
+      "waitlisted": "Waiting list",
+      "joined": "Signed up"
+    },
+    "pending": {
+      "open": "Open sign-ups"
+    },
+    "allDay": "All day",
+    "places": "{{taken}} of {{max}}",
+    "signedUp": "{{count}} signed up",
+    "full": "Full",
+    "joinWaitlist": "Join the waiting list",
+    "noMine": "You haven't signed up for any event.",
+    "emptyHint": "Plan the next event; members can sign up for it right here.",
+    "emptyMember": "Once an event is planned, you can sign up for it here."
+  },
+  "polls": {
+    "closedOn": "ended {{date}}",
+    "noEnd": "no end date",
+    "closesToday": "ends today",
+    "closesTomorrow": "ends tomorrow",
+    "closesInDays": "ends in {{count}} days",
+    "closesOn": "ends {{date}}",
+    "remindOpen": "Remind to vote",
+    "notVotedYet": "Not voted yet",
+    "optionVotes_one": "{{count}} vote",
+    "optionVotes_other": "{{count}} votes",
+    "yourVote": "Your vote",
+    "votesCount_one": "{{count}} vote",
+    "votesCount_other": "{{count}} votes",
+    "changeVote": "Change vote",
+    "search": "Search polls …",
+    "filter": {
+      "status": "Status",
+      "open": "Open ({{count}})"
+    },
+    "noneOpen": "No poll is running right now.",
+    "noMatch": "No polls found."
+  },
+  "posts": {
+    "mustRead": {
+      "banner_one": "{{count}} must-read post is waiting for your confirmation.",
+      "banner_other": "{{count}} must-read posts are waiting for your confirmation.",
+      "showUnread": "Show",
+      "badge": "Must read",
+      "who": "Who confirmed?"
+    },
+    "search": "Search posts …",
+    "filter": {
+      "show": "Show",
+      "unread": "Not confirmed yet",
+      "scheduled": "Scheduled",
+      "noneUnread": "All read and confirmed."
+    },
+    "noMatch": "No posts found."
+  }
 }

@@ -729,7 +729,9 @@
       "past": "Vergangene",
       "type": "Typ",
       "upcoming": "Kommende",
-      "when": "Zeitraum"
+      "when": "Zeitraum",
+      "mine": "Anmeldung",
+      "mineOnly": "Nur meine"
     },
     "join": "Teilnehmen",
     "joined": "Angemeldet",
@@ -930,7 +932,23 @@
       "saveTitle": "Als Vorlage speichern",
       "saveSubtitle": "Ort, Zeit, Plätze, Einstellungen und Beschreibung werden gespeichert, das Datum nicht.",
       "name": "Name der Vorlage"
-    }
+    },
+    "status": {
+      "pending": "Angefragt",
+      "waitlisted": "Warteliste",
+      "joined": "Angemeldet"
+    },
+    "pending": {
+      "open": "Offene Anmeldungen"
+    },
+    "allDay": "Ganztägig",
+    "places": "{{taken}} von {{max}}",
+    "signedUp": "{{count}} angemeldet",
+    "full": "Voll",
+    "joinWaitlist": "Auf die Warteliste",
+    "noMine": "Du bist für keinen Anlass angemeldet.",
+    "emptyHint": "Plane den nächsten Anlass, die Mitglieder können sich hier gleich anmelden.",
+    "emptyMember": "Sobald ein Anlass geplant ist, kannst du dich hier anmelden."
   },
   "finance": {
     "addCategory": "Kategorie hinzufügen",
@@ -2356,7 +2374,28 @@
     "resolutionAbstain": "Enthaltung",
     "resolutionTemplate": "Als Umlaufbeschluss",
     "autoClose": "Schliessen, sobald alle abgestimmt haben",
-    "autoCloseHint": "Für die gewählten Gruppen und Funktionen. Das Ergebnis steht dann gleich fest, auch vor dem Enddatum."
+    "autoCloseHint": "Für die gewählten Gruppen und Funktionen. Das Ergebnis steht dann gleich fest, auch vor dem Enddatum.",
+    "closedOn": "beendet am {{date}}",
+    "noEnd": "ohne Enddatum",
+    "closesToday": "endet heute",
+    "closesTomorrow": "endet morgen",
+    "closesInDays": "endet in {{count}} Tagen",
+    "closesOn": "endet am {{date}}",
+    "remindOpen": "An Abstimmung erinnern",
+    "notVotedYet": "Noch nicht abgestimmt",
+    "optionVotes_one": "{{count}} Stimme",
+    "optionVotes_other": "{{count}} Stimmen",
+    "yourVote": "Deine Stimme",
+    "votesCount_one": "{{count}} Stimme",
+    "votesCount_other": "{{count}} Stimmen",
+    "changeVote": "Stimme ändern",
+    "search": "Umfragen durchsuchen …",
+    "filter": {
+      "status": "Status",
+      "open": "Offen ({{count}})"
+    },
+    "noneOpen": "Gerade läuft keine Umfrage.",
+    "noMatch": "Keine Umfragen gefunden."
   },
   "posts": {
     "backToPosts": "Zurück zu den Beiträgen",
@@ -2425,8 +2464,21 @@
       "fieldHint": "Für Sicherheitsregeln, Regeländerungen oder GV-Unterlagen: Mitglieder bestätigen mit einem Tipp, du siehst, wer noch fehlt.",
       "done": "Gelesen bestätigt",
       "confirm": "Gelesen, bestätigen",
-      "count": "{{count}} bestätigt"
-    }
+      "count": "{{count}} bestätigt",
+      "banner_one": "{{count}} Pflicht-Beitrag wartet auf deine Lesebestätigung.",
+      "banner_other": "{{count}} Pflicht-Beiträge warten auf deine Lesebestätigung.",
+      "showUnread": "Anzeigen",
+      "badge": "Pflicht",
+      "who": "Wer hat bestätigt?"
+    },
+    "search": "Beiträge durchsuchen …",
+    "filter": {
+      "show": "Anzeigen",
+      "unread": "Noch nicht bestätigt",
+      "scheduled": "Geplant",
+      "noneUnread": "Alles gelesen und bestätigt."
+    },
+    "noMatch": "Keine Beiträge gefunden."
   },
   "settings": {
     "changePassword": "Passwort ändern",
