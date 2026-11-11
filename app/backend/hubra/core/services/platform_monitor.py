@@ -710,9 +710,7 @@ def _alert_body(
     task names in them).  Returns ``(html, text, subject)``."""
     from zoneinfo import ZoneInfo
 
-    from hubra.core.services.mail_i18n import _HUBRA_MARK, render_mail_template
-
-    import base64
+    from hubra.core.services.mail_i18n import render_mail_template
 
     cfg = current_app.config
     locale = "en-GB" if (user.language or "").lower().startswith("en") else "de-CH"
@@ -729,11 +727,9 @@ def _alert_body(
         "platform_alert",
         locale=locale,
         name=user.first_name or user.name or user.email,
-        club_name="Hubra",
-        # Always the Hubra mark: an alert is the platform's, even when a
+        # Always Hubra's look: an alert is the platform's, even when a
         # club's request raised it.
-        logo_src="data:image/png;base64,"
-        + base64.b64encode(_HUBRA_MARK.read_bytes()).decode(),
+        platform_mail=True,
         alert_subject=subject,
         lines=lines,
         level=level,
