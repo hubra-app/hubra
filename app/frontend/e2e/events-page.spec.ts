@@ -48,9 +48,9 @@ test('Anlässe shows a month and its tabs', async ({ page }) => {
   await page.goto(appUrl('operations/events'))
   await expect(page.getByRole('tab', { name: 'Anlässe' })).toBeVisible()
   await expect(page.getByRole('tab', { name: 'Anwesenheit' })).toBeVisible()
-  await page.getByTestId('events-view').getByText('Monat').click()
+  await page.getByTestId('events-view').locator('label', { hasText: 'Monat' }).click()
   await expect(page.getByTestId('events-month')).toBeVisible()
   // Back to the list for the other tests on this device.
-  await page.getByTestId('events-view').getByText('Liste').click()
+  await page.getByTestId('events-view').locator('label', { hasText: 'Liste' }).click()
   await expect(page.getByTestId('events-month')).toBeHidden()
 })

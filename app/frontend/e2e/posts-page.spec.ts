@@ -19,6 +19,7 @@ test('Beiträge: the must-read banner, the filter and a post page', async ({ pag
 
     await card.getByTestId('post-title').click()
     await expect(page).toHaveURL(new RegExp(`operations/posts/${post.id}$`))
+    await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
     await page.getByTestId('confirm-read').click()
     await expect(page.getByTestId('must-read-row')).toContainText('Gelesen bestätigt')
 

@@ -290,7 +290,7 @@ export function EventDetailScreen({ id }: { id: string }) {
             <DetailFact label={t('events.time', 'Zeit')}>{ev.time || t('events.detail.allDay', 'Ganztägig')}</DetailFact>
             <DetailFact label={t('events.location', 'Ort')}>{ev.location || t('events.noLocation', 'Kein Ort')}</DetailFact>
             <DetailFact label={t('events.detail.places', 'Plätze')}>
-              <span className="num">
+              <span className={ev.maxAttendees ? 'num' : undefined}>
                 {ev.maxAttendees
                   ? t('events.detail.placesLeft', '{{left}} von {{max}} frei', {
                       left: Math.max(0, ev.maxAttendees - (ev.placesTaken ?? 0)),
