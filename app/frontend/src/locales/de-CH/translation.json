@@ -933,6 +933,19 @@
       "saveSubtitle": "Ort, Zeit, Plätze, Einstellungen und Beschreibung werden gespeichert, das Datum nicht.",
       "name": "Name der Vorlage"
     },
+    "endDate": "Enddatum",
+    "timeFrom": "Beginn",
+    "timeTo": "Ende",
+    "timeTextHint": "Bisher: {{text}}",
+    "registrationDeadline": "Anmeldeschluss",
+    "cancellationDeadline": "Abmeldeschluss",
+    "cancellationDeadlineHint": "Danach kann man sich nicht mehr selbst abmelden.",
+    "perDateHint": "Gilt nur für diesen Termin.",
+    "endDateBeforeStart": "Das Enddatum liegt vor dem Datum",
+    "timeToBeforeFrom": "Das Ende liegt vor dem Beginn",
+    "untilDate": "bis {{date}}",
+    "registrationDeadlineAt": "Anmeldeschluss {{when}}",
+    "timeToWithoutFrom": "Bitte auch den Beginn angeben",
     "status": {
       "pending": "Angefragt",
       "waitlisted": "Warteliste",
@@ -1031,6 +1044,7 @@
       "new": "Neue Partei",
       "none": "Noch keine externen Parteien.",
       "noneHint": "Externe Parteien erfasst du im Tab «Extern».",
+      "pick": "Externe Partei wählen …",
       "removedMsg": "«{{name}}» wurde gelöscht.",
       "savedMsg": "«{{name}}» wurde gespeichert.",
       "updated": "Externe Partei gespeichert"
@@ -1052,6 +1066,7 @@
       "detail": "Rechnungsdetails",
       "due": "Fällig",
       "issued": "Ausgestellt",
+      "no": "Nr. {{n}}",
       "notFound": "Rechnung nicht gefunden",
       "number": "Rechnungsnummer",
       "numberShort": "Nr.",
@@ -1165,7 +1180,9 @@
       "memberRequired": "Bitte wähle ein Mitglied",
       "partyRequired": "Bitte wähle eine externe Partei",
       "amountRequired": "Bitte gib einen Betrag ein",
-      "categoryRequired": "Bitte wähle eine Kategorie"
+      "categoryRequired": "Bitte wähle eine Kategorie",
+      "amountPositive": "Der Betrag muss grösser als 0 sein",
+      "dueBeforeIssued": "Fällig liegt vor dem Rechnungsdatum"
     },
     "invoiceUpdateFailed": "Die Rechnung konnte nicht aktualisiert werden.",
     "invoicePaidMsg": "Die Rechnung ist als bezahlt markiert.",
@@ -1382,7 +1399,10 @@
       "chartHint": "Der Kontenplan für Vereine nach dem Schweizer KMU-Kontenrahmen. Eigene Konten lassen sich ergänzen.",
       "accountName": "Konto",
       "kind": "Art",
-      "addAccount": "Hinzufügen"
+      "addAccount": "Hinzufügen",
+      "renameAccount": "Umbenennen",
+      "deleteAccountTitle": "«{{name}}» löschen?",
+      "deleteAccountBody": "Ein Konto, auf das noch Kategorien oder Abschlüsse zählen, bleibt."
     },
     "groups": {
       "bookings": "Buchungen",
@@ -1419,7 +1439,10 @@
         "amountZero": "Betrag 0 (z. B. befreit)",
         "noBillableTier": "Stufe ohne Abrechnung"
       }
-    }
+    },
+    "editInvoice": "Rechnung bearbeiten",
+    "invoiceSaved": "Rechnung gespeichert",
+    "invoiceSavedMsg": "Rechnung {{id}} wurde geändert."
   },
   "functions": {
     "assignHolder": "Person zuweisen",

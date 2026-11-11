@@ -207,6 +207,20 @@ class ExternalPartiesService:
 # ── InvoiceService ────────────────────────────────────────────────────────────
 
 
+# What an invoice asks for; fixed once it is paid.
+_SETTLED_FIELDS = frozenset(
+    {
+        "member_id",
+        "external_party_id",
+        "issued",
+        "due",
+        "amount",
+        "purpose",
+        "description",
+    }
+)
+
+
 class InvoiceService:
     """Operations on a single invoice."""
 
@@ -249,6 +263,15 @@ class InvoiceService:
             raise_error(400, "VALIDATION_ERROR", "due is before issued")
 
         was_paid = invoice.status == "Paid"
+        # A paid invoice is settled: only taking the payment back opens it
+        # for changes again.
+        locked = sorted(set(data) & _SETTLED_FIELDS)
+        if was_paid and data.get("status", "Paid") == "Paid" and locked:
+            raise_error(
+                409,
+                "INVOICE_PAID",
+                "A paid invoice can't be changed: " + ", ".join(locked),
+            )
         for field in (
             "member_id",
             "external_party_id",

@@ -161,6 +161,7 @@ function FeeBasisForm({ module, canWrite }: { module: ModuleInfo; canWrite: bool
               min={0}
               decimalScale={2}
               thousandSeparator="’"
+              hideControls
               disabled={!canWrite}
               w={240}
             />
@@ -176,6 +177,7 @@ function FeeBasisForm({ module, canWrite }: { module: ModuleInfo; canWrite: bool
               min={0}
               decimalScale={2}
               thousandSeparator="’"
+              hideControls
               disabled={!canWrite}
               w={300}
             />

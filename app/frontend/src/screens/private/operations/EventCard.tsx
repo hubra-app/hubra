@@ -18,6 +18,7 @@ import {
 } from '@tabler/icons-react'
 import { colorText } from '@hubra/ui'
 import { EVENT_TYPE_COLORS } from '@/constants'
+import { formatDate, formatDateTime } from '@/format'
 import { useT } from '@/locales/i18n'
 import type { ClubEvent } from '@/types'
 
@@ -167,8 +168,18 @@ export function EventCard({
         <div className="hb-event-meta">
           <span>
             <IconClock size={14} aria-hidden />
+            {ev.endDate && ev.endDate !== ev.date && (
+              <>{t('events.untilDate', 'bis {{date}}', { date: formatDate(ev.endDate) })} · </>
+            )}
             {ev.allDay || !ev.time ? t('events.allDay', 'Ganztägig') : ev.time}
           </span>
+          {ev.registrationDeadline && !over && !cancelled && (
+            <span className="hb-event-dim">
+              {t('events.registrationDeadlineAt', 'Anmeldeschluss {{when}}', {
+                when: formatDateTime(ev.registrationDeadline),
+              })}
+            </span>
+          )}
           {ev.location && (
             <span>
               <IconMapPin size={14} aria-hidden />

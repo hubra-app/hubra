@@ -7,7 +7,6 @@ import {
   Button,
   Group,
   Text,
-  Modal,
   TextInput,
   Stack,
   Alert,
@@ -15,6 +14,7 @@ import {
   Select,
   MultiSelect,
 } from '@mantine/core'
+import { Modal as SharedModal } from '@/components/ui'
 import { IconPlus, IconUserPlus } from '@tabler/icons-react'
 import {
   listGlobalRoles,
@@ -246,11 +246,25 @@ export function RolesTab() {
         </Table.ScrollContainer>
       </Paper>
 
-      <Modal
-        opened={createOpen}
+      <SharedModal
+        open={createOpen}
         onClose={() => setCreateOpen(false)}
         title={tr('Plattform-Rolle erstellen', 'Create platform role')}
-        size="lg"
+        wide
+        onSubmit={(e) => {
+          e?.preventDefault()
+          createMutation.mutate()
+        }}
+        footer={
+          <>
+            <Button variant="default" onClick={() => setCreateOpen(false)}>
+              {tr('Abbrechen', 'Cancel')}
+            </Button>
+            <Button loading={createMutation.isPending} type="submit">
+              {tr('Erstellen', 'Create')}
+            </Button>
+          </>
+        }
       >
         <Stack gap={16}>
           {formError && (
@@ -293,25 +307,37 @@ export function RolesTab() {
               />
             ))}
           </Stack>
-          <Group justify="flex-end">
-            <Button variant="default" onClick={() => setCreateOpen(false)}>
-              {tr('Abbrechen', 'Cancel')}
-            </Button>
-            <Button loading={createMutation.isPending} onClick={() => createMutation.mutate()}>
-              {tr('Erstellen', 'Create')}
-            </Button>
-          </Group>
         </Stack>
-      </Modal>
+      </SharedModal>
 
-      <Modal
-        opened={!!editRole}
+      <SharedModal
+        open={!!editRole}
         onClose={() => {
           setEditRole(null)
           setSelectedPerms([])
         }}
         title={tr(`Rolle bearbeiten: ${editRole?.name}`, `Edit role: ${editRole?.name}`)}
-        size="lg"
+        wide
+        onSubmit={(e) => {
+          e?.preventDefault()
+          if (editRole) updateMutation.mutate(editRole)
+        }}
+        footer={
+          <>
+            <Button
+              variant="default"
+              onClick={() => {
+                setEditRole(null)
+                setSelectedPerms([])
+              }}
+            >
+              {tr('Abbrechen', 'Cancel')}
+            </Button>
+            <Button type="submit" loading={updateMutation.isPending}>
+              {tr('Speichern', 'Save')}
+            </Button>
+          </>
+        }
       >
         <Stack gap={16}>
           {formError && (
@@ -342,31 +368,29 @@ export function RolesTab() {
               />
             ))}
           </Stack>
-          <Group justify="flex-end">
-            <Button
-              variant="default"
-              onClick={() => {
-                setEditRole(null)
-                setSelectedPerms([])
-              }}
-            >
-              {tr('Abbrechen', 'Cancel')}
-            </Button>
-            <Button
-              loading={updateMutation.isPending}
-              onClick={() => editRole && updateMutation.mutate(editRole)}
-            >
-              {tr('Speichern', 'Save')}
-            </Button>
-          </Group>
         </Stack>
-      </Modal>
+      </SharedModal>
 
-      <Modal
-        opened={assignOpen}
+      <SharedModal
+        open={assignOpen}
         onClose={() => setAssignOpen(false)}
         title={tr('Rolle einer Person zuweisen', 'Assign a role to a person')}
-        size="md"
+        footer={
+          <>
+            <Button variant="default" onClick={() => setAssignOpen(false)}>
+              {tr('Schliessen', 'Close')}
+            </Button>
+            {selectedUser && (
+              <Button
+                loading={assignMutation.isPending}
+                disabled={!assignRoleId}
+                onClick={() => assignMutation.mutate()}
+              >
+                {tr('Zuweisen', 'Assign')}
+              </Button>
+            )}
+          </>
+        }
       >
         <Stack gap={16}>
           <Group gap={8}>
@@ -473,19 +497,10 @@ export function RolesTab() {
                 onChange={setAssignClubs}
                 data={(clubsData?.tenants ?? []).map((t) => ({ value: String(t.id), label: t.name }))}
               />
-              <Group justify="flex-end">
-                <Button
-                  loading={assignMutation.isPending}
-                  disabled={!assignRoleId}
-                  onClick={() => assignMutation.mutate()}
-                >
-                  {tr('Zuweisen', 'Assign')}
-                </Button>
-              </Group>
             </>
           )}
         </Stack>
-      </Modal>
+      </SharedModal>
     </div>
   )
 }

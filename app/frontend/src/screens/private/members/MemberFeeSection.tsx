@@ -260,6 +260,8 @@ function FeeAdjustmentModal({
               onChange={setAmount}
               min={0}
               decimalScale={2}
+              thousandSeparator="’"
+              hideControls
               error={errors.amount}
               data-testid="fee-amount"
             />

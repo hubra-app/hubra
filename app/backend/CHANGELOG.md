@@ -23,6 +23,8 @@ section and position, or the apps show that version in English.
 - **Share a dashboard with groups**: the form to create a dashboard and ⋯ › Name und Sichtbarkeit set who sees it: Privat, Ganzer Verein or chosen Gruppen. A dashboard shared with groups shows only for their members. Needs `flask db upgrade` (new column `dashboards.group_ids`, runs by itself after the deploy).
 - **Scheduled and expiring posts**: the post form has **Publish at** (the post stays hidden from members and goes out, with its notification, within five minutes of that time) and **Hide after** (members no longer see it after that time). Authors and whoever may edit the post still see both kinds, marked. Needs `flask db upgrade` (runs by itself after the deploy).
 - **Must-read posts**: tick **Lesebestätigung verlangen** on a post and members confirm it with one tap; whoever may edit the post sees who confirmed and who has not, and those missing get one reminder after a number of days (posts setting, 7 by default, 0 for none). Needs `flask db upgrade` (runs by itself after the deploy).
+- **Event end date, deadlines and von/bis time**: the event form has Enddatum (multi-day events), Anmeldeschluss and Abmeldeschluss (the app already enforced them, but nobody could set them), and Beginn/Ende time fields instead of free text. An old free-text time stays until a time is picked. The list shows the end date and the sign-up deadline.
+- **Edit open invoices**: Finanzen › Rechnungen › ⋯ › Bearbeiten (and on the invoice page) changes amount, due date and text of an open invoice. A paid invoice is locked; the API refuses changes to it until the payment is taken back.
 - **Notice periods from the statutes**: Settings › Mitgliedschaft takes a notice period in months and the period end leaving takes effect at (month, quarter, half-year or year). A member who wants to leave sees the earliest exit date and their invoices still open; the board sees both on the request to leave.
 - **One calendar for all clubs**: sign-in › My account › Profile has a personal calendar link with the events of every club the person is in (or only those they signed up for), named with their club, for Google, Apple or Outlook calendars. **New link** stops the old ones. Cancelled events show as cancelled in calendar feeds. Needs `flask db upgrade` (runs by itself after the deploy).
 
@@ -36,6 +38,7 @@ section and position, or the apps show that version in English.
 ### Fixed
 
 - Customising Dashboard › Verein failed, and "Offene Rechnungen" couldn't be added to a dashboard: widget types with capital letters were refused.
+- **Forms pass**: dropdowns no longer empty themselves when the chosen entry is clicked again (the page-size picker under lists could go to 0); searchable dropdowns say "Keine Ergebnisse." when nothing matches; "Kategorie wählen …"-style entries are placeholders, not choices. Dialogs share one footer (Abbrechen, then the main action; delete at the left) and save on Enter, in the club app and in manage. Money fields use one style (CHF, two decimals, no arrows), event places are number fields, and Settings › Erweitert uses the app's own checkboxes and filter.
 
 ## [0.2.5] - 2026-11-10
 

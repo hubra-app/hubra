@@ -15,7 +15,7 @@ test('a binding can be added and edited', async ({ page }) => {
     const pick = async (label: string, option?: string) => {
       await dialog.getByRole('combobox', { name: label }).click()
       const opts = page.getByRole('option')
-      await (option ? opts.filter({ hasText: option }) : opts.nth(1)).first().click()
+      await (option ? opts.filter({ hasText: option }) : opts).first().click()
     }
     await pick('Quelle')
     await pick('Attribut')

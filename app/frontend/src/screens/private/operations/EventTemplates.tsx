@@ -104,6 +104,10 @@ export function SaveTemplateModal({ event, onClose }: { event: ClubEvent | null;
         'events.templates.saveSubtitle',
         'Ort, Zeit, Plätze, Einstellungen und Beschreibung werden gespeichert, das Datum nicht.',
       )}
+      onSubmit={(e) => {
+        e?.preventDefault()
+        if (event && value.trim() && !save.isPending) save.mutate({ id: event.id, n: value.trim() })
+      }}
       footer={
         <Group gap="xs">
           <Button variant="default" onClick={close}>
@@ -112,7 +116,7 @@ export function SaveTemplateModal({ event, onClose }: { event: ClubEvent | null;
           <Button
             disabled={!value.trim()}
             loading={save.isPending}
-            onClick={() => event && save.mutate({ id: event.id, n: value.trim() })}
+            type="submit"
             data-testid="confirm-save-template"
           >
             {t('common.save', 'Speichern')}

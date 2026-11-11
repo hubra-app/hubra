@@ -368,6 +368,10 @@ export function MailSettingsModal({
         onClose={onClose}
         title={t('mail.admin.settings', 'Mail-Einstellungen')}
         subtitle={entry.address}
+        onSubmit={(e) => {
+          e?.preventDefault()
+          if (canManage && !busy) void handleSave()
+        }}
         footer={
           <div
             style={{
@@ -379,8 +383,7 @@ export function MailSettingsModal({
           >
             {canManage && canDelete ? (
               <Button
-                size="sm"
-                variant="light"
+                variant="subtle"
                 color="red"
                 onClick={() => setDeleteOpen(true)}
                 disabled={busy}
@@ -395,8 +398,8 @@ export function MailSettingsModal({
                 {t('common.cancel', 'Abbrechen')}
               </Button>
               {canManage && (
-                <Button variant="filled" onClick={handleSave} disabled={busy}>
-                  {busy ? '...' : t('common.save', 'Speichern')}
+                <Button variant="filled" type="submit" loading={busy}>
+                  {t('common.save', 'Speichern')}
                 </Button>
               )}
             </div>

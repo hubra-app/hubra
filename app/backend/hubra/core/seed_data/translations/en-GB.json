@@ -4292,7 +4292,20 @@
     "joinWaitlist": "Join the waiting list",
     "noMine": "You haven't signed up for any event.",
     "emptyHint": "Plan the next event; members can sign up for it right here.",
-    "emptyMember": "Once an event is planned, you can sign up for it here."
+    "emptyMember": "Once an event is planned, you can sign up for it here.",
+    "endDate": "End date",
+    "timeFrom": "Start",
+    "timeTo": "End",
+    "timeTextHint": "Before: {{text}}",
+    "registrationDeadline": "Sign-up deadline",
+    "cancellationDeadline": "Cancellation deadline",
+    "cancellationDeadlineHint": "After this, members can no longer cancel themselves.",
+    "perDateHint": "Applies to this date only.",
+    "endDateBeforeStart": "The end date is before the date",
+    "timeToBeforeFrom": "The end is before the start",
+    "untilDate": "until {{date}}",
+    "registrationDeadlineAt": "Sign-up closes {{when}}",
+    "timeToWithoutFrom": "Please also enter the start"
   },
   "polls": {
     "closedOn": "ended {{date}}",
@@ -4333,5 +4346,25 @@
       "noneUnread": "All read and confirmed."
     },
     "noMatch": "No posts found."
+  },
+  "finance": {
+    "externalParty": {
+      "pick": "Choose an external party …"
+    },
+    "invoice": {
+      "no": "No. {{n}}"
+    },
+    "validation": {
+      "amountPositive": "The amount must be more than 0",
+      "dueBeforeIssued": "The due date is before the invoice date"
+    },
+    "annual": {
+      "renameAccount": "Rename",
+      "deleteAccountTitle": "Delete “{{name}}”?",
+      "deleteAccountBody": "An account that categories or closed years still count on stays."
+    },
+    "editInvoice": "Edit invoice",
+    "invoiceSaved": "Invoice saved",
+    "invoiceSavedMsg": "Invoice {{id}} was changed."
   }
 }
