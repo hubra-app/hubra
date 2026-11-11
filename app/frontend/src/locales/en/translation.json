@@ -1048,6 +1048,7 @@
       "detail": "Invoice details",
       "due": "Due",
       "issued": "Issued",
+      "no": "No. {{n}}",
       "notFound": "Invoice not found",
       "number": "Invoice number",
       "numberShort": "No.",
@@ -1161,7 +1162,9 @@
       "memberRequired": "Member is required",
       "partyRequired": "External party is required",
       "amountRequired": "Amount is required",
-      "categoryRequired": "Category is required"
+      "categoryRequired": "Category is required",
+      "amountPositive": "The amount must be more than 0",
+      "dueBeforeIssued": "The due date is before the invoice date"
     },
     "invoiceUpdateFailed": "Could not update invoice.",
     "invoicePaidMsg": "Invoice marked as paid.",
@@ -1418,7 +1421,10 @@
         "amountZero": "Amount 0 (e.g. exempt)",
         "noBillableTier": "Tier not billed"
       }
-    }
+    },
+    "editInvoice": "Edit invoice",
+    "invoiceSaved": "Invoice saved",
+    "invoiceSavedMsg": "Invoice {{id}} was changed."
   },
   "functions": {
     "assignHolder": "Assign person",

@@ -9,8 +9,11 @@ import {
   IconCheck,
   IconExternalLink,
   IconFileDownload,
+  IconPencil,
 } from '@tabler/icons-react'
-import { useNav } from '@/context/AppContext'
+import { useAuth, useNav } from '@/context/AppContext'
+import { useState } from 'react'
+import { EditInvoiceModal } from '@/screens/private/finances/EditInvoiceModal'
 import { useInvoices } from '@/data/lists'
 import { PageHead, InvoicePill } from '@/components/ui'
 import { getInvoice, downloadInvoicePdf } from '@/api/finance'
@@ -29,6 +32,8 @@ export function InvoiceDetailScreen() {
   const { invoices } = useInvoices()
   const queryClient = useQueryClient()
   const markPaidMutation = useMarkInvoicePaid()
+  const { hasPermission } = useAuth()
+  const [editing, setEditing] = useState(false)
   const sendReminderMutation = useSendInvoiceReminder()
   const { data: fetchedInvoice } = useQuery({
     queryKey: qk.invoices.one(id),
@@ -60,6 +65,7 @@ export function InvoiceDetailScreen() {
   }
 
   const isPaid = inv.status === 'Paid'
+  const canUpdate = hasPermission('finance.invoices.update')
   const reminders = inv.reminderSentAt ?? []
 
   const lineItemDesc =
@@ -102,6 +108,12 @@ export function InvoiceDetailScreen() {
               <IconFileDownload size={16} />
               {t('finance.downloadQrBill', 'QR-Rechnung herunterladen')}
             </Button>
+            {!isPaid && canUpdate && (
+              <Button variant="subtle" onClick={() => setEditing(true)}>
+                <IconPencil size={16} />
+                {t('common.edit', 'Bearbeiten')}
+              </Button>
+            )}
             {!isPaid && (
               <Button
                 variant="subtle"
@@ -385,6 +397,7 @@ export function InvoiceDetailScreen() {
           )}
         </Paper>
       </div>
+      <EditInvoiceModal invoice={editing ? inv : null} onClose={() => setEditing(false)} />
     </div>
   )
 }

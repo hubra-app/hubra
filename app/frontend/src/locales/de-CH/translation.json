@@ -1048,6 +1048,7 @@
       "detail": "Rechnungsdetails",
       "due": "Fällig",
       "issued": "Ausgestellt",
+      "no": "Nr. {{n}}",
       "notFound": "Rechnung nicht gefunden",
       "number": "Rechnungsnummer",
       "numberShort": "Nr.",
@@ -1161,7 +1162,9 @@
       "memberRequired": "Bitte wähle ein Mitglied",
       "partyRequired": "Bitte wähle eine externe Partei",
       "amountRequired": "Bitte gib einen Betrag ein",
-      "categoryRequired": "Bitte wähle eine Kategorie"
+      "categoryRequired": "Bitte wähle eine Kategorie",
+      "amountPositive": "Der Betrag muss grösser als 0 sein",
+      "dueBeforeIssued": "Fällig liegt vor dem Rechnungsdatum"
     },
     "invoiceUpdateFailed": "Die Rechnung konnte nicht aktualisiert werden.",
     "invoicePaidMsg": "Die Rechnung ist als bezahlt markiert.",
@@ -1418,7 +1421,10 @@
         "amountZero": "Betrag 0 (z. B. befreit)",
         "noBillableTier": "Stufe ohne Abrechnung"
       }
-    }
+    },
+    "editInvoice": "Rechnung bearbeiten",
+    "invoiceSaved": "Rechnung gespeichert",
+    "invoiceSavedMsg": "Rechnung {{id}} wurde geändert."
   },
   "functions": {
     "assignHolder": "Person zuweisen",

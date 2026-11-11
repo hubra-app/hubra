@@ -289,7 +289,12 @@ export async function getFeeRunPreview(on?: string): Promise<FeeRunPreview> {
 
 export async function updateInvoice(
   id: string,
-  input: { status?: string },
+  input: {
+    status?: string;
+    amount?: number;
+    due?: string;
+    description?: string | null;
+  },
 ): Promise<Invoice> {
   const b = await apiFetch<BackendInvoice>(`/app/finance/invoices/${id}`, {
     method: "PATCH",
