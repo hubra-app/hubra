@@ -13,6 +13,12 @@ for the plan's default).
   warned.
 * **storage_mb** — the club's schema plus mailbox space.  Soft.
 
+Not a usage limit but set the same way: **file_mb**, the largest file the
+club can upload (``hubra.core.files.put`` refuses larger ones).  The club's
+own value wins, then its plan's; a plan without one uses the platform's
+``files.max_mb`` (25 MB).  Whatever it says, the server takes no upload
+larger than ``MAX_UPLOAD_MB`` (100 MB by default, also nginx's limit).
+
 ``check_quotas`` (Celery beat, hourly) warns once per level: at
 ``limits.warn_percent`` (80 % by default) and at 100 %, in the club's bell
 for its owners and in the platform event log (which also puts it in the
@@ -35,6 +41,7 @@ from hubra.core.models.tenant import Tenant
 _log = logging.getLogger(__name__)
 
 KINDS = ("members", "mail_month", "storage_mb")
+FILE_KIND = "file_mb"
 WARN_PERCENT = 80
 
 _MAIL_KINDS = ("mail.sent", "mail.fallback")
@@ -64,9 +71,19 @@ def plan_limits(plan: str) -> dict[str, int | None]:
     from hubra.core.services import plans
 
     try:
-        return plans.limits(plan)
+        limits = plans.limits(plan)
     except Exception:  # noqa: BLE001  (database hiccup: no limits)
         return dict.fromkeys(KINDS)
+    return {k: limits.get(k) for k in KINDS}
+
+
+def _plan_file_mb(plan: str | None) -> int | None:
+    from hubra.core.services import plans
+
+    try:
+        return plans.limits(plan).get(FILE_KIND)
+    except Exception:  # noqa: BLE001  (database hiccup: the default)
+        return None
 
 
 def overrides(tenant: Tenant) -> dict[str, int | None]:
@@ -86,6 +103,71 @@ def overrides(tenant: Tenant) -> dict[str, int | None]:
 
 def limits_for(tenant: Tenant) -> dict[str, int | None]:
     return {**plan_limits(tenant.plan), **overrides(tenant)}
+
+
+# ── Largest file ─────────────────────────────────────────────────────────────
+
+
+def upload_ceiling_mb() -> int:
+    """The largest upload the server takes at all (``MAX_UPLOAD_MB``)."""
+    from flask import current_app, has_app_context
+
+    if not has_app_context():
+        return 100
+    return int(current_app.config.get("MAX_UPLOAD_MB", 100))
+
+
+def default_file_mb() -> int:
+    """``files.max_mb``: the largest file for a plan that sets none."""
+    from hubra.core.services import platform_settings
+
+    value = platform_settings.int_setting("files.max_mb", 25)
+    return value if value >= 1 else 25
+
+
+def _own_file_mb(tenant: Tenant) -> int | None:
+    raw = ((tenant.settings or {}).get("limits") or {}).get(FILE_KIND)
+    if isinstance(raw, int) and not isinstance(raw, bool) and raw >= 1:
+        return raw
+    return None
+
+
+def file_limit(tenant: Tenant | None) -> dict:
+    """The largest file a club can upload, in MB, and where it comes from:
+    ``club`` (its own), ``plan`` or ``default`` (files.max_mb).  ``limit``
+    is capped at the server's ``ceiling``."""
+    ceiling = upload_ceiling_mb()
+    default = default_file_mb()
+    plan = _plan_file_mb(tenant.plan) if tenant is not None else None
+    own = _own_file_mb(tenant) if tenant is not None else None
+    wanted, source = (
+        (own, "club")
+        if own is not None
+        else (plan, "plan")
+        if plan is not None
+        else (default, "default")
+    )
+    return {
+        "limit": min(wanted, ceiling),
+        "wanted": wanted,
+        "source": source,
+        "custom": own is not None,
+        "plan_limit": plan,
+        "default": default,
+        "ceiling": ceiling,
+    }
+
+
+def max_file_mb(tenant: Tenant | None) -> int:
+    return file_limit(tenant)["limit"]
+
+
+def own_limits(tenant: Tenant) -> dict[str, int | None]:
+    """Everything the club has of its own (for the audit log)."""
+    own = overrides(tenant)
+    if (mb := _own_file_mb(tenant)) is not None:
+        own[FILE_KIND] = mb
+    return own
 
 
 def _month_start(now: datetime) -> datetime:
@@ -150,15 +232,29 @@ def status(tenant: Tenant, used: dict[str, int] | None = None) -> dict:
             "percent": round(used[kind] * 100 / limit) if limit else None,
             "level": _level(used[kind], limit, warn),
         }
-    return {"limits": out, "warn_percent": warn}
+    return {"limits": out, "warn_percent": warn, "file": file_limit(tenant)}
 
 
 def set_overrides(tenant: Tenant, values: dict) -> None:
     """Body from manage: ``{kind: number | null | "plan"}``; "plan" drops the
-    club's own value."""
+    club's own value.  ``file_mb`` takes a number of MB or "plan" (no null:
+    a file always has a largest size)."""
     settings = dict(tenant.settings or {})
     own = dict(settings.get("limits") or {})
     for kind, value in values.items():
+        if kind == FILE_KIND:
+            from hubra.core.services import plans
+
+            if value == "plan":
+                own.pop(kind, None)
+            else:
+                mb = plans.file_mb(value, kind)
+                if mb is None:
+                    raise ApiError(
+                        400, "VALIDATION_ERROR", f"{kind} is a number of MB or 'plan'"
+                    )
+                own[kind] = mb
+            continue
         if kind not in KINDS:
             raise ApiError(400, "VALIDATION_ERROR", f"Unknown limit {kind!r}")
         if value == "plan":

@@ -245,9 +245,14 @@ Backups are a platform task: manage › Backups, global permission
 - Each backup holds one schema: **Global** (`public`: accounts, clubs,
   platform settings) or **one club**. A single club can be restored without
   touching the others.
-- Celery beat makes a scheduled set every day, week and month, and keeps
-  7 daily, 4 weekly and 6 monthly backups per set. Manual backups are kept
-  until you delete them.
+- Celery beat makes a scheduled set every day, week and month. Retention is
+  set in manage › Backups › Einstellungen (`backup.keep_*`): by default each
+  set keeps its newest 7 daily, 4 weekly and 12 monthly backups; manual
+  backups are deleted after 90 days (`backup.keep_manual_days`; 0 keeps
+  them); each backup of a club deleted for good is deleted 30 days after it
+  was made (`backup.keep_deleted_club_days`; 0 lets them follow the counts
+  like any club's). Only completed
+  backups count; pruning runs after each scheduled run.
 - Files are encrypted to `BACKUP_PUBLIC_KEY` ([age](https://age-encryption.org))
   (platform setting, default from env) and stored in the S3 bucket from
   Backups › Storage. The
@@ -321,7 +326,12 @@ store (`hubra.core.files`). Set it in manage › Backups › Storage under
   the bucket only ever holds ciphertext, and a file opens only in its own
   club. A club's files count towards its storage, and deleting a club for
   good deletes its files.
-- `files.max_mb` (default 25) is the largest file a club can upload.
+- The largest file a club can upload is set per plan (All clubs › Tarife &
+  Preise, "Grösste Datei") and, for one club, on its page (Limits ›
+  Anpassen). A plan without its own value uses `files.max_mb` (default 25).
+  Nothing goes above `MAX_UPLOAD_MB` (env, default 100), the largest upload
+  the backend and the frontends' nginx take; on k3s the Ingress in front
+  needs a body size at least that large too.
 - The database backups don't contain the files. Keep the bucket versioned or
   copy it elsewhere; without the database (the club's data keys) a copy of
   the bucket can't be opened.
