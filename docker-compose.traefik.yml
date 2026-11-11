@@ -23,7 +23,7 @@ services:
       - "traefik.http.routers.hubra-secure.rule=Host(`${HUBRA_APP_HOST:-app.hubra.club}`)"
       - "traefik.http.routers.hubra-secure.entrypoints=websecure"
       - "traefik.http.routers.hubra-secure.tls.certresolver=letencrypt"
-      - "traefik.http.services.hubra-secure.loadbalancer.server.port=80"
+      - "traefik.http.services.hubra-secure.loadbalancer.server.port=8080"
       - "traefik.http.routers.hubra-secure.middlewares=crowdsec@file,error-pages-middleware"
 
   admin-frontend:
@@ -36,7 +36,7 @@ services:
       - "traefik.http.routers.manage-secure.rule=Host(`${HUBRA_MANAGE_HOST:-manage.hubra.club}`)"
       - "traefik.http.routers.manage-secure.entrypoints=websecure"
       - "traefik.http.routers.manage-secure.tls.certresolver=letencrypt"
-      - "traefik.http.services.manage-secure.loadbalancer.server.port=80"
+      - "traefik.http.services.manage-secure.loadbalancer.server.port=8080"
       - "traefik.http.routers.manage-secure.middlewares=crowdsec@file,error-pages-middleware"
 
   sso-frontend:
@@ -49,7 +49,7 @@ services:
       - "traefik.http.routers.sso-secure.rule=Host(`${HUBRA_SSO_HOST:-sso.hubra.club}`)"
       - "traefik.http.routers.sso-secure.entrypoints=websecure"
       - "traefik.http.routers.sso-secure.tls.certresolver=letencrypt"
-      - "traefik.http.services.sso-secure.loadbalancer.server.port=80"
+      - "traefik.http.services.sso-secure.loadbalancer.server.port=8080"
       - "traefik.http.routers.sso-secure.middlewares=crowdsec@file,error-pages-middleware"
       # join.hubra.club: the same frontend for starting and joining clubs. Its
       # own router, so its certificate can't hold up the SSO one.
@@ -69,7 +69,7 @@ services:
       - "traefik.http.routers.support-secure.rule=Host(`${HUBRA_SUPPORT_HOST:-support.hubra.club}`)"
       - "traefik.http.routers.support-secure.entrypoints=websecure"
       - "traefik.http.routers.support-secure.tls.certresolver=letencrypt"
-      - "traefik.http.services.support-secure.loadbalancer.server.port=80"
+      - "traefik.http.services.support-secure.loadbalancer.server.port=8080"
       - "traefik.http.routers.support-secure.middlewares=crowdsec@file,error-pages-middleware"
 
   backend:
