@@ -50,8 +50,9 @@ find "$html" -type f \( -name '*.js' -o -name '*.html' \) -exec sed -i "$script"
 
 # Security headers for the SPA (the API sets its own). The page loads scripts
 # and calls the API on its own origin or, when VITE_API_BASE is a full URL,
-# on that origin (plugin frontends come from the API). Fonts come from Google
-# Fonts. CSP replaces the policy; CSP=off sends none.
+# on that origin (plugin frontends come from the API). Fonts are bundled
+# (packages/ui/src/fonts), nothing loads from a third-party host. CSP
+# replaces the policy; CSP=off sends none.
 origin_of() {
   case "$1" in
     http://* | https://*) printf '%s' "$1" | sed -E 's#^(https?://[^/]+).*#\1#' ;;
@@ -62,11 +63,21 @@ api_origin="$(origin_of "${VITE_API_BASE-/api}")"
 app_origins="$(origin_of "${VITE_COS_URL-https://app.hubra.club}") $(origin_of "${VITE_SSO_URL-https://sso.hubra.club}")"
 default_csp="default-src 'self'; script-src 'self' ${api_origin}; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' ${api_origin} ${app_origins}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
 csp="${CSP:-$default_csp}"
+# Strict-Transport-Security on HTTPS. No includeSubDomains by default: on an
+# install served from a bare domain it would force HTTPS on every other host
+# of that domain. HSTS replaces the value; HSTS=off sends none.
+hsts="${HSTS:-max-age=31536000}"
+if [ "$hsts" = "off" ]; then hsts=""; fi
 {
   echo 'add_header X-Content-Type-Options "nosniff" always;'
   echo 'add_header X-Frame-Options "DENY" always;'
   echo 'add_header Referrer-Policy "strict-origin-when-cross-origin" always;'
-  echo 'add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;'
+  # The camera stays allowed for the page itself: the Keys check-in scans
+  # badges with it (BarcodeDetector). Nothing else, and no embedded frame.
+  echo 'add_header Permissions-Policy "camera=(self), microphone=(), geolocation=(), payment=(), usb=(), serial=(), hid=(), bluetooth=()" always;'
+  # HSTS only on HTTPS requests (directly or behind a TLS proxy). The value
+  # comes from the map in default.conf and is empty, so not sent, over HTTP.
+  echo 'add_header Strict-Transport-Security $hubra_hsts always;'
   if [ "$csp" != "off" ]; then
     echo "add_header Content-Security-Policy \"$csp\" always;"
   fi
@@ -121,6 +132,14 @@ map \$http_x_forwarded_proto \$hubra_forwarded_proto {
     default \$http_x_forwarded_proto;
     ""      \$scheme;
 }
+
+map \$hubra_forwarded_proto \$hubra_hsts {
+    https   "${hsts}";
+    default "";
+}
+
+# No nginx version in the Server header or on error pages.
+server_tokens off;
 
 server {
     listen 80;
