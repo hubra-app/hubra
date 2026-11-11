@@ -207,7 +207,7 @@ SPECS: tuple[Spec, ...] = (
         "backup.keep_manual_days",
         "Manual backups kept for",
         "Days a backup made by hand is kept; 0 keeps it until someone deletes it",
-        lambda cfg: "0",
+        lambda cfg: "90",
         "keep_days",
     ),
     Spec(
@@ -215,7 +215,7 @@ SPECS: tuple[Spec, ...] = (
         "Backups of deleted clubs kept for",
         "Days each backup of a club deleted for good is kept, counted from "
         "the day it was made; 0 keeps them like any other club's",
-        lambda cfg: "0",
+        lambda cfg: "30",
         "keep_days",
     ),
     Spec(

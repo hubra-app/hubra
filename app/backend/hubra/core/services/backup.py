@@ -79,11 +79,11 @@ def retention_policy() -> dict[str, int]:
     for backup_type, (key, default) in _RETENTION.items():
         value = ps.int_setting(key, default)
         policy[backup_type] = value if value >= 1 else default
-    for name, key in (
-        ("manual_days", "backup.keep_manual_days"),
-        ("deleted_club_days", "backup.keep_deleted_club_days"),
+    for name, key, default in (
+        ("manual_days", "backup.keep_manual_days", 90),
+        ("deleted_club_days", "backup.keep_deleted_club_days", 30),
     ):
-        policy[name] = max(0, ps.int_setting(key, 0))
+        policy[name] = max(0, ps.int_setting(key, default))
     return policy
 
 

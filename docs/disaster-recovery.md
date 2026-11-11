@@ -305,14 +305,14 @@ expired (12 months with the default retention).
 | Daily    | Every day at 03:00 UTC | 7 days (`backup.keep_daily`)     |
 | Weekly   | Sunday at 03:15 UTC    | 4 weeks (`backup.keep_weekly`)   |
 | Monthly  | 1st of month at 03:30  | 12 months (`backup.keep_monthly`) |
-| Manual   | On demand              | Until deleted (`backup.keep_manual_days`, 0) |
+| Manual   | On demand              | 90 days (`backup.keep_manual_days`, 0 = until deleted) |
 
 Each scheduled run backs up the global schema and every active club.
 Retention counts per set: the global backups and each club's backups are
 kept separately (7 daily for the global data, 7 daily for each club, and so
 on). The numbers are platform settings (manage › Backups › Einstellungen ›
 Aufbewahrung). Manual backups are deleted after `backup.keep_manual_days`
-days (0, the default: never). The backups of a club deleted for good are
-deleted `backup.keep_deleted_club_days` days after each was made (0, the
-default: they follow the counts like any club's). Pruning runs after each
+days (90 by default; 0: never). The backups of a club deleted for good are
+deleted `backup.keep_deleted_club_days` days after each was made (30 by
+default; 0: they follow the counts like any club's). Pruning runs after each
 scheduled run and deletes the S3 object too.

@@ -248,9 +248,10 @@ Backups are a platform task: manage › Backups, global permission
 - Celery beat makes a scheduled set every day, week and month. Retention is
   set in manage › Backups › Einstellungen (`backup.keep_*`): by default each
   set keeps its newest 7 daily, 4 weekly and 12 monthly backups; manual
-  backups stay until you delete them (`backup.keep_manual_days`, 0); the
-  backups of a club deleted for good follow the same counts unless
-  `backup.keep_deleted_club_days` gives them a time limit. Only completed
+  backups are deleted after 90 days (`backup.keep_manual_days`; 0 keeps
+  them); each backup of a club deleted for good is deleted 30 days after it
+  was made (`backup.keep_deleted_club_days`; 0 lets them follow the counts
+  like any club's). Only completed
   backups count; pruning runs after each scheduled run.
 - Files are encrypted to `BACKUP_PUBLIC_KEY` ([age](https://age-encryption.org))
   (platform setting, default from env) and stored in the S3 bucket from

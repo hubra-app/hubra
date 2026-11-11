@@ -672,8 +672,8 @@ class TestRetentionPolicy:
             "scheduled_daily": 7,
             "scheduled_weekly": 4,
             "scheduled_monthly": 12,
-            "manual_days": 0,
-            "deleted_club_days": 0,
+            "manual_days": 90,
+            "deleted_club_days": 30,
         }
 
     def test_counts_come_from_the_settings(
@@ -724,7 +724,8 @@ class TestRetentionPolicy:
         db.session.add_all([old, new])
         db.session.commit()
 
-        # 0 (the default): kept until someone deletes them.
+        # 0: kept until someone deletes them.
+        platform_settings.set_many({"backup.keep_manual_days": "0"})
         assert self._prune(mock_s3_client) == {}
         platform_settings.set_many({"backup.keep_manual_days": "30"})
         assert self._prune(mock_s3_client) == {"manual": 1}
@@ -763,6 +764,10 @@ class TestRetentionPolicy:
         db.session.add_all([gone, recent])
         db.session.commit()
 
+        # 0: they follow the counts like any club's.
+        platform_settings.set_many(
+            {"backup.keep_deleted_club_days": "0", "backup.keep_manual_days": "0"}
+        )
         assert self._prune(mock_s3_client) == {}
         platform_settings.set_many({"backup.keep_deleted_club_days": "90"})
         assert self._prune(mock_s3_client) == {"scheduled_daily": 1}
