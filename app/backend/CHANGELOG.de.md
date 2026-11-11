@@ -24,6 +24,8 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 - **Dashboard mit Gruppen teilen**: das Formular für ein neues Dashboard und ⋯ › Name und Sichtbarkeit legen fest, wer es sieht: Privat, Ganzer Verein oder gewählte Gruppen. Ein mit Gruppen geteiltes Dashboard sehen nur deren Mitglieder. Braucht `flask db upgrade` (neue Spalte `dashboards.group_ids`, läuft nach dem Deploy von selbst).
 - **Geplante und ablaufende Beiträge**: Das Beitragsformular hat **Veröffentlichen am** (der Beitrag bleibt für Mitglieder verborgen und erscheint mit seiner Benachrichtigung höchstens fünf Minuten nach diesem Zeitpunkt) und **Ausblenden nach** (danach sehen ihn die Mitglieder nicht mehr). Wer den Beitrag verfasst hat oder bearbeiten darf, sieht beide Arten weiterhin, markiert. Braucht `flask db upgrade` (läuft nach dem Deploy von selbst).
 - **Beiträge mit Lesebestätigung**: Mit **Lesebestätigung verlangen** bestätigen Mitglieder einen Beitrag mit einem Tipp; wer den Beitrag bearbeiten darf, sieht, wer bestätigt hat und wer nicht, und wer fehlt, bekommt nach einigen Tagen eine Erinnerung (Einstellung bei den Beiträgen, standardmässig 7, 0 für keine). Braucht `flask db upgrade` (läuft nach dem Deploy von selbst).
+- **Enddatum, Fristen und Zeit von/bis bei Anlässen**: Das Anlass-Formular hat Enddatum (mehrtägige Anlässe), Anmeldeschluss und Abmeldeschluss (die App setzte sie schon durch, aber niemand konnte sie eintragen) und statt Freitext die Felder Beginn und Ende. Eine alte Zeit als Freitext bleibt, bis eine Zeit gewählt wird. Die Liste zeigt Enddatum und Anmeldeschluss.
+- **Offene Rechnungen bearbeiten**: Finanzen › Rechnungen › ⋯ › Bearbeiten (und auf der Seite der Rechnung) ändert Betrag, Fälligkeit und Text einer offenen Rechnung. Eine bezahlte Rechnung ist gesperrt; die API lehnt Änderungen ab, bis die Zahlung zurückgenommen ist.
 
 ### Changed
 
@@ -35,6 +37,7 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 ### Fixed
 
 - Dashboard › Verein anpassen schlug fehl, und «Offene Rechnungen» liess sich keinem Dashboard hinzufügen: Widget-Typen mit Grossbuchstaben wurden abgelehnt.
+- **Formulare überarbeitet**: Auswahlfelder leeren sich nicht mehr, wenn man den gewählten Eintrag nochmals anklickt (die Anzahl pro Seite unter Listen konnte auf 0 fallen); durchsuchbare Auswahlfelder zeigen «Keine Ergebnisse.», wenn nichts passt; Einträge wie «Kategorie wählen …» sind Platzhalter statt Auswahl. Dialoge haben eine gemeinsame Fusszeile (Abbrechen, dann die Hauptaktion; Löschen links) und speichern mit Enter, in der Vereins-App und in manage. Geldfelder sehen gleich aus (CHF, zwei Nachkommastellen, ohne Pfeile), Plätze bei Anlässen sind Zahlenfelder, und Einstellungen › Erweitert nutzt die Checkboxen und den Filter der App.
 
 ## [0.2.5] - 2026-11-10
 
