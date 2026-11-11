@@ -4440,5 +4440,6 @@
   "events.month.next": "Nächster Monat",
   "events.month.today": "Heute",
   "events.month.more": "+{{count}} weitere",
-  "events.month.none": "Keine Anlässe an diesem Tag."
+  "events.month.none": "Keine Anlässe an diesem Tag.",
+  "common.externalImage": "Bild von {{host}} anzeigen"
 }
