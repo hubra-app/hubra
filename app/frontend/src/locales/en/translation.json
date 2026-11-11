@@ -616,7 +616,8 @@
     "searchMembers": "Search members …",
     "noMembersYet": "No members yet.",
     "remove": "Remove",
-    "showAll": "Show all"
+    "showAll": "Show all",
+    "externalImage": "Show image from {{host}}"
   },
   "dashboard": {
     "activeMembers": "Active members",

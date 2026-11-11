@@ -18,6 +18,7 @@
 #      allowed) trusts X-Forwarded-For from a proxy in front of this nginx.
 #      MAX_UPLOAD_MB (default 100) is the largest request body, as for the
 #      backend's file uploads; give both the same value.
+#      nginx runs as a non-root user and listens on LISTEN_PORT (8080).
 #
 # An image built with real VITE_* build args has no placeholders left, so
 # step 1 changes nothing for it.
@@ -32,7 +33,7 @@ case "$max_upload_mb" in
 esac
 
 rm -rf "${html:?}"/*
-cp -a "$src"/. "$html"/
+cp -R "$src"/. "$html"/
 
 # Escape a value for the replacement side of a sed s|...|...| expression.
 sed_escape() {
@@ -88,12 +89,15 @@ if [ "$hsts" = "off" ]; then hsts=""; fi
   if [ "$csp" != "off" ]; then
     echo "add_header Content-Security-Policy \"$csp\" always;"
   fi
-} > /etc/nginx/hubra-headers.conf
+} > /etc/nginx/conf.d/hubra-headers.inc
 
 real_ip=""
+trusted_proxies=""
 if [ -n "${REAL_IP_FROM:-}" ]; then
   for cidr in $(echo "$REAL_IP_FROM" | tr ',' ' '); do
     real_ip="${real_ip}    set_real_ip_from ${cidr};
+"
+    trusted_proxies="${trusted_proxies}    ${cidr} 1;
 "
   done
   real_ip="${real_ip}    real_ip_header X-Forwarded-For;
@@ -135,9 +139,23 @@ if [ -n "${GLOBAL_API_UPSTREAM:-}" ]; then
 fi
 
 cat > /etc/nginx/conf.d/default.conf <<CONF
-map \$http_x_forwarded_proto \$hubra_forwarded_proto {
-    default \$http_x_forwarded_proto;
-    ""      \$scheme;
+# X-Forwarded-Proto counts only from a proxy: a private or loopback address
+# (Traefik, Docker, a k8s ingress) or one of REAL_IP_FROM, and only as http
+# or https. A client reaching this nginx directly can't claim HTTPS.
+geo \$realip_remote_addr \$hubra_from_proxy {
+    default        0;
+    127.0.0.0/8    1;
+    10.0.0.0/8     1;
+    172.16.0.0/12  1;
+    192.168.0.0/16 1;
+    ::1            1;
+    fc00::/7       1;
+${trusted_proxies}}
+
+map "\$hubra_from_proxy:\$http_x_forwarded_proto" \$hubra_forwarded_proto {
+    "1:https" https;
+    "1:http"  http;
+    default   \$scheme;
 }
 
 map \$hubra_forwarded_proto \$hubra_hsts {
@@ -149,7 +167,7 @@ map \$hubra_forwarded_proto \$hubra_hsts {
 server_tokens off;
 
 server {
-    listen 80;
+    listen ${LISTEN_PORT:-8080};
     server_name _;
     root ${html};
     index index.html;
@@ -158,7 +176,7 @@ ${real_ip}
 ${api}
     # The commit this image was built from, for manage on another host.
     location = /version.json {
-        include /etc/nginx/hubra-headers.conf;
+        include /etc/nginx/conf.d/hubra-headers.inc;
         add_header Cache-Control "no-cache";
         add_header Access-Control-Allow-Origin "*";
         try_files \$uri =404;
@@ -166,13 +184,13 @@ ${api}
 
     location /assets/ {
         expires 1y;
-        include /etc/nginx/hubra-headers.conf;
+        include /etc/nginx/conf.d/hubra-headers.inc;
         add_header Cache-Control "public, immutable";
         try_files \$uri =404;
     }
 
     location / {
-        include /etc/nginx/hubra-headers.conf;
+        include /etc/nginx/conf.d/hubra-headers.inc;
         add_header Cache-Control "no-cache";
         try_files \$uri \$uri/ /index.html;
     }
