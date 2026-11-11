@@ -7,6 +7,8 @@
   invoice to a member or an outside party, booked like one made in the app.
 - ``finance.external_party.save`` (action): create an outside party, or keep
   one up to date.
+- ``finance.transaction.create`` (action): a booking (income or expense) in
+  the transactions table, checked and logged like one made in the books.
 
 Plugins that offer a source for the fee basis do it the other way round:
 they offer a query named ``<module>.fee_basis.<source>`` with the shapes
@@ -19,7 +21,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class PeriodIn(BaseModel):
@@ -186,6 +188,74 @@ def save_external_party(ctx, data: ExternalPartyIn) -> ExternalPartyOut:
     if changed:
         ExternalPartyService.update(party, changed, actor_id)
     return ExternalPartyOut(id=party.id, name=party.name, created=False)
+
+
+class TransactionIn(BaseModel):
+    """A booking. ``amount`` is given positive; an expense is stored
+    negative, as the books do."""
+
+    date: date
+    description: str = Field(min_length=1, max_length=255)
+    amount: Decimal = Field(gt=0, lt=Decimal("10000000000"))
+    type: Literal["income", "expense"]
+    method: Literal["IBAN", "Cash", "Twint", "Card"]
+    category_id: int | None = None
+    member_id: int | None = None
+    payee_name: str | None = Field(default=None, max_length=255)
+    actor_id: int | None = None
+
+
+class TransactionOut(BaseModel):
+    id: int
+    amount: Decimal
+    type: str
+
+
+def create_transaction(ctx, data: TransactionIn) -> TransactionOut:
+    from sqlalchemy import select
+
+    from hubra.core.contracts import Refused
+    from hubra.core.extensions import db
+    from hubra.core.models.finance import Transaction, TransactionCategory
+    from hubra.core.models.member import Member
+    from hubra.core.utils import log_audit
+
+    if data.member_id is not None and (
+        db.session.scalar(
+            select(Member.id)
+            .where(Member.id == data.member_id)
+            .where(Member.archived_at.is_(None))
+        )
+        is None
+    ):
+        raise Refused(f"Member {data.member_id} not found", code="NOT_FOUND")
+    if (
+        data.category_id is not None
+        and db.session.get(TransactionCategory, data.category_id) is None
+    ):
+        raise Refused(f"Category {data.category_id} not found", code="NOT_FOUND")
+    amount = data.amount.quantize(Decimal("0.01"))
+    tx = Transaction(
+        date=data.date,
+        description=data.description,
+        category_id=data.category_id,
+        member_id=data.member_id,
+        payee_name=data.payee_name,
+        amount=-amount if data.type == "expense" else amount,
+        method=data.method,
+        type=data.type,
+    )
+    db.session.add(tx)
+    # A closed fiscal year refuses the booking here (the books' flush check).
+    db.session.flush()
+    log_audit(
+        actor_id=_actor_id(ctx, data.actor_id),
+        action="create_transaction",
+        target_type="Transaction",
+        target_id=tx.id,
+        target_label=data.description,
+    )
+    return TransactionOut(id=tx.id, amount=tx.amount, type=tx.type)
 
 
 # ── Fee basis sources (offered by plugins, asked by fee_basis) ──────────────

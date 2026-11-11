@@ -283,3 +283,54 @@ def test_badge_lookup_refuses_unknown_numbers(app, seeded_db):
         with pytest.raises(Refused) as exc:
             query("members.badge.lookup", code=code, actor=SYSTEM)
         assert exc.value.code == "NOT_FOUND"
+
+
+def test_transaction_create_books_an_expense(app, seeded_db):
+    from sqlalchemy import select
+
+    from hubra.core.models.audit import AuditEntry
+    from hubra.core.models.finance import Transaction
+
+    me = seeded_db["admin"].id
+    made = call(
+        "finance.transaction.create",
+        date=date.today(),
+        description="Spesen: Kreide",
+        amount=Decimal("23.50"),
+        type="expense",
+        method="Cash",
+        member_id=me,
+        actor_id=me,
+        actor=SYSTEM,
+    )
+    tx = _db.session.get(Transaction, made["id"])
+    assert tx.amount == Decimal("-23.50") and tx.type == "expense"
+    assert _db.session.scalar(
+        select(AuditEntry).where(
+            AuditEntry.action == "create_transaction", AuditEntry.target_id == tx.id
+        )
+    )
+
+
+def test_transaction_create_refuses_bad_input(app, seeded_db):
+    with pytest.raises(Refused):
+        call(
+            "finance.transaction.create",
+            date=date.today(),
+            description="x",
+            amount=Decimal("5"),
+            type="expense",
+            method="Cash",
+            member_id=99999,
+            actor=SYSTEM,
+        )
+    with pytest.raises((Refused, ApiError, ValueError)):
+        call(
+            "finance.transaction.create",
+            date=date.today(),
+            description="x",
+            amount=Decimal("-5"),
+            type="expense",
+            method="Cash",
+            actor=SYSTEM,
+        )

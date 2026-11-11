@@ -209,6 +209,7 @@ and switch it on. Emitters and handlers don't change.
 | `finance.invoice.create` | action | `{member_id \| external_party_id, issued, due, amount, purpose?, description?, category_id?, actor_id?}` → `{id, status, amount, ...}`, booked and announced like an invoice made in the app; needs `finance.invoices.create` |
 | `finance.invoice.delete` | action | `{invoice_id, actor_id?}`, with its booking; needs `finance.invoices.delete` |
 | `finance.external_party.save` | action | `{external_party_id?, name, email?, address_*?, notes?, actor_id?}` → `{id, name, created}`: a new outside party, or the given one kept up to date; needs `finance.external_parties.create` |
+| `finance.transaction.create` | action | `{date, description, amount (> 0), type: income\|expense, method: IBAN\|Cash\|Twint\|Card, category_id?, member_id?, payee_name?, actor_id?}` → `{id, amount, type}`; an expense is stored negative, a closed fiscal year refuses it; needs `finance.transactions.create` |
 | `events.event.get` | query | `{event_id}` → `{id, title, starts_at, ends_at, places_taken, maybe}` (local times; none for all-day); needs `events.events.read` |
 | `events.event.create` | action | the event form's fields (`title, date, type, time?, ...`, `actor_id?`), checked like the form → `{id, title, date}`; needs `events.events.create` |
 | `events.registration.set` | action | `{event_id, member_id, status: registered\|cancelled\|maybe, own?, notes?, guests?}` → `{status}`, with the waitlist and (for `own`) the deadlines; needs `events.events.register` |

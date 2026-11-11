@@ -189,5 +189,13 @@ module = Module(
             perm="finance.external_parties.create",
             description="Create an outside party, or keep one up to date",
         ),
+        action_contract(
+            "finance.transaction.create",
+            "hubra.api.finance.contracts:create_transaction",
+            input="hubra.api.finance.contracts:TransactionIn",
+            output="hubra.api.finance.contracts:TransactionOut",
+            perm="finance.transactions.create",
+            description="Book an income or an expense",
+        ),
     ),
 )
