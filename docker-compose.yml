@@ -47,6 +47,7 @@ x-frontend-env: &frontend-env
   VITE_SUPPORT_URL: ${SUPPORT_BASE_URL:-http://localhost:8083}
   REAL_IP_FROM: ${REAL_IP_FROM:-}
   CSP: ${CSP:-}
+  HSTS: ${HSTS:-}
 
 services:
   frontend:
