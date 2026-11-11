@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
 import { Button, Group, Select, Text, TextInput } from '@mantine/core'
-import { IconArrowLeft, IconDownload } from '@tabler/icons-react'
+import { IconDownload } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { useAuth, useToast } from '@/context/AppContext'
 import { qk } from '@/data/keys'
-import { Card, EmptyState, Field, PageHead } from '@/components/ui'
+import { Card, EmptyState, Field } from '@/components/ui'
 import { listGroups } from '@/api/groups'
 import {
   downloadAttendanceCSV,
@@ -26,7 +25,6 @@ const CELL: Record<AttendanceStatus, { label: string; color: string }> = {
 export function AttendanceScreen() {
   const { t, i18n } = useT()
   const { notify } = useToast()
-  const navigate = useNavigate()
   const { hasPermission } = useAuth()
   const clubWide = hasPermission(PERM)
   const today = new Date().toISOString().slice(0, 10)
@@ -77,12 +75,7 @@ export function AttendanceScreen() {
 
   return (
     <div>
-      <PageHead title={t('events.attendance.overview', 'Anwesenheit')} />
-      <Group justify="space-between" mb={16} gap="xs" className="page-actions">
-        <Button variant="subtle" onClick={() => navigate('/app/operations/events')}>
-          <IconArrowLeft size={16} />
-          {t('shell.nav.events')}
-        </Button>
+      <Group justify="flex-end" mb={16} gap="xs" className="page-actions">
         <Button variant="default" onClick={download} disabled={!valid}>
           <IconDownload size={16} />
           {t('events.attendance.csv', 'CSV für J+S')}

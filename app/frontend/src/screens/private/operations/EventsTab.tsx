@@ -1,8 +1,7 @@
 import { colorText } from '@hubra/ui'
 import { EVENT_TYPE_COLORS } from '@/constants'
 import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   Button,
   Group,
@@ -14,8 +13,8 @@ import {
   SimpleGrid,
   SegmentedControl,
   Divider,
-  ActionIcon,
   Tooltip,
+  Anchor,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
@@ -31,12 +30,8 @@ import {
   IconLogout as Leave,
   IconRepeat,
   IconWorld,
-  IconClipboardCheck,
-  IconChartBar,
-  IconUserPlus,
-  IconCalendarOff,
-  IconCalendarCheck,
-  IconTemplate,
+  IconList,
+  IconCalendarMonth,
 } from '@tabler/icons-react'
 import { useToast, useAuth, useData } from '@/context/AppContext'
 import { qk } from '@/data/keys'
@@ -45,9 +40,7 @@ import {
   Modal,
   Field,
   usePagination,
-  ConfirmModal,
   DataTable,
-  ActionButtons,
   useSubmitOnce,
   useLinkedId,
   LinkedEntryBar,
@@ -56,12 +49,9 @@ import type { ClubEvent } from '@/types'
 import {
   createEvent,
   updateEvent,
-  deleteEvent,
-  reinstateEvent,
   type EventUpdate,
   type SeriesScope,
 } from '@/api/events'
-import { listGroups } from '@/api/groups'
 import {
   hasOpenSignUp,
   useToggleJoinEvent,
@@ -69,9 +59,11 @@ import {
 } from '@/screens/private/operations/useEventActions'
 import { CalendarSubscribeButton } from './CalendarSubscribeButton'
 import { PendingSignUpsModal } from './PendingSignUpsModal'
-import { AttendanceModal } from './AttendanceModal'
-import { CancelEventModal } from './CancelEventModal'
-import { SaveTemplateModal, TemplateMenu } from './EventTemplates'
+import { TemplateMenu } from './EventTemplates'
+import { EventOrganiserMenu } from './EventOrganiserMenu'
+import { EventsMonth } from './EventsMonth'
+import { DeleteEventModal } from './DeleteEventModal'
+import { useEventPerms } from './eventPerms'
 import { templateExtras } from './templateExtras'
 import type { EventTemplate, EventTemplateData } from '@/api/events'
 import { RecurrenceFields } from './RecurrenceFields'
@@ -144,7 +136,7 @@ export function EventsTab() {
   const { events } = useEvents()
   const myJoinedEvents = useMyJoinedEvents()
   const eventCache = useListCache<ClubEvent>(qk.events)
-  const { currentUser, hasPermission } = useAuth()
+  const { currentUser } = useAuth()
   const { t, i18n } = useT()
   const joinEventMutation = useToggleJoinEvent()
   const maybeMutation = useMaybeEvent()
@@ -152,50 +144,14 @@ export function EventsTab() {
   const createScope = useContentGroups('events.events.create')
   const updateScope = useContentGroups('events.events.update')
   const canCreate = createScope.canAny
-  // Templates are club-wide: saving and listing them takes the club-wide right.
-  const canTemplates = hasPermission('events.events.create')
+  const { canUpdate, canDelete, canApprove, canTemplates } = useEventPerms()
   const { moduleList, modules } = useData()
   const federationOn = Boolean(modules.federation)
   const eventTypes = clubEventTypes(
     moduleList.find((m) => m.code === 'events')?.config?.event_types,
   )
-  // Whoever put an event up runs it (the API checks the same).
-  const hosts = (ev: ClubEvent) =>
-    currentUser != null && ev.createdById === Number(currentUser.id)
-  const inScope = (key: string, ev: ClubEvent) => hasPermission(key, ev.groupId ?? undefined)
-  const canUpdate = (ev: ClubEvent) => inScope('events.events.update', ev) || hosts(ev)
-  const canDelete = (ev: ClubEvent) => inScope('events.events.delete', ev) || hosts(ev)
-  const canApprove = (ev: ClubEvent) => inScope('events.events.add_attendee', ev) || hosts(ev)
-  const navigate = useNavigate()
-  const mayGroups = moduleList.some((m) => m.code === 'groups')
-  const { data: groups = [] } = useQuery({
-    queryKey: qk.groups.all,
-    queryFn: listGroups,
-    enabled: mayGroups,
-  })
-  // Club-wide, or a trainer holding the right for one group.
-  const canTakeRoll = (ev: ClubEvent) =>
-    hasPermission('events.events.add_attendee', ev.groupId ?? undefined)
-  const seesAttendance =
-    hasPermission('events.events.add_attendee') || groups.some((g) => hasPermission('events.events.add_attendee', g.id))
-  const [rollFor, setRollFor] = useState<ClubEvent | null>(null)
-  const [cancelFor, setCancelFor] = useState<ClubEvent | null>(null)
-  const [templateFor, setTemplateFor] = useState<ClubEvent | null>(null)
   // The template a new event was started from (fields the form doesn't show).
   const [fromTemplate, setFromTemplate] = useState<EventTemplateData | null>(null)
-  const reinstate = async (ev: ClubEvent) => {
-    try {
-      await reinstateEvent(ev.id)
-      eventCache.patch(ev.id, (e) => ({ ...e, cancelledAt: null, cancelReason: null }))
-      notify(
-        'success',
-        t('events.cancel.reinstated', 'Anlass findet statt'),
-        t('events.cancel.reinstatedMsg', 'Die Angemeldeten wurden benachrichtigt.'),
-      )
-    } catch {
-      notify('error', t('events.cancel.reinstateFailed', 'Das hat nicht geklappt'))
-    }
-  }
   const [repeat, setRepeat] = useState<RepeatState>(() => defaultRepeat(''))
   const [ruleAtOpen, setRuleAtOpen] = useState<RepeatState | null>(null)
   const [editScope, setEditScope] = useState<SeriesScope>('this')
@@ -203,6 +159,22 @@ export function EventsTab() {
   const [typeFilter, setTypeFilter] = useState('All')
   const [when, setWhen] = useState<'upcoming' | 'past' | 'all'>('upcoming')
   const [search, setSearch] = useState('')
+  // List or month; remembered on this device.
+  const [view, setViewState] = useState<'list' | 'month'>(() => {
+    try {
+      return localStorage.getItem('hubra.events.view') === 'month' ? 'month' : 'list'
+    } catch {
+      return 'list'
+    }
+  })
+  const setView = (v: 'list' | 'month') => {
+    setViewState(v)
+    try {
+      localStorage.setItem('hubra.events.view', v)
+    } catch {
+      // Private window: the choice lasts until the page is left.
+    }
+  }
   const [addOpen, setAddOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<ClubEvent | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ClubEvent | null>(null)
@@ -348,6 +320,20 @@ export function EventsTab() {
     if (rule) setRepeat(rule)
   }
 
+  // ?edit=<id> (Bearbeiten on an event's page) opens that event's form.
+  const editLink = params.get('edit')
+  if (editLink && !editTarget && events.length) {
+    const ev = events.find((e) => e.id === editLink)
+    setParams(
+      (p) => {
+        p.delete('edit')
+        return p
+      },
+      { replace: true },
+    )
+    if (ev && canUpdate(ev)) openEdit(ev)
+  }
+
   const saveAdd = async (data: EventForm) => {
     try {
       const ev = await createEvent({
@@ -457,31 +443,6 @@ export function EventsTab() {
         'success',
         t('events.event.saved'),
         t('events.event.updatedMsg', { title: data.title }),
-      )
-    } catch (err: unknown) {
-      notify(
-        'error',
-        t('common.error'),
-        err instanceof Error
-          ? err.message
-          : t('common.unknownError', 'Unbekannter Fehler'),
-      )
-    }
-  }
-
-  const confirmDelete = async (scope: SeriesScope = 'this') => {
-    if (!deleteTarget) return
-    try {
-      await deleteEvent(deleteTarget.id, scope)
-      if (scope === 'following') {
-        await eventCache.invalidate()
-      } else {
-        eventCache.remove(deleteTarget.id)
-      }
-      notify(
-        'info',
-        t('events.event.deleted'),
-        t('events.event.deletedMsg', { title: deleteTarget.title }),
       )
     } catch (err: unknown) {
       notify(
@@ -637,20 +598,34 @@ export function EventsTab() {
 
   return (
     <div>
-      <Group justify="flex-end" mb={16} gap="xs" className="page-actions">
+      <Group justify="space-between" mb={16} gap="xs" className="page-actions">
+        <SegmentedControl
+          value={view}
+          onChange={(v) => setView(v as 'list' | 'month')}
+          data-testid="events-view"
+          data={[
+            {
+              value: 'list',
+              label: (
+                <Group gap={6} wrap="nowrap">
+                  <IconList size={16} />
+                  {t('events.view.list', 'Liste')}
+                </Group>
+              ),
+            },
+            {
+              value: 'month',
+              label: (
+                <Group gap={6} wrap="nowrap">
+                  <IconCalendarMonth size={16} />
+                  {t('events.view.month', 'Monat')}
+                </Group>
+              ),
+            },
+          ]}
+        />
+        <Group gap="xs" wrap="wrap">
         <CalendarSubscribeButton />
-        {seesAttendance && (
-          <Button variant="default" onClick={() => navigate('/app/operations/events/attendance')}>
-            <IconChartBar size={16} />
-            {t('events.attendance.overview', 'Anwesenheit')}
-          </Button>
-        )}
-        {hasPermission('events.trials.read') && (
-          <Button variant="default" onClick={() => navigate('/app/operations/events/trials')}>
-            <IconUserPlus size={16} />
-            {t('events.trials.button', 'Schnuppern')}
-          </Button>
-        )}
         {canTemplates && <TemplateMenu onPick={openFromTemplate} />}
         {canCreate && (
           <Button variant="filled" onClick={openAdd}>
@@ -658,6 +633,7 @@ export function EventsTab() {
             {t('events.addEvent')}
           </Button>
         )}
+        </Group>
       </Group>
       {linked.id && (
         <LinkedEntryBar
@@ -670,6 +646,11 @@ export function EventsTab() {
         />
       )}
       {!linked.id && <AssociationEventsCard />}
+      {view === 'month' && !linked.id ? (
+        <EventsMonth
+          events={events.filter((e) => typeFilter === 'All' || e.type === typeFilter)}
+        />
+      ) : (
       <DataTable
         breakpoint="wide"
         columns={[
@@ -730,15 +711,20 @@ export function EventsTab() {
                   gap: 6,
                 }}
               >
-                <span
-                  style={
-                    ev.cancelledAt
-                      ? { textDecoration: 'line-through', color: 'var(--hb-text-3)' }
-                      : undefined
-                  }
+                <Anchor
+                  component={Link}
+                  to={`/app/operations/events/${ev.id}`}
+                  data-testid="event-title"
+                  underline="hover"
+                  fw={600}
+                  size="sm"
+                  style={{
+                    color: ev.cancelledAt ? 'var(--hb-text-3)' : 'var(--hb-text)',
+                    textDecoration: ev.cancelledAt ? 'line-through' : undefined,
+                  }}
                 >
                   {ev.title}
-                </span>
+                </Anchor>
                 {ev.cancelledAt && (
                   <Tooltip label={ev.cancelReason || t('events.cancel.badge', 'Abgesagt')} multiline maw={260}>
                     <Badge color="red" variant="light" data-testid="event-cancelled" style={{ flexShrink: 0 }}>
@@ -845,7 +831,7 @@ export function EventsTab() {
           {
             key: 'actions',
             header: '',
-            width: 300,
+            width: 240,
             render: (ev) => {
               const joined = hasOpenSignUp(ev, myJoinedEvents.has(ev.id))
               const over = isPastEvent(ev)
@@ -929,58 +915,8 @@ export function EventsTab() {
                       </Button>
                     </Tooltip>
                   )}
-                  {canTakeRoll(ev) && (
-                    <Tooltip label={t('events.attendance.take', 'Anwesenheit erfassen')}>
-                      <ActionIcon
-                        variant="subtle"
-                        color="gray"
-                        size="lg"
-                        aria-label={t('events.attendance.take', 'Anwesenheit erfassen')}
-                        onClick={() => setRollFor(ev)}
-                      >
-                        <IconClipboardCheck size={18} />
-                      </ActionIcon>
-                    </Tooltip>
-                  )}
-                  {canUpdate(ev) && !over && (
-                    <Tooltip
-                      label={
-                        ev.cancelledAt
-                          ? t('events.cancel.reinstate', 'Doch durchführen')
-                          : t('events.cancel.action', 'Absagen')
-                      }
-                    >
-                      <ActionIcon
-                        variant="subtle"
-                        color={ev.cancelledAt ? 'green' : 'red'}
-                        size="lg"
-                        aria-label={
-                          ev.cancelledAt
-                            ? t('events.cancel.reinstate', 'Doch durchführen')
-                            : t('events.cancel.action', 'Absagen')
-                        }
-                        data-testid={ev.cancelledAt ? 'reinstate-event' : 'cancel-event'}
-                        onClick={() => (ev.cancelledAt ? void reinstate(ev) : setCancelFor(ev))}
-                      >
-                        {ev.cancelledAt ? <IconCalendarCheck size={18} /> : <IconCalendarOff size={18} />}
-                      </ActionIcon>
-                    </Tooltip>
-                  )}
-                  {canTemplates && (
-                    <Tooltip label={t('events.templates.saveTitle', 'Als Vorlage speichern')}>
-                      <ActionIcon
-                        variant="subtle"
-                        color="gray"
-                        size="lg"
-                        aria-label={t('events.templates.saveTitle', 'Als Vorlage speichern')}
-                        data-testid="save-template"
-                        onClick={() => setTemplateFor(ev)}
-                      >
-                        <IconTemplate size={18} />
-                      </ActionIcon>
-                    </Tooltip>
-                  )}
-                  <ActionButtons
+                  <EventOrganiserMenu
+                    ev={ev}
                     onEdit={canUpdate(ev) ? () => openEdit(ev) : undefined}
                     onDelete={canDelete(ev) ? () => setDeleteTarget(ev) : undefined}
                   />
@@ -1028,6 +964,7 @@ export function EventsTab() {
         onPerPageChange={pg.setPerPage}
         getRowKey={(ev) => ev.id}
       />
+      )}
       <Modal
         onSubmit={form.onSubmit(submitAdd)}
         open={addOpen}
@@ -1074,61 +1011,7 @@ export function EventsTab() {
           eventCache.patch(ev.id, () => ev)
         }
       />
-      <AttendanceModal event={rollFor} onClose={() => setRollFor(null)} />
-      <CancelEventModal event={cancelFor} onClose={() => setCancelFor(null)} />
-      <SaveTemplateModal event={templateFor} onClose={() => setTemplateFor(null)} />
-      <Modal
-        open={!!deleteTarget?.seriesId}
-        onClose={() => setDeleteTarget(null)}
-        title={t('events.deleteEventTitle', '{{title}} löschen?', {
-          title: deleteTarget?.title ?? '',
-        })}
-        subtitle={deleteTarget?.date}
-        footer={
-          <>
-            <Button variant="default" onClick={() => setDeleteTarget(null)}>
-              {t('common.cancel')}
-            </Button>
-            <Button
-              variant="light"
-              color="red"
-              onClick={() => {
-                void confirmDelete('this')
-                setDeleteTarget(null)
-              }}
-            >
-              {t('events.series.deleteThis', 'Nur diesen Termin')}
-            </Button>
-            <Button
-              variant="filled"
-              color="red"
-              onClick={() => {
-                void confirmDelete('following')
-                setDeleteTarget(null)
-              }}
-            >
-              {t('events.series.deleteFollowing', 'Diesen und alle folgenden')}
-            </Button>
-          </>
-        }
-      >
-        {t(
-          'events.series.deleteBody',
-          'Der Termin gehört zu einer Serie. Gelöschte Termine und ihre Anmeldungen sind endgültig weg.',
-        )}
-      </Modal>
-      <ConfirmModal
-        open={!!deleteTarget && !deleteTarget.seriesId}
-        onClose={() => setDeleteTarget(null)}
-        title={t('events.deleteEventTitle', '{{title}} löschen?', {
-          title: deleteTarget?.title ?? '',
-        })}
-        body={t(
-          'events.deleteEventBody',
-          'Der Anlass und seine Teilnehmerliste werden endgültig gelöscht.',
-        )}
-        onConfirm={() => confirmDelete()}
-      />
+      <DeleteEventModal event={deleteTarget} onClose={() => setDeleteTarget(null)} />
     </div>
   )
 }

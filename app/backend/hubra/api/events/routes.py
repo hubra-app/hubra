@@ -378,6 +378,15 @@ def maybe_for_event(event_id: int):
     return jsonify(EventRegistrationSchema().dump(registration)), 200
 
 
+# ── Who is coming: names for every member who may see the event ───────────
+
+
+@events_bp.get("/<int:event_id>/participants")
+@permission_required("events", "read", "View events")
+def list_participants(event_id: int):
+    return jsonify(EventService.participants(event_id)), 200
+
+
 # ── Registrations, and sign-ups waiting for approval ─────────────────────────
 
 

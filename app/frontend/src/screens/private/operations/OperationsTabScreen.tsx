@@ -3,7 +3,6 @@ import { Button } from '@mantine/core'
 import { IconSettings } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { PageHead } from '@/components/ui'
-import { EventsTab } from '@/screens/private/operations/EventsTab'
 import { PollsTab } from '@/screens/private/operations/PollsTab'
 import { PostsTab } from '@/screens/private/operations/PostsTab'
 import { useModules } from '@/modules/useModules'
@@ -16,18 +15,18 @@ export function OperationsTabScreen() {
   const { canUse } = useModules()
   const { hasPermission } = useAuth()
 
+  // Anlässe has a screen of its own (EventsScreen).
   const tabs = [
-    { id: 'events', label: t('shell.nav.events') },
     { id: 'polls', label: t('shell.nav.polls') },
     { id: 'posts', label: t('shell.nav.posts') },
   ].filter((tb) => canUse(tb.id))
 
   const path = location.pathname.replace('/app/operations', '').replace('/', '')
-  const tab = path === '' ? (tabs[0]?.id ?? 'events') : path
+  const tab = path === '' ? (tabs[0]?.id ?? 'polls') : path
 
-  // Anlässe, Umfragen and Beiträge each have their own sidebar entry, so the
-  // page only shows the one that was picked.
-  const title = tabs.find((tb) => tb.id === tab)?.label ?? t('shell.nav.events')
+  // Umfragen and Beiträge each have their own sidebar entry, so the page
+  // only shows the one that was picked.
+  const title = tabs.find((tb) => tb.id === tab)?.label ?? t('shell.nav.polls')
 
   return (
     <div>
@@ -48,7 +47,6 @@ export function OperationsTabScreen() {
           )
         }
       />
-      {tab === 'events' && <EventsTab />}
       {tab === 'polls' && <PollsTab />}
       {tab === 'posts' && <PostsTab />}
     </div>

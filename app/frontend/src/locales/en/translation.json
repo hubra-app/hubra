@@ -930,6 +930,35 @@
       "saveTitle": "Save as template",
       "saveSubtitle": "Place, time, places, settings and description are saved, the date is not.",
       "name": "Template name"
+    },
+    "menu": {
+      "label": "Actions for {{title}}"
+    },
+    "view": {
+      "list": "List",
+      "month": "Month"
+    },
+    "month": {
+      "prev": "Previous month",
+      "next": "Next month",
+      "today": "Today",
+      "more": "+{{count}} more",
+      "none": "No events on this day."
+    },
+    "detail": {
+      "guests": "+{{count}} guests",
+      "coming": "Who's coming",
+      "nobody": "Nobody has signed up yet. Be the first!",
+      "maybe": "Maybe ({{count}})",
+      "joinWaitlist": "Join the waiting list",
+      "allDay": "All day",
+      "places": "Places",
+      "placesLeft": "{{left}} of {{max}} free",
+      "noLimit": "No limit",
+      "cancelled": "This event has been called off.",
+      "noDescription": "No description.",
+      "meeting": "Join online",
+      "pendingHint": "{{count}} sign-ups are waiting for your approval (menu …)."
     }
   },
   "finance": {

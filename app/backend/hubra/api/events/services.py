@@ -527,6 +527,28 @@ class EventService:
         return db.session.scalars(query).all()
 
     @staticmethod
+    def participants(event_id: int) -> list[dict]:
+        """Who is coming and who may come, by name, for every member who may
+        see the event: the sign-ups holding a place, then the "Vielleicht"
+        answers. Waitlist, pending and declined sign-ups stay with the
+        organisers (``registrations``)."""
+        rows = [
+            r
+            for r in EventService.registrations(event_id)
+            if r.status in (*_HOLDS_A_PLACE, "maybe") and r.member is not None
+        ]
+        return [
+            {
+                "member_id": r.member_id,
+                "name": r.member.name,
+                "avatar_color": r.member.avatar_color,
+                "status": "maybe" if r.status == "maybe" else "coming",
+                "guests": r.guests or 0,
+            }
+            for r in sorted(rows, key=lambda r: r.status == "maybe")
+        ]
+
+    @staticmethod
     def _lock(event_id: int) -> None:
         """Serialize sign-ups and cancellations of one event until commit, so
         two people cannot both take its last place (Postgres; SQLite has

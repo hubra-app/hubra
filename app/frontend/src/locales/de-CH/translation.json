@@ -930,6 +930,35 @@
       "saveTitle": "Als Vorlage speichern",
       "saveSubtitle": "Ort, Zeit, Plätze, Einstellungen und Beschreibung werden gespeichert, das Datum nicht.",
       "name": "Name der Vorlage"
+    },
+    "menu": {
+      "label": "Aktionen für {{title}}"
+    },
+    "view": {
+      "list": "Liste",
+      "month": "Monat"
+    },
+    "month": {
+      "prev": "Vorheriger Monat",
+      "next": "Nächster Monat",
+      "today": "Heute",
+      "more": "+{{count}} weitere",
+      "none": "Keine Anlässe an diesem Tag."
+    },
+    "detail": {
+      "guests": "+{{count}} Gäste",
+      "coming": "Wer kommt",
+      "nobody": "Noch niemand angemeldet. Sei die erste Person!",
+      "maybe": "Vielleicht ({{count}})",
+      "joinWaitlist": "Auf die Warteliste",
+      "allDay": "Ganztägig",
+      "places": "Plätze",
+      "placesLeft": "{{left}} von {{max}} frei",
+      "noLimit": "Ohne Begrenzung",
+      "cancelled": "Dieser Anlass ist abgesagt.",
+      "noDescription": "Keine Beschreibung.",
+      "meeting": "Online dabei",
+      "pendingHint": "{{count}} Anmeldungen warten auf deine Bestätigung (Menü …)."
     }
   },
   "finance": {

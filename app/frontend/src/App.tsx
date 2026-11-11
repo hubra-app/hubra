@@ -113,14 +113,9 @@ const BindingsScreen = lazy(() =>
     default: m.BindingsScreen,
   })),
 )
-const TrialsScreen = lazy(() =>
-  import('./screens/private/operations/TrialsScreen').then((m) => ({
-    default: m.TrialsScreen,
-  })),
-)
-const AttendanceScreen = lazy(() =>
-  import('./screens/private/operations/AttendanceScreen').then((m) => ({
-    default: m.AttendanceScreen,
+const EventsScreen = lazy(() =>
+  import('./screens/private/operations/EventsScreen').then((m) => ({
+    default: m.EventsScreen,
   })),
 )
 const PostDetailScreen = lazy(() =>
@@ -342,27 +337,13 @@ function PrivateRoutes() {
                     </RequireModule>
                   }
                 />
+                {/* Anlässe with its tabs (Vor Ort, Anwesenheit, Schnupper-
+                    trainings), and /operations/events/<id> for one event. */}
                 <Route
-                  path="operations/events/trials"
+                  path="operations/events/:part?"
                   element={
                     <RequireModule code="events">
-                      <TrialsScreen />
-                    </RequireModule>
-                  }
-                />
-                <Route
-                  path="operations/events/attendance"
-                  element={
-                    <RequireModule code="events">
-                      <AttendanceScreen />
-                    </RequireModule>
-                  }
-                />
-                <Route
-                  path="operations/events"
-                  element={
-                    <RequireModule code="events">
-                      <OperationsTabScreen />
+                      <EventsScreen />
                     </RequireModule>
                   }
                 />

@@ -354,6 +354,34 @@ function adaptRegistration(r: BackendRegistration): EventRegistration {
   };
 }
 
+/** Who is coming to an event, and who said "Vielleicht", by name. */
+export interface EventParticipant {
+  memberId: number;
+  name: string;
+  avatarColor: string;
+  status: "coming" | "maybe";
+  guests: number;
+}
+
+interface BackendParticipant {
+  member_id: number;
+  name: string;
+  avatar_color: string;
+  status: "coming" | "maybe";
+  guests: number;
+}
+
+export async function listParticipants(eventId: string): Promise<EventParticipant[]> {
+  const data = await apiFetch<BackendParticipant[]>(`/app/events/${eventId}/participants`);
+  return data.map((p) => ({
+    memberId: p.member_id,
+    name: p.name,
+    avatarColor: p.avatar_color,
+    status: p.status,
+    guests: p.guests,
+  }));
+}
+
 /** Organisers: an event's sign-ups, e.g. those waiting for approval. */
 export async function listRegistrations(
   eventId: string,

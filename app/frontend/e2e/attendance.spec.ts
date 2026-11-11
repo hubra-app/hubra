@@ -32,14 +32,15 @@ test('a weekly training: series, attendance and overview', async ({ page }) => {
     await api(page, 'POST', `/events/${first.id}/register/${me.id}`, {})
     await page.locator('main').getByPlaceholder(/Suchen/).fill(title)
     const row = page.getByRole('row', { name: new RegExp(title) }).first()
-    await row.getByRole('button', { name: 'Anwesenheit erfassen' }).click()
+    await row.getByTestId('event-menu').click()
+    await page.getByRole('menuitem', { name: 'Anwesenheit erfassen' }).click()
     const dialog = page.getByRole('dialog')
     await dialog.getByRole('button', { name: 'Übrige anwesend' }).click()
     await dialog.getByRole('button', { name: 'Speichern' }).click()
     await expect(dialog).toBeHidden()
 
-    await page.getByRole('button', { name: 'Anwesenheit', exact: true }).click()
-    await expect(page.getByRole('heading', { name: 'Anwesenheit' })).toBeVisible()
+    await page.getByRole('tab', { name: 'Anwesenheit', exact: true }).click()
+    await expect(page).toHaveURL(/operations\/events\/attendance/)
     await expect(page.getByRole('button', { name: /CSV/ })).toBeEnabled()
     const overview = await api<{ events: { id: number; present: number }[] }>(
       page,
