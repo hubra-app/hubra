@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   Button,
   Group,
+  NumberInput,
   TextInput,
   Textarea,
   Select,
@@ -566,9 +567,13 @@ export function EventsTab() {
           />
         </Field>
         <Field label={t('events.maxAttendees', 'Plätze') + ' (optional)'}>
-          <TextInput
-            inputMode="numeric"
+          <NumberInput
+            allowDecimal={false}
+            allowNegative={false}
+            hideControls
             {...form.getInputProps('maxAttendees')}
+            // The form keeps the number as text (empty = no limit).
+            onChange={(v) => form.setFieldValue('maxAttendees', v === '' ? '' : String(v))}
             placeholder={t('events.maxAttendeesPlaceholder', 'Leer: ohne Begrenzung')}
           />
         </Field>
@@ -615,9 +620,13 @@ export function EventsTab() {
           'Wer noch nicht Mitglied ist, kann dieses Training auf der Schnupperseite des Vereins buchen. Leer: keine Schnupperplätze.',
         )}
       >
-        <TextInput
-          inputMode="numeric"
+        <NumberInput
+          allowDecimal={false}
+          allowNegative={false}
+          hideControls
           {...form.getInputProps('trialSpots')}
+          // The form keeps the number as text (empty = no limit).
+          onChange={(v) => form.setFieldValue('trialSpots', v === '' ? '' : String(v))}
           placeholder={t('events.trialSpotsPlaceholder', 'z. B. 2')}
         />
       </Field>
