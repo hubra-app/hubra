@@ -5,6 +5,6 @@
 {% call ui.p() %}{{ t('mail.email.account_deleted.body', club_name=club_name) }}{% endcall %}
 {% call ui.p() %}
   {{ t('mail.email.account_deleted.contact_prefix') }}
-  {% if support_url %}<a href="{{ support_url }}" style="color: #7441e0; font-weight: 600;">{{ t('mail.email.account_deleted.contact_link') }}</a>{% else %}{{ t('mail.email.account_deleted.contact_link') }}{% endif %}.
+  {% if support_url %}<a href="{{ support_url }}" style="color: {{ brand_link }}; font-weight: 600;">{{ t('mail.email.account_deleted.contact_link') }}</a>{% else %}{{ t('mail.email.account_deleted.contact_link') }}{% endif %}.
 {% endcall %}
 {% endblock %}

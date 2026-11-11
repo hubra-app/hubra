@@ -114,16 +114,29 @@ _LOGO_TYPES = ("image/png", "image/jpeg", "image/gif", "image/webp")
 _MAX_LOGO_BYTES = 256 * 1024
 
 
-def _club_logo() -> str | None:
+# Hubra's own look, for platform mail (account, sign-in, support) and for a
+# club that set no colour of its own: Hubra violet (brand/README.md).
+PLATFORM_NAME = "Hubra"
+HUBRA_COLOR = "#7441e0"
+_HEX = re.compile(r"^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
+
+
+def _current_club():
     try:
         from hubra.core.tenant.context import current_tenant
 
-        tenant = current_tenant()
+        return current_tenant()
     except Exception:
         return None
+
+
+def _club_logo(tenant=None) -> str | None:
+    tenant = tenant if tenant is not None else _current_club()
     if tenant is None:
         return None
     logo = ((tenant.settings or {}).get("branding") or {}).get("logo") or ""
+    if not isinstance(logo, str):
+        return None
     head, _, data = logo.partition(",")
     if not head.startswith("data:") or not head.endswith(";base64"):
         return None
@@ -132,18 +145,111 @@ def _club_logo() -> str | None:
     return logo
 
 
-def mail_logo_src() -> str:
+def _hubra_mark() -> str:
+    return (
+        "data:image/png;base64," + base64.b64encode(_HUBRA_MARK.read_bytes()).decode()
+    )
+
+
+def mail_logo_src(*, platform: bool = False) -> str:
     """The header logo as a data URL: the club's logo, else the Hubra mark.
+    A platform mail always has the Hubra mark.
 
     The sender turns it into an inline (cid:) image, since most mail apps
     don't show data URLs.
     """
-    logo = _club_logo()
-    if logo:
-        return logo
-    return (
-        "data:image/png;base64," + base64.b64encode(_HUBRA_MARK.read_bytes()).decode()
+    logo = None if platform else _club_logo()
+    return logo or _hubra_mark()
+
+
+def _hex(value) -> str | None:
+    """``#rrggbb`` from a colour setting, or None."""
+    match = _HEX.match(str(value or "").strip())
+    if not match:
+        return None
+    digits = match.group(1)
+    if len(digits) == 3:
+        digits = "".join(c * 2 for c in digits)
+    return f"#{digits.lower()}"
+
+
+def _rgb(color: str) -> tuple[int, int, int]:
+    return int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+
+
+def _mix(color: str, other: str, share: float) -> str:
+    """*color* with *share* (0..1) of *other* mixed in."""
+    a, b = _rgb(color), _rgb(other)
+    return "#" + "".join(
+        f"{round(x + (y - x) * share):02x}" for x, y in zip(a, b, strict=True)
     )
+
+
+def _luminance(color: str) -> float:
+    def channel(c: int) -> float:
+        c = c / 255
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+
+    r, g, b = (channel(c) for c in _rgb(color))
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def _contrast(a: str, b: str) -> float:
+    la, lb = sorted((_luminance(a), _luminance(b)), reverse=True)
+    return (la + 0.05) / (lb + 0.05)
+
+
+def mail_colors(color: str | None = None) -> dict[str, str]:
+    """The colours of a mail from one main colour (the club's, else Hubra
+    violet): buttons, links, the box of facts, and their dark-mode twins.
+
+    A light club colour would make white button text and links on white
+    unreadable, so the button text turns dark and links take a darker shade.
+    """
+    main = _hex(color) or HUBRA_COLOR
+    white, ink = "#ffffff", "#1a1625"
+    link = main
+    while _contrast(link, white) < 4.5:
+        link = _mix(link, "#000000", 0.15)
+    dark_link = main
+    while _contrast(dark_link, "#1e1a2a") < 4.5:
+        dark_link = _mix(dark_link, "#ffffff", 0.2)
+    return {
+        "brand_color": main,
+        "brand_on": white if _contrast(main, white) >= _contrast(main, ink) else ink,
+        "brand_link": link,
+        "brand_tint": _mix(main, white, 0.92),
+        "brand_dark_link": dark_link,
+        "brand_dark_tint": _mix(main, "#1e1a2a", 0.8),
+    }
+
+
+def club_mail_name(tenant=None) -> str:
+    """The club's name as Settings > Verein shows it, or ""."""
+    tenant = tenant if tenant is not None else _current_club()
+    if tenant is None:
+        return ""
+    branding = (tenant.settings or {}).get("branding") or {}
+    name = branding.get("club_name")
+    return (name if isinstance(name, str) else "").strip() or (tenant.name or "")
+
+
+def mail_brand(*, platform: bool = False) -> dict:
+    """Name, logo and colours for the mail header, buttons and links.
+
+    A club mail has the club's (Settings > Verein: name, logo, main colour);
+    a platform mail (``platform=True``: the person's Hubra account, sign-ins,
+    support, alerts) always has Hubra's, even when a club's request sent it.
+    """
+    tenant = None if platform else _current_club()
+    color = None
+    if tenant is not None:
+        color = ((tenant.settings or {}).get("branding") or {}).get("primary_color")
+    return {
+        "brand_name": club_mail_name(tenant) if tenant is not None else PLATFORM_NAME,
+        "logo_src": mail_logo_src(platform=platform),
+        **mail_colors(color),
+    }
 
 
 def _footer_links(template_name: str) -> dict[str, str]:
@@ -188,21 +294,31 @@ def _text_footer(t, ctx: dict) -> str:
 
 
 def render_mail_template(
-    template_name: str, locale: str, **context
+    template_name: str, locale: str, *, platform_mail: bool = False, **context
 ) -> tuple[str, str, str]:
     """Render html, txt, and subject templates for *template_name*.
 
     Returns ``(html, text, subject)``.  The subject is rendered from
     ``email/<template_name>_subject.j2`` and stripped of whitespace.
+
+    A club mail has the club's name, logo and colour (``mail_brand``); with
+    *platform_mail* the mail is Hubra's (account, sign-in, support): Hubra's name,
+    mark and violet, whatever club the request came through.
     """
     t = get_mail_translator(locale)
+    brand = mail_brand(platform=platform_mail)
     shared_ctx = {
         "t": t,
         "locale": locale,
-        "logo_src": mail_logo_src(),
+        **brand,
         **_footer_links(template_name),
         **context,
     }
+    if platform_mail:
+        shared_ctx["club_name"] = PLATFORM_NAME
+        shared_ctx["logo_src"] = brand["logo_src"]
+    elif not shared_ctx.get("club_name"):
+        shared_ctx["club_name"] = brand["brand_name"]
     shared_ctx["footer_texts"] = _footer_texts(t, shared_ctx)
 
     html = render_template(f"email/{template_name}.html", **shared_ctx)

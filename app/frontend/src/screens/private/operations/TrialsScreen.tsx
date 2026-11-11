@@ -209,6 +209,11 @@ export function TrialsScreen() {
                     <Badge color={STATUS_COLOR[s.status]} variant="light">
                       {statusLabel(s.status)}
                     </Badge>
+                    {s.source && (
+                      <Badge color="gray" variant="outline" style={{ textTransform: 'none' }}>
+                        {t('members.poster.via', 'über Plakat «{{source}}»', { source: s.source })}
+                      </Badge>
+                    )}
                   </Group>
                   {canManage && (
                     <Menu position="bottom-end" withinPortal>

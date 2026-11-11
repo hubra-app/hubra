@@ -139,6 +139,9 @@ export interface ClubEvent {
   allDay?: boolean;
   category?: string;
   maxAttendees?: number | null;
+  /** Sign-up and sign-off close at these times (ISO, with zone). */
+  registrationDeadline?: string | null;
+  cancellationDeadline?: string | null;
   requiresApproval?: boolean;
   isPublic?: boolean;
   /** Shown to the member clubs of this association. */
@@ -330,6 +333,8 @@ export interface Application {
   wantsTier: string;
   appliedAt: string;
   avatarColor: string;
+  /** The poster tag the person came from. */
+  source: string | null;
 }
 
 export interface AuditEntry {

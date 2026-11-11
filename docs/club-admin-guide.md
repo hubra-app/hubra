@@ -68,6 +68,17 @@ People can find the club on the join site (`join.hubra.club/clubs/<club>`)
 and ask to join. Requests show up under Members › Applications (Anträge).
 **Approve** makes them a member.
 
+**Posters.** Under Members › Applications, **Plakat erstellen** makes a
+printable A4 poster or A6 flyer with a QR code, either for asking to join or for
+booking a trial. Give each poster a tag, for example `bahnhof` or
+`turnhalle`: the QR code carries it, and each request and trial booking
+remembers where the person came from. The table above the button counts
+requests and trials per tag over the last year, so you can see which poster
+works. The poster carries the club's logo and colours from Settings › Verein ›
+Erscheinungsbild (Hubra violet and gold while the club has none); the QR code
+stays black on white so it scans. Print straight from the dialog; only the
+poster is printed.
+
 ### Leaving
 
 A member leaves under their account settings in the club app. With

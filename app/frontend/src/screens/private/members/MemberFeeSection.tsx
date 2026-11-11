@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
-import { Button, NumberInput, SimpleGrid, Text, TextInput, Textarea } from '@mantine/core'
+import { Button, NumberInput, SimpleGrid, Text, Textarea } from '@mantine/core'
+import { DateField } from '@hubra/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { IconReceiptOff } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
@@ -260,6 +261,8 @@ function FeeAdjustmentModal({
               onChange={setAmount}
               min={0}
               decimalScale={2}
+              thousandSeparator="’"
+              hideControls
               error={errors.amount}
               data-testid="fee-amount"
             />
@@ -296,10 +299,9 @@ function FeeAdjustmentModal({
             label={t('fees.untilLabel', 'Gültig bis (optional)')}
             hint={t('fees.untilHint', 'Danach gilt ab der nächsten Periode wieder der normale Beitrag.')}
           >
-            <TextInput
-              type="date"
+            <DateField
               value={until}
-              onChange={(e) => setUntil(e.currentTarget.value)}
+              onChange={(v) => setUntil(v)}
               data-testid="fee-until"
             />
           </Field>

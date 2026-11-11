@@ -143,7 +143,11 @@ class ApplicationsService:
 
     @staticmethod
     def submit(
-        first_name: str, last_name: str, email: str, wants_tier_id: int | None = None
+        first_name: str,
+        last_name: str,
+        email: str,
+        wants_tier_id: int | None = None,
+        source: str | None = None,
     ) -> Application:
         """Submit a new application. Raises 409 on conflicts."""
         from hubra.core.models.user import User as _User
@@ -171,8 +175,12 @@ class ApplicationsService:
             email=email,
             wants_tier_id=int(wants_tier_id) if wants_tier_id else None,
             avatar_color=random_avatar_color(),
+            source=source,
         )
         db.session.add(app)
+        from hubra.core.services import signup_source
+
+        signup_source.record("join", source)
 
         from hubra.core.notifications.staff import notify_permitted
 

@@ -4,7 +4,6 @@ import {
   Badge,
   Button,
   Group,
-  Modal,
   MultiSelect,
   Paper,
   SegmentedControl,
@@ -15,6 +14,8 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
+import { DateTimeField } from '@hubra/ui'
+import { Modal as SharedModal } from '@/components/ui'
 import { IconCalendarTime } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
 import { formatDateTime } from '@/format'
@@ -250,21 +251,40 @@ function PlanModal({
   }
 
   return (
-    <Modal opened onClose={onClose} title={tr('Wartung planen', 'Plan maintenance')} size="lg">
+    <SharedModal
+      open
+      onClose={onClose}
+      title={tr('Wartung planen', 'Plan maintenance')}
+      wide
+      onSubmit={(e) => {
+        e?.preventDefault()
+        // Enter submits too, so the button's rule applies here as well.
+        if (invalid) return
+        void save()
+      }}
+      footer={
+        <>
+          <Button variant="default" onClick={onClose}>
+            {tr('Abbrechen', 'Cancel')}
+          </Button>
+          <Button color="orange" loading={saving} disabled={invalid} type="submit">
+            {tr('Planen', 'Plan')}
+          </Button>
+        </>
+      }
+    >
       <Stack gap="md">
         <Group grow align="flex-start" wrap="wrap">
-          <TextInput
-            type="datetime-local"
+          <DateTimeField
             label={tr('Beginn', 'Start')}
             value={start}
-            onChange={(e) => setStart(e.currentTarget.value)}
+            onChange={(v) => setStart(v)}
             miw={200}
           />
-          <TextInput
-            type="datetime-local"
+          <DateTimeField
             label={tr('Ende', 'End')}
             value={end}
-            onChange={(e) => setEnd(e.currentTarget.value)}
+            onChange={(v) => setEnd(v)}
             error={endAt <= startAt ? tr('Nach dem Beginn', 'After the start') : undefined}
             miw={200}
           />
@@ -312,15 +332,7 @@ function PlanModal({
           onChange={(e) => setMessage(e.currentTarget.value)}
           maxLength={500}
         />
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose}>
-            {tr('Abbrechen', 'Cancel')}
-          </Button>
-          <Button color="orange" loading={saving} disabled={invalid} onClick={save}>
-            {tr('Planen', 'Plan')}
-          </Button>
-        </Group>
       </Stack>
-    </Modal>
+    </SharedModal>
   )
 }

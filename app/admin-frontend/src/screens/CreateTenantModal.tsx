@@ -1,15 +1,14 @@
 import { useState } from 'react'
 import { usePlanChoices } from '@/plans'
 import {
-  Modal,
   TextInput,
   Select,
   Button,
   Stack,
-  Group,
   Alert,
   Switch,
 } from '@mantine/core'
+import { Modal as SharedModal } from '@/components/ui'
 import { useForm } from '@mantine/form'
 import { useQueryClient } from '@tanstack/react-query'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
@@ -122,72 +121,77 @@ export function CreateTenantModal({
   }
 
   return (
-    <Modal opened={opened} onClose={onClose} title={tr('Neuen Verein erstellen', 'Create a new club')} size="md">
-      <form onSubmit={form.onSubmit(handleSubmit)}>
-        <Stack gap={16}>
-          {error && (
-            <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light">
-              {error}
-            </Alert>
+    <SharedModal
+      open={opened}
+      onClose={onClose}
+      title={tr('Neuen Verein erstellen', 'Create a new club')}
+      onSubmit={form.onSubmit(handleSubmit)}
+      footer={
+        <>
+          <Button variant="default" onClick={onClose}>
+            {tr('Abbrechen', 'Cancel')}
+          </Button>
+          <Button type="submit" loading={loading}>
+            {tr('Verein erstellen', 'Create club')}
+          </Button>
+        </>
+      }
+    >
+      <Stack gap={16}>
+        {error && (
+          <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light">
+            {error}
+          </Alert>
+        )}
+        <TextInput
+          label={tr('Vereinsname', 'Club name')}
+          required
+          {...form.getInputProps('name')}
+          onChange={handleNameChange}
+          placeholder={tr('Kanuclub Seeblick', 'Lakeside Canoe Club')}
+        />
+        <TextInput
+          label={tr('Kürzel', 'Slug')}
+          required
+          {...form.getInputProps('slug')}
+          onChange={handleSlugChange}
+          placeholder="kanuclub-seeblick"
+          description={tr('Erscheint in der Adresse: 3–64 Zeichen, Kleinbuchstaben und Bindestriche', 'Used in the address: 3–64 characters, lowercase letters and hyphens')}
+        />
+        <Select
+          label={tr('Plan', 'Plan')}
+          {...form.getInputProps('plan')}
+          onChange={(v) => v && form.setFieldValue('plan', v)}
+          data={(
+            planChoices?.plans ?? [
+              { key: 'starter', name_de: 'Starter', name_en: 'Starter', hidden: false },
+            ]
+          )
+            .filter((p) => !p.hidden)
+            .map((p) => ({ value: p.key, label: tr(p.name_de, p.name_en) }))}
+        />
+        <TextInput
+          label={tr('E-Mail der Admin-Person', 'Admin email')}
+          type="email"
+          {...form.getInputProps('adminEmail')}
+          placeholder="praesidium@kanuclub-seeblick.ch"
+          description={tr('Optional. Mit E-Mail und Passwort wird gleich ein Admin-Konto angelegt.', 'Optional. With an email and a password an admin account is created right away.')}
+        />
+        <TextInput
+          label={tr('Passwort der Admin-Person', 'Admin password')}
+          type="password"
+          {...form.getInputProps('adminPassword')}
+          description={tr('Nur zusammen mit der E-Mail-Adresse.', 'Only together with the email address.')}
+        />
+        <Switch
+          label={tr('Sandbox-Verein (Demo / Test)', 'Sandbox club (demo / test)')}
+          description={tr(
+            'Zahlungen und Hubra-Abo laufen immer über die Stripe-Sandbox-Schlüssel; es fliesst kein echtes Geld.',
+            'Payments and the Hubra subscription always use the Stripe sandbox keys; no real money moves.',
           )}
-          <TextInput
-            label={tr('Vereinsname', 'Club name')}
-            required
-            {...form.getInputProps('name')}
-            onChange={handleNameChange}
-            placeholder={tr('Kanuclub Seeblick', 'Lakeside Canoe Club')}
-          />
-          <TextInput
-            label={tr('Kürzel', 'Slug')}
-            required
-            {...form.getInputProps('slug')}
-            onChange={handleSlugChange}
-            placeholder="kanuclub-seeblick"
-            description={tr('Erscheint in der Adresse: 3–64 Zeichen, Kleinbuchstaben und Bindestriche', 'Used in the address: 3–64 characters, lowercase letters and hyphens')}
-          />
-          <Select
-            label={tr('Plan', 'Plan')}
-            {...form.getInputProps('plan')}
-            onChange={(v) => v && form.setFieldValue('plan', v)}
-            data={(
-              planChoices?.plans ?? [
-                { key: 'starter', name_de: 'Starter', name_en: 'Starter', hidden: false },
-              ]
-            )
-              .filter((p) => !p.hidden)
-              .map((p) => ({ value: p.key, label: tr(p.name_de, p.name_en) }))}
-          />
-          <TextInput
-            label={tr('E-Mail der Admin-Person', 'Admin email')}
-            type="email"
-            {...form.getInputProps('adminEmail')}
-            placeholder="praesidium@kanuclub-seeblick.ch"
-            description={tr('Optional. Mit E-Mail und Passwort wird gleich ein Admin-Konto angelegt.', 'Optional. With an email and a password an admin account is created right away.')}
-          />
-          <TextInput
-            label={tr('Passwort der Admin-Person', 'Admin password')}
-            type="password"
-            {...form.getInputProps('adminPassword')}
-            description={tr('Nur zusammen mit der E-Mail-Adresse.', 'Only together with the email address.')}
-          />
-          <Switch
-            label={tr('Sandbox-Verein (Demo / Test)', 'Sandbox club (demo / test)')}
-            description={tr(
-              'Zahlungen und Hubra-Abo laufen immer über die Stripe-Sandbox-Schlüssel; es fliesst kein echtes Geld.',
-              'Payments and the Hubra subscription always use the Stripe sandbox keys; no real money moves.',
-            )}
-            {...form.getInputProps('sandbox', { type: 'checkbox' })}
-          />
-          <Group justify="flex-end" mt={8}>
-            <Button variant="default" onClick={onClose}>
-              {tr('Abbrechen', 'Cancel')}
-            </Button>
-            <Button type="submit" loading={loading}>
-              {tr('Verein erstellen', 'Create club')}
-            </Button>
-          </Group>
-        </Stack>
-      </form>
-    </Modal>
+          {...form.getInputProps('sandbox', { type: 'checkbox' })}
+        />
+      </Stack>
+    </SharedModal>
   )
 }

@@ -20,7 +20,7 @@
 {% endif %}
 {% if sessions_url %}
 {% if not not_me_url %}{{ ui.button(sessions_url, t('mail.email.new_device_login.button')) }}{% endif %}
-{% call ui.muted() %}{% if not_me_url %}<a href="{{ sessions_url }}" target="_blank" style="color: #7441e0; font-weight: 600;">{{ t('mail.email.new_device_login.button') }}</a> · {% endif %}<a href="{{ password_url }}" target="_blank" style="color: #7441e0; font-weight: 600;">{{ t('mail.email.new_device_login.change_password') }}</a>{% endcall %}
+{% call ui.muted() %}{% if not_me_url %}<a href="{{ sessions_url }}" target="_blank" style="color: {{ brand_link }}; font-weight: 600;">{{ t('mail.email.new_device_login.button') }}</a> · {% endif %}<a href="{{ password_url }}" target="_blank" style="color: {{ brand_link }}; font-weight: 600;">{{ t('mail.email.new_device_login.change_password') }}</a>{% endcall %}
 {{ ui.fallback_link(not_me_url or sessions_url) }}
 {% endif %}
 {% endblock %}

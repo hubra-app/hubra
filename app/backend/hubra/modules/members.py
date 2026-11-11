@@ -61,6 +61,7 @@ module = Module(
         "payment_plans",
         "member_fee_adjustments",
         "applications",
+        "signup_sources",
     ),
     tasks=("hubra.core.tasks.digest_tasks", "hubra.core.tasks.privacy_tasks"),
     # The weekly digest goes out on Monday morning, club time; the hourly

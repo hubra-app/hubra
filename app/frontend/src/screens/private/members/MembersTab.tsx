@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Button, Group, Menu, Select, Paper, Text, TextInput, ActionIcon } from '@mantine/core'
+import { DateField } from '@hubra/ui'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useT } from '@/locales/i18n'
 import {
@@ -719,6 +720,10 @@ export function MembersTab() {
         open={bulkInvoiceOpen}
         onClose={() => setBulkInvoiceOpen(false)}
         title={t('members.bulkInvoice.title')}
+        onSubmit={(e) => {
+          e?.preventDefault()
+          if (!bulkSaving && bulkDue) void handleBulkInvoice()
+        }}
         footer={
           <>
             <Button variant="default" onClick={() => setBulkInvoiceOpen(false)}>
@@ -726,7 +731,7 @@ export function MembersTab() {
             </Button>
             <Button
               variant="filled"
-              onClick={handleBulkInvoice}
+              type="submit"
               disabled={bulkSaving || !bulkDue}
             >
               {bulkSaving
@@ -772,10 +777,9 @@ export function MembersTab() {
             />
           </Field>
           <Field label={t('members.bulkInvoice.dueDate')}>
-            <TextInput
-              type="date"
+            <DateField
               value={bulkDue}
-              onChange={(e) => setBulkDue(e.target.value)}
+              onChange={(v) => setBulkDue(v)}
             />
           </Field>
           <div

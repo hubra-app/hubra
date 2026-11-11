@@ -933,6 +933,19 @@
       "saveSubtitle": "Place, time, places, settings and description are saved, the date is not.",
       "name": "Template name"
     },
+    "endDate": "End date",
+    "timeFrom": "Start",
+    "timeTo": "End",
+    "timeTextHint": "Before: {{text}}",
+    "registrationDeadline": "Sign-up deadline",
+    "cancellationDeadline": "Cancellation deadline",
+    "cancellationDeadlineHint": "After this, members can no longer cancel themselves.",
+    "perDateHint": "Applies to this date only.",
+    "endDateBeforeStart": "The end date is before the date",
+    "timeToBeforeFrom": "The end is before the start",
+    "untilDate": "until {{date}}",
+    "registrationDeadlineAt": "Sign-up closes {{when}}",
+    "timeToWithoutFrom": "Please also enter the start",
     "status": {
       "pending": "Requested",
       "waitlisted": "Waiting list",
@@ -964,6 +977,17 @@
       "noSignUps": "Nobody has signed up yet.",
       "plusGuests_one": "+{{count}} guest",
       "plusGuests_other": "+{{count}} guests"
+    },
+    "view": {
+      "list": "List",
+      "month": "Month"
+    },
+    "month": {
+      "prev": "Previous month",
+      "next": "Next month",
+      "today": "Today",
+      "more": "+{{count}} more",
+      "none": "No events on this day."
     }
   },
   "finance": {
@@ -1047,6 +1071,7 @@
       "new": "New party",
       "none": "No external parties yet.",
       "noneHint": "Add external parties in the \"External\" tab.",
+      "pick": "Choose an external party …",
       "removedMsg": "\"{{name}}\" has been deleted.",
       "savedMsg": "\"{{name}}\" has been saved.",
       "updated": "External party saved"
@@ -1068,6 +1093,7 @@
       "detail": "Invoice details",
       "due": "Due",
       "issued": "Issued",
+      "no": "No. {{n}}",
       "notFound": "Invoice not found",
       "number": "Invoice number",
       "numberShort": "No.",
@@ -1181,7 +1207,9 @@
       "memberRequired": "Member is required",
       "partyRequired": "External party is required",
       "amountRequired": "Amount is required",
-      "categoryRequired": "Category is required"
+      "categoryRequired": "Category is required",
+      "amountPositive": "The amount must be more than 0",
+      "dueBeforeIssued": "The due date is before the invoice date"
     },
     "invoiceUpdateFailed": "Could not update invoice.",
     "invoicePaidMsg": "Invoice marked as paid.",
@@ -1398,7 +1426,10 @@
       "chartHint": "The chart of accounts for clubs after the Swiss SME chart. You can add your own accounts.",
       "accountName": "Account",
       "kind": "Kind",
-      "addAccount": "Add"
+      "addAccount": "Add",
+      "renameAccount": "Rename",
+      "deleteAccountTitle": "Delete “{{name}}”?",
+      "deleteAccountBody": "An account that categories or closed years still count on stays."
     },
     "groups": {
       "bookings": "Bookings",
@@ -1435,7 +1466,10 @@
         "amountZero": "Amount 0 (e.g. exempt)",
         "noBillableTier": "Tier not billed"
       }
-    }
+    },
+    "editInvoice": "Edit invoice",
+    "invoiceSaved": "Invoice saved",
+    "invoiceSavedMsg": "Invoice {{id}} was changed."
   },
   "functions": {
     "assignHolder": "Assign person",
@@ -2272,7 +2306,29 @@
       "byTier": "By tier",
       "todayNote": "Status and tier are today's."
     },
-    "roleViaGroup": "{{role}} (through group {{group}})"
+    "roleViaGroup": "{{role}} (through group {{group}})",
+    "poster": {
+      "via": "via poster «{{source}}»",
+      "title": "Posters and flyers",
+      "intro": "A poster with a QR code to the join or trial page. Give each one its own name, and you see here which one brings requests.",
+      "create": "Make a poster",
+      "source": "Poster",
+      "joins": "Requests to join",
+      "trials": "Trial trainings",
+      "headlineJoin": "Join us!",
+      "headlineTrial": "Come to a trial training!",
+      "callJoin": "Scan the QR code and ask to join",
+      "callTrial": "Scan the QR code and book a free trial training",
+      "print": "Print",
+      "kindJoin": "Join",
+      "kindTrial": "Trial training",
+      "a4": "A4 poster",
+      "a6": "A6 flyer",
+      "headline": "Headline",
+      "tag": "Name of this poster",
+      "tagHint": "For example «station» or «school-flyer». Whoever comes through this code is counted under it.",
+      "qrAlt": "QR code to the club's page"
+    }
   },
   "notifications": {
     "invoicePaid": "Invoice paid",

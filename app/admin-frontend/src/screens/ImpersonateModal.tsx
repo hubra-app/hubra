@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Modal, TextInput, Button, Stack, Group, Text, Alert, Checkbox, SegmentedControl } from '@mantine/core'
+import { TextInput, Button, Stack, Text, Alert, Checkbox, SegmentedControl } from '@mantine/core'
+import { Modal as SharedModal } from '@/components/ui'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
@@ -58,64 +59,69 @@ export function ImpersonateModal({
   }
 
   return (
-    <Modal opened={opened} onClose={onClose} title={tr('Verein als Admin öffnen', 'Open the club as admin')} size="md">
-      <form onSubmit={form.onSubmit(handleSubmit)}>
-        <Stack gap={16}>
-          <Alert
-            icon={<IconReplaceUser size={16} />}
-            color="orange"
-            variant="light"
-          >
+    <SharedModal
+      open={opened}
+      onClose={onClose}
+      title={tr('Verein als Admin öffnen', 'Open the club as admin')}
+      onSubmit={form.onSubmit(handleSubmit)}
+      footer={
+        <>
+          <Button variant="default" onClick={onClose}>
+            {tr('Abbrechen', 'Cancel')}
+          </Button>
+          <Button type="submit" loading={loading}>
+            {tr('Als Admin öffnen', 'Open as admin')}
+          </Button>
+        </>
+      }
+    >
+      <Stack gap={16}>
+        <Alert
+          icon={<IconReplaceUser size={16} />}
+          color="orange"
+          variant="light"
+        >
+          {tr(
+            `Du öffnest «${tenantName}» mit Admin-Rechten. Ohne «Änderungen erlauben» kannst du nur ansehen. Alles wird mit deinem Namen protokolliert.`,
+            `You open "${tenantName}" with admin rights. Without "Allow changes" you can only look. Everything is logged under your name.`,
+          )}
+        </Alert>
+        <TextInput
+          label={tr('Grund', 'Reason')}
+          required
+          {...form.getInputProps('reason')}
+          placeholder={tr('Support-Ticket #12345', 'Support ticket #12345')}
+          description={tr('Pflichtfeld für das Audit-Log. Wird dauerhaft gespeichert.', 'Required for the audit log. It is stored permanently.')}
+        />
+        <Checkbox
+          label={tr('Änderungen erlauben', 'Allow changes')}
+          description={tr(
+            'Nur wenn du im Verein etwas ändern musst, z. B. eine Einstellung korrigieren.',
+            'Only when you need to change something in the club, e.g. fix a setting.',
+          )}
+          {...form.getInputProps('allowChanges', { type: 'checkbox' })}
+        />
+        <Stack gap={4}>
+          <Text size="sm" fw={500}>
+            {tr('Dauer', 'Length')}
+          </Text>
+          <SegmentedControl
+            {...form.getInputProps('minutes')}
+            data={[
+              { value: '15', label: tr('15 Min.', '15 min') },
+              { value: '30', label: tr('30 Min.', '30 min') },
+              { value: '60', label: tr('1 Std.', '1 h') },
+              { value: '120', label: tr('2 Std.', '2 h') },
+            ]}
+          />
+          <Text size="xs" c="dimmed">
             {tr(
-              `Du öffnest «${tenantName}» mit Admin-Rechten. Ohne «Änderungen erlauben» kannst du nur ansehen. Alles wird mit deinem Namen protokolliert.`,
-              `You open "${tenantName}" with admin rights. Without "Allow changes" you can only look. Everything is logged under your name.`,
+              `Die Support-Sitzung endet nach ${Number(form.values.minutes) >= 60 ? `${Number(form.values.minutes) / 60} Std.` : `${form.values.minutes} Minuten`}; im Verein steht die ganze Zeit ein Hinweis-Banner. Unter «Support-Zugriffe» lässt sie sich vorher beenden. Verein löschen und Plan ändern sind währenddessen gesperrt.`,
+              `The support session ends after ${Number(form.values.minutes) >= 60 ? `${Number(form.values.minutes) / 60} h` : `${form.values.minutes} minutes`}; a banner shows in the club the whole time. It can be ended earlier under "Support access". Deleting the club and changing the plan are blocked meanwhile.`,
             )}
-          </Alert>
-          <TextInput
-            label={tr('Grund', 'Reason')}
-            required
-            {...form.getInputProps('reason')}
-            placeholder={tr('Support-Ticket #12345', 'Support ticket #12345')}
-            description={tr('Pflichtfeld für das Audit-Log. Wird dauerhaft gespeichert.', 'Required for the audit log. It is stored permanently.')}
-          />
-          <Checkbox
-            label={tr('Änderungen erlauben', 'Allow changes')}
-            description={tr(
-              'Nur wenn du im Verein etwas ändern musst, z. B. eine Einstellung korrigieren.',
-              'Only when you need to change something in the club, e.g. fix a setting.',
-            )}
-            {...form.getInputProps('allowChanges', { type: 'checkbox' })}
-          />
-          <Stack gap={4}>
-            <Text size="sm" fw={500}>
-              {tr('Dauer', 'Length')}
-            </Text>
-            <SegmentedControl
-              {...form.getInputProps('minutes')}
-              data={[
-                { value: '15', label: tr('15 Min.', '15 min') },
-                { value: '30', label: tr('30 Min.', '30 min') },
-                { value: '60', label: tr('1 Std.', '1 h') },
-                { value: '120', label: tr('2 Std.', '2 h') },
-              ]}
-            />
-            <Text size="xs" c="dimmed">
-              {tr(
-                `Die Support-Sitzung endet nach ${Number(form.values.minutes) >= 60 ? `${Number(form.values.minutes) / 60} Std.` : `${form.values.minutes} Minuten`}; im Verein steht die ganze Zeit ein Hinweis-Banner. Unter «Support-Zugriffe» lässt sie sich vorher beenden. Verein löschen und Plan ändern sind währenddessen gesperrt.`,
-                `The support session ends after ${Number(form.values.minutes) >= 60 ? `${Number(form.values.minutes) / 60} h` : `${form.values.minutes} minutes`}; a banner shows in the club the whole time. It can be ended earlier under "Support access". Deleting the club and changing the plan are blocked meanwhile.`,
-              )}
-            </Text>
-          </Stack>
-          <Group justify="flex-end">
-            <Button variant="default" onClick={onClose}>
-              {tr('Abbrechen', 'Cancel')}
-            </Button>
-            <Button type="submit" loading={loading}>
-              {tr('Als Admin öffnen', 'Open as admin')}
-            </Button>
-          </Group>
+          </Text>
         </Stack>
-      </form>
-    </Modal>
+      </Stack>
+    </SharedModal>
   )
 }

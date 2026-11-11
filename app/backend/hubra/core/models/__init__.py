@@ -36,7 +36,7 @@ from hubra.core.models.member import (
     member_groups,
     member_roles,
 )
-from hubra.core.models.application import Application
+from hubra.core.models.application import Application, SignupSource
 from hubra.core.models.group import Group, GroupMembership
 from hubra.core.models.consent import MemberConsent
 from hubra.core.models.function import Function, FunctionHolder
@@ -163,6 +163,7 @@ __all__ = [
     "member_groups",
     "member_roles",
     "Application",
+    "SignupSource",
     "Group",
     "GroupMembership",
     "Function",
