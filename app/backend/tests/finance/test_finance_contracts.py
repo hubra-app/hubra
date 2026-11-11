@@ -188,3 +188,34 @@ def test_create_transaction_needs_the_right(app, db, category, billable_tier_db)
             type="income",
             actor=billable_tier_db["member_billed"],
         )
+
+
+def test_create_transaction_without_category_for_a_member(app, db, seeded_db):
+    me = seeded_db["admin"].id
+    out = call(
+        "finance.transaction.create",
+        booked_on="2026-10-27",
+        description="Spesen: Kreide",
+        amount="23.50",
+        type="expense",
+        method="Cash",
+        member_id=me,
+        actor_id=me,
+        actor=SYSTEM,
+    )
+    tx = db.session.get(Transaction, out["id"])
+    assert (tx.amount, tx.category_id, tx.member_id) == (Decimal("-23.50"), None, me)
+
+
+def test_create_transaction_refuses_an_unknown_member(app, db, category):
+    with pytest.raises(Refused):
+        call(
+            "finance.transaction.create",
+            booked_on="2026-10-27",
+            description="x",
+            category_id=category.id,
+            amount="5",
+            type="expense",
+            member_id=99999,
+            actor=SYSTEM,
+        )
