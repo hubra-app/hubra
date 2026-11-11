@@ -3,7 +3,9 @@ WORKDIR /app
 COPY packages/api-client /packages/api-client
 COPY packages/ui /packages/ui
 COPY app/frontend/package.json app/frontend/package-lock.json* ./
-RUN npm ci
+# No install scripts: nothing in the tree needs one, and a compromised
+# dependency must not run code while installing.
+RUN npm ci --ignore-scripts
 COPY app/frontend/ ./
 
 FROM base AS dev

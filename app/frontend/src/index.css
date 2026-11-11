@@ -1061,3 +1061,16 @@ table[style*="min-width"] td::before {
   font-size: var(--mantine-font-size-xs);
   color: var(--hb-text-3);
 }
+
+/* ── One Anlass (EventDetail.tsx): who signed up ───────────────────── */
+.hb-signup-list {
+  display: flex;
+  flex-direction: column;
+}
+.hb-signup-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--hb-border);
+}
