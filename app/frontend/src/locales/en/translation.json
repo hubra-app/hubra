@@ -2418,7 +2418,22 @@
       "fieldHint": "For safety rules, rule changes or AGM papers: members confirm with one tap, and you see who is missing.",
       "done": "Read, confirmed",
       "confirm": "I read it",
-      "count": "{{count}} confirmed"
+      "count": "{{count}} confirmed",
+      "bannerTitle": "{{count}} posts are waiting for you to confirm you read them",
+      "bannerBody": "Please read them and confirm with one tap.",
+      "bannerShow": "Show"
+    },
+    "search": "Search posts …",
+    "filter": {
+      "confirm": "To confirm",
+      "confirmCount": "To confirm ({{count}})",
+      "scheduled": "Scheduled",
+      "mine": "Mine",
+      "allConfirmed": "All confirmed",
+      "allConfirmedHint": "You've read every post that asks for a confirmation.",
+      "showAll": "All posts",
+      "none": "No posts found",
+      "reset": "Reset filters"
     }
   },
   "settings": {

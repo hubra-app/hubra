@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState, useCallback } from 'react'
-import { Badge, Button, Checkbox, Group, Loader, SimpleGrid, TextInput, Paper } from '@mantine/core'
+import { Link } from 'react-router-dom'
+import { Alert, Anchor, Badge, Button, Checkbox, Group, Loader, SegmentedControl, SimpleGrid, TextInput, Paper } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
@@ -15,6 +16,9 @@ import {
   IconEyeOff,
   IconChecks,
   IconCircleCheck,
+  IconSearch,
+  IconNews,
+  IconAlertCircle,
 } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
 import { qk } from '@/data/keys'
@@ -28,6 +32,7 @@ import {
   ConfirmModal,
   ActionButtons,
   useSubmitOnce,
+  EmptyState,
 } from '@/components/ui'
 import { MarkdownRenderer } from '@/components/MarkdownRenderer'
 import type { ContentLanguage, Post, PostComment } from '@/types'
@@ -112,7 +117,27 @@ export function PostsTab() {
   const [commentInput, setCommentInput] = useState('')
   const [submittingComment, setSubmittingComment] = useState(false)
 
-  const pg = usePagination(posts, 10)
+  // What the feed shows: everything, what the member still has to confirm,
+  // scheduled posts (their authors and the moderators see them), or their own.
+  const [show, setShow] = useState<'all' | 'confirm' | 'scheduled' | 'mine'>('all')
+  const [search, setSearch] = useState('')
+  const toConfirm = (p: Post) => p.mustRead && !p.readByMe && !p.publishAt
+  const openReads = posts.filter(toConfirm).length
+  const scheduled = posts.filter((p) => p.publishAt).length
+  const q = search.trim().toLowerCase()
+  const shown = posts.filter((p) => {
+    if (show === 'confirm' && !toConfirm(p)) return false
+    if (show === 'scheduled' && !p.publishAt) return false
+    if (show === 'mine' && p.authorId !== currentUser?.id) return false
+    return (
+      !q ||
+      p.title.toLowerCase().includes(q) ||
+      (p.summary ?? '').toLowerCase().includes(q) ||
+      p.body.toLowerCase().includes(q) ||
+      p.author.toLowerCase().includes(q)
+    )
+  })
+  const pg = usePagination(shown, 10)
 
   const form = useForm<PostForm>({
     validate: zod4Resolver(postSchema),
@@ -467,38 +492,94 @@ export function PostsTab() {
 
   return (
     <div>
-      {canCreate && (
-        <Group justify="flex-end" mb={16} className="page-actions">
+      {openReads > 0 && show !== 'confirm' && (
+        <Alert
+          color="orange"
+          variant="light"
+          mb={16}
+          icon={<IconAlertCircle size={18} />}
+          title={t('posts.mustRead.bannerTitle', '{{count}} Beiträge warten auf deine Lesebestätigung', {
+            count: openReads,
+          })}
+          data-testid="must-read-banner"
+        >
+          <Group justify="space-between" gap="xs">
+            <span>
+              {t(
+                'posts.mustRead.bannerBody',
+                'Bitte lies sie und bestätige mit einem Tipp.',
+              )}
+            </span>
+            <Button size="xs" variant="filled" color="orange" onClick={() => setShow('confirm')}>
+              {t('posts.mustRead.bannerShow', 'Anzeigen')}
+            </Button>
+          </Group>
+        </Alert>
+      )}
+      <Group justify="space-between" mb={16} gap="xs" className="page-actions">
+        <Group gap="xs" wrap="wrap" style={{ flex: '1 1 320px' }}>
+          <TextInput
+            value={search}
+            onChange={(e) => setSearch(e.currentTarget.value)}
+            placeholder={t('posts.search', 'Beiträge durchsuchen …')}
+            leftSection={<IconSearch size={16} />}
+            aria-label={t('posts.search', 'Beiträge durchsuchen …')}
+            style={{ flex: '1 1 200px', maxWidth: 320 }}
+          />
+          <SegmentedControl
+            value={show}
+            onChange={(v) => setShow(v as typeof show)}
+            data-testid="posts-filter"
+            data={[
+              { value: 'all', label: t('common.all', 'Alle') },
+              {
+                value: 'confirm',
+                label: openReads
+                  ? t('posts.filter.confirmCount', 'Zu bestätigen ({{count}})', { count: openReads })
+                  : t('posts.filter.confirm', 'Zu bestätigen'),
+              },
+              ...(scheduled ? [{ value: 'scheduled', label: t('posts.filter.scheduled', 'Geplant') }] : []),
+              ...(canCreate ? [{ value: 'mine', label: t('posts.filter.mine', 'Meine') }] : []),
+            ]}
+          />
+        </Group>
+        {canCreate && (
           <Button variant="filled" onClick={openAdd}>
             <IconPlus size={16} />
             {t('posts.newPost', 'Neuer Beitrag')}
           </Button>
-        </Group>
-      )}
+        )}
+      </Group>
       <Paper withBorder>
         <Pagination {...pg} top />
         {pg.paged.length === 0 ? (
-          <div
-            style={{ padding: '48px', textAlign: 'center', color: 'var(--hb-text-3)' }}
-          >
-            <div style={{ fontSize: 32, marginBottom: 12 }}>📢</div>
-            <div
-              style={{
-                fontSize: 'var(--mantine-font-size-sm)',
-                fontWeight: 500,
+          posts.length === 0 ? (
+            <EmptyState
+              icon={<IconNews size={24} />}
+              title={t('posts.noPostsYet', 'Noch keine Beiträge')}
+              description={t('posts.beFirstToShare', 'Teile die erste Neuigkeit mit dem Verein.')}
+              action={canCreate ? { label: t('posts.newPost', 'Neuer Beitrag'), onClick: openAdd } : undefined}
+            />
+          ) : show === 'confirm' && !q ? (
+            <EmptyState
+              icon={<IconCircleCheck size={24} />}
+              title={t('posts.filter.allConfirmed', 'Alles bestätigt')}
+              description={t('posts.filter.allConfirmedHint', 'Du hast alle Beiträge gelesen, die eine Bestätigung verlangen.')}
+              action={{ label: t('posts.filter.showAll', 'Alle Beiträge'), onClick: () => setShow('all') }}
+            />
+          ) : (
+            <EmptyState
+              icon={<IconSearch size={24} />}
+              title={t('posts.filter.none', 'Keine Beiträge gefunden')}
+              action={{
+                label: t('posts.filter.reset', 'Filter zurücksetzen'),
+                onClick: () => {
+                  setShow('all')
+                  setSearch('')
+                },
               }}
-            >
-              {t('posts.noPostsYet', 'Noch keine Beiträge')}
-            </div>
-            <div
-              style={{ fontSize: 'var(--mantine-font-size-sm)', marginTop: 4 }}
-            >
-              {t(
-                'posts.beFirstToShare',
-                'Teile die erste Neuigkeit mit dem Verein.',
-              )}
-            </div>
-          </div>
+            />
+          )
         ) : (
           pg.paged.map((post) => {
             const liked = post.likeMemberIds.includes(currentUser?.id ?? '')
@@ -508,9 +589,12 @@ export function PostsTab() {
             return (
               <div
                 key={post.id}
+                data-testid="post-card"
                 style={{
                   padding: '20px 24px',
                   borderBottom: '1px solid var(--hb-border)',
+                  // A post the member still has to confirm stands out.
+                  boxShadow: toConfirm(post) ? 'inset 3px 0 0 var(--mantine-color-orange-6)' : undefined,
                 }}
               >
                 <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
@@ -566,16 +650,22 @@ export function PostsTab() {
                     />
                   </div>
                 </div>
-                <div
+                <Anchor
+                  component={Link}
+                  to={`/app/operations/posts/${post.id}`}
+                  underline="hover"
+                  data-testid="post-title"
                   style={{
-                    fontSize: 'var(--mantine-font-size-md)',
+                    display: 'block',
+                    fontSize: 'var(--mantine-font-size-lg)',
                     fontWeight: 700,
                     color: 'var(--hb-text)',
                     marginBottom: 8,
                   }}
                 >
                   {post.title}
-                </div>
+                </Anchor>
+
                 <div
                   style={{
                     fontSize: 'var(--mantine-font-size-sm)',
