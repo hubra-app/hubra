@@ -4,10 +4,10 @@ import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ActionIcon, Button, Group, Menu, Select, SimpleGrid, TextInput } from '@mantine/core'
+import { ActionIcon, Button, Group, Menu, NumberInput, Select, SimpleGrid, TextInput } from '@mantine/core'
 import { useModules } from '@/modules/useModules'
 import { useT, zmsg } from '@/locales/i18n'
-import { IconBell, IconCalendarDollar, IconDots, IconFileDownload, IconPlus, IconTrash } from '@tabler/icons-react'
+import { IconBell, IconCalendarDollar, IconDots, IconFileDownload, IconPencil, IconPlus, IconTrash } from '@tabler/icons-react'
 import { useToast, useNav, useAuth } from '@/context/AppContext'
 import { qk } from '@/data/keys'
 import { useInvoices, useListCache } from '@/data/lists'
@@ -29,6 +29,7 @@ import {
 } from '@/api/finance'
 import { MemberPicker } from '@/components/MemberPicker'
 import { FeeRunPreviewModal } from '@/screens/private/finances/FeeRunPreview'
+import { EditInvoiceModal } from '@/screens/private/finances/EditInvoiceModal'
 import { listTiers, calculateTierCost } from '@/api/tiers'
 import { formatCHF, formatDate } from '@/format'
 import {
@@ -111,6 +112,7 @@ export function InvoicesTab() {
   const canUpdate = hasPermission('finance.invoices.update')
   const canDelete = hasPermission('finance.invoices.delete')
   const canRemind = hasPermission('finance.invoices.remind')
+  const [editTarget, setEditTarget] = useState<Invoice | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -486,6 +488,14 @@ export function InvoicesTab() {
                     </ActionIcon>
                   </Menu.Target>
                   <Menu.Dropdown>
+                    {canUpdate && inv.status !== 'Paid' && (
+                      <Menu.Item
+                        leftSection={<IconPencil size={16} />}
+                        onClick={() => setEditTarget(inv)}
+                      >
+                        {t('common.edit', 'Bearbeiten')}
+                      </Menu.Item>
+                    )}
                     <Menu.Item
                       leftSection={<IconFileDownload size={16} />}
                       onClick={() => downloadInvoicePdf(inv.id)}
@@ -580,6 +590,7 @@ export function InvoicesTab() {
       />
 
       <FeeRunPreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} />
+      <EditInvoiceModal invoice={editTarget} onClose={() => setEditTarget(null)} />
       <Modal
         onSubmit={bulkForm.onSubmit(handleBulk)}
         open={bulkOpen}
@@ -748,24 +759,16 @@ export function InvoicesTab() {
                 }
               >
                 <Select
-                  data={
-                    externalParties.length === 0
-                      ? [
-                          {
-                            value: '',
-                            label: t(
-                              'finance.externalParty.none',
-                              'Noch keine externen Parteien.',
-                            ),
-                          },
-                        ]
-                      : externalParties.map((p) => ({
-                          value: p.id,
-                          label: p.name,
-                        }))
-                  }
+                  data={externalParties.map((p) => ({ value: p.id, label: p.name }))}
                   searchable
+                  disabled={externalParties.length === 0}
+                  placeholder={
+                    externalParties.length === 0
+                      ? t('finance.externalParty.none', 'Noch keine externen Parteien.')
+                      : t('finance.externalParty.pick', 'Externe Partei wählen …')
+                  }
                   {...singleForm.getInputProps('externalPartyId')}
+                  value={singleForm.values.externalPartyId || null}
                 />
               </Field>
             )}
@@ -801,12 +804,15 @@ export function InvoicesTab() {
                   : undefined
               }
             >
-              <TextInput
-                type="number"
-                min="0"
-                step="0.01"
+              <NumberInput
+                min={0}
+                decimalScale={2}
+                thousandSeparator="’"
+                hideControls
                 placeholder="0.00"
                 {...singleForm.getInputProps('amount')}
+                // The form keeps the amount as text (empty: not entered).
+                onChange={(v) => singleForm.setFieldValue('amount', v === '' ? '' : String(v))}
               />
             </Field>
             <Field label={t('finance.invoice.due', 'Fällig')}>
@@ -824,17 +830,11 @@ export function InvoicesTab() {
               )}
             >
               <Select
-                data={[
-                  {
-                    value: '',
-                    label: t('finance.selectCategory', 'Kategorie wählen …'),
-                  },
-                  ...txCategories.map((c) => ({
-                    value: c.id,
-                    label: c.name,
-                  })),
-                ]}
+                data={txCategories.map((c) => ({ value: c.id, label: c.name }))}
+                searchable
+                placeholder={t('finance.selectCategory', 'Kategorie wählen …')}
                 {...singleForm.getInputProps('categoryId')}
+                value={singleForm.values.categoryId || null}
               />
             </Field>
           )}

@@ -15,7 +15,6 @@ export function OperationsTabScreen() {
   const { canUse } = useModules()
   const { hasPermission } = useAuth()
 
-  // Anlässe has a screen of its own (EventsScreen).
   const tabs = [
     { id: 'polls', label: t('shell.nav.polls') },
     { id: 'posts', label: t('shell.nav.posts') },
@@ -24,8 +23,8 @@ export function OperationsTabScreen() {
   const path = location.pathname.replace('/app/operations', '').replace('/', '')
   const tab = path === '' ? (tabs[0]?.id ?? 'polls') : path
 
-  // Umfragen and Beiträge each have their own sidebar entry, so the page
-  // only shows the one that was picked.
+  // Umfragen and Beiträge each have their own sidebar entry, so the page only
+  // shows the one that was picked. Anlässe has its own page (EventsPage).
   const title = tabs.find((tb) => tb.id === tab)?.label ?? t('shell.nav.polls')
 
   return (

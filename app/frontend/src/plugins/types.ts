@@ -15,8 +15,9 @@ export interface PluginRoute extends Gated {
   component: ComponentType
 }
 
-/** A tab on a screen of the app: `finance` or `events` (docs/plugins.md). */
+/** A tab on a screen of the app, such as `finance`. */
 export interface PluginTab extends Gated {
+  /** The page it goes on: `finance` (Finanzen) or `events` (Anlässe, /app/operations/events/<id>). */
   screen: string
   id: string
   /** A translation key. */

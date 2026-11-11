@@ -1,4 +1,5 @@
 import { apiFetch } from '@hubra/api-client'
+import { posterSource } from '@/posterSource'
 
 export interface PermissionsResponse {
   is_admin: boolean
@@ -278,6 +279,7 @@ export interface ClubPage extends ClubListing {
 
 /** One club for its join page (the club app's /apply sends people here). */
 export async function getClub(slug: string): Promise<ClubPage> {
+  posterSource(slug) // keep a poster's ?src= for the request to join
   return apiFetch(`/global/clubs/${encodeURIComponent(slug)}`)
 }
 
@@ -286,9 +288,11 @@ export async function joinClub(
   slug: string,
   wantsTierId?: number,
 ): Promise<{ status: 'joined' | 'requested'; club: { slug: string; name: string } }> {
+  // The join poster the person came from, if any.
+  const source = posterSource(slug)
   return apiFetch(`/global/clubs/${encodeURIComponent(slug)}/join`, {
     method: 'POST',
-    body: JSON.stringify(wantsTierId ? { wantsTierId } : {}),
+    body: JSON.stringify({ ...(wantsTierId ? { wantsTierId } : {}), ...(source ? { source } : {}) }),
   })
 }
 
@@ -788,4 +792,21 @@ export async function getBadge(): Promise<MemberBadge> {
 /** Writes the badge's pass to Google Wallet; the link saves it on the phone. */
 export async function addBadgeToGoogleWallet(): Promise<{ url: string }> {
   return apiFetch<{ url: string }>('/global/account/badge/google-wallet', { method: 'POST' })
+}
+
+// ── One calendar for every club ─────────────────────────────────────────────
+
+/** The personal calendar URLs: every club's events, or those signed up for. */
+export interface AccountCalendar {
+  all: string
+  mine: string
+}
+
+export async function getAccountCalendar(): Promise<AccountCalendar> {
+  return apiFetch<AccountCalendar>('/global/account/calendar')
+}
+
+/** New calendar URLs; the old ones stop working. */
+export async function renewAccountCalendar(): Promise<AccountCalendar> {
+  return apiFetch<AccountCalendar>('/global/account/calendar/renew', { method: 'POST' })
 }

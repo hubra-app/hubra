@@ -55,6 +55,7 @@ function age(birth: string | null): number | null {
  * club's public trial page. The trainer marks who came and invites them as
  * a trial member with one click.
  */
+/** The trial bookings, a tab of Anlässe (EventsPage has the page head). */
 export function TrialsScreen() {
   const { t, i18n } = useT()
   const { notify } = useToast()
@@ -112,13 +113,13 @@ export function TrialsScreen() {
 
   return (
     <div>
-      <Group justify="space-between" mb={16} gap="xs" className="page-actions">
-        <Text size="sm" c="dimmed" maw={560}>
-          {t(
-            'events.trials.subtitle',
-            'Wer noch nicht Mitglied ist, bucht ein Training auf der Schnupperseite. Schnupperplätze gibst du im Anlass an.',
-          )}
-        </Text>
+      <Text size="sm" c="dimmed" mb="md">
+        {t(
+          'events.trials.subtitle',
+          'Wer noch nicht Mitglied ist, bucht ein Training auf der Schnupperseite. Schnupperplätze gibst du im Anlass an.',
+        )}
+      </Text>
+      <Group justify="flex-end" mb={16} gap="xs" className="page-actions">
         <SegmentedControl
           value={past ? 'past' : 'upcoming'}
           onChange={(v) => setPast(v === 'past')}
@@ -208,6 +209,11 @@ export function TrialsScreen() {
                     <Badge color={STATUS_COLOR[s.status]} variant="light">
                       {statusLabel(s.status)}
                     </Badge>
+                    {s.source && (
+                      <Badge color="gray" variant="outline" style={{ textTransform: 'none' }}>
+                        {t('members.poster.via', 'über Plakat «{{source}}»', { source: s.source })}
+                      </Badge>
+                    )}
                   </Group>
                   {canManage && (
                     <Menu position="bottom-end" withinPortal>

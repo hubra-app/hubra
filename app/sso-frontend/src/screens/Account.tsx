@@ -38,6 +38,7 @@ import { SignedInFrame } from '@/components/SignedInFrame'
 import { ThemeSwitch } from '@hubra/ui'
 import { LoadFailed } from '@/components/LoadFailed'
 import { MemberBadgeCard } from '@/components/MemberBadgeCard'
+import { CalendarFeedCard } from '@/components/CalendarFeedCard'
 import { getLang, setLang, themeLabels, tr, useLang } from '@/lang'
 import * as authApi from '@/api/auth'
 import { TwoFactorTab } from './TwoFactor'
@@ -224,6 +225,7 @@ function ProfileTab({ profile }: { profile: authApi.Profile }) {
   return (
     <Stack gap="md">
       <MemberBadgeCard />
+      <CalendarFeedCard />
       <Paper withBorder p="lg">
         <form
           onSubmit={(e) => {

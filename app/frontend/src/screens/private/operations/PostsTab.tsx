@@ -1,6 +1,8 @@
 import { lazy, Suspense, useState, useCallback } from 'react'
+import { ActionIcon, Alert, Anchor, Badge, Button, Checkbox, Group, Loader, Menu, SimpleGrid, Text, TextInput, Paper } from '@mantine/core'
 import { Link } from 'react-router-dom'
-import { Alert, Anchor, Badge, Button, Checkbox, Group, Loader, SegmentedControl, SimpleGrid, TextInput, Paper } from '@mantine/core'
+import { FilterBar } from '@hubra/ui'
+import { filterLabels } from '@/components/filterLabels'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
@@ -16,9 +18,10 @@ import {
   IconEyeOff,
   IconChecks,
   IconCircleCheck,
-  IconSearch,
-  IconNews,
   IconAlertCircle,
+  IconDotsVertical,
+  IconNews,
+  IconPencil,
 } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
 import { qk } from '@/data/keys'
@@ -30,9 +33,8 @@ import {
   usePagination,
   Pagination,
   ConfirmModal,
-  ActionButtons,
-  useSubmitOnce,
   EmptyState,
+  useSubmitOnce,
 } from '@/components/ui'
 import { MarkdownRenderer } from '@/components/MarkdownRenderer'
 import type { ContentLanguage, Post, PostComment } from '@/types'
@@ -117,26 +119,22 @@ export function PostsTab() {
   const [commentInput, setCommentInput] = useState('')
   const [submittingComment, setSubmittingComment] = useState(false)
 
-  // What the feed shows: everything, what the member still has to confirm,
-  // scheduled posts (their authors and the moderators see them), or their own.
-  const [show, setShow] = useState<'all' | 'confirm' | 'scheduled' | 'mine'>('all')
   const [search, setSearch] = useState('')
-  const toConfirm = (p: Post) => p.mustRead && !p.readByMe && !p.publishAt
-  const openReads = posts.filter(toConfirm).length
-  const scheduled = posts.filter((p) => p.publishAt).length
-  const q = search.trim().toLowerCase()
-  const shown = posts.filter((p) => {
-    if (show === 'confirm' && !toConfirm(p)) return false
-    if (show === 'scheduled' && !p.publishAt) return false
-    if (show === 'mine' && p.authorId !== currentUser?.id) return false
-    return (
-      !q ||
-      p.title.toLowerCase().includes(q) ||
-      (p.summary ?? '').toLowerCase().includes(q) ||
-      p.body.toLowerCase().includes(q) ||
-      p.author.toLowerCase().includes(q)
-    )
-  })
+  const [show, setShow] = useState<'all' | 'unread' | 'scheduled'>('all')
+  // What still waits for the member's read confirmation, shown on top.
+  const unreadMust = (p: Post) => p.mustRead && !p.readByMe && !p.publishAt
+  const unreadCount = posts.filter(unreadMust).length
+  const scheduledCount = posts.filter((p) => p.publishAt).length
+  const shown = posts
+    .filter((p) => {
+      const q = search.trim().toLowerCase()
+      const matchSearch =
+        !q || p.title.toLowerCase().includes(q) || p.body.toLowerCase().includes(q) || p.author.toLowerCase().includes(q)
+      const matchShow = show === 'all' || (show === 'unread' ? unreadMust(p) : !!p.publishAt)
+      return matchSearch && matchShow
+    })
+    // Unconfirmed must-read posts first; otherwise the order the API gives (newest first).
+    .sort((a, b) => Number(unreadMust(b)) - Number(unreadMust(a)))
   const pg = usePagination(shown, 10)
 
   const form = useForm<PostForm>({
@@ -492,94 +490,90 @@ export function PostsTab() {
 
   return (
     <div>
-      {openReads > 0 && show !== 'confirm' && (
-        <Alert
-          color="orange"
-          variant="light"
-          mb={16}
-          icon={<IconAlertCircle size={18} />}
-          title={t('posts.mustRead.bannerTitle', '{{count}} Beiträge warten auf deine Lesebestätigung', {
-            count: openReads,
-          })}
-          data-testid="must-read-banner"
-        >
-          <Group justify="space-between" gap="xs">
-            <span>
-              {t(
-                'posts.mustRead.bannerBody',
-                'Bitte lies sie und bestätige mit einem Tipp.',
-              )}
-            </span>
-            <Button size="xs" variant="filled" color="orange" onClick={() => setShow('confirm')}>
-              {t('posts.mustRead.bannerShow', 'Anzeigen')}
-            </Button>
-          </Group>
-        </Alert>
-      )}
-      <Group justify="space-between" mb={16} gap="xs" className="page-actions">
-        <Group gap="xs" wrap="wrap" style={{ flex: '1 1 320px' }}>
-          <TextInput
-            value={search}
-            onChange={(e) => setSearch(e.currentTarget.value)}
-            placeholder={t('posts.search', 'Beiträge durchsuchen …')}
-            leftSection={<IconSearch size={16} />}
-            aria-label={t('posts.search', 'Beiträge durchsuchen …')}
-            style={{ flex: '1 1 200px', maxWidth: 320 }}
-          />
-          <SegmentedControl
-            value={show}
-            onChange={(v) => setShow(v as typeof show)}
-            data-testid="posts-filter"
-            data={[
-              { value: 'all', label: t('common.all', 'Alle') },
-              {
-                value: 'confirm',
-                label: openReads
-                  ? t('posts.filter.confirmCount', 'Zu bestätigen ({{count}})', { count: openReads })
-                  : t('posts.filter.confirm', 'Zu bestätigen'),
-              },
-              ...(scheduled ? [{ value: 'scheduled', label: t('posts.filter.scheduled', 'Geplant') }] : []),
-              ...(canCreate ? [{ value: 'mine', label: t('posts.filter.mine', 'Meine') }] : []),
-            ]}
-          />
-        </Group>
-        {canCreate && (
+      {canCreate && (
+        <Group justify="flex-end" mb={16} className="page-actions">
           <Button variant="filled" onClick={openAdd}>
             <IconPlus size={16} />
             {t('posts.newPost', 'Neuer Beitrag')}
           </Button>
-        )}
-      </Group>
+        </Group>
+      )}
+      {unreadCount > 0 && show !== 'unread' && (
+        <Alert
+          variant="light"
+          color="orange"
+          mb="md"
+          icon={<IconAlertCircle size={18} />}
+          data-testid="must-read-banner"
+        >
+          <Group justify="space-between" gap="xs">
+            <Text size="sm">
+              {t('posts.mustRead.banner', '{{count}} Pflicht-Beitrag wartet auf deine Lesebestätigung.', {
+                count: unreadCount,
+              })}
+            </Text>
+            <Button size="xs" variant="light" color="orange" onClick={() => setShow('unread')}>
+              {t('posts.mustRead.showUnread', 'Anzeigen')}
+            </Button>
+          </Group>
+        </Alert>
+      )}
       <Paper withBorder>
-        <Pagination {...pg} top />
-        {pg.paged.length === 0 ? (
-          posts.length === 0 ? (
-            <EmptyState
-              icon={<IconNews size={24} />}
-              title={t('posts.noPostsYet', 'Noch keine Beiträge')}
-              description={t('posts.beFirstToShare', 'Teile die erste Neuigkeit mit dem Verein.')}
-              action={canCreate ? { label: t('posts.newPost', 'Neuer Beitrag'), onClick: openAdd } : undefined}
-            />
-          ) : show === 'confirm' && !q ? (
-            <EmptyState
-              icon={<IconCircleCheck size={24} />}
-              title={t('posts.filter.allConfirmed', 'Alles bestätigt')}
-              description={t('posts.filter.allConfirmedHint', 'Du hast alle Beiträge gelesen, die eine Bestätigung verlangen.')}
-              action={{ label: t('posts.filter.showAll', 'Alle Beiträge'), onClick: () => setShow('all') }}
-            />
-          ) : (
-            <EmptyState
-              icon={<IconSearch size={24} />}
-              title={t('posts.filter.none', 'Keine Beiträge gefunden')}
-              action={{
-                label: t('posts.filter.reset', 'Filter zurücksetzen'),
-                onClick: () => {
-                  setShow('all')
-                  setSearch('')
-                },
+        <FilterBar
+          padded
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder={t('posts.search', 'Beiträge durchsuchen …')}
+          labels={filterLabels()}
+          groups={[
+            {
+              key: 'show',
+              label: t('posts.filter.show', 'Anzeigen'),
+              value: show,
+              defaultValue: 'all',
+              options: [
+                { value: 'all', label: t('common.all', 'Alle') },
+                { value: 'unread', label: t('posts.filter.unread', 'Noch nicht bestätigt') },
+                ...(canCreate || scheduledCount > 0
+                  ? [{ value: 'scheduled', label: t('posts.filter.scheduled', 'Geplant') }]
+                  : []),
+              ],
+              onChange: (v) => setShow(v as 'all' | 'unread' | 'scheduled'),
+            },
+          ]}
+        />
+        {pg.total > pg.perPage && <Pagination {...pg} top />}
+        {pg.paged.length === 0 && (search || show !== 'all') ? (
+          <EmptyState
+            icon={<IconNews size={36} />}
+            title={
+              show === 'unread'
+                ? t('posts.filter.noneUnread', 'Alles gelesen und bestätigt.')
+                : t('posts.noMatch', 'Keine Beiträge gefunden.')
+            }
+          />
+        ) : pg.paged.length === 0 ? (
+          <div
+            style={{ padding: '48px', textAlign: 'center', color: 'var(--hb-text-3)' }}
+          >
+            <div style={{ fontSize: 32, marginBottom: 12 }}>📢</div>
+            <div
+              style={{
+                fontSize: 'var(--mantine-font-size-sm)',
+                fontWeight: 500,
               }}
-            />
-          )
+            >
+              {t('posts.noPostsYet', 'Noch keine Beiträge')}
+            </div>
+            <div
+              style={{ fontSize: 'var(--mantine-font-size-sm)', marginTop: 4 }}
+            >
+              {t(
+                'posts.beFirstToShare',
+                'Teile die erste Neuigkeit mit dem Verein.',
+              )}
+            </div>
+          </div>
         ) : (
           pg.paged.map((post) => {
             const liked = post.likeMemberIds.includes(currentUser?.id ?? '')
@@ -589,42 +583,36 @@ export function PostsTab() {
             return (
               <div
                 key={post.id}
+                className="hb-post-card"
                 data-testid="post-card"
-                style={{
-                  padding: '20px 24px',
-                  borderBottom: '1px solid var(--hb-border)',
-                  // A post the member still has to confirm stands out.
-                  boxShadow: toConfirm(post) ? 'inset 3px 0 0 var(--mantine-color-orange-6)' : undefined,
-                }}
+                data-unread={unreadMust(post) || undefined}
               >
-                <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-                  <Avatar
-                    name={post.author}
-                    color={post.avatarColor}
-                    size={38}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <div
-                      style={{
-                        fontSize: 'var(--mantine-font-size-sm)',
-                        fontWeight: 600,
-                        color: 'var(--hb-text)',
-                      }}
-                    >
-                      {post.author}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 'var(--mantine-font-size-xs)',
-                        color: 'var(--hb-text-3)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      <span className="num">{post.time}</span>
-                      <GroupBadge name={createScope.groupName(post.groupId)} />
+                <div className="hb-post-head">
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Group gap={8} wrap="wrap" mb={4}>
+                      <Anchor
+                        component={Link}
+                        to={`/app/operations/posts/${post.id}`}
+                        c="var(--hb-text)"
+                        fw={700}
+                        fz="lg"
+                        underline="hover"
+                        data-testid="post-title"
+                      >
+                        {post.title}
+                      </Anchor>
+                      {post.mustRead && (
+                        <Badge
+                          variant="light"
+                          color={post.readByMe ? 'green' : 'orange'}
+                          size="sm"
+                          style={{ textTransform: 'none' }}
+                        >
+                          {post.readByMe
+                            ? t('posts.mustRead.done', 'Gelesen bestätigt')
+                            : t('posts.mustRead.badge', 'Pflicht')}
+                        </Badge>
+                      )}
                       {post.publishAt && (
                         <Badge variant="light" color="violet" size="sm" leftSection={<IconClock size={12} />} style={{ textTransform: 'none' }}>
                           {t('posts.schedule.badge', 'Geplant für {{when}}', { when: formatDateTime(post.publishAt) })}
@@ -635,37 +623,51 @@ export function PostsTab() {
                           {t('posts.schedule.hidden', 'Ausgeblendet')}
                         </Badge>
                       )}
+                    </Group>
+                    <div className="hb-post-byline">
+                      <Avatar name={post.author} color={post.avatarColor} size={22} />
+                      <span style={{ fontWeight: 600, color: 'var(--hb-text-2)' }}>{post.author}</span>
+                      <span>·</span>
+                      <span>{post.time}</span>
+                      <GroupBadge name={createScope.groupName(post.groupId)} />
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <ActionButtons
-                      onEdit={
-                        canEditPost(post) ? () => openEdit(post) : undefined
-                      }
-                      onDelete={
-                        canDeletePost(post)
-                          ? () => setDeleteTarget(post)
-                          : undefined
-                      }
-                    />
-                  </div>
+                  {(canEditPost(post) || canDeletePost(post)) && (
+                    <Menu position="bottom-end" withinPortal>
+                      <Menu.Target>
+                        <ActionIcon
+                          variant="subtle"
+                          color="gray"
+                          size="lg"
+                          aria-label={t('common.moreActions', 'Weitere Aktionen')}
+                          data-testid="post-menu"
+                        >
+                          <IconDotsVertical size={18} />
+                        </ActionIcon>
+                      </Menu.Target>
+                      <Menu.Dropdown>
+                        {canEditPost(post) && (
+                          <Menu.Item leftSection={<IconPencil size={16} />} onClick={() => openEdit(post)}>
+                            {t('common.edit', 'Bearbeiten')}
+                          </Menu.Item>
+                        )}
+                        {canEditPost(post) && post.mustRead && (
+                          <Menu.Item leftSection={<IconChecks size={16} />} onClick={() => setReadsFor(post)}>
+                            {t('posts.mustRead.who', 'Wer hat bestätigt?')}
+                          </Menu.Item>
+                        )}
+                        {canDeletePost(post) && (
+                          <>
+                            {canEditPost(post) && <Menu.Divider />}
+                            <Menu.Item color="red" leftSection={<IconTrash size={16} />} onClick={() => setDeleteTarget(post)}>
+                              {t('common.delete', 'Löschen')}
+                            </Menu.Item>
+                          </>
+                        )}
+                      </Menu.Dropdown>
+                    </Menu>
+                  )}
                 </div>
-                <Anchor
-                  component={Link}
-                  to={`/app/operations/posts/${post.id}`}
-                  underline="hover"
-                  data-testid="post-title"
-                  style={{
-                    display: 'block',
-                    fontSize: 'var(--mantine-font-size-lg)',
-                    fontWeight: 700,
-                    color: 'var(--hb-text)',
-                    marginBottom: 8,
-                  }}
-                >
-                  {post.title}
-                </Anchor>
-
                 <div
                   style={{
                     fontSize: 'var(--mantine-font-size-sm)',

@@ -756,54 +756,73 @@ class EventService:
         """
         from hubra.core.tenant.context import current_tenant
 
-        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         # Event ids repeat across clubs (one schema each): the club's slug
         # keeps the UIDs apart for someone who subscribes to two clubs.
         tenant = current_tenant()
-        uid_host = f"{tenant.slug}.hubra" if tenant else "hubra"
-        lines = [
-            "BEGIN:VCALENDAR",
-            "VERSION:2.0",
-            "PRODID:-//Hubra//Event Calendar//EN",
-            "CALSCALE:GREGORIAN",
-            "METHOD:PUBLISH",
+        return ical_document(ical_events(events, tenant.slug if tenant else None), name)
+
+
+def ical_events(
+    events: list[ClubEvent], club_slug: str | None, club_name: str | None = None
+) -> list[str]:
+    """The VEVENT lines of *events* (not folded). UIDs carry the club's
+    slug; with *club_name* the club is named in each summary (a calendar
+    with several clubs)."""
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    uid_host = f"{club_slug}.hubra" if club_slug else "hubra"
+    lines: list[str] = []
+    for event in events:
+        summary = f"{event.title} · {club_name}" if club_name else event.title
+        if event.cancelled_at is not None:
+            summary = f"✕ {summary}"
+        lines += [
+            "BEGIN:VEVENT",
+            f"UID:event-{event.id}@{uid_host}",
+            f"DTSTAMP:{stamp}",
+            f"SUMMARY:{_ical_text(summary)}",
         ]
-        if name:
-            lines.append(f"X-WR-CALNAME:{_ical_text(name)}")
-        lines.append("X-WR-TIMEZONE:Europe/Zurich")
-        lines += _ZURICH_VTIMEZONE
+        if event.cancelled_at is not None:
+            lines.append("STATUS:CANCELLED")
+        start, end = _event_times(event)
+        if start is None:
+            last = event.end_date or event.date
+            lines.append(f"DTSTART;VALUE=DATE:{event.date:%Y%m%d}")
+            # DTEND of an all-day event is exclusive.
+            lines.append(f"DTEND;VALUE=DATE:{last + timedelta(days=1):%Y%m%d}")
+        else:
+            lines.append(f"DTSTART;TZID=Europe/Zurich:{start:%Y%m%dT%H%M%S}")
+            lines.append(f"DTEND;TZID=Europe/Zurich:{end:%Y%m%dT%H%M%S}")
+        if event.location:
+            lines.append(f"LOCATION:{_ical_text(event.location)}")
+        description = event.description or ""
+        if event.meeting_url:
+            description = f"{description}\n\n{event.meeting_url}".strip()
+            # The URL property is not escaped text; a line break in it
+            # would start a new calendar property.
+            if re.fullmatch(r"https?://\S+", event.meeting_url):
+                lines.append(f"URL:{event.meeting_url}")
+        if description:
+            lines.append(f"DESCRIPTION:{_ical_text(description)}")
+        lines += [f"CATEGORIES:{_ical_text(event.type)}", "END:VEVENT"]
+    return lines
 
-        for event in events:
-            lines += [
-                "BEGIN:VEVENT",
-                f"UID:event-{event.id}@{uid_host}",
-                f"DTSTAMP:{stamp}",
-                f"SUMMARY:{_ical_text(event.title)}",
-            ]
-            start, end = _event_times(event)
-            if start is None:
-                last = event.end_date or event.date
-                lines.append(f"DTSTART;VALUE=DATE:{event.date:%Y%m%d}")
-                # DTEND of an all-day event is exclusive.
-                lines.append(f"DTEND;VALUE=DATE:{last + timedelta(days=1):%Y%m%d}")
-            else:
-                lines.append(f"DTSTART;TZID=Europe/Zurich:{start:%Y%m%dT%H%M%S}")
-                lines.append(f"DTEND;TZID=Europe/Zurich:{end:%Y%m%dT%H%M%S}")
-            if event.location:
-                lines.append(f"LOCATION:{_ical_text(event.location)}")
-            description = event.description or ""
-            if event.meeting_url:
-                description = f"{description}\n\n{event.meeting_url}".strip()
-                # The URL property is not escaped text; a line break in it
-                # would start a new calendar property.
-                if re.fullmatch(r"https?://\S+", event.meeting_url):
-                    lines.append(f"URL:{event.meeting_url}")
-            if description:
-                lines.append(f"DESCRIPTION:{_ical_text(description)}")
-            lines += [f"CATEGORIES:{_ical_text(event.type)}", "END:VEVENT"]
 
-        lines.append("END:VCALENDAR")
-        return "\r\n".join(_fold(line) for line in lines) + "\r\n"
+def ical_document(vevents: list[str], name: str | None = None) -> str:
+    """A whole VCALENDAR around *vevents* (from ``ical_events``)."""
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Hubra//Event Calendar//EN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+    ]
+    if name:
+        lines.append(f"X-WR-CALNAME:{_ical_text(name)}")
+    lines.append("X-WR-TIMEZONE:Europe/Zurich")
+    lines += _ZURICH_VTIMEZONE
+    lines += vevents
+    lines.append("END:VCALENDAR")
+    return "\r\n".join(_fold(line) for line in lines) + "\r\n"
 
 
 _ZURICH_VTIMEZONE = [

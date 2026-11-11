@@ -93,6 +93,11 @@ class User(db.Model):
         db.String(128), nullable=True
     )
     google_wallet_hash: Mapped[str | None] = mapped_column(db.String(64), nullable=True)
+    # The personal calendar of every club (one feed URL); raised to stop
+    # every older URL (hubra/api/events/account_feed.py).
+    calendar_feed_version: Mapped[int] = mapped_column(
+        db.Integer, nullable=False, default=0, server_default="0"
+    )
 
     # Two-factor sign-in (hubra/core/auth/mfa.py).  Secrets are Fernet
     # encrypted; recovery codes are kept as SHA-256 hashes, used ones removed.

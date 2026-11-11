@@ -113,9 +113,9 @@ const BindingsScreen = lazy(() =>
     default: m.BindingsScreen,
   })),
 )
-const EventsScreen = lazy(() =>
-  import('./screens/private/operations/EventsScreen').then((m) => ({
-    default: m.EventsScreen,
+const EventsPage = lazy(() =>
+  import('./screens/private/operations/EventsPage').then((m) => ({
+    default: m.EventsPage,
   })),
 )
 const PostDetailScreen = lazy(() =>
@@ -337,13 +337,36 @@ function PrivateRoutes() {
                     </RequireModule>
                   }
                 />
-                {/* Anlässe with its tabs (Vor Ort, Anwesenheit, Schnupper-
-                    trainings), and /operations/events/<id> for one event. */}
                 <Route
-                  path="operations/events/:part?"
+                  path="operations/events/trials"
                   element={
                     <RequireModule code="events">
-                      <EventsScreen />
+                      <EventsPage />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="operations/events/attendance"
+                  element={
+                    <RequireModule code="events">
+                      <EventsPage />
+                    </RequireModule>
+                  }
+                />
+                <Route
+                  path="operations/events"
+                  element={
+                    <RequireModule code="events">
+                      <EventsPage />
+                    </RequireModule>
+                  }
+                />
+                {/* Tabs plugins add to Anlässe, such as Booking's Vor Ort. */}
+                <Route
+                  path="operations/events/:tab"
+                  element={
+                    <RequireModule code="events">
+                      <EventsPage />
                     </RequireModule>
                   }
                 />

@@ -22,6 +22,7 @@ const CELL: Record<AttendanceStatus, { label: string; color: string }> = {
 }
 
 /** Attendance per member over a period, per group, with a CSV for J+S. */
+/** The attendance overview, a tab of Anlässe (EventsPage has the page head). */
 export function AttendanceScreen() {
   const { t, i18n } = useT()
   const { notify } = useToast()

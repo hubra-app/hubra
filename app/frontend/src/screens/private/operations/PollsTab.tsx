@@ -3,9 +3,7 @@ import {
   Button,
   TextInput,
   Switch,
-  Badge,
   Paper,
-  Progress,
   MultiSelect,
   ActionIcon,
   Group,
@@ -16,7 +14,7 @@ import {
 import { useForm } from "@mantine/form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useT } from "@/locales/i18n";
-import { IconPlus, IconEdit, IconTrash, IconBell } from "@tabler/icons-react";
+import { IconPlus, IconTrash } from "@tabler/icons-react";
 import { useToast, useAuth } from "@/context/AppContext";
 import { qk } from "@/data/keys";
 import { useListCache, useMyVotes, usePolls } from "@/data/lists";
@@ -40,10 +38,13 @@ import {
   type PollUpdate,
 } from "@/api/polls";
 import { listGroups } from "@/api/groups";
-import { GroupBadge, GroupField } from "./ContentGroupFields";
+import { GroupField } from "./ContentGroupFields";
 import { useContentGroups } from "./contentGroups";
 import { listFunctions } from "@/api/functions";
 import { ProxyPanel } from "./ProxyPanel";
+import { PollCard } from "./PollCard";
+import { FilterBar } from "@hubra/ui";
+import { filterLabels } from "@/components/filterLabels";
 import { toLocalInput } from "./localInput";
 
 /* -- Polls ------------------------------------ */
@@ -54,7 +55,7 @@ export function PollsTab() {
   const myVotes = useMyVotes();
   const pollCache = useListCache<Poll>(qk.polls);
   const { currentUser, hasPermission } = useAuth();
-  const { t, i18n } = useT();
+  const { t } = useT();
   // Club-wide, or through a role for one group (that group's polls).
   const createScope = useContentGroups("polls.polls.create");
   const updateScope = useContentGroups("polls.polls.update");
@@ -103,7 +104,21 @@ export function PollsTab() {
 
   // ?poll=<id> (from a notification) shows just that poll.
   const linked = useLinkedId("poll");
-  const shownPolls = linked.id ? polls.filter((p) => p.id === linked.id) : polls;
+  const [status, setStatus] = useState<"open" | "closed" | "all">("open");
+  const [search, setSearch] = useState("");
+  const needsMe = (p: Poll) => p.status === "open" && p.mayVote !== false && myVotes[p.id] === undefined;
+  const shownPolls = linked.id
+    ? polls.filter((p) => p.id === linked.id)
+    : polls
+        .filter((p) => (status === "all" || p.status === status))
+        .filter((p) => !search.trim() || p.question.toLowerCase().includes(search.trim().toLowerCase()))
+        // What still needs the member's vote first, then what closes soonest.
+        .sort(
+          (a, b) =>
+            Number(needsMe(b)) - Number(needsMe(a)) ||
+            (a.closesAt ?? "9999").localeCompare(b.closesAt ?? "9999"),
+        );
+  const openCount = polls.filter((p) => p.status === "open").length;
   const pg = usePagination(shownPolls, 12);
 
   const castVoteMutation = useMutation({
@@ -270,15 +285,42 @@ export function PollsTab() {
         />
       )}
       <Paper withBorder style={{ marginBottom: 0 }}>
-        <Pagination {...pg} top />
+        {!linked.id && (
+          <FilterBar
+            padded
+            search={search}
+            onSearchChange={setSearch}
+            searchPlaceholder={t("polls.search", "Umfragen durchsuchen …")}
+            labels={filterLabels()}
+            groups={[
+              {
+                key: "status",
+                label: t("polls.filter.status", "Status"),
+                value: status,
+                defaultValue: "open",
+                options: [
+                  { value: "open", label: t("polls.filter.open", "Offen ({{count}})", { count: openCount }) },
+                  { value: "closed", label: t("polls.statusClosed", "Beendet") },
+                  { value: "all", label: t("common.all", "Alle") },
+                ],
+                onChange: (v) => setStatus(v as "open" | "closed" | "all"),
+              },
+            ]}
+          />
+        )}
+        {pg.total > pg.perPage && <Pagination {...pg} top />}
         {pg.paged.length === 0 && (
           <div
             style={{ padding: '48px', textAlign: 'center', color: 'var(--hb-text-3)' }}
           >
             <div style={{ fontSize: 'var(--mantine-font-size-sm)', fontWeight: 500 }}>
-              {t('polls.empty', 'Noch keine Umfragen.')}
+              {polls.length > 0
+                ? status === "open"
+                  ? t('polls.noneOpen', 'Gerade läuft keine Umfrage.')
+                  : t('polls.noMatch', 'Keine Umfragen gefunden.')
+                : t('polls.empty', 'Noch keine Umfragen.')}
             </div>
-            <div style={{ fontSize: 'var(--mantine-font-size-sm)', marginTop: 4 }}>
+            <div style={{ fontSize: 'var(--mantine-font-size-sm)', marginTop: 4, display: polls.length > 0 ? 'none' : undefined }}>
               {canCreate
                 ? t('polls.emptyHint', 'Frag den Verein nach seiner Meinung, zum Beispiel zum nächsten Ausflug oder zu einem Termin.')
                 : t('polls.emptyMember', 'Sobald der Vorstand eine Umfrage startet, kannst du hier abstimmen.')}
@@ -294,232 +336,29 @@ export function PollsTab() {
           }}
         >
           {pg.paged.map((poll) => {
-            const max = Math.max(...poll.options.map((o) => o.votes));
             const voted = myVotes[poll.id];
-            const hasVoted = voted !== undefined;
             return (
-              <Paper
+              <PollCard
                 key={poll.id}
-                withBorder
-                style={{ padding: 20 }}
+                poll={poll}
+                voted={voted}
+                groupName={createScope.groupName(poll.groupId)}
+                runs={runs(poll)}
+                voting={castVoteMutation.isPending}
+                onVote={(i) => handleVote(poll.id, i)}
+                onRemind={poll.isRequired && runs(poll) && poll.status === "open" ? () => remindPollMutation.mutate(poll.id) : undefined}
+                reminding={remindingPollId === poll.id}
+                onEdit={runs(poll) ? () => openEdit(poll) : undefined}
+                onDelete={canDelete(poll) && deletingPollId !== poll.id ? () => setDeleteTarget(poll.id) : undefined}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    marginBottom: 10,
-                    gap: 10,
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "var(--mantine-font-size-sm)",
-                      fontWeight: 600,
-                      color: "var(--hb-text)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    {poll.question}
-                    {poll.isRequired && (
-                      <Badge
-                        variant="light"
-                        color="orange"
-                        size="xs"
-                        radius="xl"
-                      >
-                        {t("polls.requiredBadge", "Pflicht")}
-                      </Badge>
-                    )}
-                    {poll.autoClose && (
-                      <Badge variant="light" color="violet" size="xs" radius="xl">
-                        {t("polls.resolutionBadge", "Umlaufbeschluss")}
-                      </Badge>
-                    )}
-                  </div>
-                  <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
-                    {hasVoted && (
-                      <Badge
-                        variant="light"
-                        color="green"
-                        radius="xl"
-                        style={{ fontSize: "var(--mantine-font-size-xs)" }}
-                      >
-                        {t("polls.voted", 'Abgestimmt')}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 10,
-                    marginBottom: 14,
-                  }}
-                >
-                  {poll.options.map((opt, i) => {
-                    const pct =
-                      poll.totalVotes > 0
-                        ? Math.round((opt.votes / poll.totalVotes) * 100)
-                        : 0;
-                    const isWinner = opt.votes === max && max > 0;
-                    const isMyVote = voted === i;
-                    return (
-                      <div key={opt.label}>
-                        <button
-                          onClick={() => handleVote(poll.id, i)}
-                          disabled={poll.mayVote === false}
-                          title={
-                            poll.mayVote === false
-                              ? t("polls.notForYou", "Diese Abstimmung ist für bestimmte Gruppen oder Funktionen.")
-                              : undefined
-                          }
-                          style={{
-                            all: "unset",
-                            cursor: poll.mayVote === false ? "default" : "pointer",
-                            display: "block",
-                            width: "100%",
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              marginBottom: 4,
-                            }}
-                          >
-                            <span
-                              style={{
-                                fontSize: "var(--mantine-font-size-sm)",
-                                color: isMyVote ? "var(--mantine-color-acc-7)" : "var(--hb-text)",
-                                fontWeight: isMyVote ? 600 : 400,
-                              }}
-                            >
-                              {opt.label}
-                              {isMyVote ? " ✓" : ""}
-                            </span>
-                            <span
-                              className="num"
-                              style={{
-                                fontSize: "var(--mantine-font-size-sm)",
-                                color: isWinner ? "var(--mantine-color-acc-7)" : "var(--hb-text-2)",
-                                fontWeight: isWinner ? 700 : 400,
-                              }}
-                            >
-                              {pct}%
-                            </span>
-                          </div>
-                          <Progress
-                            value={pct}
-                            aria-label={opt.label}
-                            size="sm"
-                            radius="xl"
-                            styles={{
-                              section: {
-                                background: isMyVote
-                                  ? "var(--mantine-color-acc-6)"
-                                  : isWinner
-                                    ? "var(--mantine-color-acc-3)"
-                                    : "#ebe8f2",
-                                transition: "width .4s",
-                              },
-                            }}
-                          />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: 8,
-                    borderTop: "1px solid var(--hb-border)",
-                    paddingTop: 12,
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: "var(--mantine-font-size-xs)",
-                      color: "var(--hb-text-2)",
-                    }}
-                  >
-                    <span
-                      className="num"
-                      style={{ fontWeight: 600, color: "var(--hb-text)" }}
-                    >
-                      {poll.totalVotes}
-                    </span>{" "}
-                    {t("polls.votes", 'Stimmen')} &middot;{" "}
-                    {poll.closesAt
-                      ? `${t("polls.closes", 'endet')} ${new Date(
-                          poll.closesAt,
-                        ).toLocaleDateString(i18n.language, {
-                          day: "numeric",
-                          month: "short",
-                        })}`
-                      : `${t("polls.closesIn", 'endet in')} ${poll.closesIn}d`}
-                  </span>
-                  <div
-                    style={{ display: "flex", gap: 6, alignItems: "center" }}
-                  >
-                    <GroupBadge name={createScope.groupName(poll.groupId)} />
-                    <Badge variant="light" color="acc" radius="xl" style={{ flexShrink: 0 }}>
-                      {poll.status === "open"
-                        ? t("polls.statusOpen", "Offen")
-                        : t("polls.statusClosed", "Beendet")}
-                    </Badge>
-                    {poll.isRequired && runs(poll) && (
-                      <ActionIcon
-                        size="md"
-                        variant="subtle"
-                        onClick={() => remindPollMutation.mutate(poll.id)}
-                        loading={remindingPollId === poll.id}
-                        aria-label={t('polls.remind', 'Erinnern')}
-                      >
-                        <IconBell size={18} />
-                      </ActionIcon>
-                    )}
-                    {runs(poll) && (
-                      <ActionIcon
-                        size="md"
-                        variant="subtle"
-                        onClick={() => openEdit(poll)}
-                        aria-label={t('common.edit', 'Bearbeiten')}
-                      >
-                        <IconEdit size={18} />
-                      </ActionIcon>
-                    )}
-                    {canDelete(poll) && (
-                      <ActionIcon
-                        size="md"
-                        variant="subtle"
-                        color="red"
-                        onClick={() => setDeleteTarget(poll.id)}
-                        loading={deletingPollId === poll.id}
-                        aria-label={t('common.delete', 'Löschen')}
-                      >
-                        <IconTrash size={18} />
-                      </ActionIcon>
-                    )}
-                  </div>
-                </div>
                 {poll.allowProxy && poll.status === "open" && poll.mayVote !== false && (
                   <ProxyPanel
                     poll={poll}
-                    hasVoted={hasVoted}
-                    onPollUpdated={(updated) =>
-                      pollCache.replace(updated)
-                    }
+                    hasVoted={voted !== undefined}
+                    onPollUpdated={(updated) => pollCache.replace(updated)}
                   />
                 )}
-              </Paper>
+              </PollCard>
             );
           })}
         </div>
@@ -535,6 +374,10 @@ export function PollsTab() {
         wide
         title={editTarget ? t("polls.editTitle", "Umfrage bearbeiten") : t("polls.createPoll", "Neue Umfrage")}
         subtitle={editTarget?.question}
+        onSubmit={(e) => {
+          e?.preventDefault();
+          if (!saving) void savePoll();
+        }}
         footer={
           <>
             <Button
@@ -546,7 +389,7 @@ export function PollsTab() {
             >
               {t("common.cancel")}
             </Button>
-            <Button variant="filled" onClick={savePoll} disabled={saving}>
+            <Button variant="filled" type="submit" loading={saving}>
               {editTarget
                 ? t("common.save", 'Speichern')
                 : t("polls.createPoll", 'Neue Umfrage')}

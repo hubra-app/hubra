@@ -7,7 +7,6 @@ import {
   Button,
   Code,
   Group,
-  Modal,
   MultiSelect,
   NumberInput,
   Paper,
@@ -21,6 +20,7 @@ import {
   Textarea,
   Title,
 } from '@mantine/core'
+import { Modal as SharedModal } from '@/components/ui'
 import { BillingOverview } from '@/screens/platform/BillingOverview'
 import {
   IconArrowDown,
@@ -533,14 +533,66 @@ function PlanModal({
   const keyOk = plan != null || /^[a-z][a-z0-9-]{1,39}$/.test(key)
 
   return (
-    <Modal
-      opened
+    <SharedModal
+      open
       onClose={onClose}
-      size="xl"
       title={
         plan
           ? tr(`Tarif ${plan.name_de} bearbeiten`, `Edit plan ${plan.name_en}`)
           : tr('Tarif erstellen', 'Create a plan')
+      }
+      wide
+      onSubmit={async (e) => {
+        e?.preventDefault()
+        if (!v.name_de.trim() || !keyOk) return
+        setSaving(true)
+        try {
+          await onSave({
+            ...(plan ? {} : { key }),
+            name_de: v.name_de,
+            name_en: v.name_en,
+            description_de: v.description_de,
+            description_en: v.description_en,
+            price_month_chf: money(v.price_month_chf),
+            price_year_chf: money(v.price_year_chf),
+            limit_members: count(v.limit_members),
+            limit_mail_month: count(v.limit_mail_month),
+            limit_storage_mb: count(v.limit_storage_mb),
+            features: features.filter((f) => f.de.trim() || f.en.trim()),
+            modules: modules.map((m) =>
+              m.price_chf == null ? { ...m, unit: 'flat' as const } : m,
+            ),
+            builds_on: buildsOn,
+            club_ids: clubIds.map(Number),
+            public: v.public,
+            selectable: v.selectable,
+            highlighted: v.highlighted,
+            hidden: v.hidden,
+          })
+        } finally {
+          setSaving(false)
+        }
+      }}
+      footer={
+        <>
+          {onDelete && (
+            <Button
+              variant="subtle"
+              color="red"
+              mr="auto"
+              leftSection={<IconTrash size={16} />}
+              onClick={() => void onDelete()}
+            >
+              {tr('Löschen', 'Delete')}
+            </Button>
+          )}
+          <Button variant="default" onClick={onClose}>
+            {tr('Abbrechen', 'Cancel')}
+          </Button>
+          <Button type="submit" loading={saving} disabled={!v.name_de.trim() || !keyOk}>
+            {tr('Speichern', 'Save')}
+          </Button>
+        </>
       }
     >
       <Stack gap="md">
@@ -886,62 +938,8 @@ function PlanModal({
           value={clubIds}
           onChange={setClubIds}
         />
-        <Group justify="space-between">
-          {onDelete ? (
-            <Button
-              variant="subtle"
-              color="red"
-              leftSection={<IconTrash size={16} />}
-              onClick={() => void onDelete()}
-            >
-              {tr('Löschen', 'Delete')}
-            </Button>
-          ) : (
-            <span />
-          )}
-          <Group>
-            <Button variant="default" onClick={onClose}>
-              {tr('Abbrechen', 'Cancel')}
-            </Button>
-            <Button
-              loading={saving}
-              disabled={!v.name_de.trim() || !keyOk}
-              onClick={async () => {
-                setSaving(true)
-                try {
-                  await onSave({
-                    ...(plan ? {} : { key }),
-                    name_de: v.name_de,
-                    name_en: v.name_en,
-                    description_de: v.description_de,
-                    description_en: v.description_en,
-                    price_month_chf: money(v.price_month_chf),
-                    price_year_chf: money(v.price_year_chf),
-                    limit_members: count(v.limit_members),
-                    limit_mail_month: count(v.limit_mail_month),
-                    limit_storage_mb: count(v.limit_storage_mb),
-                    features: features.filter((f) => f.de.trim() || f.en.trim()),
-                    modules: modules.map((m) =>
-                      m.price_chf == null ? { ...m, unit: 'flat' as const } : m,
-                    ),
-                    builds_on: buildsOn,
-                    club_ids: clubIds.map(Number),
-                    public: v.public,
-                    selectable: v.selectable,
-                    highlighted: v.highlighted,
-                    hidden: v.hidden,
-                  })
-                } finally {
-                  setSaving(false)
-                }
-              }}
-            >
-              {tr('Speichern', 'Save')}
-            </Button>
-          </Group>
-        </Group>
       </Stack>
-    </Modal>
+    </SharedModal>
   )
 }
 
@@ -966,7 +964,30 @@ function AddonModal({
   const set = <K extends keyof typeof v>(k: K, value: (typeof v)[K]) =>
     setV((cur) => ({ ...cur, [k]: value }))
   return (
-    <Modal opened onClose={onClose} size="lg" title={addon.name}>
+    <SharedModal
+      open
+      onClose={onClose}
+      title={addon.name}
+      wide
+      onSubmit={(e) => {
+        e?.preventDefault()
+        void onSave({
+          ...v,
+          price_month_chf: price === '' ? null : String(price),
+          price_unit: unit,
+        })
+      }}
+      footer={
+        <>
+          <Button variant="default" onClick={onClose}>
+            {tr('Abbrechen', 'Cancel')}
+          </Button>
+          <Button type="submit">
+            {tr('Speichern', 'Save')}
+          </Button>
+        </>
+      }
+    >
       <Stack gap="md">
         <SimpleGrid cols={{ base: 1, sm: 2 }}>
           <NumberInput
@@ -1029,23 +1050,7 @@ function AddonModal({
           checked={v.public}
           onChange={(e) => set('public', e.currentTarget.checked)}
         />
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose}>
-            {tr('Abbrechen', 'Cancel')}
-          </Button>
-          <Button
-            onClick={() =>
-              void onSave({
-                ...v,
-                price_month_chf: price === '' ? null : String(price),
-                price_unit: unit,
-              })
-            }
-          >
-            {tr('Speichern', 'Save')}
-          </Button>
-        </Group>
       </Stack>
-    </Modal>
+    </SharedModal>
   )
 }

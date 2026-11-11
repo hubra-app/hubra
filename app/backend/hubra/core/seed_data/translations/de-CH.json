@@ -454,6 +454,14 @@
   "bootstrap.title": "Verein einrichten",
   "bootstrap.welcome": "Willkommen bei Hubra! Richten wir deinen Verein ein.",
   "clubSettings.accentColor": "Akzentfarbe",
+  "clubSettings.leaveAt": "Austritt auf",
+  "clubSettings.leaveAtAny": "Jeden Tag",
+  "clubSettings.leaveAtHalfYear": "Ende Halbjahr",
+  "clubSettings.leaveAtMonth": "Ende Monat",
+  "clubSettings.leaveAtQuarter": "Ende Quartal",
+  "clubSettings.leaveAtYear": "Ende Jahr",
+  "clubSettings.leaveNoticeHint": "Wie in euren Statuten. Wer austreten möchte, sieht den frühesten Austritt und die noch offenen Rechnungen, ihr seht beides beim Austrittsgesuch.",
+  "clubSettings.leaveNoticeMonths": "Kündigungsfrist (Monate)",
   "clubSettings.pickColor": "Farbe vom Bildschirm wählen",
   "clubSettings.banner": "Ankündigungsbanner",
   "clubSettings.bannerPlaceholder": "Generalversammlung am Freitag!",
@@ -1809,6 +1817,18 @@
   "members.joined": "Beigetreten",
   "members.lastName": "Nachname",
   "members.lastSeen": "Zuletzt gesehen",
+  "members.leave.at.any": "jederzeit",
+  "members.leave.at.halfYearEnd": "auf Ende Halbjahr",
+  "members.leave.at.monthEnd": "auf Ende Monat",
+  "members.leave.at.quarterEnd": "auf Ende Quartal",
+  "members.leave.at.yearEnd": "auf Ende Jahr",
+  "members.leave.due": "fällig {{date}}",
+  "members.leave.earliestExit": "Frühester Austritt: {{date}}",
+  "members.leave.invoice": "Rechnung",
+  "members.leave.noticeRule": "{{months}} Monate Kündigungsfrist, {{period}}",
+  "members.leave.openInvoices": "Noch offene Rechnungen:",
+  "members.leave.overdue": "überfällig",
+  "members.leave.ownOpenInvoices": "Diese Rechnungen sind noch offen und bleiben geschuldet:",
   "members.loadFailed": "Laden fehlgeschlagen",
   "members.loadTiersFailedMsg": "Die Stufen konnten nicht geladen werden.",
   "members.markVerified": "Als bestätigt markieren",
@@ -1859,6 +1879,26 @@
   "members.passwordUpdated": "Das Passwort des Mitglieds wurde geändert.",
   "members.passwordUpdatedMsg": "Das Passwort des Mitglieds wurde geändert.",
   "members.phone": "Telefon",
+  "members.poster.a4": "A4 Plakat",
+  "members.poster.a6": "A6 Flyer",
+  "members.poster.callJoin": "QR-Code scannen und Beitritt anfragen",
+  "members.poster.callTrial": "QR-Code scannen und gratis Probetraining buchen",
+  "members.poster.create": "Plakat erstellen",
+  "members.poster.headline": "Überschrift",
+  "members.poster.headlineJoin": "Werde Mitglied!",
+  "members.poster.headlineTrial": "Komm ins Probetraining!",
+  "members.poster.intro": "Ein Plakat mit QR-Code zur Beitritts- oder Probetrainings-Seite. Gib jedem Aushang einen eigenen Namen, dann siehst du hier, welcher Anfragen bringt.",
+  "members.poster.joins": "Beitrittsanfragen",
+  "members.poster.kindJoin": "Mitglied werden",
+  "members.poster.kindTrial": "Probetraining",
+  "members.poster.print": "Drucken",
+  "members.poster.qrAlt": "QR-Code zur Seite des Vereins",
+  "members.poster.source": "Plakat",
+  "members.poster.tag": "Name des Aushangs",
+  "members.poster.tagHint": "Zum Beispiel «bahnhof» oder «flyer-schule». Wer über diesen Code kommt, wird so gezählt.",
+  "members.poster.title": "Plakate und Flyer",
+  "members.poster.trials": "Probetrainings",
+  "members.poster.via": "über Plakat «{{source}}»",
   "members.privateEmail": "Private E-Mail",
   "members.privateEmailHint": "Persönliche E-Mail-Adresse",
   "members.privateEmailUnverified": "Private E-Mail nicht bestätigt",
@@ -4251,5 +4291,107 @@
   "dashboards.visPrivateHint": "Nur du siehst es.",
   "dashboards.visClubHint": "Alle Mitglieder sehen es, jedes nur mit den Widgets, die es sehen darf.",
   "dashboards.visGroupsHint": "Nur die Mitglieder dieser Gruppen sehen es, jedes nur mit den Widgets, die es sehen darf.",
-  "dashboards.sharedGroups": "Geteilt mit {{groups}}"
+  "dashboards.sharedGroups": "Geteilt mit {{groups}}",
+  "events": {
+    "filter": {
+      "mine": "Anmeldung",
+      "mineOnly": "Nur meine"
+    },
+    "status": {
+      "pending": "Angefragt",
+      "waitlisted": "Warteliste",
+      "joined": "Angemeldet"
+    },
+    "pending": {
+      "open": "Offene Anmeldungen"
+    },
+    "allDay": "Ganztägig",
+    "places": "{{taken}} von {{max}}",
+    "signedUp": "{{count}} angemeldet",
+    "full": "Voll",
+    "joinWaitlist": "Auf die Warteliste",
+    "noMine": "Du bist für keinen Anlass angemeldet.",
+    "emptyHint": "Plane den nächsten Anlass, die Mitglieder können sich hier gleich anmelden.",
+    "emptyMember": "Sobald ein Anlass geplant ist, kannst du dich hier anmelden.",
+    "endDate": "Enddatum",
+    "timeFrom": "Beginn",
+    "timeTo": "Ende",
+    "timeTextHint": "Bisher: {{text}}",
+    "registrationDeadline": "Anmeldeschluss",
+    "cancellationDeadline": "Abmeldeschluss",
+    "cancellationDeadlineHint": "Danach kann man sich nicht mehr selbst abmelden.",
+    "perDateHint": "Gilt nur für diesen Termin.",
+    "endDateBeforeStart": "Das Enddatum liegt vor dem Datum",
+    "timeToBeforeFrom": "Das Ende liegt vor dem Beginn",
+    "untilDate": "bis {{date}}",
+    "registrationDeadlineAt": "Anmeldeschluss {{when}}",
+    "timeToWithoutFrom": "Bitte auch den Beginn angeben"
+  },
+  "polls": {
+    "closedOn": "beendet am {{date}}",
+    "noEnd": "ohne Enddatum",
+    "closesToday": "endet heute",
+    "closesTomorrow": "endet morgen",
+    "closesInDays": "endet in {{count}} Tagen",
+    "closesOn": "endet am {{date}}",
+    "remindOpen": "An Abstimmung erinnern",
+    "notVotedYet": "Noch nicht abgestimmt",
+    "optionVotes_one": "{{count}} Stimme",
+    "optionVotes_other": "{{count}} Stimmen",
+    "yourVote": "Deine Stimme",
+    "votesCount_one": "{{count}} Stimme",
+    "votesCount_other": "{{count}} Stimmen",
+    "changeVote": "Stimme ändern",
+    "search": "Umfragen durchsuchen …",
+    "filter": {
+      "status": "Status",
+      "open": "Offen ({{count}})"
+    },
+    "noneOpen": "Gerade läuft keine Umfrage.",
+    "noMatch": "Keine Umfragen gefunden."
+  },
+  "posts": {
+    "mustRead": {
+      "banner_one": "{{count}} Pflicht-Beitrag wartet auf deine Lesebestätigung.",
+      "banner_other": "{{count}} Pflicht-Beiträge warten auf deine Lesebestätigung.",
+      "showUnread": "Anzeigen",
+      "badge": "Pflicht",
+      "who": "Wer hat bestätigt?"
+    },
+    "search": "Beiträge durchsuchen …",
+    "filter": {
+      "show": "Anzeigen",
+      "unread": "Noch nicht bestätigt",
+      "scheduled": "Geplant",
+      "noneUnread": "Alles gelesen und bestätigt."
+    },
+    "noMatch": "Keine Beiträge gefunden."
+  },
+  "finance": {
+    "externalParty": {
+      "pick": "Externe Partei wählen …"
+    },
+    "invoice": {
+      "no": "Nr. {{n}}"
+    },
+    "validation": {
+      "amountPositive": "Der Betrag muss grösser als 0 sein",
+      "dueBeforeIssued": "Fällig liegt vor dem Rechnungsdatum"
+    },
+    "annual": {
+      "renameAccount": "Umbenennen",
+      "deleteAccountTitle": "«{{name}}» löschen?",
+      "deleteAccountBody": "Ein Konto, auf das noch Kategorien oder Abschlüsse zählen, bleibt."
+    },
+    "editInvoice": "Rechnung bearbeiten",
+    "invoiceSaved": "Rechnung gespeichert",
+    "invoiceSavedMsg": "Rechnung {{id}} wurde geändert."
+  },
+  "events.view.list": "Liste",
+  "events.view.month": "Monat",
+  "events.month.prev": "Vorheriger Monat",
+  "events.month.next": "Nächster Monat",
+  "events.month.today": "Heute",
+  "events.month.more": "+{{count}} weitere",
+  "events.month.none": "Keine Anlässe an diesem Tag."
 }

@@ -1556,6 +1556,52 @@ def add_badge_to_google_wallet():
     return jsonify({"url": url}), 200
 
 
+# ── /account/calendar (one calendar feed for every club) ─────────────────────
+
+
+@account_bp.get("/calendar")
+@jwt_required()
+def get_account_calendar():
+    """The person's calendar URLs: ``{all, mine}`` (every club's events, or
+    those they signed up for)."""
+    from hubra.api.events.account_feed import feed_urls
+
+    return jsonify(feed_urls(_signed_in_user())), 200
+
+
+@account_bp.post("/calendar/renew")
+@jwt_required()
+def renew_account_calendar():
+    """New calendar URLs; every older one stops working."""
+    from hubra.api.events.account_feed import feed_urls
+
+    refuse_during_impersonation()
+    user = _signed_in_user()
+    user.calendar_feed_version = (user.calendar_feed_version or 0) + 1
+    db.session.commit()
+    return jsonify(feed_urls(user)), 200
+
+
+@account_bp.get("/calendar/<token>.ics")
+@limiter.limit("60 per hour")
+def account_calendar_feed(token: str):
+    """Public iCalendar feed for calendar apps (token from /account/calendar)."""
+    from flask import Response
+
+    from hubra.api.events.account_feed import build, user_for
+
+    found = user_for(token)
+    if found is None:
+        return api_error("NOT_FOUND", "Unknown calendar", 404)
+    user, scope = found
+    return Response(
+        build(user, scope),
+        status=200,
+        mimetype="text/calendar",
+        headers={"Cache-Control": "private, max-age=900"},
+    )
+
+
 # ── /account/notifications (every club's, for the account page) ───────────────
 
 

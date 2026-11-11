@@ -454,6 +454,14 @@
   "bootstrap.title": "Set up your club",
   "bootstrap.welcome": "Welcome! Let's set up your club.",
   "clubSettings.accentColor": "Accent Color",
+  "clubSettings.leaveAt": "Leaving takes effect at",
+  "clubSettings.leaveAtAny": "Any day",
+  "clubSettings.leaveAtHalfYear": "End of a half-year",
+  "clubSettings.leaveAtMonth": "End of a month",
+  "clubSettings.leaveAtQuarter": "End of a quarter",
+  "clubSettings.leaveAtYear": "End of the year",
+  "clubSettings.leaveNoticeHint": "As in your statutes. Members who want to leave see the earliest exit date and the invoices still open; you see both on the request to leave.",
+  "clubSettings.leaveNoticeMonths": "Notice period (months)",
   "clubSettings.pickColor": "Pick a colour from the screen",
   "clubSettings.banner": "Announcement Banner",
   "clubSettings.bannerPlaceholder": "Annual meeting on Friday!",
@@ -1809,6 +1817,18 @@
   "members.joined": "Joined",
   "members.lastName": "Last Name",
   "members.lastSeen": "Last Seen",
+  "members.leave.at.any": "at any time",
+  "members.leave.at.halfYearEnd": "to the end of a half-year",
+  "members.leave.at.monthEnd": "to the end of a month",
+  "members.leave.at.quarterEnd": "to the end of a quarter",
+  "members.leave.at.yearEnd": "to the end of the year",
+  "members.leave.due": "due {{date}}",
+  "members.leave.earliestExit": "Earliest exit: {{date}}",
+  "members.leave.invoice": "Invoice",
+  "members.leave.noticeRule": "{{months}} months' notice, {{period}}",
+  "members.leave.openInvoices": "Invoices still open:",
+  "members.leave.overdue": "overdue",
+  "members.leave.ownOpenInvoices": "These invoices are still open and remain due:",
   "members.loadFailed": "Load failed",
   "members.loadTiersFailedMsg": "The tiers could not be loaded.",
   "members.markVerified": "Mark verified",
@@ -1859,6 +1879,26 @@
   "members.passwordUpdated": "Member password has been changed.",
   "members.passwordUpdatedMsg": "The member's password has been changed.",
   "members.phone": "Phone",
+  "members.poster.a4": "A4 poster",
+  "members.poster.a6": "A6 flyer",
+  "members.poster.callJoin": "Scan the QR code and ask to join",
+  "members.poster.callTrial": "Scan the QR code and book a free trial training",
+  "members.poster.create": "Make a poster",
+  "members.poster.headline": "Headline",
+  "members.poster.headlineJoin": "Join us!",
+  "members.poster.headlineTrial": "Come to a trial training!",
+  "members.poster.intro": "A poster with a QR code to the join or trial page. Give each one its own name, and you see here which one brings requests.",
+  "members.poster.joins": "Requests to join",
+  "members.poster.kindJoin": "Join",
+  "members.poster.kindTrial": "Trial training",
+  "members.poster.print": "Print",
+  "members.poster.qrAlt": "QR code to the club's page",
+  "members.poster.source": "Poster",
+  "members.poster.tag": "Name of this poster",
+  "members.poster.tagHint": "For example «station» or «school-flyer». Whoever comes through this code is counted under it.",
+  "members.poster.title": "Posters and flyers",
+  "members.poster.trials": "Trial trainings",
+  "members.poster.via": "via poster «{{source}}»",
   "members.privateEmail": "Private email",
   "members.privateEmailHint": "Personal email address",
   "members.privateEmailUnverified": "Private email not verified",
@@ -4251,5 +4291,107 @@
   "dashboards.visPrivateHint": "Only you see it.",
   "dashboards.visClubHint": "All members see it, each only with the widgets they may see.",
   "dashboards.visGroupsHint": "Only the members of these groups see it, each only with the widgets they may see.",
-  "dashboards.sharedGroups": "Shared with {{groups}}"
+  "dashboards.sharedGroups": "Shared with {{groups}}",
+  "events": {
+    "filter": {
+      "mine": "Sign-up",
+      "mineOnly": "Only mine"
+    },
+    "status": {
+      "pending": "Requested",
+      "waitlisted": "Waiting list",
+      "joined": "Signed up"
+    },
+    "pending": {
+      "open": "Open sign-ups"
+    },
+    "allDay": "All day",
+    "places": "{{taken}} of {{max}}",
+    "signedUp": "{{count}} signed up",
+    "full": "Full",
+    "joinWaitlist": "Join the waiting list",
+    "noMine": "You haven't signed up for any event.",
+    "emptyHint": "Plan the next event; members can sign up for it right here.",
+    "emptyMember": "Once an event is planned, you can sign up for it here.",
+    "endDate": "End date",
+    "timeFrom": "Start",
+    "timeTo": "End",
+    "timeTextHint": "Before: {{text}}",
+    "registrationDeadline": "Sign-up deadline",
+    "cancellationDeadline": "Cancellation deadline",
+    "cancellationDeadlineHint": "After this, members can no longer cancel themselves.",
+    "perDateHint": "Applies to this date only.",
+    "endDateBeforeStart": "The end date is before the date",
+    "timeToBeforeFrom": "The end is before the start",
+    "untilDate": "until {{date}}",
+    "registrationDeadlineAt": "Sign-up closes {{when}}",
+    "timeToWithoutFrom": "Please also enter the start"
+  },
+  "polls": {
+    "closedOn": "ended {{date}}",
+    "noEnd": "no end date",
+    "closesToday": "ends today",
+    "closesTomorrow": "ends tomorrow",
+    "closesInDays": "ends in {{count}} days",
+    "closesOn": "ends {{date}}",
+    "remindOpen": "Remind to vote",
+    "notVotedYet": "Not voted yet",
+    "optionVotes_one": "{{count}} vote",
+    "optionVotes_other": "{{count}} votes",
+    "yourVote": "Your vote",
+    "votesCount_one": "{{count}} vote",
+    "votesCount_other": "{{count}} votes",
+    "changeVote": "Change vote",
+    "search": "Search polls …",
+    "filter": {
+      "status": "Status",
+      "open": "Open ({{count}})"
+    },
+    "noneOpen": "No poll is running right now.",
+    "noMatch": "No polls found."
+  },
+  "posts": {
+    "mustRead": {
+      "banner_one": "{{count}} must-read post is waiting for your confirmation.",
+      "banner_other": "{{count}} must-read posts are waiting for your confirmation.",
+      "showUnread": "Show",
+      "badge": "Must read",
+      "who": "Who confirmed?"
+    },
+    "search": "Search posts …",
+    "filter": {
+      "show": "Show",
+      "unread": "Not confirmed yet",
+      "scheduled": "Scheduled",
+      "noneUnread": "All read and confirmed."
+    },
+    "noMatch": "No posts found."
+  },
+  "finance": {
+    "externalParty": {
+      "pick": "Choose an external party …"
+    },
+    "invoice": {
+      "no": "No. {{n}}"
+    },
+    "validation": {
+      "amountPositive": "The amount must be more than 0",
+      "dueBeforeIssued": "The due date is before the invoice date"
+    },
+    "annual": {
+      "renameAccount": "Rename",
+      "deleteAccountTitle": "Delete “{{name}}”?",
+      "deleteAccountBody": "An account that categories or closed years still count on stays."
+    },
+    "editInvoice": "Edit invoice",
+    "invoiceSaved": "Invoice saved",
+    "invoiceSavedMsg": "Invoice {{id}} was changed."
+  },
+  "events.view.list": "List",
+  "events.view.month": "Month",
+  "events.month.prev": "Previous month",
+  "events.month.next": "Next month",
+  "events.month.today": "Today",
+  "events.month.more": "+{{count}} more",
+  "events.month.none": "No events on this day."
 }

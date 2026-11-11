@@ -14,6 +14,7 @@ import {
 import { getLookups, lookupsQuery } from '@/api/lookups'
 import { formatDateTime } from '@/format'
 import { LeaveRequests } from './LeaveRequests'
+import { PosterSection } from './PosterSection'
 import { roleLabel } from '@/roles'
 
 /* ── Applications ───────────────────────────── */
@@ -174,6 +175,12 @@ export function ApplicationsTab() {
                       {t('members.applications.wants', 'möchte')} <strong>{app.wantsTier}</strong>
                     </>
                   )}
+                  {app.source && (
+                    <>
+                      {' · '}
+                      {t('members.poster.via', 'über Plakat «{{source}}»', { source: app.source })}
+                    </>
+                  )}
                 </div>
               </div>
               <span
@@ -209,6 +216,8 @@ export function ApplicationsTab() {
       </Paper>
 
       <LeaveRequests />
+
+      <PosterSection />
 
       <Modal
         open={!!approveTarget}

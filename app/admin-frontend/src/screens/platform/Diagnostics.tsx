@@ -5,7 +5,6 @@ import {
   Badge,
   Button,
   Group,
-  Modal,
   Paper,
   Stack,
   Table,
@@ -15,7 +14,7 @@ import {
 } from '@mantine/core'
 import { IconBolt, IconRefresh, IconSearch, IconTrash } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
-import { Pagination } from '@/components/ui'
+import { Pagination, Modal as SharedModal } from '@/components/ui'
 import { tr } from '@/lang'
 import {
   deleteMailServerOrphan,
@@ -321,10 +320,20 @@ export function MailServerPanel() {
         </div>
       </Paper>
 
-      <Modal
-        opened={deleteTarget !== null}
+      <SharedModal
+        open={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
         title={tr('Verwaisten Eintrag löschen?', 'Delete orphan entry?')}
+        footer={
+          <>
+            <Button variant="default" onClick={() => setDeleteTarget(null)}>
+              {tr('Abbrechen', 'Cancel')}
+            </Button>
+            <Button color="red" onClick={remove} loading={busy}>
+              {tr('Löschen', 'Delete')}
+            </Button>
+          </>
+        }
       >
         <Text size="sm" mb="md">
           {tr(
@@ -332,15 +341,7 @@ export function MailServerPanel() {
             `${deleteTarget?.address} belongs to no club. Deleting removes it and all its mail from the mail server and cannot be undone.`,
           )}
         </Text>
-        <Group justify="flex-end">
-          <Button variant="default" onClick={() => setDeleteTarget(null)}>
-            {tr('Abbrechen', 'Cancel')}
-          </Button>
-          <Button color="red" onClick={remove} loading={busy}>
-            {tr('Löschen', 'Delete')}
-          </Button>
-        </Group>
-      </Modal>
+      </SharedModal>
     </Stack>
   )
 }

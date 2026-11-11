@@ -51,10 +51,10 @@ def _needs_approval(db, tenant, on: bool):
 
 def test_member_leaves_at_once_by_default(client, db, club):
     _login(client, "anna@test.ch")
-    assert client.get("/api/v1/members/me/leave", headers=H).json == {
-        "requiresApproval": False,
-        "requestedAt": None,
-    }
+    state = client.get("/api/v1/members/me/leave", headers=H).json
+    assert state["requiresApproval"] is False and state["requestedAt"] is None
+    # No notice rule: no exit date.
+    assert state["earliestExit"] is None
     resp = client.post("/api/v1/members/me/leave", headers=H)
     assert resp.status_code == 200 and resp.json["status"] == "left"
 

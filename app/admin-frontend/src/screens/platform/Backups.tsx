@@ -5,7 +5,6 @@ import {
   Table,
   Paper,
   Badge,
-  Modal,
   Group,
   Text,
   Anchor,
@@ -13,6 +12,7 @@ import {
   TextInput,
   PasswordInput,
 } from '@mantine/core'
+import { Modal as SharedModal } from '@/components/ui'
 import { Link } from 'react-router-dom'
 import {
   IconRefresh,
@@ -235,6 +235,12 @@ export function Backups() {
       setDeleting(false)
     }
   }
+
+  // The club's address typed out (and the key when the backup needs one).
+  const restoreReady =
+    !!restoreTarget &&
+    confirmSlug.trim() === restoreTarget.tenant_slug &&
+    !(restoreTarget.needs_private_key && !privateKey.trim())
 
   const closeRestore = () => {
     setRestoreTarget(null)
@@ -719,20 +725,34 @@ export function Backups() {
         </Table.ScrollContainer>
       </Paper>
 
-      <Modal
-        opened={restoreTarget !== null}
+      <SharedModal
+        open={restoreTarget !== null}
         onClose={closeRestore}
         title={tr('Verein wiederherstellen', 'Restore club')}
+        onSubmit={(e) => {
+          e?.preventDefault()
+          if (restoreTarget && restoreReady && !restoring) handleRestore(restoreTarget)
+        }}
+        footer={
+          <>
+            <Button variant="default" onClick={closeRestore}>
+              {tr('Abbrechen', 'Cancel')}
+            </Button>
+            <Button color="red" type="submit" loading={restoring} disabled={!restoreReady}>
+              {tr('Wiederherstellen', 'Restore')}
+            </Button>
+          </>
+        }
       >
         {restoreTarget && (
           <>
-            <Text size="sm" mb="sm">
+            <Text size="sm">
               {tr(
                 `${restoreTarget.tenant_slug} wird auf den Stand vom ${formatDate(restoreTarget.created_at)} zurückgesetzt. Alles, was der Verein seither geändert hat, ist danach nicht mehr in der App. Andere Vereine und die Konten bleiben, wie sie sind.`,
                 `${restoreTarget.tenant_slug} goes back to ${formatDate(restoreTarget.created_at)}. Everything the club changed since then is gone from the app. Other clubs and the accounts stay as they are.`,
               )}
             </Text>
-            <Text size="sm" mb="md" c="dimmed">
+            <Text size="sm" c="dimmed">
               {tr(
                 'Der jetzige Stand wird vorher als Sicherheitskopie in der Datenbank behalten. Schlägt die Wiederherstellung fehl, bleibt der Verein unverändert.',
                 'The current data is kept as a safety copy in the database first. If the restore fails, the club stays as it is.',
@@ -748,7 +768,6 @@ export function Backups() {
                 value={privateKey}
                 onChange={(e) => setPrivateKey(e.currentTarget.value)}
                 autoComplete="off"
-                mb="sm"
               />
             )}
             <TextInput
@@ -759,32 +778,33 @@ export function Backups() {
               value={confirmSlug}
               onChange={(e) => setConfirmSlug(e.currentTarget.value)}
               autoComplete="off"
-              mb="lg"
             />
-            <Group justify="flex-end">
-              <Button variant="default" onClick={closeRestore}>
-                {tr('Abbrechen', 'Cancel')}
-              </Button>
-              <Button
-                color="red"
-                loading={restoring}
-                disabled={
-                  confirmSlug.trim() !== restoreTarget.tenant_slug ||
-                  (restoreTarget.needs_private_key && !privateKey.trim())
-                }
-                onClick={() => handleRestore(restoreTarget)}
-              >
-                {tr('Wiederherstellen', 'Restore')}
-              </Button>
-            </Group>
           </>
         )}
-      </Modal>
+      </SharedModal>
 
-      <Modal opened={verifyTarget !== null} onClose={closeVerify} title={tr('Backup prüfen', 'Verify backup')}>
+      <SharedModal
+        open={verifyTarget !== null}
+        onClose={closeVerify}
+        title={tr('Backup prüfen', 'Verify backup')}
+        onSubmit={(e) => {
+          e?.preventDefault()
+          if (verifyTarget) handleVerify(verifyTarget.id, privateKey.trim() || undefined)
+        }}
+        footer={
+          <>
+            <Button variant="default" onClick={closeVerify}>
+              {tr('Abbrechen', 'Cancel')}
+            </Button>
+            <Button type="submit" loading={verifyingId !== null && verifyingId === verifyTarget?.id}>
+              {privateKey.trim() ? tr('Öffnen und prüfen', 'Open and check') : tr('Datei prüfen', 'Check file')}
+            </Button>
+          </>
+        }
+      >
         {verifyTarget && (
           <>
-            <Text size="sm" mb="md">
+            <Text size="sm">
               {tr(
                 'Ohne Schlüssel wird geprüft, ob die Datei im Speicher vollständig und unverändert ist. Mit dem privaten Schlüssel wird sie zusätzlich geöffnet und der Inhalt gezählt; der Schlüssel wird nicht gespeichert.',
                 'Without a key, the check makes sure the file in storage is complete and unchanged. With the private key it is also opened and its contents counted; the key is not stored.',
@@ -795,29 +815,33 @@ export function Backups() {
               value={privateKey}
               onChange={(e) => setPrivateKey(e.currentTarget.value)}
               autoComplete="off"
-              mb="lg"
             />
-            <Group justify="flex-end">
-              <Button variant="default" onClick={closeVerify}>
-                {tr('Abbrechen', 'Cancel')}
-              </Button>
-              <Button
-                loading={verifyingId === verifyTarget.id}
-                onClick={() => handleVerify(verifyTarget.id, privateKey.trim() || undefined)}
-              >
-                {privateKey.trim() ? tr('Öffnen und prüfen', 'Open and check') : tr('Datei prüfen', 'Check file')}
-              </Button>
-            </Group>
           </>
         )}
-      </Modal>
+      </SharedModal>
 
-      <Modal
-        opened={deleteTarget !== null}
+      <SharedModal
+        open={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
         title={tr('Backup löschen', 'Delete backup')}
+        footer={
+          <>
+            <Button variant="default" onClick={() => setDeleteTarget(null)}>
+              {tr('Abbrechen', 'Cancel')}
+            </Button>
+            <Button
+              color="red"
+              loading={deleting}
+              onClick={() => {
+                if (deleteTarget) handleDelete(deleteTarget)
+              }}
+            >
+              {tr('Löschen', 'Delete')}
+            </Button>
+          </>
+        }
       >
-        <Text size="sm" mb="lg">
+        <Text size="sm">
           {deleteTarget
             ? tr(
                 `Backup #${deleteTarget.id} vom ${formatDate(deleteTarget.created_at)} löschen? Die Datei im S3-Speicher wird entfernt, das lässt sich nicht rückgängig machen.`,
@@ -825,21 +849,7 @@ export function Backups() {
               )
             : ''}
         </Text>
-        <Group justify="flex-end">
-          <Button variant="default" onClick={() => setDeleteTarget(null)}>
-            {tr('Abbrechen', 'Cancel')}
-          </Button>
-          <Button
-            color="red"
-            loading={deleting}
-            onClick={() => {
-              if (deleteTarget) handleDelete(deleteTarget)
-            }}
-          >
-            {tr('Löschen', 'Delete')}
-          </Button>
-        </Group>
-      </Modal>
+      </SharedModal>
     </div>
   )
 }

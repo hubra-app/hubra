@@ -22,7 +22,7 @@ import {
   type Domain,
 } from '@/api/admin'
 import { useToast } from '@/context/AppContext'
-import { SimpleList } from '@/components/ui'
+import { ConfirmModal, Modal as FormModal, SimpleList } from '@/components/ui'
 import { useT } from '@/locales/i18n'
 import { qk } from '@/data/keys'
 
@@ -181,20 +181,29 @@ export function DomainsTab() {
         })}
       />
 
-      <Modal opened={addOpen} onClose={() => { setAddOpen(false); setNewDomain('') }} title={t('domains.add', 'Domain hinzufügen')}>
-        <Stack gap={14}>
-          <TextInput
-            label={t('domains.domain', 'Domain')}
-            placeholder="example.com"
-            value={newDomain}
-            onChange={(e) => setNewDomain(e.target.value)}
-          />
-          <Group justify="flex-end">
+      <FormModal
+        open={addOpen}
+        onClose={() => { setAddOpen(false); setNewDomain('') }}
+        title={t('domains.add', 'Domain hinzufügen')}
+        onSubmit={(e) => {
+          e?.preventDefault()
+          if (!adding) void handleAdd()
+        }}
+        footer={
+          <>
             <Button variant="default" onClick={() => setAddOpen(false)}>{t('common.cancel', 'Abbrechen')}</Button>
-            <Button loading={adding} onClick={handleAdd}>{t('common.add', 'Hinzufügen')}</Button>
-          </Group>
-        </Stack>
-      </Modal>
+            <Button type="submit" loading={adding}>{t('common.add', 'Hinzufügen')}</Button>
+          </>
+        }
+      >
+        <TextInput
+          label={t('domains.domain', 'Domain')}
+          placeholder="example.com"
+          value={newDomain}
+          onChange={(e) => setNewDomain(e.target.value)}
+          data-autofocus
+        />
+      </FormModal>
 
       <Modal
         opened={!!recordFor}
@@ -231,22 +240,14 @@ export function DomainsTab() {
         )}
       </Modal>
 
-      <Modal
-        opened={!!deleteTarget}
+      <ConfirmModal
+        open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         title={t('domains.removeTitle', 'Domain entfernen')}
-        size="sm"
-      >
-        <Stack gap={14}>
-          <Text>{t('domains.removeConfirm', 'Willst du {{domain}} wirklich entfernen?', { domain: deleteTarget?.domain ?? '' })}</Text>
-          <Group justify="flex-end">
-            <Button variant="default" onClick={() => setDeleteTarget(null)}>{t('common.cancel', 'Abbrechen')}</Button>
-            <Button color="red" onClick={() => deleteTarget && handleRemove(deleteTarget.id)}>
-              {t('domains.remove', 'Entfernen')}
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        body={t('domains.removeConfirm', 'Willst du {{domain}} wirklich entfernen?', { domain: deleteTarget?.domain ?? '' })}
+        confirmLabel={t('domains.remove', 'Entfernen')}
+        onConfirm={() => deleteTarget && handleRemove(deleteTarget.id)}
+      />
     </Stack>
   )
 }

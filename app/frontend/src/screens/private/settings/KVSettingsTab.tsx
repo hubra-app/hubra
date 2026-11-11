@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Badge, Button, TextInput, Select } from '@mantine/core'
+import { Badge, Button, Checkbox, TextInput, Select } from '@mantine/core'
 import {
   IconPlus,
   IconPencil,
@@ -10,7 +10,7 @@ import {
 } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
 import { useT } from '@/locales/i18n'
-import { KVTable, Modal, Field, ConfirmModal } from '@/components/ui'
+import { KVTable, Modal, Field, ConfirmModal, Seg } from '@/components/ui'
 import { listSettings, upsertSetting, deleteSetting } from '@/api/settings'
 import type { SettingEntry } from '@/api/settings'
 import { qk } from '@/data/keys'
@@ -159,20 +159,52 @@ export function KVSettingsTab() {
     return true
   })
 
+  const saveMeta = async () => {
+    if (!editingMeta) return
+    setMetaSaving(true)
+    try {
+      await upsertSetting(
+        editingMeta.key,
+        editingMeta.value ?? '',
+        {
+          namespace: metaNamespace || 'general',
+          label: metaLabel || null,
+          validation_type: metaValidationType || null,
+          description: metaDescription || null,
+          sensitive: metaSensitive,
+          required: metaRequired,
+          restricted: metaRestricted,
+        },
+      )
+      queryClient.invalidateQueries({ queryKey: qk.settings.kv })
+      setEditingMeta(null)
+      notify(
+        'success',
+        t('kv.metaSaved', 'Eigenschaften gespeichert'),
+        t('kv.updatedMsg', '{{key}} wurde gespeichert.', { key: editingMeta.key }),
+      )
+    } catch (err: unknown) {
+      notify(
+        'error',
+        t('common.saveFailed', 'Speichern fehlgeschlagen'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
+      )
+    } finally {
+      setMetaSaving(false)
+    }
+  }
+
   return (
     <div>
-      <div
-        style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}
-      >
-        {(['all', 'required', 'sensitive', 'restricted'] as const).map((f) => (
-          <button
-            key={f}
-            className={`chip${typeFilter === f ? ' on' : ''}`}
-            onClick={() => setTypeFilter(f)}
-          >
-            {t(`kv.filter.${f}`, f)}
-          </button>
-        ))}
+      <div style={{ marginBottom: 12 }}>
+        <Seg
+          value={typeFilter}
+          onChange={(v) => setTypeFilter(v as typeof typeFilter)}
+          options={(['all', 'required', 'sensitive', 'restricted'] as const).map((f) => ({
+            value: f,
+            label: t(`kv.filter.${f}`, f),
+          }))}
+        />
       </div>
       <KVTable<SettingEntry>
         entries={filteredEntries}
@@ -338,6 +370,20 @@ export function KVSettingsTab() {
         open={showAdd}
         title={t('kv.addTitle', 'Einstellung hinzufügen')}
         onClose={() => setShowAdd(false)}
+        onSubmit={(e) => {
+          e?.preventDefault()
+          if (!addSaving && newKey.trim()) void handleAdd()
+        }}
+        footer={
+          <>
+            <Button variant="default" onClick={() => setShowAdd(false)}>
+              {t('common.cancel', 'Abbrechen')}
+            </Button>
+            <Button type="submit" loading={addSaving} disabled={!newKey.trim()}>
+              {t('common.save', 'Speichern')}
+            </Button>
+          </>
+        }
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Field label={t('data.key', 'Schlüssel')} hint={t('kv.keyHint', 'z. B. club.website')}>
@@ -407,25 +453,6 @@ export function KVSettingsTab() {
               onChange={(v) => setNewValidationType(v ?? '')}
             />
           </Field>
-          <div
-            style={{
-              display: 'flex',
-              gap: 8,
-              justifyContent: 'flex-end',
-              marginTop: 4,
-            }}
-          >
-            <Button variant="subtle" onClick={() => setShowAdd(false)}>
-              {t('common.cancel', 'Abbrechen')}
-            </Button>
-            <Button
-              variant="filled"
-              onClick={handleAdd}
-              disabled={addSaving || !newKey.trim()}
-            >
-              {addSaving ? t('common.saving', 'Wird gespeichert …') : t('common.save', 'Speichern')}
-            </Button>
-          </div>
         </div>
       </Modal>
 
@@ -447,6 +474,20 @@ export function KVSettingsTab() {
         open={editingMeta !== null}
         title={`${t('kv.editMeta', 'Eigenschaften bearbeiten')}: ${editingMeta?.key ?? ''}`}
         onClose={() => setEditingMeta(null)}
+        onSubmit={(e) => {
+          e?.preventDefault()
+          if (!metaSaving) void saveMeta()
+        }}
+        footer={
+          <>
+            <Button variant="default" onClick={() => setEditingMeta(null)}>
+              {t('common.cancel', 'Abbrechen')}
+            </Button>
+            <Button type="submit" loading={metaSaving}>
+              {t('common.save', 'Speichern')}
+            </Button>
+          </>
+        }
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Field label={t('kv.label', 'Bezeichnung')} hint={t('kv.labelHint', 'Anzeigename dieser Einstellung')}>
@@ -508,133 +549,24 @@ export function KVSettingsTab() {
             />
           </Field>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                fontSize: 'var(--mantine-font-size-sm)',
-                cursor: 'pointer',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={metaSensitive}
-                onChange={(e) => setMetaSensitive(e.target.checked)}
-                style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-6)' }}
-              />
-              <span style={{ fontWeight: 600 }}>{t('kv.sensitive', 'Vertraulich')}</span>
-              <span
-                style={{
-                  color: 'var(--hb-text-2)',
-                  fontSize: 'var(--mantine-font-size-xs)',
-                }}
-              >
-                {t('kv.sensitiveHint', 'Wert wird in API-Antworten verborgen')}
-              </span>
-            </label>
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                fontSize: 'var(--mantine-font-size-sm)',
-                cursor: 'pointer',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={metaRequired}
-                onChange={(e) => setMetaRequired(e.target.checked)}
-                style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-6)' }}
-              />
-              <span style={{ fontWeight: 600 }}>{t('kv.required', 'Pflichtfeld')}</span>
-              <span
-                style={{
-                  color: 'var(--hb-text-2)',
-                  fontSize: 'var(--mantine-font-size-xs)',
-                }}
-              >
-                {t('kv.requiredHint', 'Kann nicht gelöscht werden')}
-              </span>
-            </label>
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                fontSize: 'var(--mantine-font-size-sm)',
-                cursor: 'pointer',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={metaRestricted}
-                onChange={(e) => setMetaRestricted(e.target.checked)}
-                style={{ width: 16, height: 16, accentColor: 'var(--mantine-color-acc-6)' }}
-              />
-              <span style={{ fontWeight: 600 }}>{t('kv.restricted', 'Gesperrt')}</span>
-              <span
-                style={{
-                  color: 'var(--hb-text-2)',
-                  fontSize: 'var(--mantine-font-size-xs)',
-                }}
-              >
-                {t('kv.restrictedHint', 'Kann nicht geändert werden')}
-              </span>
-            </label>
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              gap: 8,
-              justifyContent: 'flex-end',
-              marginTop: 4,
-            }}
-          >
-            <Button variant="subtle" onClick={() => setEditingMeta(null)}>
-              {t('common.cancel', 'Abbrechen')}
-            </Button>
-            <Button
-              variant="filled"
-              onClick={async () => {
-                if (!editingMeta) return
-                setMetaSaving(true)
-                try {
-                  await upsertSetting(
-                    editingMeta.key,
-                    editingMeta.value ?? '',
-                    {
-                      namespace: metaNamespace || 'general',
-                      label: metaLabel || null,
-                      validation_type: metaValidationType || null,
-                      description: metaDescription || null,
-                      sensitive: metaSensitive,
-                      required: metaRequired,
-                      restricted: metaRestricted,
-                    },
-                  )
-                  queryClient.invalidateQueries({ queryKey: qk.settings.kv })
-                  setEditingMeta(null)
-                  notify(
-                    'success',
-                    t('kv.metaSaved', 'Eigenschaften gespeichert'),
-                    t('kv.updatedMsg', '{{key}} wurde gespeichert.', { key: editingMeta.key }),
-                  )
-                } catch (err: unknown) {
-                  notify(
-                    'error',
-                    t('common.saveFailed', 'Speichern fehlgeschlagen'),
-                    err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
-                  )
-                } finally {
-                  setMetaSaving(false)
-                }
-              }}
-              disabled={metaSaving}
-            >
-              {metaSaving ? t('common.saving', 'Wird gespeichert …') : t('common.save', 'Speichern')}
-            </Button>
+            <Checkbox
+              checked={metaSensitive}
+              onChange={(e) => setMetaSensitive(e.currentTarget.checked)}
+              label={t('kv.sensitive', 'Vertraulich')}
+              description={t('kv.sensitiveHint', 'Wert wird in API-Antworten verborgen')}
+            />
+            <Checkbox
+              checked={metaRequired}
+              onChange={(e) => setMetaRequired(e.currentTarget.checked)}
+              label={t('kv.required', 'Pflichtfeld')}
+              description={t('kv.requiredHint', 'Kann nicht gelöscht werden')}
+            />
+            <Checkbox
+              checked={metaRestricted}
+              onChange={(e) => setMetaRestricted(e.currentTarget.checked)}
+              label={t('kv.restricted', 'Gesperrt')}
+              description={t('kv.restrictedHint', 'Kann nicht geändert werden')}
+            />
           </div>
         </div>
       </Modal>

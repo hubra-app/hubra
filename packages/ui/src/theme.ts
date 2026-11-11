@@ -192,7 +192,10 @@ export const theme = createTheme({
     NumberInput: { defaultProps: { radius: 'md', size: 'sm' } },
     Textarea: { defaultProps: { radius: 'md', size: 'sm' } },
     Select: {
-      defaultProps: { radius: 'md', size: 'sm', checkIconPosition: 'right' },
+      // Clicking the chosen entry again keeps it. Mantine's default empties
+      // the field, which blanked required fields (status, type) and set the
+      // page size to 0; an optional field gets an × (clearable) instead.
+      defaultProps: { radius: 'md', size: 'sm', checkIconPosition: 'right', allowDeselect: false },
     },
     MultiSelect: { defaultProps: { radius: 'md', size: 'sm' } },
     InputWrapper: {
