@@ -9,7 +9,8 @@ import pytest
 
 from hubra.core.contracts import SYSTEM, ActionForbidden, Refused, call, query
 from hubra.core.contracts import registry as creg
-from hubra.core.models.finance import Invoice
+from hubra.core.contracts.base import ContractError
+from hubra.core.models.finance import Invoice, Transaction, TransactionCategory
 
 
 def test_finance_offers_its_contracts(app):
@@ -50,6 +51,7 @@ def test_set_status_marks_an_invoice_paid_and_open_again(app, db, invoice):
     ) == {
         "id": invoice.id,
         "status": "Paid",
+        "transaction_id": None,
     }
     assert db.session.get(Invoice, invoice.id).status == "Paid"
     call(
@@ -74,4 +76,115 @@ def test_set_status_needs_the_invoice_right(app, db, invoice, billable_tier_db):
             invoice_id=invoice.id,
             status="Paid",
             actor=member,
+        )
+
+
+def test_set_status_with_a_payment_books_what_arrived(app, db, invoice):
+    db.session.add(TransactionCategory(name="Membership"))
+    db.session.commit()
+    out = call(
+        "finance.invoice.set_status",
+        invoice_id=invoice.id,
+        status="Paid",
+        payment={"on": "2026-10-20", "amount": "100.00", "method": "IBAN"},
+        actor=SYSTEM,
+    )
+    tx = db.session.get(Transaction, out["transaction_id"])
+    assert (tx.date, tx.amount, tx.method, tx.status, tx.type) == (
+        date(2026, 10, 20),
+        Decimal("100.00"),
+        "IBAN",
+        "Completed",
+        "income",
+    )
+    assert db.session.get(Invoice, invoice.id).transaction_id == tx.id
+
+    # A booking that is there already is brought in line, not doubled.
+    call(
+        "finance.invoice.set_status",
+        invoice_id=invoice.id,
+        status="Paid",
+        payment={"on": "2026-10-21", "amount": "120.00"},
+        actor=SYSTEM,
+    )
+    assert db.session.scalar(db.select(db.func.count()).select_from(Transaction)) == 1
+    assert db.session.get(Transaction, tx.id).amount == Decimal("120.00")
+
+
+def test_a_payment_only_goes_with_paid(app, db, invoice):
+    with pytest.raises(ContractError):
+        call(
+            "finance.invoice.set_status",
+            invoice_id=invoice.id,
+            status="Open",
+            payment={"on": "2026-10-20", "amount": "1"},
+            actor=SYSTEM,
+        )
+
+
+@pytest.fixture
+def category(db):
+    row = TransactionCategory(name="Telefon")
+    db.session.add(row)
+    db.session.commit()
+    return row
+
+
+def test_create_transaction(app, db, category):
+    out = call(
+        "finance.transaction.create",
+        booked_on="2026-10-27",
+        description="Swisscom",
+        category_id=category.id,
+        amount="45.50",
+        type="expense",
+        payee_name="Swisscom",
+        actor=SYSTEM,
+    )
+    tx = db.session.get(Transaction, out["id"])
+    assert (tx.amount, tx.type, tx.status, tx.method, tx.category_id) == (
+        Decimal("-45.50"),
+        "expense",
+        "Completed",
+        "IBAN",
+        category.id,
+    )
+
+
+def test_create_transaction_checks_its_input(app, db, category):
+    with pytest.raises(Refused):
+        call(
+            "finance.transaction.create",
+            booked_on="2026-10-27",
+            description="x",
+            category_id=9999,
+            amount="1",
+            type="income",
+            actor=SYSTEM,
+        )
+    with pytest.raises(ContractError):
+        call(
+            "finance.transaction.create",
+            booked_on="2026-10-27",
+            description="x",
+            category_id=category.id,
+            amount="-5",
+            type="income",
+            actor=SYSTEM,
+        )
+
+
+def test_create_transaction_needs_the_right(app, db, category, billable_tier_db):
+    with (
+        patch("hubra.core.permissions.member_has_permission", return_value=False),
+        pytest.raises(ActionForbidden),
+    ):
+        call(
+            "finance.transaction.create",
+            booked_on="2026-10-27",
+            description="x",
+            category_id=category.id,
+            amount="1",
+            type="income",
+            actor=billable_tier_db["member_billed"],
         )

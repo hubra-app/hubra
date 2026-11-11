@@ -166,6 +166,14 @@ module = Module(
             description="Mark an invoice paid, or open again",
         ),
         action_contract(
+            "finance.transaction.create",
+            "hubra.api.finance.contracts:create_transaction",
+            input="hubra.api.finance.contracts:TransactionIn",
+            output="hubra.api.finance.contracts:TransactionOut",
+            perm="finance.transactions.create",
+            description="Put one booking in the books",
+        ),
+        action_contract(
             "finance.invoice.create",
             "hubra.api.finance.contracts:create_invoice",
             input="hubra.api.finance.contracts:InvoiceIn",
@@ -188,14 +196,6 @@ module = Module(
             output="hubra.api.finance.contracts:ExternalPartyOut",
             perm="finance.external_parties.create",
             description="Create an outside party, or keep one up to date",
-        ),
-        action_contract(
-            "finance.transaction.create",
-            "hubra.api.finance.contracts:create_transaction",
-            input="hubra.api.finance.contracts:TransactionIn",
-            output="hubra.api.finance.contracts:TransactionOut",
-            perm="finance.transactions.create",
-            description="Book an income or an expense",
         ),
     ),
 )

@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import date, datetime, timezone
 
 from argon2 import PasswordHasher
-from argon2.exceptions import VerifyMismatchError
+from argon2.exceptions import VerificationError, VerifyMismatchError
 from sqlalchemy import Date, DateTime, Integer, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import JSON
@@ -20,6 +20,20 @@ from hubra.core.avatar import random_avatar_color
 from hubra.core.extensions import db
 
 _ph = PasswordHasher()
+_dummy_hashes: dict[int, str] = {}
+
+
+def burn_password_check(plain: object) -> None:
+    """Spend as long as checking a real password, for an address without an
+    account: otherwise the quicker answer tells that nobody signs in with it."""
+    ph = _ph
+    dummy = _dummy_hashes.get(id(ph))
+    if dummy is None:
+        dummy = _dummy_hashes.setdefault(id(ph), ph.hash("no account here"))
+    try:
+        ph.verify(dummy, plain if isinstance(plain, str) else "")
+    except VerificationError:
+        pass
 
 
 class User(db.Model):

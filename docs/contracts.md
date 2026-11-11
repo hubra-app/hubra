@@ -205,11 +205,11 @@ and switch it on. Emitters and handlers don't change.
 | Contract | Kind | What it does |
 | --- | --- | --- |
 | `finance.billing_period` | query | `{on}` → `{start, end}`, the club's billing year around that day |
-| `finance.invoice.set_status` | action | `{invoice_id, status: Paid\|Open, actor_id?, book?}`, with the mails and `invoice.updated`; `book` first announces a paid invoice that has no booking yet, so the books book it; needs `finance.invoices.update` |
+| `finance.invoice.set_status` | action | `{invoice_id, status: Paid\|Open, actor_id?, book?, payment?: {on, amount, method}}`, with the mails and `invoice.updated`; `book` first announces a paid invoice that has no booking yet, so the books book it; `payment` (only with Paid) gives the invoice's booking the date, amount and method that arrived and completes it, or books the income when nobody booked the invoice; returns `{id, status, transaction_id}`; needs `finance.invoices.update` |
+| `finance.transaction.create` | action | `{booked_on, description, category_id, amount (above 0), type: income\|expense, method?, payee_name?, member_id?, actor_id?}` → `{id}`: one completed booking (an expense is stored negative), with an audit entry; needs `finance.transactions.create` |
 | `finance.invoice.create` | action | `{member_id \| external_party_id, issued, due, amount, purpose?, description?, category_id?, actor_id?}` → `{id, status, amount, ...}`, booked and announced like an invoice made in the app; needs `finance.invoices.create` |
 | `finance.invoice.delete` | action | `{invoice_id, actor_id?}`, with its booking; needs `finance.invoices.delete` |
 | `finance.external_party.save` | action | `{external_party_id?, name, email?, address_*?, notes?, actor_id?}` → `{id, name, created}`: a new outside party, or the given one kept up to date; needs `finance.external_parties.create` |
-| `finance.transaction.create` | action | `{date, description, amount (> 0), type: income\|expense, method: IBAN\|Cash\|Twint\|Card, category_id?, member_id?, payee_name?, actor_id?}` → `{id, amount, type}`; an expense is stored negative, a closed fiscal year refuses it; needs `finance.transactions.create` |
 | `events.event.get` | query | `{event_id}` → `{id, title, starts_at, ends_at, places_taken, maybe}` (local times; none for all-day); needs `events.events.read` |
 | `events.event.create` | action | the event form's fields (`title, date, type, time?, ...`, `actor_id?`), checked like the form → `{id, title, date}`; needs `events.events.create` |
 | `events.registration.set` | action | `{event_id, member_id, status: registered\|cancelled\|maybe, own?, notes?, guests?}` → `{status}`, with the waitlist and (for `own`) the deadlines; needs `events.events.register` |

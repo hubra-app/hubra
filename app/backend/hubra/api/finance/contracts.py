@@ -3,12 +3,12 @@
 - ``finance.billing_period`` (query): the club's billing year around a day.
 - ``finance.invoice.set_status`` (action): mark an invoice paid or open
   again, with everything that comes with it (mails, events, the audit log).
+  With ``payment`` the invoice's booking holds what arrived (Bank Import).
+- ``finance.transaction.create`` (action): put one booking in the books.
 - ``finance.invoice.create`` / ``finance.invoice.delete`` (actions): an
   invoice to a member or an outside party, booked like one made in the app.
 - ``finance.external_party.save`` (action): create an outside party, or keep
   one up to date.
-- ``finance.transaction.create`` (action): a booking (income or expense) in
-  the transactions table, checked and logged like one made in the books.
 
 Plugins that offer a source for the fee basis do it the other way round:
 they offer a query named ``<module>.fee_basis.<source>`` with the shapes
@@ -40,6 +40,14 @@ def billing_period(ctx, data: PeriodIn) -> Period:
     return Period(start=start, end=end)
 
 
+class PaymentIn(BaseModel):
+    """What arrived for an invoice: the booking is brought in line with it."""
+
+    on: date
+    amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
+    method: str = Field("IBAN", min_length=1, max_length=50)
+
+
 class InvoiceStatusIn(BaseModel):
     invoice_id: int
     status: Literal["Paid", "Open"]
@@ -50,11 +58,22 @@ class InvoiceStatusIn(BaseModel):
     # so whoever keeps the books (the Finances plugin) books its income and
     # the booking turns paid with it. Bank Import does this for a payment.
     book: bool = False
+    # Paid by this payment: the invoice's booking gets its date, amount and
+    # method and is completed; an invoice nobody booked (no Finances plugin)
+    # gets an income booking. Only with status "Paid".
+    payment: PaymentIn | None = None
+
+    @model_validator(mode="after")
+    def _payment_only_when_paid(self):
+        if self.payment is not None and self.status != "Paid":
+            raise ValueError("payment only goes with status Paid")
+        return self
 
 
 class InvoiceStatus(BaseModel):
     id: int
     status: str
+    transaction_id: int | None = None
 
 
 def set_invoice_status(ctx, data: InvoiceStatusIn) -> InvoiceStatus:
@@ -75,7 +94,102 @@ def set_invoice_status(ctx, data: InvoiceStatusIn) -> InvoiceStatus:
         _link_pending_transaction(invoice)
     if invoice.status != data.status:
         InvoiceService.update(invoice, {"status": data.status}, actor_id)
-    return InvoiceStatus(id=invoice.id, status=invoice.status)
+    if data.payment is not None:
+        _book_payment(invoice, data.payment)
+    return InvoiceStatus(
+        id=invoice.id, status=invoice.status, transaction_id=invoice.transaction_id
+    )
+
+
+def _income_category_id() -> int | None:
+    """The "Membership" category, else the first one, as invoice bookings use."""
+    from sqlalchemy import select
+
+    from hubra.core.extensions import db
+    from hubra.core.models.finance import TransactionCategory
+
+    category = db.session.scalar(
+        select(TransactionCategory).where(TransactionCategory.name == "Membership")
+    ) or db.session.scalar(select(TransactionCategory).order_by(TransactionCategory.id))
+    return category.id if category else None
+
+
+def _book_payment(invoice, payment: PaymentIn) -> None:
+    from hubra.core.extensions import db
+    from hubra.core.models.finance import Transaction
+
+    tx = (
+        db.session.get(Transaction, invoice.transaction_id)
+        if invoice.transaction_id is not None
+        else None
+    )
+    if tx is None:
+        # Nobody keeps the invoices' bookings: the payment books its income.
+        tx = Transaction(
+            description=f"Invoice #{invoice.id}",
+            category_id=_income_category_id(),
+            member_id=invoice.member_id,
+            type="income",
+        )
+        db.session.add(tx)
+    tx.date = payment.on
+    tx.method = payment.method
+    tx.status = "Completed"
+    # The books hold what arrived; it may differ from the invoice (a
+    # mismatch the treasurer accepted).
+    tx.amount = payment.amount
+    db.session.flush()
+    invoice.transaction_id = tx.id
+
+
+class TransactionIn(BaseModel):
+    """One booking. ``amount`` is positive; an expense is stored negative,
+    as the finance screens store it."""
+
+    booked_on: date
+    description: str = Field(min_length=1, max_length=255)
+    category_id: int
+    amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
+    type: Literal["income", "expense"]
+    method: str = Field("IBAN", min_length=1, max_length=50)
+    payee_name: str | None = Field(None, max_length=255)
+    member_id: int | None = None
+    actor_id: int | None = None
+
+
+class TransactionOut(BaseModel):
+    id: int
+
+
+def create_transaction(ctx, data: TransactionIn) -> TransactionOut:
+    from hubra.core.contracts import Refused
+    from hubra.core.extensions import db
+    from hubra.core.models.finance import Transaction, TransactionCategory
+    from hubra.core.utils import log_audit
+
+    if db.session.get(TransactionCategory, data.category_id) is None:
+        raise Refused("Category not found", code="NOT_FOUND", status=404)
+    tx = Transaction(
+        date=data.booked_on,
+        description=data.description,
+        category_id=data.category_id,
+        payee_name=data.payee_name,
+        member_id=data.member_id,
+        amount=data.amount if data.type == "income" else -data.amount,
+        method=data.method,
+        type=data.type,
+        status="Completed",
+    )
+    db.session.add(tx)
+    db.session.flush()
+    log_audit(
+        _actor_id(ctx, data.actor_id),
+        "create_transaction",
+        "Transaction",
+        tx.id,
+        tx.description,
+    )
+    return TransactionOut(id=tx.id)
 
 
 def _actor_id(ctx, given: int | None) -> int | None:
@@ -188,74 +302,6 @@ def save_external_party(ctx, data: ExternalPartyIn) -> ExternalPartyOut:
     if changed:
         ExternalPartyService.update(party, changed, actor_id)
     return ExternalPartyOut(id=party.id, name=party.name, created=False)
-
-
-class TransactionIn(BaseModel):
-    """A booking. ``amount`` is given positive; an expense is stored
-    negative, as the books do."""
-
-    date: date
-    description: str = Field(min_length=1, max_length=255)
-    amount: Decimal = Field(gt=0, lt=Decimal("10000000000"))
-    type: Literal["income", "expense"]
-    method: Literal["IBAN", "Cash", "Twint", "Card"]
-    category_id: int | None = None
-    member_id: int | None = None
-    payee_name: str | None = Field(default=None, max_length=255)
-    actor_id: int | None = None
-
-
-class TransactionOut(BaseModel):
-    id: int
-    amount: Decimal
-    type: str
-
-
-def create_transaction(ctx, data: TransactionIn) -> TransactionOut:
-    from sqlalchemy import select
-
-    from hubra.core.contracts import Refused
-    from hubra.core.extensions import db
-    from hubra.core.models.finance import Transaction, TransactionCategory
-    from hubra.core.models.member import Member
-    from hubra.core.utils import log_audit
-
-    if data.member_id is not None and (
-        db.session.scalar(
-            select(Member.id)
-            .where(Member.id == data.member_id)
-            .where(Member.archived_at.is_(None))
-        )
-        is None
-    ):
-        raise Refused(f"Member {data.member_id} not found", code="NOT_FOUND")
-    if (
-        data.category_id is not None
-        and db.session.get(TransactionCategory, data.category_id) is None
-    ):
-        raise Refused(f"Category {data.category_id} not found", code="NOT_FOUND")
-    amount = data.amount.quantize(Decimal("0.01"))
-    tx = Transaction(
-        date=data.date,
-        description=data.description,
-        category_id=data.category_id,
-        member_id=data.member_id,
-        payee_name=data.payee_name,
-        amount=-amount if data.type == "expense" else amount,
-        method=data.method,
-        type=data.type,
-    )
-    db.session.add(tx)
-    # A closed fiscal year refuses the booking here (the books' flush check).
-    db.session.flush()
-    log_audit(
-        actor_id=_actor_id(ctx, data.actor_id),
-        action="create_transaction",
-        target_type="Transaction",
-        target_id=tx.id,
-        target_label=data.description,
-    )
-    return TransactionOut(id=tx.id, amount=tx.amount, type=tx.type)
 
 
 # ── Fee basis sources (offered by plugins, asked by fee_basis) ──────────────
