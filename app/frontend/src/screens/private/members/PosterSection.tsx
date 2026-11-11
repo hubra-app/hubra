@@ -2,12 +2,26 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useDebouncedValue } from '@mantine/hooks'
-import { Button, Group, Paper, SegmentedControl, SimpleGrid, Stack, Table, Text, TextInput } from '@mantine/core'
+import {
+  Button,
+  Group,
+  Paper,
+  SegmentedControl,
+  SimpleGrid,
+  Stack,
+  Table,
+  Text,
+  TextInput,
+  useMantineTheme,
+} from '@mantine/core'
 import { IconPrinter, IconQrcode } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { useAuth } from '@/context/AppContext'
 import { Modal } from '@/components/ui'
 import { qk } from '@/data/keys'
+import { readableOn, textOn } from '@hubra/ui'
+import { useClubColors } from '@/branding'
+import { useClubLogo } from '@/data/clubProfile'
 import { getPoster, listSignupSources, type PosterKind, type PosterLink } from '@/api/applications'
 
 type Size = 'a4' | 'a6'
@@ -40,7 +54,11 @@ export function PosterSection() {
             )}
           </Text>
         </div>
-        <Button leftSection={<IconQrcode size={16} />} onClick={() => setOpen(true)} data-testid="open-poster">
+        <Button
+          leftSection={<IconQrcode size={16} />}
+          onClick={() => setOpen(true)}
+          data-testid="open-poster"
+        >
           {t('members.poster.create', 'Plakat erstellen')}
         </Button>
       </Group>
@@ -95,6 +113,7 @@ function PosterModal({ open, onClose }: { open: boolean; onClose: () => void }) 
     kind === 'join'
       ? t('members.poster.callJoin', 'QR-Code scannen und Beitritt anfragen')
       : t('members.poster.callTrial', 'QR-Code scannen und gratis Probetraining buchen')
+  const brand = usePosterBrand()
 
   return (
     <Modal
@@ -107,7 +126,11 @@ function PosterModal({ open, onClose }: { open: boolean; onClose: () => void }) 
           <Button variant="default" onClick={onClose}>
             {t('common.close', 'Schliessen')}
           </Button>
-          <Button leftSection={<IconPrinter size={16} />} onClick={() => window.print()} disabled={!data}>
+          <Button
+            leftSection={<IconPrinter size={16} />}
+            onClick={() => window.print()}
+            disabled={!data}
+          >
             {t('members.poster.print', 'Drucken')}
           </Button>
         </>
@@ -169,7 +192,7 @@ function PosterModal({ open, onClose }: { open: boolean; onClose: () => void }) 
             border: '1px solid var(--hb-border)',
           }}
         >
-          <PosterArt data={data} headline={shown} call={call} qrAlt={qrAlt} />
+          <PosterArt data={data} headline={shown} call={call} qrAlt={qrAlt} brand={brand} />
         </div>
       </SimpleGrid>
       {/* The copy that prints: straight in <body>, so no dialog clips or
@@ -177,7 +200,7 @@ function PosterModal({ open, onClose }: { open: boolean; onClose: () => void }) 
       {open &&
         createPortal(
           <div className="hb-poster-print">
-            <PosterArt data={data} headline={shown} call={call} qrAlt={qrAlt} />
+            <PosterArt data={data} headline={shown} call={call} qrAlt={qrAlt} brand={brand} />
           </div>,
           document.body,
         )}
@@ -185,45 +208,149 @@ function PosterModal({ open, onClose }: { open: boolean; onClose: () => void }) 
   )
 }
 
-/** The poster itself; it fills its box and scales with its width. */
+interface PosterBrand {
+  logo: string | undefined
+  primary: string
+  accent: string
+  secondary: string
+}
+
+/** The club's logo and colours (Settings › Verein › Erscheinungsbild), as
+ * the club app uses them; Hubra violet and gold while the club has none. */
+function usePosterBrand(): PosterBrand {
+  const club = useClubColors()
+  const theme = useMantineTheme()
+  const logo = useClubLogo()
+  const primary = club.primary ?? theme.colors.acc[6]
+  const accent = club.accent ?? theme.colors.gold[6]
+  return { logo, primary, accent, secondary: club.secondary ?? accent }
+}
+
+/** The poster itself; it fills its box and scales with its width. The QR
+ * code stays black on white with a quiet zone, so it scans on any colour. */
 function PosterArt({
   data,
   headline,
   call,
   qrAlt,
+  brand,
 }: {
   data: PosterLink | undefined
   headline: string
   call: string
   qrAlt: string
+  brand: PosterBrand
 }) {
+  const onPrimary = textOn(brand.primary)
+  const onAccent = textOn(brand.accent)
+  // The headline in the club colour, darkened until it reads on white.
+  const headlineColor = readableOn(brand.primary, ['#ffffff'], 4.5)
   return (
-    <div style={{ containerType: 'inline-size', width: '100%', height: '100%', background: '#fff' }}>
+    <div
+      style={{ containerType: 'inline-size', width: '100%', height: '100%', background: '#fff' }}
+    >
       <div
+        data-testid="poster-art"
         style={{
           height: '100%',
           color: '#111',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'space-between',
           textAlign: 'center',
-          padding: '8cqw 7cqw',
           boxSizing: 'border-box',
-          borderTop: '3cqw solid var(--mantine-primary-color-filled)',
+          borderBottom: '2.4cqw solid ' + brand.secondary,
         }}
       >
-        <div style={{ fontSize: '5.5cqw', fontWeight: 600, letterSpacing: '0.04em' }}>{data?.club.name}</div>
-        <div style={{ fontSize: '10cqw', fontWeight: 800, lineHeight: 1.1 }}>{headline}</div>
-        {data && (
-          <img
-            src={`data:image/svg+xml;utf8,${encodeURIComponent(data.qrSvg)}`}
-            alt={qrAlt}
-            style={{ width: '58cqw', height: '58cqw' }}
-          />
-        )}
-        <div style={{ fontSize: '4.4cqw', fontWeight: 600 }}>{call}</div>
-        <div style={{ fontSize: '2.8cqw', color: '#555', wordBreak: 'break-all' }}>{data?.url}</div>
+        <div
+          style={{
+            width: '100%',
+            background: brand.primary,
+            color: onPrimary,
+            padding: '5cqw 7cqw 4cqw',
+            boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '2.5cqw',
+          }}
+        >
+          {brand.logo && (
+            <div
+              style={{
+                background: '#fff',
+                borderRadius: '3cqw',
+                padding: '2cqw',
+                lineHeight: 0,
+                boxShadow: '0 0.5cqw 2cqw rgba(0,0,0,0.15)',
+              }}
+            >
+              <img
+                src={brand.logo}
+                alt=""
+                data-testid="poster-logo"
+                style={{ height: '14cqw', maxWidth: '50cqw', objectFit: 'contain' }}
+              />
+            </div>
+          )}
+          <div
+            style={{
+              fontSize: '5.5cqw',
+              fontWeight: 700,
+              letterSpacing: '0.03em',
+              lineHeight: 1.2,
+            }}
+          >
+            {data?.club.name}
+          </div>
+        </div>
+        <div
+          style={{
+            flex: 1,
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'space-evenly',
+            padding: '3cqw 7cqw 4.5cqw',
+            boxSizing: 'border-box',
+          }}
+        >
+          <div
+            style={{ fontSize: '10cqw', fontWeight: 800, lineHeight: 1.1, color: headlineColor }}
+          >
+            {headline}
+          </div>
+          {data && (
+            <img
+              src={`data:image/svg+xml;utf8,${encodeURIComponent(data.qrSvg)}`}
+              alt={qrAlt}
+              style={{
+                width: '46cqw',
+                height: '46cqw',
+                background: '#fff',
+                padding: '2.5cqw',
+                border: '0.8cqw solid ' + brand.primary,
+                borderRadius: '2.5cqw',
+              }}
+            />
+          )}
+          <div
+            style={{
+              fontSize: '4.2cqw',
+              fontWeight: 700,
+              background: brand.accent,
+              color: onAccent,
+              borderRadius: '999px',
+              padding: '1.6cqw 4.5cqw',
+            }}
+          >
+            {call}
+          </div>
+          <div style={{ fontSize: '2.8cqw', color: '#555', wordBreak: 'break-all' }}>
+            {data?.url}
+          </div>
+        </div>
       </div>
     </div>
   )
