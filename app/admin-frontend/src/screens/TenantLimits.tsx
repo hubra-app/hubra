@@ -21,6 +21,7 @@ import { planLabel } from '@/labels'
 import {
   getTenantLimits,
   setTenantLimits,
+  type FileLimit,
   type LimitKind,
   type LimitRow,
   type TenantLimits as Limits,
@@ -38,6 +39,33 @@ const unit = (kind: LimitKind, n: number) =>
   kind === 'storage_mb' ? `${n.toLocaleString('de-CH')} MB` : n.toLocaleString('de-CH')
 
 const COLOR = { ok: 'acc', warning: 'orange', over: 'red' } as const
+
+const fileSource = (f: FileLimit) =>
+  f.source === 'club'
+    ? tr('Eigenes Limit für diesen Verein', 'Own limit for this club')
+    : f.source === 'plan'
+      ? tr('Vom Tarif', 'From the plan')
+      : tr('Plattform-Standard', 'Platform default')
+
+function FileLine({ file }: { file: FileLimit }) {
+  return (
+    <Text size="sm" mt="md">
+      <Text span fw={600}>
+        {tr('Grösste Datei: ', 'Largest file: ')}
+      </Text>
+      {`${file.limit.toLocaleString('de-CH')} MB`}
+      <Text span size="xs" c="dimmed">
+        {' · '}
+        {fileSource(file)}
+        {file.wanted > file.limit &&
+          tr(
+            ` (${file.wanted} MB, aber der Server nimmt höchstens ${file.ceiling} MB, MAX_UPLOAD_MB)`,
+            ` (${file.wanted} MB, but the server takes at most ${file.ceiling} MB, MAX_UPLOAD_MB)`,
+          )}
+      </Text>
+    </Text>
+  )
+}
 
 type Mode = 'plan' | 'custom' | 'none'
 
@@ -123,6 +151,7 @@ export function TenantLimits({ tenantId }: { tenantId: number }) {
           <LimitMeter key={k} kind={k} row={data.limits[k]} />
         ))}
       </SimpleGrid>
+      {data.file && <FileLine file={data.file} />}
       {editing && (
         <LimitsModal
           data={data}
@@ -154,8 +183,13 @@ function LimitsModal({
 }: {
   data: Limits
   onClose: () => void
-  onSave: (values: Record<LimitKind, number | null | 'plan'>) => Promise<void>
+  onSave: (
+    values: Record<LimitKind, number | null | 'plan'> & { file_mb?: number | 'plan' },
+  ) => Promise<void>
 }) {
+  const file = data.file
+  const [fileMode, setFileMode] = useState<'plan' | 'custom'>(file?.custom ? 'custom' : 'plan')
+  const [fileValue, setFileValue] = useState<number | string>(file?.wanted ?? '')
   const start = (row: LimitRow): Mode =>
     !row.custom ? 'plan' : row.limit == null ? 'none' : 'custom'
   const [mode, setMode] = useState<Record<LimitKind, Mode>>(
@@ -168,7 +202,9 @@ function LimitsModal({
       ) as Record<LimitKind, number | string>,
   )
   const [saving, setSaving] = useState(false)
-  const invalid = KINDS.some((k) => mode[k] === 'custom' && typeof value[k] !== 'number')
+  const invalid =
+    KINDS.some((k) => mode[k] === 'custom' && typeof value[k] !== 'number') ||
+    (fileMode === 'custom' && (typeof fileValue !== 'number' || fileValue < 1))
 
   const planText = (k: LimitKind) => {
     const p = data.limits[k].plan_limit
@@ -208,6 +244,45 @@ function LimitsModal({
             )}
           </Stack>
         ))}
+        {file && (
+          <Stack gap={6}>
+            <Text size="sm" fw={600}>
+              {tr('Grösste Datei', 'Largest file')}
+            </Text>
+            <SegmentedControl
+              fullWidth
+              size="xs"
+              value={fileMode}
+              onChange={(v) => setFileMode(v as 'plan' | 'custom')}
+              data={[
+                {
+                  value: 'plan',
+                  label:
+                    file.plan_limit != null
+                      ? tr(`Tarif (${file.plan_limit} MB)`, `Plan (${file.plan_limit} MB)`)
+                      : tr(`Standard (${file.default} MB)`, `Default (${file.default} MB)`),
+                },
+                { value: 'custom', label: tr('Eigenes', 'Own') },
+              ]}
+            />
+            {fileMode === 'custom' && (
+              <NumberInput
+                aria-label={tr('Grösste Datei', 'Largest file')}
+                min={1}
+                max={10240}
+                allowDecimal={false}
+                allowNegative={false}
+                suffix=" MB"
+                description={tr(
+                  `Der Server nimmt höchstens ${file.ceiling} MB an (MAX_UPLOAD_MB).`,
+                  `The server takes at most ${file.ceiling} MB (MAX_UPLOAD_MB).`,
+                )}
+                value={fileValue}
+                onChange={setFileValue}
+              />
+            )}
+          </Stack>
+        )}
         <Group justify="flex-end">
           <Button variant="default" onClick={onClose}>
             {tr('Abbrechen', 'Cancel')}
@@ -218,14 +293,15 @@ function LimitsModal({
             onClick={async () => {
               setSaving(true)
               try {
-                await onSave(
-                  Object.fromEntries(
+                await onSave({
+                  ...(Object.fromEntries(
                     KINDS.map((k) => [
                       k,
                       mode[k] === 'plan' ? 'plan' : mode[k] === 'none' ? null : Number(value[k]),
                     ]),
-                  ) as Record<LimitKind, number | null | 'plan'>,
-                )
+                  ) as Record<LimitKind, number | null | 'plan'>),
+                  ...(file ? { file_mb: fileMode === 'plan' ? 'plan' : Number(fileValue) } : {}),
+                })
               } finally {
                 setSaving(false)
               }

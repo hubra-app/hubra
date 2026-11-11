@@ -68,6 +68,9 @@ class PlatformPlan(db.Model):
     limit_members: Mapped[int | None] = mapped_column(Integer, nullable=True)
     limit_mail_month: Mapped[int | None] = mapped_column(Integer, nullable=True)
     limit_storage_mb: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Largest file a club on this plan can upload, in MB.  Null: the
+    # platform default (files.max_mb), not unlimited.
+    limit_file_mb: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # Shown on the website (public pricing).
     public: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     # Every club can pick it in Settings › Hubra subscription.

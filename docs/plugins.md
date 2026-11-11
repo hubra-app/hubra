@@ -63,7 +63,9 @@ The platform decides where files go (S3 or a folder on the server), every
 file is encrypted with the club's key, counts towards the club's storage and
 is deleted with the club. Keep `stored.key` in your own table; `read` and
 `remove` only find files of the club the request works in. `put` refuses
-files larger than `files.max_mb` (`files.FileTooLarge`).
+files larger than the club may upload (`files.FileTooLarge`); `files.max_mb()`
+says how large that is (the club's own limit, its plan's, or the platform's
+`files.max_mb`), for example to show it next to an upload button.
 
 ## Slots
 

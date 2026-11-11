@@ -325,7 +325,12 @@ store (`hubra.core.files`). Set it in manage › Backups › Storage under
   the bucket only ever holds ciphertext, and a file opens only in its own
   club. A club's files count towards its storage, and deleting a club for
   good deletes its files.
-- `files.max_mb` (default 25) is the largest file a club can upload.
+- The largest file a club can upload is set per plan (All clubs › Tarife &
+  Preise, "Grösste Datei") and, for one club, on its page (Limits ›
+  Anpassen). A plan without its own value uses `files.max_mb` (default 25).
+  Nothing goes above `MAX_UPLOAD_MB` (env, default 100), the largest upload
+  the backend and the frontends' nginx take; on k3s the Ingress in front
+  needs a body size at least that large too.
 - The database backups don't contain the files. Keep the bucket versioned or
   copy it elsewhere; without the database (the club's data keys) a copy of
   the bucket can't be opened.

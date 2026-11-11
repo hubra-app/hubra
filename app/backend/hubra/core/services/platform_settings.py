@@ -288,8 +288,9 @@ SPECS: tuple[Spec, ...] = (
     ),
     Spec(
         "files.max_mb",
-        "Largest file",
-        "Largest file a club can upload, in MB",
+        "Largest file (default)",
+        "Largest file a club can upload, in MB, when its plan sets none "
+        "(plans and clubs can have their own under All clubs)",
         lambda cfg: str(cfg.get("FILES_MAX_MB") or 25),
         "count",
     ),

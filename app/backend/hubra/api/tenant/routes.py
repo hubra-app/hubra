@@ -608,7 +608,7 @@ def set_tenant_limits(tenant_id: int):
     body = request.get_json(silent=True)
     if not isinstance(body, dict) or not body:
         raise_error(400, "VALIDATION_ERROR", "Send at least one limit")
-    before = quotas.overrides(tenant)
+    before = quotas.own_limits(tenant)
     quotas.set_overrides(tenant, body)
     db.session.add(
         GlobalAuditEntry(
@@ -617,7 +617,7 @@ def set_tenant_limits(tenant_id: int):
             action="tenant.limits",
             target_type="Tenant",
             target_id=str(tenant.id),
-            details={"before": before, "after": quotas.overrides(tenant)},
+            details={"before": before, "after": quotas.own_limits(tenant)},
             ip_address=request.remote_addr,
         )
     )
