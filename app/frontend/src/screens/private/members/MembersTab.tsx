@@ -719,6 +719,10 @@ export function MembersTab() {
         open={bulkInvoiceOpen}
         onClose={() => setBulkInvoiceOpen(false)}
         title={t('members.bulkInvoice.title')}
+        onSubmit={(e) => {
+          e?.preventDefault()
+          if (!bulkSaving && bulkDue) void handleBulkInvoice()
+        }}
         footer={
           <>
             <Button variant="default" onClick={() => setBulkInvoiceOpen(false)}>
@@ -726,7 +730,7 @@ export function MembersTab() {
             </Button>
             <Button
               variant="filled"
-              onClick={handleBulkInvoice}
+              type="submit"
               disabled={bulkSaving || !bulkDue}
             >
               {bulkSaving

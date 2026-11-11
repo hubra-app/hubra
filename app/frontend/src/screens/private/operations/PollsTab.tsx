@@ -535,6 +535,10 @@ export function PollsTab() {
         wide
         title={editTarget ? t("polls.editTitle", "Umfrage bearbeiten") : t("polls.createPoll", "Neue Umfrage")}
         subtitle={editTarget?.question}
+        onSubmit={(e) => {
+          e?.preventDefault();
+          if (!saving) void savePoll();
+        }}
         footer={
           <>
             <Button
@@ -546,7 +550,7 @@ export function PollsTab() {
             >
               {t("common.cancel")}
             </Button>
-            <Button variant="filled" onClick={savePoll} disabled={saving}>
+            <Button variant="filled" type="submit" loading={saving}>
               {editTarget
                 ? t("common.save", 'Speichern')
                 : t("polls.createPoll", 'Neue Umfrage')}
