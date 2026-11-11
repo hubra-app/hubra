@@ -241,12 +241,14 @@ jobs:
           echo "**$IMAGE**: $what ($REASON), \`$digest\`" >> "$GITHUB_STEP_SUMMARY"
 
       # Fixable HIGH/CRITICAL CVEs go to the job summary, for reused images too
-      # (new CVEs turn up in old images). Report only for now;
-      # set TRIVY_EXIT_CODE=1 once the images are clean to fail the build.
+      # (new CVEs turn up in old images). They fail the four web app images
+      # (*frontend: nginx with apk upgrade at build, so a fresh build is clean;
+      # for a reused one run Images with build_all). Report only for the
+      # others until they are clean too.
       - name: Scan the image (Trivy)
         env:
           REF: ${{ steps.name.outputs.image }}@${{ steps.result.outputs.digest }}
-          TRIVY_EXIT_CODE: "0"
+          TRIVY_EXIT_CODE: ${{ endsWith(matrix.image, 'frontend') && '1' || '0' }}
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \

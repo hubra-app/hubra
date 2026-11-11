@@ -81,6 +81,8 @@ class ClubSettingsSchema(Schema):
     public_group_listing = fields.Bool(required=False, allow_none=True)
     # Members ask to leave and a club admin approves (off: they leave at once).
     leave_requires_approval = fields.Bool(required=False, allow_none=True)
+    # Hubra staff ask before a support session (services.support_access).
+    support_requires_approval = fields.Bool(required=False, allow_none=True)
     # Notice period from the statutes: this many months, to the end of a
     # period (hubra.core.services.notice_period). Shown on requests to leave.
     leave_notice_months = fields.Int(

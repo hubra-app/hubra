@@ -108,17 +108,22 @@ export function safeTarget(url: string, current: string, extraOrigins: string[] 
   const local = (h: string) => h === 'localhost' || h === '127.0.0.1'
   const labels = here.hostname.split('.')
   const parent = labels.length > 2 ? labels.slice(1).join('.') : here.hostname
+  const configured = extraOrigins.some((o) => {
+    try {
+      return new URL(o).origin === target.origin
+    } catch {
+      return false
+    }
+  })
+  // Never from HTTPS down to plain HTTP (someone on the network could read
+  // or change that page), except to localhost or a configured address.
+  if (here.protocol === 'https:' && target.protocol === 'http:' && !local(target.hostname) && !configured)
+    return null
   const ok =
     target.host === here.host ||
     (local(target.hostname) && local(here.hostname)) ||
     target.hostname === parent ||
     target.hostname.endsWith(`.${parent}`) ||
-    extraOrigins.some((o) => {
-      try {
-        return new URL(o).origin === target.origin
-      } catch {
-        return false
-      }
-    })
+    configured
   return ok ? target.href : null
 }

@@ -616,7 +616,8 @@
     "searchMembers": "Search members …",
     "noMembersYet": "No members yet.",
     "remove": "Remove",
-    "showAll": "Show all"
+    "showAll": "Show all",
+    "externalImage": "Show image from {{host}}"
   },
   "dashboard": {
     "activeMembers": "Active members",
@@ -2759,7 +2760,8 @@
         "feeConfirmed": "Reason for an own fee confirmed",
         "memberFeeEnded": "A member's own fee has ended",
         "eventReinstated": "Event takes place after all",
-        "confirmRead": "Please confirm you read this"
+        "confirmRead": "Please confirm you read this",
+        "supportAsksAccess": "Hubra support asks for access"
       }
     },
     "notifPanel": {
@@ -3478,7 +3480,14 @@
       "leave_declined": "Request to leave declined",
       "approve_registration": "Registration approved",
       "delete_application": "Application deleted",
-      "create_member": "Member created"
+      "create_member": "Member created",
+      "support_session_view": "Support access (look only)",
+      "support_session_change": "Support access (with changes)",
+      "support_session_end": "Support access ended",
+      "support_access_request": "Support asks for access",
+      "support_access_approve": "Support access approved",
+      "support_access_decline": "Support access declined",
+      "support_session_revoked": "Support access ended early"
     },
     "systemActor": "System (automatic)",
     "backToLog": "Back to the log",
@@ -4797,6 +4806,29 @@
       "notePlaceholder": "e.g. \"Studying until summer 2027, I'll email my student card\"",
       "noteLabel": "Your confirmation",
       "confirm": "The reason still applies"
+    }
+  },
+  "supportAccess": {
+    "title": "Hubra support",
+    "requireApproval": "Support access only when approved",
+    "requireApprovalHint": "On: before Hubra support opens your club, they ask here and an admin approves (once, within 24 hours). Every access is in the audit log.",
+    "none": "No requests from Hubra support yet.",
+    "staff": "Hubra support",
+    "minutes": "{{count}} min",
+    "mayChange": "may change things",
+    "lookOnly": "look only",
+    "decidedBy": "decided by {{name}}",
+    "approve": "Approve",
+    "decline": "Decline",
+    "approved": "Access approved",
+    "declined": "Access declined",
+    "failed": "Not saved",
+    "status": {
+      "pending": "Open",
+      "approved": "Approved",
+      "declined": "Declined",
+      "used": "Used",
+      "expired": "Expired"
     }
   }
 }
