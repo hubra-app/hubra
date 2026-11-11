@@ -22,7 +22,9 @@ through the fallback, e.g. Brevo's SMTP relay, from the same sender.  See
 ``email._send_via_smtp``.
 
 Backups (the global one and one per club) are the platform's, so where they
-are stored (``backup.s3.*``) is the platform's to decide, not a club's.
+are stored (``backup.s3.*``) and how long they are kept (``backup.keep_*``,
+see ``BackupService.run_retention_cleanup``) is the platform's to decide,
+not a club's.
 
 Files (``files.*``): where clubs' files (documents, attachments of plugins)
 are kept, ``hubra.core.files``.  With ``files.s3.bucket`` set they go to
@@ -178,6 +180,43 @@ SPECS: tuple[Spec, ...] = (
         "The private key stays off the server; restore asks for it",
         lambda cfg: cfg.get("BACKUP_PUBLIC_KEY") or "",
         "age_public_keys",
+    ),
+    Spec(
+        "backup.keep_daily",
+        "Daily backups kept",
+        "Newest daily backups kept per set (the global one and each club's), "
+        "1 to 365",
+        lambda cfg: "7",
+        "backup_keep",
+    ),
+    Spec(
+        "backup.keep_weekly",
+        "Weekly backups kept",
+        "Newest weekly backups (Sunday) kept per set, 1 to 365",
+        lambda cfg: "4",
+        "backup_keep",
+    ),
+    Spec(
+        "backup.keep_monthly",
+        "Monthly backups kept",
+        "Newest monthly backups (the 1st) kept per set, 1 to 365",
+        lambda cfg: "12",
+        "backup_keep",
+    ),
+    Spec(
+        "backup.keep_manual_days",
+        "Manual backups kept for",
+        "Days a backup made by hand is kept; 0 keeps it until someone deletes it",
+        lambda cfg: "0",
+        "keep_days",
+    ),
+    Spec(
+        "backup.keep_deleted_club_days",
+        "Backups of deleted clubs kept for",
+        "Days each backup of a club deleted for good is kept, counted from "
+        "the day it was made; 0 keeps them like any other club's",
+        lambda cfg: "0",
+        "keep_days",
     ),
     Spec(
         "backup.s3.endpoint",

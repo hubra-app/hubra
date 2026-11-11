@@ -245,9 +245,13 @@ Backups are a platform task: manage › Backups, global permission
 - Each backup holds one schema: **Global** (`public`: accounts, clubs,
   platform settings) or **one club**. A single club can be restored without
   touching the others.
-- Celery beat makes a scheduled set every day, week and month, and keeps
-  7 daily, 4 weekly and 6 monthly backups per set. Manual backups are kept
-  until you delete them.
+- Celery beat makes a scheduled set every day, week and month. Retention is
+  set in manage › Backups › Einstellungen (`backup.keep_*`): by default each
+  set keeps its newest 7 daily, 4 weekly and 12 monthly backups; manual
+  backups stay until you delete them (`backup.keep_manual_days`, 0); the
+  backups of a club deleted for good follow the same counts unless
+  `backup.keep_deleted_club_days` gives them a time limit. Only completed
+  backups count; pruning runs after each scheduled run.
 - Files are encrypted to `BACKUP_PUBLIC_KEY` ([age](https://age-encryption.org))
   (platform setting, default from env) and stored in the S3 bucket from
   Backups › Storage. The

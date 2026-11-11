@@ -654,6 +654,141 @@ class TestScopedBackups:
             assert len(BackupService.list_backups(club.id)) == 7
 
 
+class TestRetentionPolicy:
+    """manage › Backups › Einstellungen: backup.keep_*."""
+
+    def _prune(self, mock_s3_client):
+        from hubra.core.services.backup import BackupService
+
+        with patch(
+            "hubra.core.services.backup._get_s3_client", return_value=mock_s3_client
+        ):
+            return BackupService.run_retention_cleanup()
+
+    def test_defaults(self, app, db):
+        from hubra.core.services.backup import retention_policy
+
+        assert retention_policy() == {
+            "scheduled_daily": 7,
+            "scheduled_weekly": 4,
+            "scheduled_monthly": 12,
+            "manual_days": 0,
+            "deleted_club_days": 0,
+        }
+
+    def test_counts_come_from_the_settings(
+        self, app, db, backup_config, mock_s3_client
+    ):
+        from hubra.core.models.backup import BackupRecord
+        from hubra.core.services import platform_settings
+
+        platform_settings.set_many({"backup.keep_weekly": "2"})
+        for i in range(5):
+            db.session.add(
+                BackupRecord(
+                    type="scheduled_weekly", status="completed", s3_key=f"w{i}"
+                )
+            )
+        db.session.commit()
+
+        assert self._prune(mock_s3_client) == {"scheduled_weekly": 3}
+        assert BackupRecord.query.filter_by(type="scheduled_weekly").count() == 2
+
+    def test_invalid_counts_are_refused(self, app, db):
+        from hubra.core.services import platform_settings
+
+        with pytest.raises(platform_settings.PlatformSettingError):
+            platform_settings.set_many({"backup.keep_daily": "0"})
+
+    def test_manual_backups_expire_after_the_days_set(
+        self, app, db, backup_config, mock_s3_client
+    ):
+        from datetime import datetime, timedelta, timezone
+
+        from hubra.core.models.backup import BackupRecord
+        from hubra.core.services import platform_settings
+
+        now = datetime.now(timezone.utc)
+        old = BackupRecord(
+            type="manual",
+            status="completed",
+            s3_key="old",
+            created_at=now - timedelta(days=40),
+        )
+        new = BackupRecord(
+            type="manual",
+            status="completed",
+            s3_key="new",
+            created_at=now - timedelta(days=5),
+        )
+        db.session.add_all([old, new])
+        db.session.commit()
+
+        # 0 (the default): kept until someone deletes them.
+        assert self._prune(mock_s3_client) == {}
+        platform_settings.set_many({"backup.keep_manual_days": "30"})
+        assert self._prune(mock_s3_client) == {"manual": 1}
+        assert [r.s3_key for r in BackupRecord.query.all()] == ["new"]
+        mock_s3_client.delete_object.assert_called_once()
+
+    def test_backups_of_deleted_clubs_expire(
+        self, app, db, backup_config, mock_s3_client
+    ):
+        from datetime import datetime, timedelta, timezone
+
+        from hubra.core.models.backup import BackupRecord
+        from hubra.core.services import platform_settings
+
+        live = _club(db)
+        now = datetime.now(timezone.utc)
+        _club_record(db, live, created_at=now - timedelta(days=100))
+        gone = BackupRecord(
+            type="scheduled_daily",
+            status="completed",
+            scope="club",
+            tenant_id=None,
+            tenant_slug="gone",
+            s3_key="gone-old",
+            created_at=now - timedelta(days=100),
+        )
+        recent = BackupRecord(
+            type="manual",
+            status="completed",
+            scope="club",
+            tenant_id=None,
+            tenant_slug="gone",
+            s3_key="gone-new",
+            created_at=now - timedelta(days=2),
+        )
+        db.session.add_all([gone, recent])
+        db.session.commit()
+
+        assert self._prune(mock_s3_client) == {}
+        platform_settings.set_many({"backup.keep_deleted_club_days": "90"})
+        assert self._prune(mock_s3_client) == {"scheduled_daily": 1}
+        keys = {r.s3_key for r in BackupRecord.query.all()}
+        assert "gone-old" not in keys
+        assert "gone-new" in keys
+        # A club that still exists keeps its manual backup.
+        assert len(BackupRecord.query.filter_by(tenant_id=live.id).all()) == 1
+
+    def test_failed_backups_are_left_alone(
+        self, app, db, backup_config, mock_s3_client
+    ):
+        from hubra.core.models.backup import BackupRecord
+        from hubra.core.services import platform_settings
+
+        platform_settings.set_many({"backup.keep_daily": "1"})
+        for _ in range(3):
+            db.session.add(BackupRecord(type="scheduled_daily", status="failed"))
+        db.session.add(
+            BackupRecord(type="scheduled_daily", status="completed", s3_key="ok")
+        )
+        db.session.commit()
+
+        assert self._prune(mock_s3_client) == {}
+
+
 class TestClubRestore:
     def _run(self, record_id, *, restore_rc=0, schema_exists=True):
         from hubra.core.services.backup import BackupService
