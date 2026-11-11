@@ -82,6 +82,8 @@ install the backend with `pip install -r app/backend/requirements-dev.txt`
 - Anything a user or operator would notice gets an entry under
   `## [Unreleased]` in `app/backend/CHANGELOG.md` **and** the same entry in
   German in `app/backend/CHANGELOG.de.md`.
+  Mark who it is for (`<!-- for: events -->`, `admins`, `staff`) as in
+  [docs/releases.md](docs/releases.md#who-a-change-is-for).
 - Update the page in `docs/` that describes what you changed.
 
 Releases start with a `v*` tag push; see [docs/releases.md](docs/releases.md)

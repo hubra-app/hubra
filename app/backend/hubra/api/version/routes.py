@@ -19,12 +19,30 @@ def get_version():
 
 @version_bp.get("/version/changelog")
 def get_changelog():
-    """The backend version and the changelog entries; ``?lang=de`` for German."""
+    """The backend version and the changelog entries; ``?lang=de`` for German.
+
+    The club app asks for one reader: ``?modules=events,posts`` (the modules
+    the club has and the reader may use) and ``admin=1`` leave out the items
+    marked for other modules, for admins or for Hubra's team
+    (``<!-- for: ... -->`` in CHANGELOG.md, see docs/releases.md).
+    """
+    entries = VersionService.get_changelog(request.args.get("lang"))
+    if "modules" in request.args:
+        modules = {
+            m.strip().lower()
+            for m in request.args.get("modules", "").split(",")
+            if m.strip()
+        }
+        entries = VersionService.for_reader(
+            entries, modules, admin=request.args.get("admin") == "1"
+        )
     return (
         jsonify(
             {
                 "version": VersionService.get_version(),
-                "entries": VersionService.get_changelog(request.args.get("lang")),
+                "entries": [
+                    {k: v for k, v in e.items() if k != "tags"} for e in entries
+                ],
             }
         ),
         200,

@@ -23,7 +23,7 @@ export const qk = {
   translations: (locale: string) => ['translations', locale] as const,
   translationSuggestions: ['translation-suggestions'] as const,
   notifications: ['notifications'] as const,
-  changelog: (lang: string) => ['changelog', lang] as const,
+  changelog: (lang: string, reader?: string) => ['changelog', lang, reader ?? ''] as const,
   support: {
     all: ['support'] as const,
     mine: ['support', 'mine'] as const,
