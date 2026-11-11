@@ -175,6 +175,19 @@ may edit it still see it, marked **Ausgeblendet**, and can give it a later
 date or clear the field to show it again. The dashboard and the weekly
 digest only show posts members can see.
 
+### Must-read posts
+
+For safety rules, rule changes or the papers for the general meeting, tick
+**Lesebestätigung verlangen** in the post form. Members then see
+**Gelesen, bestätigen** under the post and confirm with one tap. Whoever may
+edit the post sees **n bestätigt**; it opens the list of who confirmed (and
+when) and which active members have not yet.
+
+Those still missing get one reminder in the bell (and by push and in the
+messengers they turned on) a number of days after the post went out:
+Beiträge › Einstellungen › **Erinnerung bei Lesebestätigung (Tage)**,
+7 by default, 0 for no reminder.
+
 ## Roles and permissions
 
 Permissions (Berechtigungen) lists the club's roles. Each role grants

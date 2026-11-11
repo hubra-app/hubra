@@ -2377,6 +2377,19 @@
       "badge": "Geplant für {{when}}",
       "hidden": "Ausgeblendet",
       "submit": "Planen"
+    },
+    "mustRead": {
+      "statusTitle": "Lesebestätigungen",
+      "statusFailed": "Die Liste konnte nicht geladen werden.",
+      "reminded": "Erinnerung verschickt am {{when}}.",
+      "notReminded": "Wer noch nicht bestätigt hat, bekommt nach der eingestellten Frist eine Erinnerung.",
+      "missing": "Noch nicht bestätigt",
+      "confirmed": "Bestätigt",
+      "field": "Lesebestätigung verlangen",
+      "fieldHint": "Für Sicherheitsregeln, Regeländerungen oder GV-Unterlagen: Mitglieder bestätigen mit einem Tipp, du siehst, wer noch fehlt.",
+      "done": "Gelesen bestätigt",
+      "confirm": "Gelesen, bestätigen",
+      "count": "{{count}} bestätigt"
     }
   },
   "settings": {
@@ -2607,7 +2620,8 @@
         "feeEnded": "Dein eigener Beitrag ist abgelaufen",
         "feeConfirmed": "Grund für eigenen Beitrag bestätigt",
         "memberFeeEnded": "Eigener Beitrag eines Mitglieds abgelaufen",
-        "eventReinstated": "Anlass findet doch statt"
+        "eventReinstated": "Anlass findet doch statt",
+        "confirmRead": "Bitte Lesen bestätigen"
       }
     },
     "notifPanel": {

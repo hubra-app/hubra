@@ -26,6 +26,11 @@ TITLES: dict[str, tuple[str, str, str]] = {
         "Erinnerung an einen Anlass",
         "Event reminder",
     ),
+    "Please confirm you read this": (
+        "shell.notif.text.confirmRead",
+        "Bitte Lesen bestätigen",
+        "Please confirm you read this",
+    ),
     "Event cancelled": (
         "shell.notif.text.eventCancelled",
         "Anlass abgesagt",

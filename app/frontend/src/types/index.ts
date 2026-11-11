@@ -248,6 +248,12 @@ export interface Post {
   publishAt: string | null;
   /** Members no longer see the post after this time (ISO). */
   hideAfter: string | null;
+  /** Members confirm they read it. */
+  mustRead: boolean;
+  /** How many confirmed (must-read posts). */
+  readCount: number;
+  /** Whether the current member confirmed. */
+  readByMe: boolean;
 }
 
 export type ContentLanguage = "de" | "fr" | "it" | "en";

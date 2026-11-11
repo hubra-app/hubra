@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, useCallback } from 'react'
-import { Badge, Button, Group, Loader, SimpleGrid, TextInput, Paper } from '@mantine/core'
+import { Badge, Button, Checkbox, Group, Loader, SimpleGrid, TextInput, Paper } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
@@ -13,6 +13,8 @@ import {
   IconArrowBackUp,
   IconClock,
   IconEyeOff,
+  IconChecks,
+  IconCircleCheck,
 } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
 import { qk } from '@/data/keys'
@@ -40,7 +42,9 @@ import {
   addComment,
   deleteComment,
   readerLanguage,
+  confirmRead,
 } from '@/api/posts'
+import { PostReadsModal } from './PostReadsModal'
 import { GroupBadge, GroupField } from './ContentGroupFields'
 import { PostLanguagesField } from './PostLanguagesField'
 import { useContentGroups } from './contentGroups'
@@ -62,6 +66,7 @@ const postSchema = z.object({
   // datetime-local values; empty: now / never.
   publishAt: z.string(),
   hideAfter: z.string(),
+  mustRead: z.boolean(),
 })
 type PostForm = z.infer<typeof postSchema>
 
@@ -96,6 +101,7 @@ export function PostsTab() {
   const [addOpen, setAddOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Post | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Post | null>(null)
+  const [readsFor, setReadsFor] = useState<Post | null>(null)
   const [expandedBodies, setExpandedBodies] = useState<Set<string>>(new Set())
   const [expandedComments, setExpandedComments] = useState<Set<string>>(
     new Set(),
@@ -110,7 +116,7 @@ export function PostsTab() {
 
   const form = useForm<PostForm>({
     validate: zod4Resolver(postSchema),
-    initialValues: { title: '', summary: '', body: '', groupId: '', language: readerLanguage(), translations: {}, publishAt: '', hideAfter: '' },
+    initialValues: { title: '', summary: '', body: '', groupId: '', language: readerLanguage(), translations: {}, publishAt: '', hideAfter: '', mustRead: false },
   })
   const formScope = editTarget ? updateScope : createScope
 
@@ -124,6 +130,7 @@ export function PostsTab() {
       translations: {},
       publishAt: '',
       hideAfter: '',
+      mustRead: false,
     })
     setAddOpen(true)
   }
@@ -139,6 +146,7 @@ export function PostsTab() {
       translations: post.translations as PostForm['translations'],
       publishAt: toLocalInput(post.publishAt),
       hideAfter: toLocalInput(post.hideAfter),
+      mustRead: post.mustRead,
     })
   }
 
@@ -153,6 +161,7 @@ export function PostsTab() {
         translations: filledTranslations(data),
         publishAt: fromLocalInput(data.publishAt),
         hideAfter: fromLocalInput(data.hideAfter),
+        mustRead: data.mustRead,
       })
       postCache.prepend(post)
       setAddOpen(false)
@@ -203,6 +212,7 @@ export function PostsTab() {
         ...(data.hideAfter !== toLocalInput(editTarget.hideAfter)
           ? { hideAfter: fromLocalInput(data.hideAfter) }
           : {}),
+        mustRead: data.mustRead,
       })
       postCache.replace(post)
       setEditTarget(null)
@@ -242,6 +252,17 @@ export function PostsTab() {
       )
     }
   }
+
+  const readMutation = useMutation({
+    mutationFn: (postId: string) => confirmRead(postId),
+    onSuccess: (post) => postCache.replace(post),
+    onError: (err) =>
+      notify(
+        'error',
+        t('common.error'),
+        err instanceof Error ? err.message : t('common.unknownError', 'Unbekannter Fehler'),
+      ),
+  })
 
   const likeMutation = useMutation({
     mutationFn: ({ postId, liked }: { postId: string; liked: boolean }) =>
@@ -406,6 +427,15 @@ export function PostsTab() {
           <TextInput type="datetime-local" data-testid="post-hide-after" {...form.getInputProps('hideAfter')} />
         </Field>
       </SimpleGrid>
+      <Checkbox
+        label={t('posts.mustRead.field', 'Lesebestätigung verlangen')}
+        description={t(
+          'posts.mustRead.fieldHint',
+          'Für Sicherheitsregeln, Regeländerungen oder GV-Unterlagen: Mitglieder bestätigen mit einem Tipp, du siehst, wer noch fehlt.',
+        )}
+        {...form.getInputProps('mustRead', { type: 'checkbox' })}
+        data-testid="post-must-read"
+      />
       <PostLanguagesField
         language={form.values.language}
         translations={form.values.translations as Post['translations']}
@@ -581,6 +611,38 @@ export function PostsTab() {
                     </Button>
                   )}
                 </div>
+                {post.mustRead && (
+                  <Group gap="xs" mb={14} data-testid="must-read-row">
+                    {post.readByMe ? (
+                      <Badge color="green" variant="light" leftSection={<IconCircleCheck size={12} />} style={{ textTransform: 'none' }}>
+                        {t('posts.mustRead.done', 'Gelesen bestätigt')}
+                      </Badge>
+                    ) : (
+                      !post.publishAt && (
+                        <Button
+                          size="xs"
+                          leftSection={<IconCircleCheck size={14} />}
+                          loading={readMutation.isPending && readMutation.variables === post.id}
+                          onClick={() => readMutation.mutate(post.id)}
+                          data-testid="confirm-read"
+                        >
+                          {t('posts.mustRead.confirm', 'Gelesen, bestätigen')}
+                        </Button>
+                      )
+                    )}
+                    {canEditPost(post) && (
+                      <Button
+                        size="xs"
+                        variant="subtle"
+                        leftSection={<IconChecks size={14} />}
+                        onClick={() => setReadsFor(post)}
+                        data-testid="read-status"
+                      >
+                        {t('posts.mustRead.count', '{{count}} bestätigt', { count: post.readCount })}
+                      </Button>
+                    )}
+                  </Group>
+                )}
                 <div
                   style={{
                     display: 'flex',
@@ -792,6 +854,7 @@ export function PostsTab() {
       >
         {postForm}
       </Modal>
+      <PostReadsModal post={readsFor} onClose={() => setReadsFor(null)} />
       <ConfirmModal
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}

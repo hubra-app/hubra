@@ -17,7 +17,7 @@ from hubra.core.permissions import (
     row_group,
     scoped_permission_keys,
 )
-from hubra.api.posts.services import PostService, PostsService
+from hubra.api.posts.services import PostService, PostsService, read_counts
 from hubra.core.errors import api_error, raise_error, validation_error
 from hubra.core.extensions import db, limiter
 from hubra.core.schemas.post import (
@@ -30,7 +30,6 @@ from hubra.core.schemas.post import (
 
 posts_bp = Blueprint("posts_bp", __name__)
 
-_post_schema = PostSchema()
 _posts_schema = PostSchema(many=True)
 _create_schema = PostCreateSchema()
 _update_schema = PostUpdateSchema()
@@ -95,13 +94,30 @@ def _shown_post(post_id: int) -> Post:
     return post
 
 
+def _dump(posts: list[Post]) -> list[dict]:
+    """Posts as JSON, with how many confirmed a must-read post and whether
+    the current member did."""
+    counts, mine = read_counts(
+        [p.id for p in posts if p.must_read], get_current_member().id
+    )
+    out = _posts_schema.dump(posts)
+    for row in out:
+        row["read_count"] = counts.get(row["id"], 0)
+        row["read_by_me"] = row["id"] in mine
+    return out
+
+
+def _dump_one(post: Post) -> dict:
+    return _dump([post])[0]
+
+
 # ── GET /posts ────────────────────────────────────────────────────────────────
 
 
 @posts_bp.get("/")
 @permission_required("posts", "read", "View posts")
 def list_posts():
-    return jsonify(_posts_schema.dump(PostsService.list(_may_see_hidden))), 200
+    return jsonify(_dump(PostsService.list(_may_see_hidden))), 200
 
 
 # ── Machine translation for the editor ──────────────────────────────────────
@@ -149,7 +165,7 @@ def translate_post_text():
 @permission_required("posts", "read", "View posts")
 def get_post(post_id: int):
     post = _shown_post(post_id)
-    return jsonify(_post_schema.dump(post)), 200
+    return jsonify(_dump_one(post)), 200
 
 
 # ── POST /posts ───────────────────────────────────────────────────────────────
@@ -172,7 +188,7 @@ def create_post():
         db.session.rollback()
         raise
 
-    return jsonify(_post_schema.dump(post)), 201
+    return jsonify(_dump_one(post)), 201
 
 
 # ── PATCH /posts/<id> ─────────────────────────────────────────────────────────
@@ -206,7 +222,7 @@ def update_post(post_id: int):
         raise
 
     db.session.refresh(post)
-    return jsonify(_post_schema.dump(post)), 200
+    return jsonify(_dump_one(post)), 200
 
 
 # ── DELETE /posts/<id> ────────────────────────────────────────────────────────
@@ -232,6 +248,30 @@ def delete_post(post_id: int):
     return "", 204
 
 
+# ── Must-read: confirm, and who has ──────────────────────────────────────────
+
+
+@posts_bp.post("/<int:post_id>/read")
+@permission_required("posts", "read", "View posts")
+def confirm_read(post_id: int):
+    """The member confirms they read a must-read post."""
+    post = _shown_post(post_id)
+    PostService.confirm_read(post, get_current_member().id)
+    db.session.commit()
+    return jsonify(_dump_one(post)), 200
+
+
+@posts_bp.get("/<int:post_id>/reads")
+@permission_required("posts", "read", "View posts")
+def read_status(post_id: int):
+    """Who confirmed a must-read post and who has not: for those who may
+    edit it."""
+    post = PostService.get(post_id)
+    if not _may_manage(post, get_current_member().id, "update"):
+        return api_error("FORBIDDEN", "Only those who manage the post see this", 403)
+    return jsonify(PostService.read_status(post)), 200
+
+
 # ── POST /posts/<id>/like ─────────────────────────────────────────────────────
 
 
@@ -250,7 +290,7 @@ def like_post(post_id: int):
         raise
 
     post = PostService.get(post_id)
-    return jsonify(_post_schema.dump(post)), 200
+    return jsonify(_dump_one(post)), 200
 
 
 # ── DELETE /posts/<id>/like ───────────────────────────────────────────────────
@@ -270,7 +310,7 @@ def unlike_post(post_id: int):
         raise
 
     post = PostService.get(post_id)
-    return jsonify(_post_schema.dump(post)), 200
+    return jsonify(_dump_one(post)), 200
 
 
 # ── GET /posts/<id>/comments ──────────────────────────────────────────────────

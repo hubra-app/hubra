@@ -23,6 +23,7 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 - **Anlass-Vorlagen**: Einen Anlass (Ort, Zeit, Plätze, Einstellungen, Beschreibung) in seiner Zeile unter Anlässe als Vorlage speichern und neue Anlässe **Aus Vorlage** anlegen: Das Formular ist ausgefüllt, nur das Datum fehlt. Braucht `flask db upgrade` (läuft nach dem Deploy von selbst).
 - **Dashboard mit Gruppen teilen**: das Formular für ein neues Dashboard und ⋯ › Name und Sichtbarkeit legen fest, wer es sieht: Privat, Ganzer Verein oder gewählte Gruppen. Ein mit Gruppen geteiltes Dashboard sehen nur deren Mitglieder. Braucht `flask db upgrade` (neue Spalte `dashboards.group_ids`, läuft nach dem Deploy von selbst).
 - **Geplante und ablaufende Beiträge**: Das Beitragsformular hat **Veröffentlichen am** (der Beitrag bleibt für Mitglieder verborgen und erscheint mit seiner Benachrichtigung höchstens fünf Minuten nach diesem Zeitpunkt) und **Ausblenden nach** (danach sehen ihn die Mitglieder nicht mehr). Wer den Beitrag verfasst hat oder bearbeiten darf, sieht beide Arten weiterhin, markiert. Braucht `flask db upgrade` (läuft nach dem Deploy von selbst).
+- **Beiträge mit Lesebestätigung**: Mit **Lesebestätigung verlangen** bestätigen Mitglieder einen Beitrag mit einem Tipp; wer den Beitrag bearbeiten darf, sieht, wer bestätigt hat und wer nicht, und wer fehlt, bekommt nach einigen Tagen eine Erinnerung (Einstellung bei den Beiträgen, standardmässig 7, 0 für keine). Braucht `flask db upgrade` (läuft nach dem Deploy von selbst).
 
 ### Changed
 

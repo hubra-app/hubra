@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Text, UniqueConstraint
+from sqlalchemy import JSON, DateTime, ForeignKey, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -42,6 +42,15 @@ class Post(db.Model):
     )
     # Members no longer see the post after this (an outdated notice).
     hide_after: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # Must-read: members confirm they read it; the board sees who hasn't,
+    # and those still missing get one reminder (posts setting
+    # ``must_read_reminder_days``), stamped here.
+    must_read: Mapped[bool] = mapped_column(
+        db.Boolean, nullable=False, default=False, server_default=text("false")
+    )
+    read_reminder_sent_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
 
@@ -150,3 +159,28 @@ class PostComment(db.Model):
 
     def __repr__(self) -> str:
         return f"<PostComment id={self.id} post_id={self.post_id}>"
+
+
+class PostRead(db.Model):
+    """A member confirmed they read a must-read post."""
+
+    __tablename__ = "post_reads"
+    __table_args__ = (
+        UniqueConstraint("post_id", "member_id", name="uq_post_read_member"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    post_id: Mapped[int] = mapped_column(
+        db.Integer, ForeignKey("posts.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    member_id: Mapped[int] = mapped_column(
+        db.Integer, ForeignKey("members.id", ondelete="CASCADE"), nullable=False
+    )
+    read_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    def __repr__(self) -> str:
+        return f"<PostRead post_id={self.post_id} member_id={self.member_id}>"

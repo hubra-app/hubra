@@ -11,7 +11,8 @@ from hubra.core.notifications.services import notify_on_publish
 from hubra.core.utils import log_audit
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
-from hubra.core.models.post import Post, PostComment, PostLike
+from hubra.core.models.member import Member
+from hubra.core.models.post import Post, PostComment, PostLike, PostRead
 from hubra.core.modules import emit
 from hubra.core.modules.events import POST_PUBLISHED
 from hubra.core.timeutil import as_utc
@@ -81,7 +82,15 @@ class PostService:
                 )
             except ValidationError as exc:
                 raise_error(400, "VALIDATION_ERROR", str(exc.messages))
-        for field in ("title", "summary", "body", "group_id", "language", "translations"):
+        for field in (
+            "title",
+            "summary",
+            "body",
+            "group_id",
+            "language",
+            "translations",
+            "must_read",
+        ):
             if field in data:
                 setattr(post, field, data[field])
         go_out = False
@@ -116,6 +125,48 @@ class PostService:
         post.created_at = _now()
         db.session.flush()
         announce(post, skip_member_id=post.author_id)
+
+    @staticmethod
+    def confirm_read(post: Post, member_id: int) -> None:
+        """The member read a must-read post (again is fine)."""
+        if not post.must_read:
+            raise_error(400, "NOT_MUST_READ", "This post asks for no confirmation")
+        exists = db.session.scalar(
+            select(PostRead.id).where(
+                PostRead.post_id == post.id, PostRead.member_id == member_id
+            )
+        )
+        if exists is None:
+            db.session.add(PostRead(post_id=post.id, member_id=member_id))
+
+    @staticmethod
+    def read_status(post: Post) -> dict:
+        """Who confirmed a must-read post and which active members have not."""
+        reads = dict(
+            db.session.execute(
+                select(PostRead.member_id, PostRead.read_at).where(
+                    PostRead.post_id == post.id
+                )
+            ).all()
+        )
+        confirmed, missing = [], []
+        members = db.session.scalars(
+            select(Member).where(Member.status == "active", Member.archived_at.is_(None))
+        ).all()
+        members.sort(key=lambda m: ((m.last_name or "").lower(), (m.first_name or "").lower(), m.id))
+        for member in members:
+            row = {"member_id": member.id, "name": f"{member.first_name} {member.last_name}"}
+            if member.id in reads:
+                confirmed.append({**row, "read_at": as_utc(reads[member.id]).isoformat()})
+            else:
+                missing.append(row)
+        return {
+            "confirmed": confirmed,
+            "missing": missing,
+            "reminder_sent_at": as_utc(post.read_reminder_sent_at).isoformat()
+            if post.read_reminder_sent_at
+            else None,
+        }
 
     @staticmethod
     def delete(post_id: int, actor_id: int) -> None:
@@ -267,6 +318,7 @@ class PostsService:
             group_id=data.get("group_id"),
             language=data.get("language"),
             translations=data.get("translations"),
+            must_read=data.get("must_read", False),
         )
         db.session.add(post)
         db.session.flush()
@@ -298,3 +350,57 @@ def publish_due_posts(now: datetime | None = None) -> int:
     for post in due:
         PostService.publish(post)
     return len(due)
+
+
+def read_counts(post_ids: list[int], member_id: int | None) -> tuple[dict, set]:
+    """Confirmations per post, and the posts *member_id* confirmed."""
+    if not post_ids:
+        return {}, set()
+    counts = dict(
+        db.session.execute(
+            select(PostRead.post_id, func.count())
+            .where(PostRead.post_id.in_(post_ids))
+            .group_by(PostRead.post_id)
+        ).all()
+    )
+    mine = set(
+        db.session.scalars(
+            select(PostRead.post_id).where(
+                PostRead.post_id.in_(post_ids), PostRead.member_id == member_id
+            )
+        )
+    )
+    return counts, mine
+
+
+def remind_unread(now: datetime | None = None) -> int:
+    """One reminder to the active members who have not confirmed a
+    must-read post N days after it went out (posts setting
+    ``must_read_reminder_days``; 0: none). Returns how many were reminded."""
+    from hubra.core.modules import get_config
+    from hubra.core.notifications.services import notify_member
+
+    days = int(get_config("posts").get("must_read_reminder_days", 7) or 0)
+    if days <= 0:
+        return 0
+    now = now or _now()
+    posts = db.session.scalars(
+        select(Post)
+        .where(Post.must_read.is_(True), Post.read_reminder_sent_at.is_(None))
+        .where(Post.shown(now), Post.created_at <= now - timedelta(days=days))
+        .order_by(Post.id)
+    ).all()
+    reminded = 0
+    for post in posts:
+        post.read_reminder_sent_at = now
+        for row in PostService.read_status(post)["missing"]:
+            notify_member(
+                row["member_id"],
+                "warning",
+                "Please confirm you read this",
+                post.title,
+                link=f"/app/operations/posts/{post.id}",
+                topic="posts",
+            )
+            reminded += 1
+    return reminded

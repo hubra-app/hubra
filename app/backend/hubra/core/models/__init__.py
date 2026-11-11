@@ -51,7 +51,7 @@ from hubra.core.models.event import (
     event_attendees,
 )
 from hubra.core.models.poll import Poll, PollOption, PollVote, PollProxy
-from hubra.core.models.post import Post, PostLike, PostComment
+from hubra.core.models.post import Post, PostLike, PostComment, PostRead
 from hubra.core.models.finance import (
     Account,
     FiscalYear,
@@ -182,6 +182,7 @@ __all__ = [
     "Post",
     "PostLike",
     "PostComment",
+    "PostRead",
     "Transaction",
     "Account",
     "FiscalYear",
