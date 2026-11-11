@@ -4441,5 +4441,6 @@
   "events.month.next": "Next month",
   "events.month.today": "Today",
   "events.month.more": "+{{count}} more",
-  "events.month.none": "No events on this day."
+  "events.month.none": "No events on this day.",
+  "common.externalImage": "Show image from {{host}}"
 }

@@ -23,6 +23,12 @@ _VERSION_HEADING_RE = re.compile(
     r"^##\s*\[(?P<version>[^\]]+)\](?:\s*-\s*(?P<date>\d{4}-\d{2}-\d{2}))?\s*$"
 )
 _SECTION_HEADING_RE = re.compile(r"^###\s*(?P<name>.+?)\s*$")
+# Who a changelog item is for, at the end of its bullet:
+# "- **Event templates**: ... <!-- for: events -->". The words are module
+# codes, "admins" (club admins only) or "staff" (Hubra's own team, never
+# shown in the club app). Invisible on GitHub; the apps get the text without.
+_FOR_RE = re.compile(r"\s*<!--\s*for:\s*(?P<tags>[^>]*?)\s*-->\s*", re.IGNORECASE)
+AUDIENCES = ("admins", "staff")
 
 _version_cache: str | None = None
 # Parsed changelog files by path, each with the mtime it was read at.
@@ -64,6 +70,29 @@ class VersionService:
                 out.append({**entry, "sections": de["sections"], "lang": "de"})
             else:
                 out.append({**entry, "lang": "en"})
+        return out
+
+    @staticmethod
+    def for_reader(
+        entries: list[dict], modules: set[str] | None, *, admin: bool
+    ) -> list[dict]:
+        """Only the items a reader in a club cares about: untagged items,
+        items for a module in *modules* (on in the club, and the reader may
+        use it), "admins" items only for an admin, never "staff" items. The
+        marks come from the English file (a German version has the same
+        shape). A version left without items keeps its heading."""
+        out = []
+        for entry in entries:
+            tags = entry.get("tags") or {}
+            sections = {}
+            for name, items in entry["sections"].items():
+                marks = tags.get(name) or []
+                sections[name] = [
+                    item
+                    for i, item in enumerate(items)
+                    if _shown(marks[i] if i < len(marks) else None, modules, admin)
+                ]
+            out.append({**entry, "sections": sections})
         return out
 
     @staticmethod
@@ -181,5 +210,37 @@ def _parse_changelog(path: Path) -> list[dict]:
         elif not stripped:
             in_item = False
 
+    for entry in entries:
+        entry["tags"] = {}
+        for name, items in entry["sections"].items():
+            marks: list[list[str] | None] = []
+            for i, item in enumerate(items):
+                items[i], found = _split_for(item)
+                marks.append(found)
+            entry["tags"][name] = marks
+
     _changelog_cache[path] = (mtime, entries)
     return entries
+
+
+def _split_for(item: str) -> tuple[str, list[str] | None]:
+    """An item's text without its "<!-- for: ... -->" mark, and the mark's
+    words in lower case (None without a mark)."""
+    match = _FOR_RE.search(item)
+    if match is None:
+        return item, None
+    words = [w.lower() for w in re.split(r"[,\s]+", match.group("tags")) if w]
+    return _FOR_RE.sub(" ", item).strip(), words or None
+
+
+def _shown(tags: list[str] | None, modules: set[str] | None, admin: bool) -> bool:
+    if not tags:
+        return True
+    if "staff" in tags:
+        return False
+    if "admins" in tags and not admin:
+        return False
+    wanted = [t for t in tags if t not in AUDIENCES]
+    if not wanted or modules is None:
+        return True
+    return any(code in modules for code in wanted)
