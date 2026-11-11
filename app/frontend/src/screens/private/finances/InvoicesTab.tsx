@@ -5,6 +5,7 @@ import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ActionIcon, Button, Group, Menu, NumberInput, Select, SimpleGrid, TextInput } from '@mantine/core'
+import { DateField } from '@hubra/ui'
 import { useModules } from '@/modules/useModules'
 import { useT, zmsg } from '@/locales/i18n'
 import { IconBell, IconCalendarDollar, IconDots, IconFileDownload, IconPencil, IconPlus, IconTrash } from '@tabler/icons-react'
@@ -643,7 +644,7 @@ export function InvoicesTab() {
               />
             </Field>
             <Field label={t('finance.invoice.due', 'Fällig')}>
-              <TextInput type="date" {...bulkForm.getInputProps('due')} />
+              <DateField {...bulkForm.getInputProps('due')} />
             </Field>
           </SimpleGrid>
           <Field
@@ -816,7 +817,7 @@ export function InvoicesTab() {
               />
             </Field>
             <Field label={t('finance.invoice.due', 'Fällig')}>
-              <TextInput type="date" {...singleForm.getInputProps('due')} />
+              <DateField {...singleForm.getInputProps('due')} />
             </Field>
           </SimpleGrid>
 

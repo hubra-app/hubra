@@ -15,6 +15,7 @@ import {
   Textarea,
   Title,
 } from '@mantine/core'
+import { DateField } from '@hubra/ui'
 import { Modal as SharedModal } from '@/components/ui'
 import {
   IconAlertTriangle,
@@ -497,15 +498,14 @@ function NewRequestModal({
             value={email}
             onChange={(e) => setEmail(e.currentTarget.value)}
           />
-          <TextInput
-            type="date"
+          <DateField
             label={tr('Eingegangen am', 'Received on')}
             description={tr(
               'Die Frist von 30 Tagen läuft ab hier',
               'The 30-day deadline starts here',
             )}
             value={received}
-            onChange={(e) => setReceived(e.currentTarget.value)}
+            onChange={(v) => setReceived(v)}
           />
           <TextInput
             label={tr('Eingegangen über', 'Received via')}

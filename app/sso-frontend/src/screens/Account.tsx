@@ -35,7 +35,7 @@ import {
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import { SignedInFrame } from '@/components/SignedInFrame'
-import { ThemeSwitch } from '@hubra/ui'
+import { DateField, ThemeSwitch } from '@hubra/ui'
 import { LoadFailed } from '@/components/LoadFailed'
 import { MemberBadgeCard } from '@/components/MemberBadgeCard'
 import { CalendarFeedCard } from '@/components/CalendarFeedCard'
@@ -273,14 +273,13 @@ function ProfileTab({ profile }: { profile: authApi.Profile }) {
                   { value: 'diverse', label: tr('Divers', 'Diverse') },
                 ]}
               />
-              <TextInput
-                type="date"
+              <DateField
                 label={tr('Geburtstag', 'Birthday')}
                 autoComplete="bday"
                 max={today}
                 min="1900-01-01"
                 value={birthday}
-                onChange={(e) => setBirthday(e.currentTarget.value)}
+                onChange={(v) => setBirthday(v)}
               />
             </SimpleGrid>
 

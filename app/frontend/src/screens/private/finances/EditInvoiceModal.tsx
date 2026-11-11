@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Button, NumberInput, SimpleGrid, TextInput } from '@mantine/core'
+import { DateField } from '@hubra/ui'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -125,7 +126,7 @@ export function EditInvoiceModal({
           />
         </Field>
         <Field label={t('finance.invoice.due', 'Fällig')}>
-          <TextInput type="date" min={form.values.issued || undefined} {...form.getInputProps('due')} />
+          <DateField min={form.values.issued || undefined} {...form.getInputProps('due')} />
         </Field>
       </SimpleGrid>
     </Modal>

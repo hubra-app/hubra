@@ -14,6 +14,7 @@ import {
   Textarea,
   Title,
 } from '@mantine/core'
+import { DateField } from '@hubra/ui'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { IconCalendarEvent, IconCheck, IconMailCheck } from '@tabler/icons-react'
 import { useParams, useSearchParams } from 'react-router-dom'
@@ -251,11 +252,10 @@ function TrialForm({ slug }: { slug: string }) {
             onChange={set('phone')}
             autoComplete="tel"
           />
-          <TextInput
+          <DateField
             label={tr('Geburtsdatum (optional)', 'Date of birth (optional)')}
-            type="date"
             value={form.birthDate}
-            onChange={set('birthDate')}
+            onChange={(v) => set('birthDate')({ currentTarget: { value: v } })}
             autoComplete="bday"
           />
         </SimpleGrid>
