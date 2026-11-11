@@ -158,6 +158,17 @@ Then put the same `POSTGRES_APP_USER` and `POSTGRES_APP_PASSWORD` in `.env`
 and `docker compose up -d` (on Kubernetes, update the Secret and restart). The script also hands the role ownership of the existing schemas
 and tables, which later migrations need.
 
+The app role also needs `CREATEROLE`, so that every club gets its own
+database role ([club-db-roles.md](club-db-roles.md)). New volumes get it;
+on an existing stack run the upgrade script again, or as the superuser:
+
+```sql
+ALTER ROLE hubra_app CREATEROLE;
+```
+
+Without it Hubra works as before and the init step says
+"Club database roles: off".
+
 ## Encryption keys
 
 Hubra stores a few secrets encrypted: door codes, binding values, mailbox

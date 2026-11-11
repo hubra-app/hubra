@@ -3,7 +3,9 @@ WORKDIR /app
 COPY packages/api-client /packages/api-client
 COPY packages/ui /packages/ui
 COPY app/sso-frontend/package.json app/sso-frontend/package-lock.json* ./
-RUN npm ci
+# No install scripts: nothing in the tree needs one, and a compromised
+# dependency must not run code while installing.
+RUN npm ci --ignore-scripts
 COPY app/sso-frontend/ ./
 
 FROM base AS dev
@@ -35,8 +37,19 @@ RUN npm run build
 ARG GIT_SHA=""
 RUN printf '{"commit":"%s"}\n' "${GIT_SHA}" > dist/version.json
 
-FROM nginx:alpine@sha256:54f2a904c251d5a34adf545a72d32515a15e08418dae0266e23be2e18c66fefa AS production
+FROM nginx:alpine@sha256:713fc2ebfd92e8217db451477182ee91944b123d2b1ee9fd5a8c6e91ca6c3a11 AS production
+# nginx runs as the image's unprivileged nginx user (uid 101), never root:
+# no user directive, the pid file in /tmp, and the start script may write
+# only the web root, /etc/nginx/conf.d and nginx's temp directory (so a
+# read-only root filesystem works with those three and /tmp as volumes).
+# It listens on 8080 (LISTEN_PORT), since a non-root process can't bind 80.
+# apk upgrade: fixes published since the base image was built (Trivy fails
+# the SPA images on fixable HIGH/CRITICAL CVEs, see images.yml).
+RUN apk upgrade --no-cache \
+ && sed -i -e '/^user /d' -e 's#^pid .*#pid /tmp/nginx.pid;#' /etc/nginx/nginx.conf \
+ && chown -R nginx:nginx /usr/share/nginx/html /etc/nginx/conf.d /var/cache/nginx
 COPY --from=builder /app/dist /opt/spa
 COPY app/deploy/nginx/40-hubra-runtime.sh /docker-entrypoint.d/
-EXPOSE 80
+USER nginx
+EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]

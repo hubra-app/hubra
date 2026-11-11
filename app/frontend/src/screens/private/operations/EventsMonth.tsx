@@ -30,7 +30,7 @@ function EventChip({ ev }: { ev: ClubEvent }) {
   const color = typeColor(ev)
   return (
     <Link
-      to={`/app/operations/events?event=${ev.id}`}
+      to={`/app/operations/events/${ev.id}`}
       title={ev.time ? `${ev.time} · ${ev.title}` : ev.title}
       data-testid="month-event"
       style={{

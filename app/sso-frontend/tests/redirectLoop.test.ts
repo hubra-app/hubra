@@ -84,4 +84,9 @@ test('redirects go only to places of this install', () => {
   assert.equal(safeTarget('https://user:pw@sso.hubra.club/', here), null)
   assert.equal(safeTarget('https://login.other.ch/', here, ['https://login.other.ch']), 'https://login.other.ch/')
   assert.equal(safeTarget('http://localhost:5175/login', 'http://localhost:5173/x'), 'http://localhost:5175/login')
+  // Never down from HTTPS to HTTP, unless that address is configured.
+  assert.equal(safeTarget('http://sso.hubra.club/login', here), null)
+  assert.equal(safeTarget('http://app.hubra.club/demo/app/members', here), null)
+  assert.equal(safeTarget('http://sso.local.test/login', here, ['http://sso.local.test']), 'http://sso.local.test/login')
+  assert.equal(safeTarget('http://sso.hubra.club/login', 'http://app.hubra.club/x'), 'http://sso.hubra.club/login')
 })

@@ -65,6 +65,8 @@ def _run(spec: Spec, fn, down: bool = False) -> list[str | None]:
     conn = db.session.connection()
     postgres = conn.dialect.name == "postgresql"
     if postgres:
+        # Migrations run as the app role, never as a club's (db_roles).
+        conn.execute(text("RESET ROLE"))
         conn.execute(text("SELECT pg_advisory_xact_lock(:k)"), {"k": LOCK_KEY})
     done = []
     schemas = _schemas()
@@ -88,9 +90,20 @@ def _run(spec: Spec, fn, down: bool = False) -> list[str | None]:
     return done
 
 
+def _sync_club_roles() -> None:
+    """New plugin tables: club roles get theirs, not the templates in public."""
+    from hubra.core.tenant import db_roles
+    from hubra.core.tenant.schema_manager import tables_to_clone
+
+    conn = db.session.connection()
+    if conn.dialect.name == "postgresql":
+        db_roles.sync_all(conn, tables_to_clone())
+
+
 def upgrade_everywhere(spec: Spec) -> list[str | None]:
     """Bring the plugin's tables up to date in public and in every club."""
     done = _run(spec, lambda cfg: command.upgrade(cfg, "heads"))
+    _sync_club_roles()
     _log.info("Plugin %s migrated in %d schema(s)", spec.id, len(done))
     return done
 

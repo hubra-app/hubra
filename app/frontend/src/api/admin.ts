@@ -8,6 +8,8 @@ export interface ClubSettings {
   leave_notice_months?: number | null
   /** Leaving takes effect at the end of this period. */
   leave_at?: 'any' | 'month_end' | 'quarter_end' | 'half_year_end' | 'year_end' | null
+  /** Hubra staff ask before they open the club for support. */
+  support_requires_approval?: boolean
   /** Off: the club takes new members by invite only. */
   join_requests_open?: boolean
   /** The club's public page on the join portal (off by default). */
@@ -177,4 +179,34 @@ export function setBackupKeyClubOnly(clubOnly: boolean, confirm?: string): Promi
     method: 'PATCH',
     body: JSON.stringify({ club_only: clubOnly, confirm }),
   })
+}
+
+/** Hubra staff asking to open the club for support. */
+export interface SupportAccessRequest {
+  id: number
+  staff: string | null
+  reason: string
+  minutes: number
+  allowChanges: boolean
+  status: 'pending' | 'approved' | 'declined' | 'used' | 'expired'
+  decidedBy: string | null
+  decidedAt: string | null
+  createdAt: string | null
+}
+
+export interface SupportAccessOverview {
+  requiresApproval: boolean
+  approvalHours: number
+  requests: SupportAccessRequest[]
+}
+
+export function listSupportAccess(): Promise<SupportAccessOverview> {
+  return apiFetch<SupportAccessOverview>('/app/admin/support-access')
+}
+
+export function decideSupportAccess(id: number, approve: boolean): Promise<SupportAccessRequest> {
+  return apiFetch<SupportAccessRequest>(
+    `/app/admin/support-access/${id}/${approve ? 'approve' : 'decline'}`,
+    { method: 'POST' },
+  )
 }

@@ -66,6 +66,11 @@ TITLES: dict[str, tuple[str, str, str]] = {
         "Du hast einen Platz bekommen",
         "You got a place",
     ),
+    "Hubra support asks for access": (
+        "shell.notif.text.supportAsksAccess",
+        "Hubra-Support bittet um Zugriff",
+        "Hubra support asks for access",
+    ),
     "Request to leave": (
         "shell.notif.text.requestToLeave",
         "Austrittsgesuch",

@@ -33,6 +33,7 @@ import { useToast } from '@/context/AppContext'
 import { ErrorBanner } from '@/components/ui'
 import { PublicPageCard } from './PublicPageCard'
 import { AssociationsCard } from './AssociationsCard'
+import { SupportAccessRequests } from './SupportAccessRequests'
 
 /** Which part of the club settings a tab shows; each saves the whole set. */
 export type ClubSettingsSection = 'club' | 'membership'
@@ -291,6 +292,25 @@ function ClubSettingsForm({
                 onChange={(e) => update('announcement_banner_text', e.target.value)}
                 placeholder={t('clubSettings.bannerPlaceholder', 'Generalversammlung am Freitag!')}
               />
+            </Stack>
+          </Paper>
+
+          <Paper withBorder p="lg">
+            <Title order={3} mb="md">
+              {t('supportAccess.title', 'Hubra-Support')}
+            </Title>
+            <Stack gap={14}>
+              <Switch
+                label={t('supportAccess.requireApproval', 'Support-Zugriff nur mit Freigabe')}
+                description={t(
+                  'supportAccess.requireApprovalHint',
+                  'Ein: Bevor der Hubra-Support euren Verein öffnet, fragt er hier an, und eine Admin-Person gibt den Zugriff frei (einmal, innerhalb von 24 Stunden). Jeder Zugriff steht im Audit-Log.',
+                )}
+                checked={form.support_requires_approval ?? false}
+                onChange={(e) => update('support_requires_approval', e.currentTarget.checked)}
+                data-testid="support-requires-approval"
+              />
+              <SupportAccessRequests />
             </Stack>
           </Paper>
           <AssociationsCard />
