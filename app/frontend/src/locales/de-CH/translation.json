@@ -930,7 +930,19 @@
       "saveTitle": "Als Vorlage speichern",
       "saveSubtitle": "Ort, Zeit, Plätze, Einstellungen und Beschreibung werden gespeichert, das Datum nicht.",
       "name": "Name der Vorlage"
-    }
+    },
+    "endDate": "Enddatum",
+    "timeFrom": "Beginn",
+    "timeTo": "Ende",
+    "timeTextHint": "Bisher: {{text}}",
+    "registrationDeadline": "Anmeldeschluss",
+    "cancellationDeadline": "Abmeldeschluss",
+    "cancellationDeadlineHint": "Danach kann man sich nicht mehr selbst abmelden.",
+    "perDateHint": "Gilt nur für diesen Termin.",
+    "endDateBeforeStart": "Das Enddatum liegt vor dem Datum",
+    "timeToBeforeFrom": "Das Ende liegt vor dem Beginn",
+    "untilDate": "bis {{date}}",
+    "registrationDeadlineAt": "Anmeldeschluss {{when}}"
   },
   "finance": {
     "addCategory": "Kategorie hinzufügen",
@@ -1365,7 +1377,10 @@
       "chartHint": "Der Kontenplan für Vereine nach dem Schweizer KMU-Kontenrahmen. Eigene Konten lassen sich ergänzen.",
       "accountName": "Konto",
       "kind": "Art",
-      "addAccount": "Hinzufügen"
+      "addAccount": "Hinzufügen",
+      "renameAccount": "Umbenennen",
+      "deleteAccountTitle": "«{{name}}» löschen?",
+      "deleteAccountBody": "Ein Konto, auf das noch Kategorien oder Abschlüsse zählen, bleibt."
     },
     "groups": {
       "bookings": "Buchungen",

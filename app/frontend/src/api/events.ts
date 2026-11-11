@@ -15,6 +15,8 @@ interface BackendEvent {
   all_day: boolean;
   category: string;
   max_attendees: number | null;
+  registration_deadline?: string | null;
+  cancellation_deadline?: string | null;
   requires_approval: boolean;
   is_public: boolean;
   federation_shared?: boolean;
@@ -79,6 +81,8 @@ function adapt(b: BackendEvent): ClubEvent {
     allDay: b.all_day ?? false,
     category: b.category ?? "general",
     maxAttendees: b.max_attendees ?? null,
+    registrationDeadline: b.registration_deadline ?? null,
+    cancellationDeadline: b.cancellation_deadline ?? null,
     requiresApproval: b.requires_approval ?? false,
     isPublic: b.is_public ?? false,
     federationShared: b.federation_shared ?? false,
@@ -121,10 +125,13 @@ export interface EventCreate {
   type: string;
   description?: string;
   meetingUrl?: string;
-  endDate?: string;
+  endDate?: string | null;
   allDay?: boolean;
   category?: string;
   maxAttendees?: number | null;
+  /** ISO date-times; null removes the deadline. */
+  registrationDeadline?: string | null;
+  cancellationDeadline?: string | null;
   requiresApproval?: boolean;
   isPublic?: boolean;
   federationShared?: boolean;
@@ -155,6 +162,10 @@ export async function createEvent(input: EventCreate): Promise<ClubEvent> {
   if (input.allDay !== undefined) body.all_day = input.allDay;
   if (input.category !== undefined) body.category = input.category;
   if (input.maxAttendees !== undefined) body.max_attendees = input.maxAttendees;
+  if (input.registrationDeadline !== undefined)
+    body.registration_deadline = input.registrationDeadline;
+  if (input.cancellationDeadline !== undefined)
+    body.cancellation_deadline = input.cancellationDeadline;
   if (input.requiresApproval !== undefined) body.requires_approval = input.requiresApproval;
   if (input.isPublic !== undefined) body.is_public = input.isPublic;
   if (input.federationShared !== undefined) body.federation_shared = input.federationShared;
@@ -191,6 +202,10 @@ export async function updateEvent(
   if (input.allDay !== undefined) body.all_day = input.allDay;
   if (input.category !== undefined) body.category = input.category;
   if (input.maxAttendees !== undefined) body.max_attendees = input.maxAttendees;
+  if (input.registrationDeadline !== undefined)
+    body.registration_deadline = input.registrationDeadline;
+  if (input.cancellationDeadline !== undefined)
+    body.cancellation_deadline = input.cancellationDeadline;
   if (input.requiresApproval !== undefined) body.requires_approval = input.requiresApproval;
   if (input.isPublic !== undefined) body.is_public = input.isPublic;
   if (input.federationShared !== undefined) body.federation_shared = input.federationShared;

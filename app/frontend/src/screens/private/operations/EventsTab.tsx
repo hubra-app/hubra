@@ -74,6 +74,8 @@ import { AttendanceModal } from './AttendanceModal'
 import { CancelEventModal } from './CancelEventModal'
 import { SaveTemplateModal, TemplateMenu } from './EventTemplates'
 import { templateExtras } from './templateExtras'
+import { joinTime, splitTime } from './eventTime'
+import { formatDate, formatDateTime } from '@/format'
 import type { EventTemplate, EventTemplateData } from '@/api/events'
 import { RecurrenceFields } from './RecurrenceFields'
 import { GroupField } from './ContentGroupFields'
@@ -84,7 +86,16 @@ import { defaultRepeat, type RepeatState } from './recurrence'
 const eventSchema = z.object({
   title: z.string().min(1, zmsg('validation.titleRequired', 'Titel ist erforderlich')),
   date: z.string().min(1, zmsg('validation.dateRequired', 'Datum ist erforderlich')),
-  time: z.string(),
+  // Von/bis compose the event's time text ("14:00–18:00"); an old free
+  // text that isn't a time stays as it is until a time is picked.
+  timeFrom: z.string(),
+  timeTo: z.string(),
+  timeText: z.string(),
+  // Multi-day events; empty: one day.
+  endDate: z.string(),
+  // datetime-local values (local time); empty: no deadline.
+  registrationDeadline: z.string(),
+  cancellationDeadline: z.string(),
   location: z.string(),
   type: z.string(),
   // Empty: no limit.
@@ -105,7 +116,27 @@ const eventSchema = z.object({
     .string()
     .regex(/^([1-9]\d?|100)?$/, zmsg('events.trialSpotsInvalid', 'Eine Zahl von 1 bis 100, oder leer')),
 })
+  .refine((v) => !v.endDate || v.endDate >= v.date, {
+    path: ['endDate'],
+    ...zmsg('events.endDateBeforeStart', 'Das Enddatum liegt vor dem Datum'),
+  })
+  .refine((v) => !v.timeTo || !v.timeFrom || v.endDate > v.date || v.timeTo > v.timeFrom, {
+    path: ['timeTo'],
+    ...zmsg('events.timeToBeforeFrom', 'Das Ende liegt vor dem Beginn'),
+  })
 type EventForm = z.infer<typeof eventSchema>
+
+/** An ISO date-time as a datetime-local value in the viewer's time. */
+function toLocalInput(iso: string | null | undefined): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+/** A datetime-local value as an ISO date-time (null: no deadline). */
+const fromLocalInput = (value: string) => (value ? new Date(value).toISOString() : null)
 
 const limitOf = (value: string) => (value.trim() ? Number(value) : null)
 
@@ -212,7 +243,12 @@ export function EventsTab() {
     initialValues: {
       title: '',
       date: new Date().toISOString().slice(0, 10),
-      time: '',
+      timeFrom: '',
+      timeTo: '',
+      timeText: '',
+      endDate: '',
+      registrationDeadline: '',
+      cancellationDeadline: '',
       location: '',
       type: eventTypes[0],
       maxAttendees: '',
@@ -263,7 +299,12 @@ export function EventsTab() {
     form.setValues({
       title: '',
       date: new Date().toISOString().slice(0, 10),
-      time: '',
+      timeFrom: '',
+      timeTo: '',
+      timeText: '',
+      endDate: '',
+      registrationDeadline: '',
+      cancellationDeadline: '',
       location: '',
       type: eventTypes[0],
       maxAttendees: '',
@@ -283,7 +324,7 @@ export function EventsTab() {
     const d = tpl.data
     form.setValues({
       title: d.title ?? '',
-      time: d.time ?? '',
+      ...splitTime(d.time),
       location: d.location ?? '',
       type: d.type && eventTypes.includes(d.type) ? d.type : eventTypes[0],
       maxAttendees: d.max_attendees ? String(d.max_attendees) : '',
@@ -326,7 +367,10 @@ export function EventsTab() {
     form.setValues({
       title: ev.title,
       date: ev.date,
-      time: ev.time ?? '',
+      ...splitTime(ev.time),
+      endDate: ev.endDate ?? '',
+      registrationDeadline: toLocalInput(ev.registrationDeadline),
+      cancellationDeadline: toLocalInput(ev.cancellationDeadline),
       location: ev.location ?? '',
       type: ev.type,
       maxAttendees: ev.maxAttendees ? String(ev.maxAttendees) : '',
@@ -354,7 +398,7 @@ export function EventsTab() {
       const ev = await createEvent({
         title: data.title,
         date: data.date,
-        time: data.time || undefined,
+        time: joinTime(data) || undefined,
         location: data.location || undefined,
         type: data.type,
         maxAttendees: limitOf(data.maxAttendees),
@@ -364,7 +408,11 @@ export function EventsTab() {
         isPublic: data.isPublic,
         federationShared: data.federationShared,
         trialSpots: limitOf(data.trialSpots),
+        registrationDeadline: fromLocalInput(data.registrationDeadline),
+        cancellationDeadline: fromLocalInput(data.cancellationDeadline),
         ...templateExtras(fromTemplate, data.date),
+        // A chosen end date wins over the template's length.
+        ...(data.endDate ? { endDate: data.endDate } : {}),
         recurrence: repeat.on
           ? {
               until: repeat.until,
@@ -403,7 +451,7 @@ export function EventsTab() {
     const all: EventUpdate = {
       title: data.title,
       date: data.date,
-      time: data.time || undefined,
+      time: joinTime(data),
       location: data.location || undefined,
       type: data.type,
       maxAttendees: limitOf(data.maxAttendees),
@@ -413,6 +461,15 @@ export function EventsTab() {
       isPublic: data.isPublic,
       federationShared: data.federationShared,
       trialSpots: limitOf(data.trialSpots),
+      // End date and deadlines belong to one date; a series moves them
+      // along with its rule.
+      ...(editScope === 'following' && editTarget.seriesId
+        ? {}
+        : {
+            endDate: data.endDate || null,
+            registrationDeadline: fromLocalInput(data.registrationDeadline),
+            cancellationDeadline: fromLocalInput(data.cancellationDeadline),
+          }),
     }
     const following = editScope === 'following' && !!editTarget.seriesId
     let input = all
@@ -421,7 +478,7 @@ export function EventsTab() {
       // location or time stays; dates move with the rule.
       const was: EventUpdate = {
         title: editTarget.title,
-        time: editTarget.time || undefined,
+        time: editTarget.time ?? '',
         location: editTarget.location || undefined,
         type: editTarget.type,
         maxAttendees: editTarget.maxAttendees ?? null,
@@ -544,10 +601,41 @@ export function EventsTab() {
             disabled={followingScope}
           />
         </Field>
-        <Field label={t('events.time', 'Zeit') + ' (optional)'}>
+        <Field
+          label={t('events.endDate', 'Enddatum') + ' (optional)'}
+          hint={followingScope ? t('events.perDateHint', 'Gilt nur für diesen Termin.') : undefined}
+        >
           <TextInput
-            {...form.getInputProps('time')}
-            placeholder="14:00–18:00"
+            type="date"
+            min={form.values.date || undefined}
+            {...form.getInputProps('endDate')}
+            disabled={followingScope}
+          />
+        </Field>
+        <Field
+          label={t('events.timeFrom', 'Beginn') + ' (optional)'}
+          // An old free-text time stays until a time is picked.
+          hint={
+            !form.values.timeFrom && form.values.timeText
+              ? t('events.timeTextHint', 'Bisher: {{text}}', { text: form.values.timeText })
+              : undefined
+          }
+        >
+          <TextInput
+            type="time"
+            {...form.getInputProps('timeFrom')}
+            onChange={(e) => {
+              form.setFieldValue('timeFrom', e.currentTarget.value)
+              // A picked time replaces the old text for good.
+              form.setFieldValue('timeText', '')
+            }}
+          />
+        </Field>
+        <Field label={t('events.timeTo', 'Ende') + ' (optional)'}>
+          <TextInput
+            type="time"
+            {...form.getInputProps('timeTo')}
+            disabled={!form.values.timeFrom}
           />
         </Field>
         <Field label={t('events.location', 'Ort') + ' (optional)'}>
@@ -566,6 +654,8 @@ export function EventsTab() {
             {...form.getInputProps('type')}
           />
         </Field>
+      </SimpleGrid>
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
         <Field label={t('events.maxAttendees', 'Plätze') + ' (optional)'}>
           <NumberInput
             allowDecimal={false}
@@ -575,6 +665,47 @@ export function EventsTab() {
             // The form keeps the number as text (empty = no limit).
             onChange={(v) => form.setFieldValue('maxAttendees', v === '' ? '' : String(v))}
             placeholder={t('events.maxAttendeesPlaceholder', 'Leer: ohne Begrenzung')}
+          />
+        </Field>
+        <Field
+          label={t('events.trialSpots', 'Plätze für Schnuppertraining') + ' (optional)'}
+          hint={t(
+            'events.trialSpotsHint',
+            'Wer noch nicht Mitglied ist, kann dieses Training auf der Schnupperseite des Vereins buchen. Leer: keine Schnupperplätze.',
+          )}
+        >
+          <NumberInput
+            allowDecimal={false}
+            allowNegative={false}
+            hideControls
+            {...form.getInputProps('trialSpots')}
+            // The form keeps the number as text (empty = no limit).
+            onChange={(v) => form.setFieldValue('trialSpots', v === '' ? '' : String(v))}
+            placeholder={t('events.trialSpotsPlaceholder', 'z. B. 2')}
+          />
+        </Field>
+        <Field
+          label={t('events.registrationDeadline', 'Anmeldeschluss') + ' (optional)'}
+          hint={followingScope ? t('events.perDateHint', 'Gilt nur für diesen Termin.') : undefined}
+        >
+          <TextInput
+            type="datetime-local"
+            {...form.getInputProps('registrationDeadline')}
+            disabled={followingScope}
+          />
+        </Field>
+        <Field
+          label={t('events.cancellationDeadline', 'Abmeldeschluss') + ' (optional)'}
+          hint={
+            followingScope
+              ? t('events.perDateHint', 'Gilt nur für diesen Termin.')
+              : t('events.cancellationDeadlineHint', 'Danach kann man sich nicht mehr selbst abmelden.')
+          }
+        >
+          <TextInput
+            type="datetime-local"
+            {...form.getInputProps('cancellationDeadline')}
+            disabled={followingScope}
           />
         </Field>
       </SimpleGrid>
@@ -613,23 +744,6 @@ export function EventsTab() {
           {...form.getInputProps('federationShared', { type: 'checkbox' })}
         />
       )}
-      <Field
-        label={t('events.trialSpots', 'Plätze für Schnuppertraining') + ' (optional)'}
-        hint={t(
-          'events.trialSpotsHint',
-          'Wer noch nicht Mitglied ist, kann dieses Training auf der Schnupperseite des Vereins buchen. Leer: keine Schnupperplätze.',
-        )}
-      >
-        <NumberInput
-          allowDecimal={false}
-          allowNegative={false}
-          hideControls
-          {...form.getInputProps('trialSpots')}
-          // The form keeps the number as text (empty = no limit).
-          onChange={(v) => form.setFieldValue('trialSpots', v === '' ? '' : String(v))}
-          placeholder={t('events.trialSpotsPlaceholder', 'z. B. 2')}
-        />
-      </Field>
       {(!editTarget || followingScope) && (
         <>
           <Divider />
@@ -786,8 +900,19 @@ export function EventsTab() {
                   color: 'var(--hb-text-2)',
                 }}
               >
+                {ev.endDate && ev.endDate !== ev.date && (
+                  <>{t('events.untilDate', 'bis {{date}}', { date: formatDate(ev.endDate) })} · </>
+                )}
                 {ev.time && <>{ev.time} · </>}
                 {ev.location || t('events.noLocation', 'Kein Ort')}
+                {ev.registrationDeadline && (
+                  <>
+                    <br />
+                    {t('events.registrationDeadlineAt', 'Anmeldeschluss {{when}}', {
+                      when: formatDateTime(ev.registrationDeadline),
+                    })}
+                  </>
+                )}
               </span>
             ),
           },

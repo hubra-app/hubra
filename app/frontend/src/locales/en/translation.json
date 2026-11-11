@@ -930,7 +930,19 @@
       "saveTitle": "Save as template",
       "saveSubtitle": "Place, time, places, settings and description are saved, the date is not.",
       "name": "Template name"
-    }
+    },
+    "endDate": "End date",
+    "timeFrom": "Start",
+    "timeTo": "End",
+    "timeTextHint": "Before: {{text}}",
+    "registrationDeadline": "Sign-up deadline",
+    "cancellationDeadline": "Cancellation deadline",
+    "cancellationDeadlineHint": "After this, members can no longer cancel themselves.",
+    "perDateHint": "Applies to this date only.",
+    "endDateBeforeStart": "The end date is before the date",
+    "timeToBeforeFrom": "The end is before the start",
+    "untilDate": "until {{date}}",
+    "registrationDeadlineAt": "Sign-up closes {{when}}"
   },
   "finance": {
     "addCategory": "Add Category",
@@ -1365,7 +1377,10 @@
       "chartHint": "The chart of accounts for clubs after the Swiss SME chart. You can add your own accounts.",
       "accountName": "Account",
       "kind": "Kind",
-      "addAccount": "Add"
+      "addAccount": "Add",
+      "renameAccount": "Rename",
+      "deleteAccountTitle": "Delete “{{name}}”?",
+      "deleteAccountBody": "An account that categories or closed years still count on stays."
     },
     "groups": {
       "bookings": "Bookings",
