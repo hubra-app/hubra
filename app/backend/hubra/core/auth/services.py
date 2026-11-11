@@ -19,7 +19,7 @@ from hubra.core.models.finance import Invoice
 from hubra.core.models.member import Member
 from hubra.core.models.password_reset import PasswordResetToken
 from hubra.core.models.token import TokenBlocklist
-from hubra.core.models.user import User
+from hubra.core.models.user import User, burn_password_check
 from hubra.core.models.user_tenant import UserTenant
 from hubra.core.models.device_session import Device, Session
 from hubra.core.tenant.context import current_tenant
@@ -412,6 +412,9 @@ class AuthService:
         )
 
         if member is None:
+            # As slow as a wrong password, so the time doesn't tell whether
+            # the address has an account.
+            burn_password_check(password)
             _failed_from_address(email)
             raise_error(401, "UNAUTHORIZED", "Invalid credentials")
 
