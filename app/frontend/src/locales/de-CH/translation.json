@@ -1013,6 +1013,7 @@
       "new": "Neue Partei",
       "none": "Noch keine externen Parteien.",
       "noneHint": "Externe Parteien erfasst du im Tab «Extern».",
+      "pick": "Externe Partei wählen …",
       "removedMsg": "«{{name}}» wurde gelöscht.",
       "savedMsg": "«{{name}}» wurde gespeichert.",
       "updated": "Externe Partei gespeichert"

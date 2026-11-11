@@ -118,7 +118,7 @@ export function BindingFormModal({
       }}
       footer={
         <>
-          <Button variant="subtle" onClick={onClose}>
+          <Button variant="default" onClick={onClose}>
             {t('common.cancel', 'Abbrechen')}
           </Button>
           <Button variant="filled" type="submit" loading={saving} disabled={!complete}>
@@ -151,11 +151,9 @@ export function BindingFormModal({
             </div>
           ) : (
             <Select
-              data={[
-                { value: '', label: t('bindings.selectSource', 'Eintrag wählen …') },
-                ...sources.map((s) => ({ value: s.id, label: s.label })),
-              ]}
-              value={sourceId}
+              data={sources.map((s) => ({ value: s.id, label: s.label }))}
+              placeholder={t('bindings.selectSource', 'Eintrag wählen …')}
+              value={sourceId || null}
               onChange={(v) => setSourceId(v ?? '')}
               searchable
             />
@@ -186,11 +184,9 @@ export function BindingFormModal({
         )}
         <Field label={t('bindings.attribute', 'Attribut')}>
           <Select
-            data={[
-              { value: '', label: t('bindings.selectAttribute', 'Attribut wählen …') },
-              ...attributes.map((a) => ({ value: a.name, label: `${a.label} (${a.name})` })),
-            ]}
-            value={attribute}
+            data={attributes.map((a) => ({ value: a.name, label: `${a.label} (${a.name})` }))}
+            placeholder={t('bindings.selectAttribute', 'Attribut wählen …')}
+            value={attribute || null}
             onChange={(v) => setAttribute(v ?? '')}
             searchable
           />
@@ -217,14 +213,12 @@ export function BindingFormModal({
         )}
         <Field label={t('bindings.targetKey', 'Zielschlüssel')}>
           <Select
-            data={[
-              { value: '', label: t('bindings.selectKey', 'Schlüssel wählen …') },
-              ...keys.map((k) => ({
-                value: String(k.id),
-                label: `${k.key}${k.label ? ` — ${k.label}` : ''}`,
-              })),
-            ]}
-            value={keyId}
+            data={keys.map((k) => ({
+              value: String(k.id),
+              label: `${k.key}${k.label ? ` — ${k.label}` : ''}`,
+            }))}
+            placeholder={t('bindings.selectKey', 'Schlüssel wählen …')}
+            value={keyId || null}
             onChange={(v) => setKeyId(v ?? '')}
             searchable
           />

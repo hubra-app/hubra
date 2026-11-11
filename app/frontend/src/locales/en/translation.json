@@ -1013,6 +1013,7 @@
       "new": "New party",
       "none": "No external parties yet.",
       "noneHint": "Add external parties in the \"External\" tab.",
+      "pick": "Choose an external party …",
       "removedMsg": "\"{{name}}\" has been deleted.",
       "savedMsg": "\"{{name}}\" has been saved.",
       "updated": "External party saved"

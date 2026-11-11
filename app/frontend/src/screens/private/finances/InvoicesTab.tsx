@@ -748,24 +748,16 @@ export function InvoicesTab() {
                 }
               >
                 <Select
-                  data={
-                    externalParties.length === 0
-                      ? [
-                          {
-                            value: '',
-                            label: t(
-                              'finance.externalParty.none',
-                              'Noch keine externen Parteien.',
-                            ),
-                          },
-                        ]
-                      : externalParties.map((p) => ({
-                          value: p.id,
-                          label: p.name,
-                        }))
-                  }
+                  data={externalParties.map((p) => ({ value: p.id, label: p.name }))}
                   searchable
+                  disabled={externalParties.length === 0}
+                  placeholder={
+                    externalParties.length === 0
+                      ? t('finance.externalParty.none', 'Noch keine externen Parteien.')
+                      : t('finance.externalParty.pick', 'Externe Partei wählen …')
+                  }
                   {...singleForm.getInputProps('externalPartyId')}
+                  value={singleForm.values.externalPartyId || null}
                 />
               </Field>
             )}
@@ -824,17 +816,11 @@ export function InvoicesTab() {
               )}
             >
               <Select
-                data={[
-                  {
-                    value: '',
-                    label: t('finance.selectCategory', 'Kategorie wählen …'),
-                  },
-                  ...txCategories.map((c) => ({
-                    value: c.id,
-                    label: c.name,
-                  })),
-                ]}
+                data={txCategories.map((c) => ({ value: c.id, label: c.name }))}
+                searchable
+                placeholder={t('finance.selectCategory', 'Kategorie wählen …')}
                 {...singleForm.getInputProps('categoryId')}
+                value={singleForm.values.categoryId || null}
               />
             </Field>
           )}
