@@ -141,6 +141,7 @@ export const qk = {
     kv: ['kv-settings'] as const,
     club: ['club-settings'] as const,
     clubMfa: ['club-settings', 'mfa'] as const,
+    supportAccess: ['support-access'] as const,
     bank: ['bank-settings'] as const,
     clubProfile: ['club-profile'] as const,
     domains: ['domains'] as const,
