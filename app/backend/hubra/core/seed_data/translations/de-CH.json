@@ -4304,7 +4304,12 @@
     "status": {
       "pending": "Angefragt",
       "waitlisted": "Warteliste",
-      "joined": "Angemeldet"
+      "joined": "Angemeldet",
+      "registered": "Angemeldet",
+      "approved": "Bestätigt",
+      "attended": "War da",
+      "maybe": "Vielleicht",
+      "declined": "Abgelehnt"
     },
     "pending": {
       "open": "Offene Anmeldungen"
@@ -4317,6 +4322,17 @@
     "noMine": "Du bist für keinen Anlass angemeldet.",
     "emptyHint": "Plane den nächsten Anlass, die Mitglieder können sich hier gleich anmelden.",
     "emptyMember": "Sobald ein Anlass geplant ist, kannst du dich hier anmelden.",
+    "detail": {
+      "back": "Zu den Anlässen",
+      "meeting": "Online teilnehmen",
+      "copied": "Link kopiert",
+      "copyLink": "Link kopieren",
+      "about": "Beschreibung",
+      "signUps": "Anmeldungen",
+      "noSignUps": "Noch niemand angemeldet.",
+      "plusGuests_one": "+{{count}} Gast",
+      "plusGuests_other": "+{{count}} Gäste"
+    },
     "endDate": "Enddatum",
     "timeFrom": "Beginn",
     "timeTo": "Ende",

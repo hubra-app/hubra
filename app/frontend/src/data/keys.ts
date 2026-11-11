@@ -50,6 +50,7 @@ export const qk = {
   memberClubs: ['federation', 'clubs'] as const,
   eventPending: (id: string) => ['events', id, 'pending'] as const,
   eventRoll: (id: string) => ['events', id, 'roll'] as const,
+  eventRegistrations: (id: string) => ['events', id, 'registrations'] as const,
   eventParticipants: (id: string) => ['events', id, 'participants'] as const,
   attendance: ['attendance'] as const,
   trialsAll: ['trials'] as const,
