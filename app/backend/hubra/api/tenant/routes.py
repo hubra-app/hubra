@@ -790,7 +790,7 @@ def impersonate_tenant_user(tenant_id: int):
                 tenant, g.system_user.id, data.get("request_id")
             )
         except support_access.SupportAccessError as exc:
-            return jsonify({"error": exc.code, "message": str(exc)}), exc.status
+            raise_error(exc.status, exc.code, str(exc))
         reason, minutes, allow_changes = (
             approved.reason,
             approved.minutes,
