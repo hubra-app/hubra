@@ -789,3 +789,20 @@ export async function getBadge(): Promise<MemberBadge> {
 export async function addBadgeToGoogleWallet(): Promise<{ url: string }> {
   return apiFetch<{ url: string }>('/global/account/badge/google-wallet', { method: 'POST' })
 }
+
+// ── One calendar for every club ─────────────────────────────────────────────
+
+/** The personal calendar URLs: every club's events, or those signed up for. */
+export interface AccountCalendar {
+  all: string
+  mine: string
+}
+
+export async function getAccountCalendar(): Promise<AccountCalendar> {
+  return apiFetch<AccountCalendar>('/global/account/calendar')
+}
+
+/** New calendar URLs; the old ones stop working. */
+export async function renewAccountCalendar(): Promise<AccountCalendar> {
+  return apiFetch<AccountCalendar>('/global/account/calendar/renew', { method: 'POST' })
+}
