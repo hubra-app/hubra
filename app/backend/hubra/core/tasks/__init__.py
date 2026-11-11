@@ -253,6 +253,11 @@ def make_celery(app: Flask) -> Celery:
                 },
             },
             # ── M7: Monitoring checks ──────────────────────────────────────
+            # Which clubs use which modules and plugins (manage › Plugins).
+            "usage-snapshot-nightly": {
+                "task": "hubra.core.tasks.plugin_tasks.usage_snapshot",
+                "schedule": crontab(hour=4, minute=40),
+            },
             "infra-checks-hourly": {
                 "task": "hubra.core.tasks.infra_checks.run_all_checks_task",
                 "schedule": crontab(minute=0),

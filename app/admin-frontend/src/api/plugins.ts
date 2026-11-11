@@ -294,3 +294,42 @@ export interface UpgradeImpact {
 
 export const getUpgradeImpact = (version: string) =>
   apiFetch<UpgradeImpact>(`${P}/upgrade-impact?version=${encodeURIComponent(version)}`)
+
+/** One module in the usage count (manage › Plugins › Nutzung). */
+export interface ModuleUsage {
+  code: string
+  name: string
+  required: boolean
+  plugin: string | null
+  pluginName: string | null
+  version: string | null
+  /** False: the module has no tables of its own, so use can't be counted. */
+  measured: boolean
+  clubsOn: number
+  clubsActive: number
+  /** On but nothing written in the period (null when not measured). */
+  clubsIdle: number | null
+  rows: number
+  idle: { id: number; name: string }[]
+}
+
+export interface PluginUsage {
+  id: string
+  name: string
+  version: string | null
+  modules: string[]
+  clubsOn: number
+}
+
+export interface UsageSnapshot {
+  generatedAt: string
+  days: number
+  clubs: number
+  modules: ModuleUsage[]
+  plugins: PluginUsage[]
+}
+
+export const getUsage = () => apiFetch<{ usage: UsageSnapshot | null }>(`${P}/usage`)
+
+export const refreshUsage = () =>
+  apiFetch<{ usage: UsageSnapshot }>(`${P}/usage/refresh`, { method: 'POST' })

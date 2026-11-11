@@ -39,6 +39,7 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 - **«Jetzt da»-Mails**: Wenn ein Roadmap-Eintrag erscheint, bekommen alle, die dafür gestimmt oder eine damit verknüpfte Idee eingereicht oder unterstützt haben, eine kurze Mail. Neuigkeiten markiert bei der Version, was man sich gewünscht hat («Du hast dir das gewünscht»).
 - **Support-Zugriffe im Audit-Log des Vereins**: Öffnet der Hubra-Support einen Verein, steht im Audit-Log, wer, als welches Mitglied, warum, wie lange und ob mit Änderungsrecht, und wann der Zugriff endete. Einstellungen › Verein › **Support-Zugriff nur mit Freigabe** lässt den Support zuerst anfragen: Die Admins des Vereins geben frei oder lehnen ab, eine Freigabe öffnet eine Sitzung innerhalb von 24 Stunden. Braucht `flask db upgrade` (läuft nach dem Deploy von selbst).
 - **Neuigkeiten für deinen Verein**: Neuigkeiten in der Vereins-App lässt Änderungen an Modulen weg, die der Verein nicht hat oder die man nicht nutzen kann, Änderungen nur für Admins (bei Mitgliedern) und Änderungen für das Hubra-Team.
+- **Nutzung der Module und Plugins**: manage › Plugin-Katalog › **Nutzung** zeigt, in wie vielen Vereinen ein Modul oder Plugin eingeschaltet ist, in wie vielen es in den letzten 30 Tagen genutzt wurde, wo es eingeschaltet, aber ungenutzt ist, und installierte Plugins, die kein Verein nutzt. Wird jede Nacht gezählt oder sofort mit **Jetzt zählen**.
 
 ### Changed
 
