@@ -27,6 +27,7 @@ section and position, or the apps show that version in English.
 - **Edit open invoices**: Finanzen › Rechnungen › ⋯ › Bearbeiten (and on the invoice page) changes amount, due date and text of an open invoice. A paid invoice is locked; the API refuses changes to it until the payment is taken back.
 - **Notice periods from the statutes**: Settings › Mitgliedschaft takes a notice period in months and the period end leaving takes effect at (month, quarter, half-year or year). A member who wants to leave sees the earliest exit date and their invoices still open; the board sees both on the request to leave.
 - **One calendar for all clubs**: sign-in › My account › Profile has a personal calendar link with the events of every club the person is in (or only those they signed up for), named with their club, for Google, Apple or Outlook calendars. **New link** stops the old ones. Cancelled events show as cancelled in calendar feeds. Needs `flask db upgrade` (runs by itself after the deploy).
+- **Join and trial posters**: Members › Applications › **Plakat erstellen** prints an A4 poster or A6 flyer with a QR code for asking to join or booking a trial. A tag on each poster travels with the QR code, requests and trial bookings show where the person came from, and a table counts them per tag. Needs `flask db upgrade` and `flask sync-tenant-schemas` (run by themselves after the deploy).
 
 ### Changed
 

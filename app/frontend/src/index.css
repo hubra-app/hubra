@@ -860,6 +860,24 @@ table[style*="min-width"] td::before {
   }
 }
 
+/* Members › Applications › Plakat erstellen: print only the poster, on a
+   whole page (the page size is set by the dialog). */
+.hb-poster-print {
+  display: none;
+}
+@media print {
+  body > *:not(.hb-poster-print) {
+    display: none !important;
+  }
+  .hb-poster-print {
+    display: block;
+    position: fixed;
+    inset: 0;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
 /* ── Anlässe: the event list (EventCard.tsx) ───────────────────────── */
 .hb-event-month {
   padding: 14px 20px 6px;

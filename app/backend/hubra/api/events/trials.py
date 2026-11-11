@@ -26,6 +26,7 @@ from hubra.core.extensions import db, limiter
 from hubra.core.models.event import ClubEvent, TrialSignup
 from hubra.core.models.member import Member
 from hubra.core.permissions import member_has_permission, permission_required
+from hubra.core.services import signup_source
 
 # How far ahead the trial page lists trainings.
 TRIAL_DAYS_AHEAD = 60
@@ -271,10 +272,12 @@ def public_trial_signup(slug: str):
         phone=_clean(data.get("phone"), 50),
         birth_date=birth,
         message=_clean(data.get("message"), 2000),
+        source=signup_source.clean(data.get("source")),
         token=secrets.token_urlsafe(32),
         status="pending",
     )
     db.session.add(signup)
+    signup_source.record("trial", signup.source)
     db.session.flush()
     db.session.refresh(signup)
     db.session.commit()
@@ -343,6 +346,7 @@ def _dump(signup: TrialSignup) -> dict:
         "phone": signup.phone,
         "birthDate": signup.birth_date.isoformat() if signup.birth_date else None,
         "message": signup.message,
+        "source": signup.source,
         "status": signup.status,
         "createdAt": signup.created_at.isoformat(),
         "confirmedAt": signup.confirmed_at.isoformat() if signup.confirmed_at else None,
