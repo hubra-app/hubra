@@ -148,7 +148,8 @@ class TransactionIn(BaseModel):
 
     booked_on: date
     description: str = Field(min_length=1, max_length=255)
-    category_id: int
+    # Optional: Kasse pays expense claims that have no category.
+    category_id: int | None = None
     amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
     type: Literal["income", "expense"]
     method: str = Field("IBAN", min_length=1, max_length=50)
@@ -162,13 +163,28 @@ class TransactionOut(BaseModel):
 
 
 def create_transaction(ctx, data: TransactionIn) -> TransactionOut:
+    from sqlalchemy import select
+
     from hubra.core.contracts import Refused
     from hubra.core.extensions import db
     from hubra.core.models.finance import Transaction, TransactionCategory
+    from hubra.core.models.member import Member
     from hubra.core.utils import log_audit
 
-    if db.session.get(TransactionCategory, data.category_id) is None:
+    if (
+        data.category_id is not None
+        and db.session.get(TransactionCategory, data.category_id) is None
+    ):
         raise Refused("Category not found", code="NOT_FOUND", status=404)
+    if data.member_id is not None and (
+        db.session.scalar(
+            select(Member.id)
+            .where(Member.id == data.member_id)
+            .where(Member.archived_at.is_(None))
+        )
+        is None
+    ):
+        raise Refused("Member not found", code="NOT_FOUND", status=404)
     tx = Transaction(
         date=data.booked_on,
         description=data.description,
