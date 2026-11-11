@@ -18,6 +18,11 @@ async function openDialog(page: Page, path: string, button: string) {
   await page.getByRole('main').getByRole('button', { name: button }).first().click()
   const dialog = page.getByRole('dialog')
   await expect(dialog).toBeVisible()
+  // Measure only once the dialog has stopped moving: its open transition
+  // shifts the fields while the boxes are read one after the other.
+  await page.locator('.mantine-Modal-content').evaluate((el) =>
+    Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)),
+  )
   return dialog
 }
 
