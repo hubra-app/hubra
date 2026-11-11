@@ -942,7 +942,8 @@
     "endDateBeforeStart": "The end date is before the date",
     "timeToBeforeFrom": "The end is before the start",
     "untilDate": "until {{date}}",
-    "registrationDeadlineAt": "Sign-up closes {{when}}"
+    "registrationDeadlineAt": "Sign-up closes {{when}}",
+    "timeToWithoutFrom": "Please also enter the start"
   },
   "finance": {
     "addCategory": "Add Category",

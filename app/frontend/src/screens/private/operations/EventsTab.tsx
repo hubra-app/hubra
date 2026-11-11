@@ -120,6 +120,10 @@ const eventSchema = z.object({
     path: ['endDate'],
     ...zmsg('events.endDateBeforeStart', 'Das Enddatum liegt vor dem Datum'),
   })
+  .refine((v) => !v.timeTo || !!v.timeFrom, {
+    path: ['timeTo'],
+    ...zmsg('events.timeToWithoutFrom', 'Bitte auch den Beginn angeben'),
+  })
   .refine((v) => !v.timeTo || !v.timeFrom || v.endDate > v.date || v.timeTo > v.timeFrom, {
     path: ['timeTo'],
     ...zmsg('events.timeToBeforeFrom', 'Das Ende liegt vor dem Beginn'),
@@ -635,7 +639,6 @@ export function EventsTab() {
           <TextInput
             type="time"
             {...form.getInputProps('timeTo')}
-            disabled={!form.values.timeFrom}
           />
         </Field>
         <Field label={t('events.location', 'Ort') + ' (optional)'}>

@@ -942,7 +942,8 @@
     "endDateBeforeStart": "Das Enddatum liegt vor dem Datum",
     "timeToBeforeFrom": "Das Ende liegt vor dem Beginn",
     "untilDate": "bis {{date}}",
-    "registrationDeadlineAt": "Anmeldeschluss {{when}}"
+    "registrationDeadlineAt": "Anmeldeschluss {{when}}",
+    "timeToWithoutFrom": "Bitte auch den Beginn angeben"
   },
   "finance": {
     "addCategory": "Kategorie hinzufügen",
