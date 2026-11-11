@@ -106,7 +106,21 @@ def make_celery(app: Flask) -> Celery:
                 set_search_path,
             )
 
-            g.tenant = db.session.get(Tenant, int(tenant_id))
+            tenant = db.session.get(Tenant, int(tenant_id))
+            if tenant is None:
+                # The club is gone (deleted after the job was queued). Its
+                # schema is gone too, and Postgres skips a missing schema in
+                # search_path, so the job would read and write public
+                # instead. Drop it rather than run it anywhere else.
+                import logging
+
+                logging.getLogger(__name__).warning(
+                    "task %s dropped: club %s no longer exists",
+                    self.name,
+                    tenant_id,
+                )
+                return None
+            g.tenant = tenant
             set_search_path(int(tenant_id))
             try:
                 return self.run(*args, **kwargs)
