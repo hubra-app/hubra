@@ -17,9 +17,8 @@ import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
 import { useT, zmsg } from '@/locales/i18n'
-import { isPastEvent, monthKey } from './eventDates'
+import { eventTypeLabel, isPastEvent, monthKey } from './eventDates'
 import { AssociationEventsCard } from './AssociationEventsCard'
-import i18n from 'i18next'
 import {
   IconPlus,
   IconCalendarEvent,
@@ -114,17 +113,6 @@ function clubEventTypes(raw: unknown): string[] {
 }
 
 /** Stored event types are English keys; show them in the user's language. */
-function eventTypeLabel(type: string) {
-  const defaults: Record<string, string> = {
-    Workshop: 'Workshop',
-    Social: 'Geselliges',
-    Certification: 'Einführung',
-    Meeting: 'Sitzung',
-  }
-  return defaults[type]
-    ? i18n.t(`events.types.${type.toLowerCase()}`, defaults[type])
-    : type
-}
 
 export function EventsTab() {
   const { notify } = useToast()
@@ -206,7 +194,9 @@ export function EventsTab() {
   const types = ['All', ...eventTypes]
   // ?event=<id> (from a notification) shows just that event; &pending=1
   // opens its sign-ups waiting for approval.
-  const linked = useLinkedId('event', ['pending'])
+  const linked = useLinkedId('event', ['pending', 'edit'])
+  // &edit=1 (Bearbeiten on the event's own page) opens its form.
+  const [handledEdit, setHandledEdit] = useState<string | null>(null)
   const [handledPending, setHandledPending] = useState<string | null>(null)
   if (linked.id && linked.params.get('pending') === '1' && handledPending !== linked.id) {
     const ev = events.find((e) => e.id === linked.id)
@@ -326,6 +316,13 @@ export function EventsTab() {
       : null
     setRuleAtOpen(rule)
     if (rule) setRepeat(rule)
+  }
+  if (linked.id && linked.params.get('edit') === '1' && handledEdit !== linked.id) {
+    const ev = events.find((e) => e.id === linked.id)
+    if (ev) {
+      setHandledEdit(linked.id)
+      if (canUpdate(ev)) openEdit(ev)
+    }
   }
 
   const saveAdd = async (data: EventForm) => {

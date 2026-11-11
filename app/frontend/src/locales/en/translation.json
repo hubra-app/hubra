@@ -936,7 +936,12 @@
     "status": {
       "pending": "Requested",
       "waitlisted": "Waiting list",
-      "joined": "Signed up"
+      "joined": "Signed up",
+      "registered": "Signed up",
+      "approved": "Approved",
+      "attended": "Came",
+      "maybe": "Maybe",
+      "declined": "Declined"
     },
     "pending": {
       "open": "Open sign-ups"
@@ -948,7 +953,18 @@
     "joinWaitlist": "Join the waiting list",
     "noMine": "You haven't signed up for any event.",
     "emptyHint": "Plan the next event; members can sign up for it right here.",
-    "emptyMember": "Once an event is planned, you can sign up for it here."
+    "emptyMember": "Once an event is planned, you can sign up for it here.",
+    "detail": {
+      "back": "Back to events",
+      "meeting": "Join online",
+      "copied": "Link copied",
+      "copyLink": "Copy link",
+      "about": "Description",
+      "signUps": "Sign-ups",
+      "noSignUps": "Nobody has signed up yet.",
+      "plusGuests_one": "+{{count}} guest",
+      "plusGuests_other": "+{{count}} guests"
+    }
   },
   "finance": {
     "addCategory": "Add Category",

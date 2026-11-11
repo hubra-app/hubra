@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { ActionIcon, Badge, Button, Menu, Text, Tooltip } from '@mantine/core'
 import {
   IconCalendarCheck,
@@ -145,9 +146,11 @@ export function EventCard({
       <div className="hb-event-body">
         <div className="hb-event-title-row">
           <Text
+            component={Link}
+            to={`/app/operations/events/${ev.id}`}
             fw={650}
             fz="md"
-            c={cancelled ? 'dimmed' : undefined}
+            c={cancelled ? 'dimmed' : 'var(--hb-text)'}
             td={cancelled ? 'line-through' : undefined}
             className="hb-event-title"
           >

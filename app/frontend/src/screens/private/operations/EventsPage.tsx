@@ -10,6 +10,7 @@ import { EventsTab } from './EventsTab'
 import { AttendanceScreen } from './AttendanceScreen'
 import { TrialsScreen } from './TrialsScreen'
 import { useContentGroups } from './contentGroups'
+import { EventDetail } from './EventDetail'
 
 type Part = { id: string; label: string; allowed: boolean; render: () => ReactNode }
 
@@ -68,6 +69,9 @@ export function EventsPage() {
   const rest = (location.pathname.split('/app/operations/events')[1] ?? '').replace(/^\//, '')
   const active = parts.find((p) => p.id === rest)?.id ?? 'list'
   const part = parts.find((p) => p.id === active)
+
+  // /app/operations/events/<id>: one event on its own page.
+  if (/^\d+$/.test(rest)) return <EventDetail id={rest} />
 
   return (
     <div>
