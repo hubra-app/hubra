@@ -1,0 +1,12 @@
+{% extends "email/base.html" %}
+{% import "email/_ui.html" as ui with context %}
+{% block preheader %}{{ t('mail.email.roadmap_shipped.intro', version=version) | striptags }}{% endblock %}
+{% block content %}
+{% call ui.p() %}{{ t('mail.email.roadmap_shipped.intro', version=version) }}{% endcall %}
+{% call ui.p() %}<strong>{{ item_title }}</strong>{% if item_summary %}<br>{{ item_summary }}{% endif %}{% endcall %}
+{% call ui.muted() %}{{ t('mail.email.roadmap_shipped.thanks') }}{% endcall %}
+{% if roadmap_url %}
+{{ ui.button(roadmap_url, t('mail.email.roadmap_shipped.button')) }}
+{{ ui.fallback_link(roadmap_url) }}
+{% endif %}
+{% endblock %}

@@ -20,7 +20,8 @@ export function WhatsNewModal() {
   const opened = useSyncExternalStore(subscribeWhatsNew, whatsNewOpen)
   const [view, setView] = useState<View>('news')
   const changelog = useChangelog(opened)
-  const roadmap = useRoadmap(opened && view === 'roadmap')
+  // Loaded with the news too: a release names what the reader voted for.
+  const roadmap = useRoadmap(opened)
 
   useEffect(() => {
     if (opened && changelog.data) markWhatsNewSeen(latestReleaseKey(changelog.data.entries))
@@ -57,7 +58,7 @@ export function WhatsNewModal() {
             {t('shell.whatsNew.changelogSoon')}
           </Text>
         ) : view === 'news' ? (
-          <ReleaseNotes entries={changelog.data?.entries ?? []} lang={lang} />
+          <ReleaseNotes entries={changelog.data?.entries ?? []} lang={lang} roadmap={roadmap.items} />
         ) : (
           <Roadmap items={roadmap.items} lang={lang} voting={roadmap.voting} />
         )}
