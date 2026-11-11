@@ -1,5 +1,36 @@
+import { useState, type ImgHTMLAttributes } from 'react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { useT } from '@/locales/i18n'
+import { foreignImageHost } from '@/components/foreignImage'
+
+
+function PostImage({ src, alt, title }: Pick<ImgHTMLAttributes<HTMLImageElement>, 'src' | 'alt' | 'title'>) {
+  const { t } = useT()
+  const [shown, setShown] = useState(false)
+  const host = foreignImageHost(typeof src === 'string' ? src : undefined)
+  const img = <img src={src} alt={alt} title={title} referrerPolicy="no-referrer" style={{ maxWidth: '100%', height: 'auto' }} />
+  if (!host || shown) return img
+  return (
+    <button
+      type="button"
+      onClick={() => setShown(true)}
+      style={{
+        display: 'inline-block',
+        border: '1px dashed var(--hb-border)',
+        borderRadius: '6px',
+        padding: '6px 10px',
+        background: 'transparent',
+        color: 'var(--mantine-color-anchor)',
+        cursor: 'pointer',
+        font: 'inherit',
+      }}
+    >
+      {alt ? `${alt}: ` : ''}
+      {t('common.externalImage', 'Bild von {{host}} anzeigen', { host })}
+    </button>
+  )
+}
 
 interface MarkdownRendererProps {
   content: string
@@ -118,6 +149,7 @@ export function MarkdownRenderer({
               {...props}
             />
           ),
+          img: ({ src, alt, title }) => <PostImage src={src} alt={alt} title={title} />,
           a: (props) => (
             <a
               target="_blank"

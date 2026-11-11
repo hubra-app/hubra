@@ -326,12 +326,13 @@ export function navSections(): NavSection[] {
               label: tr('Einstellungen', 'Settings'),
               perm: 'platform.settings',
               desc: tr(
-                'Wohin die verschlüsselten Backups und die Dateien der Vereine gehen.',
-                "Where the encrypted backups and the clubs' files go.",
+                'Wohin die verschlüsselten Backups und die Dateien der Vereine gehen und wie lange Backups bleiben.',
+                "Where the encrypted backups and the clubs' files go, and how long backups are kept.",
               ),
               render: () => (
                 <>
                   <SettingsSection section="backups" />
+                  <SettingsSection section="backup-retention" />
                   <SettingsSection section="files" />
                 </>
               ),

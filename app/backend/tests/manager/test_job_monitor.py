@@ -135,3 +135,15 @@ def test_failed_task_is_recorded_by_the_signal(app):
 
 def test_needs_platform_rights(client, auth_headers):
     assert client.get(BASE).status_code in (401, 403)
+
+
+def test_secret_positional_args_are_hidden(client, staff_headers):
+    # approve_request(req_id, user_id, interaction_token): the token comes
+    # by position, and is hidden like a keyword one.
+    _fail(
+        task="hubra.core.tasks.platform_bot_tasks.approve_request",
+        args=[5, 7, "discord-interaction-token"],
+        kwargs={},
+    )
+    (f,) = client.get(BASE).get_json()["failed"]
+    assert f["args"] == [5, 7, "•••"]

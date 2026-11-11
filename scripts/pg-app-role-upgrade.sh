@@ -21,9 +21,11 @@ psql -v ON_ERROR_STOP=1 \
   -v app_user="$POSTGRES_APP_USER" -v app_password="$POSTGRES_APP_PASSWORD" \
   -v db="$POSTGRES_DB" \
   -U "$POSTGRES_USER" -d "$POSTGRES_DB" <<'SQL'
-SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION', :'app_user')
+SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER NOCREATEDB CREATEROLE NOREPLICATION', :'app_user')
 WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = :'app_user') \gexec
 ALTER ROLE :"app_user" LOGIN PASSWORD :'app_password';
+-- Club roles (docs/club-db-roles.md): the app makes one per club.
+ALTER ROLE :"app_user" CREATEROLE;
 GRANT CREATE, CONNECT, TEMP ON DATABASE :"db" TO :"app_user";
 
 -- The app's schemas: public and one per club. Everything in them moves to
