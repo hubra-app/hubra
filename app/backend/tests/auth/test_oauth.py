@@ -286,6 +286,35 @@ def test_code_works_once_and_reuse_ends_the_sign_in(app, db, signed_in, app_clie
     assert resp.status_code == 401
 
 
+def test_code_taken_by_a_parallel_request_is_refused(app, db, signed_in, app_client):
+    """Two token requests with one code: the one whose read of used_at is
+    already stale loses, instead of both getting a token."""
+    from werkzeug.datastructures import MultiDict
+
+    cid = app_client["client_id"]
+    code = _code_from(_consent(signed_in, cid))
+    row = db.session.scalar(db.select(OAuthCode))  # this request's read
+    client = db.session.get(OAuthClient, row.client_id)
+    # The other request takes the code meanwhile, behind this session's back.
+    db.session.execute(
+        db.update(OAuthCode)
+        .where(OAuthCode.id == row.id)
+        .values(used_at=datetime.now(timezone.utc))
+        .execution_options(synchronize_session=False)
+    )
+    assert row.used_at is None
+    form = MultiDict(
+        {
+            "code": code,
+            "redirect_uri": REDIRECT,
+            "code_verifier": VERIFIER,
+            "resource": f"{MCP}/mcp",
+        }
+    )
+    with pytest.raises(oauth.OAuthError, match="already used"):
+        oauth.exchange_code(client, form)
+
+
 def test_wrong_verifier_is_refused(app, signed_in, app_client):
     cid = app_client["client_id"]
     code = _code_from(_consent(signed_in, cid))

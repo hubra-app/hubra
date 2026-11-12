@@ -49,8 +49,9 @@ def _provider_or_404(code: str):
 
 
 def _callback_url(code: str) -> str:
-    base = current_app.config.get("API_PUBLIC_URL") or request.host_url
-    return f"{base.rstrip('/')}/api/v1/account/linked-accounts/{code}/callback"
+    from hubra.core.utils import public_api_base
+
+    return f"{public_api_base()}/api/v1/account/linked-accounts/{code}/callback"
 
 
 def _serialize(acc: ExternalAccount) -> dict:

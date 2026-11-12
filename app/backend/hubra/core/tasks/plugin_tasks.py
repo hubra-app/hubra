@@ -18,3 +18,12 @@ def check_plugin_updates() -> dict:
     result = check()
     platform_monitor.plugin_news(result)
     return result
+
+
+@celery_app.task(name="hubra.core.tasks.plugin_tasks.usage_snapshot", ignore_result=True)
+def usage_snapshot() -> None:
+    """Nightly: which clubs use which modules and plugins (manage › Plugins ›
+    Nutzung, ``services.module_usage``)."""
+    from hubra.core.services import module_usage
+
+    module_usage.refresh()

@@ -42,6 +42,13 @@ const BACKUP = [
   'backup.s3.access_key',
   'backup.s3.secret_key',
 ]
+const RETENTION = [
+  'backup.keep_daily',
+  'backup.keep_weekly',
+  'backup.keep_monthly',
+  'backup.keep_manual_days',
+  'backup.keep_deleted_club_days',
+]
 const FILES = [
   'files.s3.endpoint',
   'files.s3.bucket',
@@ -92,7 +99,7 @@ const DISCORD_SUPPORT = ['discord.support_channel_id', 'discord.support_add_repo
 const PERF = ['perf.slow_request_ms', 'perf.slow_query_ms', 'perf.p95_warning_ms']
 const ERRORS = ['errors.auto_resolve']
 const UPGRADES = ['upgrades.post_deploy_steps']
-const LIMITS = ['limits.warn_percent']
+const LIMITS = ['limits.warn_percent', 'limits.grace_days']
 const MCP = ['mcp.url']
 const OAUTH = ['oauth.dynamic_clients', 'oauth.dynamic_redirect_hosts']
 const SUPPORT = ['support.url']
@@ -109,7 +116,7 @@ const BUILT_IN = [
   'domains.cluster_issuer',
   'domains.ingress_class',
   'domains.service',
-  'alerts.cooldown_minutes', 'alerts.retention_days', 'translate.deepl_url', ...PERF, ...ERRORS, ...UPGRADES, ...LIMITS, ...OAUTH, ...LEGAL]
+  'alerts.cooldown_minutes', 'alerts.retention_days', 'translate.deepl_url', ...RETENTION, ...PERF, ...ERRORS, ...UPGRADES, ...LIMITS, ...OAUTH, ...LEGAL]
 const ALERTS = ['alerts.cooldown_minutes', 'alerts.retention_days', 'alerts.manage_url']
 
 
@@ -127,6 +134,7 @@ export type SettingsSectionId =
   | 'relay'
   | 'sender'
   | 'backups'
+  | 'backup-retention'
   | 'files'
   | 'payments'
   | 'billing'
@@ -147,6 +155,7 @@ const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
   relay: [...RELAY, ...FALLBACK],
   sender: SENDER,
   backups: BACKUP,
+  'backup-retention': RETENTION,
   files: FILES,
   payments: PAYMENTS,
   billing: BILLING,
@@ -237,7 +246,30 @@ const FIELD_DE: Record<string, [string, string]> = {
   'files.s3.region': ['S3-Region für Dateien', "Bei Contabo meist 'default'"],
   'files.s3.access_key': ['S3-Access-Key für Dateien', 'Wird verschlüsselt gespeichert'],
   'files.s3.secret_key': ['S3-Secret-Key für Dateien', 'Wird verschlüsselt gespeichert'],
-  'files.max_mb': ['Grösste Datei', 'Grösste Datei, die ein Verein hochladen kann, in MB'],
+  'files.max_mb': [
+    'Grösste Datei (Standard)',
+    'Grösste Datei, die ein Verein hochladen kann, in MB, wenn sein Tarif keine eigene Grenze hat',
+  ],
+  'backup.keep_daily': [
+    'Tägliche Backups behalten',
+    'So viele der neuesten täglichen Backups bleiben pro Satz (das globale und das jedes Vereins), 1 bis 365',
+  ],
+  'backup.keep_weekly': [
+    'Wöchentliche Backups behalten',
+    'So viele der neuesten wöchentlichen Backups (Sonntag) bleiben pro Satz, 1 bis 365',
+  ],
+  'backup.keep_monthly': [
+    'Monatliche Backups behalten',
+    'So viele der neuesten monatlichen Backups (am 1.) bleiben pro Satz, 1 bis 365',
+  ],
+  'backup.keep_manual_days': [
+    'Manuelle Backups behalten (Tage)',
+    'So viele Tage bleibt ein von Hand erstelltes Backup; 0 behält es, bis es jemand löscht',
+  ],
+  'backup.keep_deleted_club_days': [
+    'Backups gelöschter Vereine behalten (Tage)',
+    'So viele Tage bleibt jedes Backup eines endgültig gelöschten Vereins, ab dem Tag, an dem es erstellt wurde; 0 behält sie wie die jedes anderen Vereins',
+  ],
   'domains.serving': [
     'Vereinsdomains ausliefern',
     'on: jede bestätigte Vereinsdomain bekommt ein Zertifikat und ein eigenes Ingress (k3s mit cert-manager), Besucher werden zum Verein weitergeleitet. off: die Ingresses werden entfernt (Notschalter)',
@@ -385,6 +417,10 @@ const FIELD_DE: Record<string, [string, string]> = {
   'limits.warn_percent': [
     'Warnen ab (%)',
     'Inhaber und Plattform bekommen eine Meldung, wenn ein Verein diesen Anteil eines Limits erreicht. Die zweite kommt bei 100 %',
+  ],
+  'limits.grace_days': [
+    'Kulanzfrist am Mitgliederlimit (Tage)',
+    'So lange nimmt ein Verein am Mitgliederlimit noch neue Mitglieder auf, ab dem ersten Beitritt darüber. Die Admins sehen dabei, welcher Tarif passt. 0: kein neues Mitglied über dem Limit',
   ],
   'discord.log_channel_id': [
     'Kanal für das Plattform-Log',
@@ -877,11 +913,14 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
               </Group>
               <Text size="xs" c="dimmed" mb={12}>
                 {tr(
-                  'Die Limits stehen bei jedem Tarif (oben). Ist das Mitgliederlimit erreicht, kommt niemand Neues dazu (Einladungen, Anträge); Plattform-Staff kann in manage trotzdem hinzufügen. Mails pro Monat und Speicher werden nur gemeldet, nichts wird gesperrt. Einzelne Vereine bekommen eigene Limits auf ihrer Seite.',
-                  'The limits are on each plan (above). At the member limit nobody new can join (invites, applications); platform staff can still add people in manage. Mails per month and storage are only reported, nothing is blocked. A club gets its own limits on its page.',
+                  'Die Limits stehen bei jedem Tarif (oben). Am Mitgliederlimit läuft eine Kulanzfrist: Neue Mitglieder kommen noch dazu, die Admins sehen, welcher Tarif passt, und wechseln mit einem Klick. Danach kommt niemand Neues dazu (Einladungen, Anträge); Plattform-Staff kann in manage trotzdem hinzufügen. Mails pro Monat und Speicher werden nur gemeldet, nichts wird gesperrt. Einzelne Vereine bekommen eigene Limits auf ihrer Seite.',
+                  'The limits are on each plan (above). At the member limit a grace period runs: new members still join, the admins see which plan fits and switch in one click. After it nobody new can join (invites, applications); platform staff can still add people in manage. Mails per month and storage are only reported, nothing is blocked. A club gets its own limits on its page.',
                 )}
               </Text>
-              <Stack gap="md">{field('limits.warn_percent')}</Stack>
+              <Stack gap="md">
+                {field('limits.warn_percent')}
+                {field('limits.grace_days')}
+              </Stack>
             </Paper>
           )}
 
@@ -898,6 +937,22 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                 )}
               </Text>
               <Stack gap="sm">{BACKUP.map(field)}</Stack>
+            </Paper>
+          )}
+
+          {section === 'backup-retention' && (
+            <Paper withBorder p="lg">
+              <Group justify="space-between" mb={4}>
+                <Title order={3}>{tr('Aufbewahrung', 'Retention')}</Title>
+                {resetButton(RETENTION)}
+              </Group>
+              <Text size="xs" c="dimmed" mb={12}>
+                {tr(
+                  'Jede Nacht um 3 Uhr entsteht ein globales Backup und eines pro Verein, sonntags zusätzlich ein wöchentliches, am 1. ein monatliches. Danach löscht Hubra, was diese Regeln nicht mehr behalten, auch im Bucket. Gezählt wird pro Satz, also für jeden Verein für sich. Fehlgeschlagene Backups zählen nicht.',
+                  'Every night at 3:00 Hubra makes a global backup and one per club, plus a weekly one on Sundays and a monthly one on the 1st. Afterwards it deletes what these rules no longer keep, in the bucket too. Counts are per set, so each club on its own. Failed backups do not count.',
+                )}
+              </Text>
+              <Stack gap="sm">{RETENTION.map(field)}</Stack>
             </Paper>
           )}
 

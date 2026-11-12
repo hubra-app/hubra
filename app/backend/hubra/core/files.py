@@ -46,7 +46,8 @@ class FileStoreError(Exception):
 
 
 class FileTooLarge(FileStoreError):
-    """The file is larger than ``files.max_mb``."""
+    """The file is larger than the club may upload (``max_mb``: its own
+    limit, its plan's, or ``files.max_mb``)."""
 
 
 class FileNotFound(FileStoreError):
@@ -80,10 +81,21 @@ def _s3_config() -> _S3 | None:
     )
 
 
-def max_bytes() -> int:
-    from hubra.core.services import platform_settings as ps
+def max_mb(tenant_id: int | None = None) -> int:
+    """The largest file, in MB, the club (default: the one this context
+    works in) can store: its own limit, its plan's, else ``files.max_mb``;
+    never more than the server's upload ceiling (``services.quotas``)."""
+    from hubra.core.models.tenant import Tenant
+    from hubra.core.services import quotas
 
-    return ps.int_setting("files.max_mb", 25) * 1024 * 1024
+    if tenant_id is None:
+        tenant_id = _tenant_of(crypto.context_scope())
+    tenant = db.session.get(Tenant, tenant_id) if tenant_id is not None else None
+    return quotas.max_file_mb(tenant)
+
+
+def max_bytes(tenant_id: int | None = None) -> int:
+    return max_mb(tenant_id) * 1024 * 1024
 
 
 def backend() -> str:
@@ -181,9 +193,10 @@ def put(
     (added to the session, saved with the caller's commit)."""
     if not _OWNER.match(owner):
         raise ValueError(f"bad owner {owner!r}")
-    if len(data) > max_bytes():
-        raise FileTooLarge(f"larger than {max_bytes() // (1024 * 1024)} MB")
     scope = crypto.context_scope()
+    limit = max_mb(_tenant_of(scope))
+    if len(data) > limit * 1024 * 1024:
+        raise FileTooLarge(f"larger than {limit} MB")
     key = f"{scope}/{owner}/{secrets.token_hex(16)}"
     _write(key, crypto.encrypt_bytes(data, _purpose(owner), scope))
     record = StoredFile(

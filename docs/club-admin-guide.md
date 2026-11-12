@@ -325,6 +325,18 @@ a year.
 | Privacy | Whether all members see the member directory; whether groups are listed publicly |
 | Membership | Leaving needs approval, notice period (see [Leaving](#leaving)) |
 | Announcement Banner | A line shown at the top of every page, for example for the general meeting |
+| Hubra support | Whether Hubra support must ask before opening the club, and their requests (see below) |
+
+**Hubra support in your club.** When Hubra support opens your club to help
+(as one of your members, for at most two hours, with a banner the whole
+time), the audit log shows it: "Support-Zugriff (ansehen)" or "(mit
+Änderungen)" with the member, the length and the reason, and "Support-Zugriff
+beendet" at the end. With **Support-Zugriff nur mit Freigabe** on, support
+asks first: your admins get a notification, and the request shows under
+Settings › Club › Hubra-Support with **Freigeben** and **Ablehnen**. An
+approval opens one session, as asked (length, look or change), within 24
+hours. Support can't approve its own request or turn the rule off while
+inside your club.
 
 ### Domains
 

@@ -131,6 +131,7 @@ def test_limits_api_needs_platform_rights(client, auth_headers, club):
 
 def test_a_full_club_takes_no_new_members(sqlite_only, app, client, db, seeded_db, club):
     club.settings = {"limits": {"members": 1}}  # the owner is the one member
+    platform_settings.set_many({"limits.grace_days": "0"})  # a hard stop
     db.session.commit()
     client.post(
         "/api/v1/auth/login",
@@ -262,3 +263,71 @@ def test_bell_texts_are_translated():
     assert notification_text.translate(
         "Club limit almost reached", "Mails this month: 80 of 100.", "de-CH"
     ) == ("Vereinslimit fast erreicht", "Mails diesen Monat: 80 von 100.")
+
+
+# ── Largest file (file_mb) ───────────────────────────────────────────────────
+
+
+def test_largest_file_comes_from_club_plan_or_default(app, db, club):
+    from hubra.core.services import plans
+
+    # No value anywhere: the platform's files.max_mb (25).
+    assert quotas.file_limit(club) == {
+        "limit": 25,
+        "wanted": 25,
+        "source": "default",
+        "custom": False,
+        "plan_limit": None,
+        "default": 25,
+        "ceiling": 100,
+    }
+    platform_settings.set_many({"files.max_mb": "10"})
+    assert quotas.max_file_mb(club) == 10
+    _plan(db, file_mb=50)
+    assert quotas.file_limit(club)["source"] == "plan"
+    assert quotas.max_file_mb(club) == 50
+    quotas.set_overrides(club, {"file_mb": 5})
+    assert quotas.file_limit(club)["source"] == "club"
+    assert quotas.max_file_mb(club) == 5
+    # The member/mail/storage limits are untouched by it.
+    assert "file_mb" not in quotas.limits_for(club)
+    quotas.set_overrides(club, {"file_mb": "plan"})
+    assert quotas.max_file_mb(club) == 50
+    # Capped at the server's upload ceiling.
+    _plan(db, file_mb=500)
+    app.config["MAX_UPLOAD_MB"] = 200
+    try:
+        row = quotas.file_limit(club)
+        assert row["limit"] == 200 and row["wanted"] == 500
+    finally:
+        app.config["MAX_UPLOAD_MB"] = 100
+    assert plans.plan_json(plans.get("starter"))["limits"]["file_mb"] == 500
+
+
+def test_bad_file_sizes_are_refused(db, club):
+    from hubra.core.services import plans
+
+    for bad in (0, -1, None, "5", True, plans.MAX_FILE_MB + 1):
+        with pytest.raises(Exception) as err:
+            quotas.set_overrides(club, {"file_mb": bad})
+        assert getattr(err.value, "status", None) == 400
+    with pytest.raises(Exception) as err:
+        plans.update(plans.get("growth"), {"limit_file_mb": 0})
+    assert getattr(err.value, "status", None) == 400
+    # Empty on the plan: back to the default.
+    plans.update(plans.get("growth"), {"limit_file_mb": ""})
+    assert plans.get("growth").limit_file_mb is None
+
+
+def test_limits_api_sets_the_largest_file(sqlite_only, client, staff_headers, db, club):
+    url = f"/api/v1/system/tenants/{club.id}/limits"
+    body = client.get(url).get_json()
+    assert body["file"]["limit"] == 25 and body["file"]["source"] == "default"
+    resp = client.put(url, json={"file_mb": 40})
+    assert resp.status_code == 200, resp.get_json()
+    assert resp.get_json()["file"]["limit"] == 40
+    assert resp.get_json()["file"]["custom"] is True
+    entry = db.session.scalar(
+        select(GlobalAuditEntry).where(GlobalAuditEntry.action == "tenant.limits")
+    )
+    assert entry.details["after"] == {"file_mb": 40}

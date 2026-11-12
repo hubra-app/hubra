@@ -236,8 +236,10 @@ export function PlatformPlans() {
               )}
               <Text size="xs" c="dimmed" mt={6}>
                 {tr(
-                  `${limit(p.limits.members)} Mitglieder · ${limit(p.limits.mail_month)} Mails/Monat · ${limit(p.limits.storage_mb, ' MB')} Speicher`,
-                  `${limit(p.limits.members)} members · ${limit(p.limits.mail_month)} mails/month · ${limit(p.limits.storage_mb, ' MB')} storage`,
+                  `${limit(p.limits.members)} Mitglieder · ${limit(p.limits.mail_month)} Mails/Monat · ${limit(p.limits.storage_mb, ' MB')} Speicher` +
+                    (p.limits.file_mb != null ? ` · Dateien bis ${p.limits.file_mb} MB` : ''),
+                  `${limit(p.limits.members)} members · ${limit(p.limits.mail_month)} mails/month · ${limit(p.limits.storage_mb, ' MB')} storage` +
+                    (p.limits.file_mb != null ? ` · files up to ${p.limits.file_mb} MB` : ''),
                 )}
               </Text>
               {p.features.length > 0 && (
@@ -481,6 +483,7 @@ function PlanModal({
     limit_members: plan?.limits.members ?? '',
     limit_mail_month: plan?.limits.mail_month ?? '',
     limit_storage_mb: plan?.limits.storage_mb ?? '',
+    limit_file_mb: plan?.limits.file_mb ?? '',
     public: plan?.public ?? false,
     selectable: plan?.selectable ?? false,
     highlighted: plan?.highlighted ?? false,
@@ -558,6 +561,7 @@ function PlanModal({
             limit_members: count(v.limit_members),
             limit_mail_month: count(v.limit_mail_month),
             limit_storage_mb: count(v.limit_storage_mb),
+            limit_file_mb: count(v.limit_file_mb),
             features: features.filter((f) => f.de.trim() || f.en.trim()),
             modules: modules.map((m) =>
               m.price_chf == null ? { ...m, unit: 'flat' as const } : m,
@@ -693,6 +697,19 @@ function PlanModal({
             onChange={(x) => set('limit_storage_mb', x === '' ? '' : Number(x))}
           />
         </SimpleGrid>
+        <NumberInput
+          label={tr('Grösste Datei (MB)', 'Largest file (MB)')}
+          description={tr(
+            'Die grösste Datei, die ein Verein mit diesem Tarif hochladen kann (z. B. in die Dokumente). Leer: der Plattform-Standard unter Backups › Einstellungen › Dateispeicher.',
+            'The largest file a club on this plan can upload (e.g. to Documents). Empty: the platform default under Backups › Settings › File storage.',
+          )}
+          min={1}
+          max={10240}
+          allowDecimal={false}
+          allowNegative={false}
+          value={v.limit_file_mb}
+          onChange={(x) => set('limit_file_mb', x === '' ? '' : Number(x))}
+        />
         <Stack gap={6}>
           <Text size="sm" fw={600}>
             {tr('Leistungen (für die Website)', 'Features (for the website)')}

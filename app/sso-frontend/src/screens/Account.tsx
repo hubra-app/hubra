@@ -723,6 +723,15 @@ function SessionsTab() {
                 {s.ipAddress || tr('IP unbekannt', 'IP unknown')} ·{' '}
                 {tr('zuletzt aktiv', 'last active')} {formatTime(s.lastActiveAt)}
               </Text>
+              {(s.clubs ?? []).length > 0 && (
+                <Group gap={4} mt={6}>
+                  {(s.clubs ?? []).map((c) => (
+                    <Badge key={c.slug} size="sm" variant="outline" color="gray">
+                      {c.name}
+                    </Badge>
+                  ))}
+                </Group>
+              )}
             </div>
             {!s.current && (
               <Button

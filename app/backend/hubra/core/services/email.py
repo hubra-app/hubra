@@ -706,6 +706,34 @@ def support_cases_url(case_id: int | None = None) -> str:
     return f"{base}/app/feedback" if base else ""
 
 
+def send_roadmap_shipped(
+    to_address: str,
+    name: str,
+    *,
+    title: str,
+    summary: str,
+    version: str,
+    lang: str = DEFAULT_LANG,
+) -> bool:
+    """Tell someone who wanted a roadmap item that it shipped in *version*
+    (``services.shipped``).  True when sent."""
+    roadmap_url = support_site_url("/roadmap")
+    if not roadmap_url:
+        base = _get_base_url()
+        roadmap_url = f"{base}/app/feedback/roadmap" if base else ""
+    body_html, body_text, subject = render_mail_template(
+        "roadmap_shipped",
+        locale=lang,
+        name=name,
+        club_name="Hubra",
+        item_title=title,
+        item_summary=summary,
+        version=version,
+        roadmap_url=roadmap_url,
+    )
+    return _send(to_address, name, subject, body_html, body_text, system=True)
+
+
 def send_support_case_update(
     to_address: str,
     name: str,

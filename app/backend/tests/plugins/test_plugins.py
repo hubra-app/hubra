@@ -1291,3 +1291,85 @@ def test_frontend_tag_follows_the_content_and_old_builds_are_not_cached(
     assert ok.headers["Cache-Control"] == "public, max-age=3600"
     old = client.get("/api/v1/plugins/notes/frontend.js?v=2.0.0-newbuild")
     assert old.status_code == 200 and old.headers["Cache-Control"] == "no-store"
+
+
+def test_download_connects_to_the_checked_address(monkeypatch):
+    """The address that passed the check is the one connected to: a second DNS
+    answer (rebinding) can't send the download into the local network."""
+    import socket
+
+    from hubra.core import webhooks
+
+    monkeypatch.delenv("HUBRA_PLUGINS_ALLOW_PRIVATE", raising=False)
+    answers = iter(["93.184.216.34", "127.0.0.1"])
+
+    def resolve(host, port, *a, **kw):
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (next(answers), port))]
+
+    used = []
+
+    class FakeConn:
+        def __init__(self, host, ip, port, timeout):
+            used.append((host, ip))
+
+        def request(self, *a, **kw):
+            pass
+
+        def getresponse(self):
+            class R:
+                status = 200
+
+                def read(self, n):
+                    return b"ok"
+
+                def getheader(self, name):
+                    return None
+
+            return R()
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(installer.socket, "getaddrinfo", resolve)
+    monkeypatch.setattr(webhooks, "_PinnedHTTPS", FakeConn)
+    assert installer.http_get("https://plugins.example/index.json") == b"ok"
+    assert used == [("plugins.example", "93.184.216.34")]
+
+
+def test_download_redirect_to_a_private_host_is_refused(monkeypatch):
+    import socket
+
+    from hubra.core import webhooks
+
+    monkeypatch.delenv("HUBRA_PLUGINS_ALLOW_PRIVATE", raising=False)
+    ips = {"plugins.example": "93.184.216.34", "inside.example": "10.0.0.5"}
+
+    def resolve(host, port, *a, **kw):
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (ips[host], port))]
+
+    class Redirect:
+        def __init__(self, host, ip, port, timeout):
+            pass
+
+        def request(self, *a, **kw):
+            pass
+
+        def getresponse(self):
+            class R:
+                status = 302
+
+                def read(self, n):
+                    return b""
+
+                def getheader(self, name):
+                    return "https://inside.example/secret"
+
+            return R()
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(installer.socket, "getaddrinfo", resolve)
+    monkeypatch.setattr(webhooks, "_PinnedHTTPS", Redirect)
+    with pytest.raises(InstallError, match="not a public address"):
+        installer.http_get("https://plugins.example/index.json")

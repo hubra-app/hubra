@@ -311,6 +311,12 @@ def update_club_settings():
         return validation_error(exc, 422)
 
     _check_mfa_rule(tenant, validated)
+    if "support_requires_approval" in validated and bool(
+        validated["support_requires_approval"]
+    ) != bool(
+        (tenant.settings or {}).get("branding", {}).get("support_requires_approval")
+    ):
+        _refuse_support_staff()
 
     settings = dict(tenant.settings or {})
     branding = dict(settings.get("branding", {}))
@@ -340,6 +346,70 @@ def update_club_settings():
     db.session.commit()
 
     return jsonify({"settings": branding}), 200
+
+
+# ── Support access (services.support_access) ─────────────────────────────────
+
+
+def _refuse_support_staff() -> None:
+    """Approving support access, and the setting that asks for it, stay
+    with the club's own admins, not Hubra staff inside the club."""
+    from hubra.core.permissions import check_impersonation_restriction
+
+    blocked = check_impersonation_restriction("support_access")
+    if blocked is not None:
+        raise ApiError(403, blocked[0], blocked[1])
+
+
+@admin_bp.get("/support-access")
+@require_admin
+def list_support_access():
+    """Hubra staff's requests to open the club, newest first."""
+    from hubra.core.services import support_access
+
+    tenant = current_tenant()
+    if tenant is None:
+        return jsonify({"error": "NO_TENANT", "message": "No tenant context"}), 400
+    return jsonify(
+        {
+            "requiresApproval": support_access.requires_approval(tenant),
+            "approvalHours": support_access.APPROVAL_HOURS,
+            "requests": [
+                support_access.as_dict(r) for r in support_access.for_club(tenant)
+            ],
+        }
+    ), 200
+
+
+def _decide_support_access(request_id: int, approve: bool):
+    from hubra.core.auth.helpers import get_current_member
+    from hubra.core.services import support_access
+
+    _refuse_support_staff()
+    tenant = current_tenant()
+    if tenant is None:
+        return jsonify({"error": "NO_TENANT", "message": "No tenant context"}), 400
+    member = get_current_member()
+    try:
+        req = support_access.decide(
+            tenant, request_id, approve=approve, by=member.name, by_member_id=member.id
+        )
+    except support_access.SupportAccessError as exc:
+        raise ApiError(exc.status, exc.code, str(exc)) from exc
+    return jsonify(support_access.as_dict(req)), 200
+
+
+@admin_bp.post("/support-access/<int:request_id>/approve")
+@require_admin
+def approve_support_access(request_id: int):
+    """Let Hubra staff start the session they asked for (once, within a day)."""
+    return _decide_support_access(request_id, True)
+
+
+@admin_bp.post("/support-access/<int:request_id>/decline")
+@require_admin
+def decline_support_access(request_id: int):
+    return _decide_support_access(request_id, False)
 
 
 # ── Bank details for QR invoices ─────────────────────────────────────────────

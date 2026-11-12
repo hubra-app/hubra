@@ -112,6 +112,8 @@ def choose_plan(tenant: Tenant, key) -> bool:
             f"This plan allows {limit} members; the club has {count}",
         )
     tenant.plan = key
+    if limit is None or count < limit:
+        quotas.end_grace(tenant)  # room again: a new grace period next time
     return True
 
 

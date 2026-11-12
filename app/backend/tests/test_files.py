@@ -98,6 +98,45 @@ def test_files_above_the_limit_are_refused(app, db, store, club):
         assert files.put("documents", b"x" * 1024).size == 1024
 
 
+def test_the_clubs_plan_and_own_limit_decide_the_largest_file(app, db, store, club):
+    from hubra.core.services import plans, quotas
+
+    tenant = club("files-d2")
+    tenant.plan = "starter"
+    platform_settings.set_many({"files.max_mb": "1"})
+    plans.update(plans.get("starter"), {"limit_file_mb": 2})
+    db.session.commit()
+    two_mb = b"x" * (2 * 1024 * 1024)
+    with app.test_request_context():
+        _in(tenant)
+        assert files.max_mb() == 2
+        assert files.put("documents", two_mb).size == len(two_mb)
+        with pytest.raises(files.FileTooLarge, match="2 MB"):
+            files.put("documents", two_mb + b"x")
+        quotas.set_overrides(tenant, {"file_mb": 1})
+        with pytest.raises(files.FileTooLarge, match="1 MB"):
+            files.put("documents", two_mb)
+
+
+def test_uploads_may_be_larger_than_other_requests(app, client):
+    big = b"x" * (app.config["MAX_CONTENT_LENGTH"] + 10)
+    resp = client.post(
+        "/api/v1/health",
+        data=big,
+        headers={"Content-Type": "application/json"},
+    )
+    assert resp.status_code == 413
+    with app.test_request_context(
+        "/x", method="POST", content_type="multipart/form-data; boundary=b", data=b""
+    ):
+        from flask import request
+
+        from hubra.core.app import _upload_body_limit
+
+        _upload_body_limit()
+        assert request.max_content_length == app.config["MAX_UPLOAD_MB"] * 1024 * 1024
+
+
 def test_remove_deletes_object_and_record(app, db, store, club):
     tenant = club("files-e")
     with app.test_request_context():

@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { TextInput, Button, Stack, Text, Alert, Checkbox, SegmentedControl } from '@mantine/core'
 import { Modal as SharedModal } from '@/components/ui'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
-import { IconReplaceUser } from '@tabler/icons-react'
-import { impersonateTenant } from '@/api/tenants'
+import { IconLock, IconReplaceUser } from '@tabler/icons-react'
+import { askSupportAccess, getSupportAccess, impersonateTenant } from '@/api/tenants'
 import { useAdmin } from '@/context/AdminContext'
 import { tr } from '@/lang'
 
@@ -33,18 +34,60 @@ export function ImpersonateModal({
   const { notify } = useAdmin()
   const [loading, setLoading] = useState(false)
 
+  const queryClient = useQueryClient()
   const form = useForm<FormValues>({
     validate: zod4Resolver(schema),
     initialValues: { reason: '', allowChanges: false, minutes: '30' },
   })
+  // A club can ask Hubra staff to get its approval first.
+  const access = useQuery({
+    queryKey: ['support-access', tenantId],
+    queryFn: () => getSupportAccess(tenantId),
+    enabled: opened,
+    refetchInterval: (q) => (q.state.data?.request?.status === 'pending' ? 15_000 : false),
+  })
+  const needsApproval = access.data?.requiresApproval ?? false
+  const request = access.data?.request ?? null
+  const approved = needsApproval && request?.status === 'approved' ? request : null
+  const pending = needsApproval && request?.status === 'pending'
+  const mustAsk = needsApproval && !approved && !pending
+
+  // An approval runs as asked for: show those values (the server uses them).
+  useEffect(() => {
+    if (approved) {
+      form.setValues({
+        reason: approved.reason,
+        allowChanges: approved.allowChanges,
+        minutes: String(approved.minutes) as FormValues['minutes'],
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per approval
+  }, [approved?.id])
 
   const handleSubmit = async (values: FormValues) => {
     setLoading(true)
+    if (mustAsk) {
+      try {
+        await askSupportAccess(tenantId, {
+          reason: values.reason.trim(),
+          allow_changes: values.allowChanges,
+          minutes: Number(values.minutes),
+        })
+        notify('success', tr('Anfrage gesendet', 'Request sent'), tr('Die Admins des Vereins werden benachrichtigt.', "The club's admins are notified."))
+        await queryClient.invalidateQueries({ queryKey: ['support-access', tenantId] })
+      } catch (err) {
+        notify('error', tr('Anfrage fehlgeschlagen', 'Request failed'), err instanceof Error ? err.message : undefined)
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
     try {
       const res = await impersonateTenant(tenantId, {
         reason: values.reason.trim(),
         allow_changes: values.allowChanges,
         minutes: Number(values.minutes),
+        ...(approved ? { request_id: approved.id } : {}),
       })
       notify('success', tr('Stellvertretung gestartet', 'Impersonation started'), tr('Du wirst zum Verein weitergeleitet …', 'Redirecting to the club…'))
       // The club app's routes start with the club's slug.
@@ -69,8 +112,10 @@ export function ImpersonateModal({
           <Button variant="default" onClick={onClose}>
             {tr('Abbrechen', 'Cancel')}
           </Button>
-          <Button type="submit" loading={loading}>
-            {tr('Als Admin öffnen', 'Open as admin')}
+          <Button type="submit" loading={loading} disabled={pending || access.isLoading}>
+            {mustAsk || pending
+              ? tr('Beim Verein anfragen', 'Ask the club')
+              : tr('Als Admin öffnen', 'Open as admin')}
           </Button>
         </>
       }
@@ -86,7 +131,31 @@ export function ImpersonateModal({
             `You open "${tenantName}" with admin rights. Without "Allow changes" you can only look. Everything is logged under your name.`,
           )}
         </Alert>
+        {needsApproval && (
+          <Alert
+            icon={<IconLock size={16} />}
+            color={approved ? 'green' : pending ? 'blue' : 'gray'}
+            variant="light"
+            data-testid="support-approval-state"
+          >
+            {approved
+              ? tr(
+                  `Freigegeben von ${approved.decidedBy ?? 'einer Admin-Person'}. Die Sitzung läuft so, wie du sie angefragt hast.`,
+                  `Approved by ${approved.decidedBy ?? 'an admin'}. The session runs as you asked for it.`,
+                )
+              : pending
+                ? tr(
+                    'Wartet auf die Freigabe durch eine Admin-Person des Vereins.',
+                    "Waiting for one of the club's admins to approve.",
+                  )
+                : tr(
+                    `Dieser Verein gibt Support-Zugriffe selbst frei. Frag an; eine Freigabe gilt einmal, ${access.data?.approvalHours ?? 24} Stunden lang.${request?.status === 'declined' ? ' Die letzte Anfrage wurde abgelehnt.' : ''}`,
+                    `This club approves support access itself. Ask first; an approval works once, for ${access.data?.approvalHours ?? 24} hours.${request?.status === 'declined' ? ' The last request was declined.' : ''}`,
+                  )}
+          </Alert>
+        )}
         <TextInput
+          disabled={!!approved || pending}
           label={tr('Grund', 'Reason')}
           required
           {...form.getInputProps('reason')}
@@ -94,6 +163,7 @@ export function ImpersonateModal({
           description={tr('Pflichtfeld für das Audit-Log. Wird dauerhaft gespeichert.', 'Required for the audit log. It is stored permanently.')}
         />
         <Checkbox
+          disabled={!!approved || pending}
           label={tr('Änderungen erlauben', 'Allow changes')}
           description={tr(
             'Nur wenn du im Verein etwas ändern musst, z. B. eine Einstellung korrigieren.',
@@ -106,6 +176,7 @@ export function ImpersonateModal({
             {tr('Dauer', 'Length')}
           </Text>
           <SegmentedControl
+            disabled={!!approved || pending}
             {...form.getInputProps('minutes')}
             data={[
               { value: '15', label: tr('15 Min.', '15 min') },

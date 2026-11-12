@@ -80,6 +80,25 @@ def upgrade_impact():
         return api_error("VALIDATION_ERROR", error_message(exc), 400)
 
 
+@plugins_bp.get("/usage")
+@require_global_permission(_PERM)
+def usage():
+    """Which clubs use which modules and plugins, from the last count
+    (nightly, or POST /usage/refresh); ``{"usage": null}`` before the first."""
+    from hubra.core.services import module_usage
+
+    return jsonify({"usage": module_usage.latest()}), 200
+
+
+@plugins_bp.post("/usage/refresh")
+@require_global_permission(_PERM)
+def refresh_usage():
+    """Count now (reads every club; takes a moment with many clubs)."""
+    from hubra.core.services import module_usage
+
+    return jsonify({"usage": module_usage.refresh()}), 200
+
+
 @plugins_bp.post("/upload")
 @require_global_permission(_PERM)
 @require_step_up

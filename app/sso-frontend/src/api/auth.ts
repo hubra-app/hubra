@@ -430,6 +430,8 @@ export interface AccountSession {
   lastActiveAt: string | null
   /** null: a sign-in to the account itself (this portal), not to a club. */
   club: { slug: string; name: string } | null
+  /** The clubs opened from this sign-in; signing it out ends them too. */
+  clubs?: { slug: string; name: string }[]
   current: boolean
 }
 

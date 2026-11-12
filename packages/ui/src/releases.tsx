@@ -13,7 +13,7 @@ import {
   Text,
   UnstyledButton,
 } from '@mantine/core'
-import { IconArrowBigUp, IconArrowBigUpFilled, IconCircleCheck, IconExternalLink } from '@tabler/icons-react'
+import { IconArrowBigUp, IconArrowBigUpFilled, IconCircleCheck, IconExternalLink, IconHeartFilled } from '@tabler/icons-react'
 import type { Lang } from './lang'
 
 // Release notes ("Neuigkeiten", from CHANGELOG.md) and the one roadmap
@@ -82,6 +82,7 @@ const TEXT = {
     vote: 'Dafür stimmen',
     voted: 'Abgestimmt',
     voteAria: (title: string, on: boolean) => (on ? `Stimme für «${title}» zurücknehmen` : `Für «${title}» stimmen`),
+    wished: 'Du hast dir das gewünscht',
   },
   en: {
     unreleased: (prev?: string) => (prev ? `New since v${prev}` : 'Latest changes'),
@@ -111,6 +112,7 @@ const TEXT = {
     vote: 'Vote',
     voted: 'Voted',
     voteAria: (title: string, on: boolean) => (on ? `Take back your vote for “${title}”` : `Vote for “${title}”`),
+    wished: 'You asked for this',
   },
 } as const
 
@@ -263,18 +265,50 @@ function releaseTitle(entry: ChangelogEntry, entries: ChangelogEntry[], lang: La
   return TEXT[lang].unreleased(prev?.version)
 }
 
+const bare = (v: string | null | undefined) => (v ?? '').trim().replace(/^v/i, '')
+
+/** The shipped roadmap items of *entry* that the reader voted for. */
+export function wishedIn(entry: ChangelogEntry, items: RoadmapItem[]): RoadmapItem[] {
+  const v = bare(entry.version)
+  return items.filter((i) => i.status === 'done' && i.voted && !!i.version && bare(i.version) === v)
+}
+
+/** "You asked for this": the reader's own wishes that shipped in a release. */
+function Wished({ items, lang }: { items: RoadmapItem[]; lang: Lang }) {
+  if (items.length === 0) return null
+  return (
+    <Paper radius="md" p="sm" mb={12} bg="var(--mantine-color-grape-light)">
+      <Group gap={6} mb={4} wrap="nowrap">
+        <IconHeartFilled size={14} color="var(--mantine-color-grape-filled)" aria-hidden />
+        <Text fz="xs" fw={700} c="grape">
+          {TEXT[lang].wished}
+        </Text>
+      </Group>
+      {items.map((item) => (
+        <Text key={item.id} fz="sm" fw={600}>
+          {pick(item.title, lang)}
+        </Text>
+      ))}
+    </Paper>
+  )
+}
+
 /**
  * The newest release open at the top, older ones below as a list that
  * opens one version at a time and loads `pageSize` more on request.
+ * With `roadmap` (the reader's roadmap with votes), a release names the
+ * items in it that the reader voted for.
  */
 export function ReleaseNotes({
   entries,
   lang,
   pageSize = 5,
   latestLimit = 6,
+  roadmap = [],
 }: {
   entries: ChangelogEntry[]
   lang: Lang
+  roadmap?: RoadmapItem[]
   /** Older versions listed at first, and added per "load older". */
   pageSize?: number
   /** Changes of the newest release shown before "show all". */
@@ -309,6 +343,7 @@ export function ReleaseNotes({
           )}
           <EnglishOnly entry={latest} lang={lang} />
         </Group>
+        <Wished items={wishedIn(latest, roadmap)} lang={lang} />
         <ReleaseSections entry={latest} lang={lang} limit={latestLimit} />
       </Paper>
 
@@ -334,9 +369,13 @@ export function ReleaseNotes({
                       · {t.changes(itemCount(entry))}
                     </Text>
                     <EnglishOnly entry={entry} lang={lang} />
+                    {wishedIn(entry, roadmap).length > 0 && (
+                      <IconHeartFilled size={12} color="var(--mantine-color-grape-filled)" aria-label={t.wished} />
+                    )}
                   </Group>
                 </Accordion.Control>
                 <Accordion.Panel>
+                  <Wished items={wishedIn(entry, roadmap)} lang={lang} />
                   <ReleaseSections entry={entry} lang={lang} />
                 </Accordion.Panel>
               </Accordion.Item>

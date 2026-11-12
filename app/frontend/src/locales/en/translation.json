@@ -616,7 +616,8 @@
     "searchMembers": "Search members …",
     "noMembersYet": "No members yet.",
     "remove": "Remove",
-    "showAll": "Show all"
+    "showAll": "Show all",
+    "externalImage": "Show image from {{host}}"
   },
   "dashboard": {
     "activeMembers": "Active members",
@@ -949,7 +950,12 @@
     "status": {
       "pending": "Requested",
       "waitlisted": "Waiting list",
-      "joined": "Signed up"
+      "joined": "Signed up",
+      "registered": "Signed up",
+      "approved": "Approved",
+      "attended": "Came",
+      "maybe": "Maybe",
+      "declined": "Declined"
     },
     "pending": {
       "open": "Open sign-ups"
@@ -962,6 +968,17 @@
     "noMine": "You haven't signed up for any event.",
     "emptyHint": "Plan the next event; members can sign up for it right here.",
     "emptyMember": "Once an event is planned, you can sign up for it here.",
+    "detail": {
+      "back": "Back to events",
+      "meeting": "Join online",
+      "copied": "Link copied",
+      "copyLink": "Copy link",
+      "about": "Description",
+      "signUps": "Sign-ups",
+      "noSignUps": "Nobody has signed up yet.",
+      "plusGuests_one": "+{{count}} guest",
+      "plusGuests_other": "+{{count}} guests"
+    },
     "view": {
       "list": "List",
       "month": "Month"
@@ -2743,7 +2760,8 @@
         "feeConfirmed": "Reason for an own fee confirmed",
         "memberFeeEnded": "A member's own fee has ended",
         "eventReinstated": "Event takes place after all",
-        "confirmRead": "Please confirm you read this"
+        "confirmRead": "Please confirm you read this",
+        "supportAsksAccess": "Hubra support asks for access"
       }
     },
     "notifPanel": {
@@ -3462,7 +3480,14 @@
       "leave_declined": "Request to leave declined",
       "approve_registration": "Registration approved",
       "delete_application": "Application deleted",
-      "create_member": "Member created"
+      "create_member": "Member created",
+      "support_session_view": "Support access (look only)",
+      "support_session_change": "Support access (with changes)",
+      "support_session_end": "Support access ended",
+      "support_access_request": "Support asks for access",
+      "support_access_approve": "Support access approved",
+      "support_access_decline": "Support access declined",
+      "support_session_revoked": "Support access ended early"
     },
     "systemActor": "System (automatic)",
     "backToLog": "Back to the log",
@@ -4782,5 +4807,50 @@
       "noteLabel": "Your confirmation",
       "confirm": "The reason still applies"
     }
+  },
+  "supportAccess": {
+    "title": "Hubra support",
+    "requireApproval": "Support access only when approved",
+    "requireApprovalHint": "On: before Hubra support opens your club, they ask here and an admin approves (once, within 24 hours). Every access is in the audit log.",
+    "none": "No requests from Hubra support yet.",
+    "staff": "Hubra support",
+    "minutes": "{{count}} min",
+    "mayChange": "may change things",
+    "lookOnly": "look only",
+    "decidedBy": "decided by {{name}}",
+    "approve": "Approve",
+    "decline": "Decline",
+    "approved": "Access approved",
+    "declined": "Access declined",
+    "failed": "Not saved",
+    "status": {
+      "pending": "Open",
+      "approved": "Approved",
+      "declined": "Declined",
+      "used": "Used",
+      "expired": "Expired"
+    }
+  },
+  "limits": {
+    "kind": {
+      "members": "Members",
+      "mail": "Mails this month",
+      "storage": "Storage"
+    },
+    "banner": {
+      "grace": "Your club has reached its limit of {{limit}} members. New members can still join until {{date}}.",
+      "full": "Your club has reached its limit of {{limit}} members. New members can only join with a bigger plan.",
+      "near": "Your club is close to its plan's limit: {{tight}}."
+    },
+    "fits": {
+      "unlimited": "{{name}} has no member limit",
+      "members": "{{name}} has room for {{limit}} members"
+    },
+    "perMonth": "per month",
+    "switchTo": "Switch to {{name}}",
+    "seePlans": "See plans",
+    "confirmTitle": "Switch to {{name}}?",
+    "newPrice": "New: {{price}} per month.",
+    "switch": "Switch"
   }
 }
