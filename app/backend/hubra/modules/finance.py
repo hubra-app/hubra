@@ -6,7 +6,7 @@ monthly statement and the annual accounts) are the Finances plugin, module
 booking, so they live in every club schema either way.
 """
 
-from hubra.core.contracts import action_contract, query_contract
+from hubra.core.contracts import action_contract, query_contract, widget_contract
 from hubra.core.modules import Blueprint, Module, NavItem, SettingField
 
 module = Module(
@@ -196,6 +196,25 @@ module = Module(
             output="hubra.api.finance.contracts:ExternalPartyOut",
             perm="finance.external_parties.create",
             description="Create an outside party, or keep one up to date",
+        ),
+        # Dashboard widgets (hubra/api/finance/widgets.py).
+        widget_contract(
+            "finance.invoices.ageing",
+            "hubra.api.finance.widgets:ageing",
+            label="dashboards.w.invoiceAgeing",
+            description="dashboards.d.invoiceAgeing",
+            size="m",
+            view="list",
+            perm="finance.invoices.read",
+        ),
+        widget_contract(
+            "finance.invoices.expected",
+            "hubra.api.finance.widgets:expected",
+            label="dashboards.w.expectedIncome",
+            description="dashboards.d.expectedIncome",
+            size="s",
+            view="stat",
+            perm="finance.invoices.read",
         ),
     ),
 )

@@ -60,6 +60,22 @@ the dashboard.
 
 ![Edit mode](screenshots/dashboard-grid/2-edit-desktop.png)
 
+### Templates
+
+**Neues Dashboard** can start from a template instead of an empty grid. The
+template keeps only the widgets the member may add in this club, and is
+offered only when at least two of them are left.
+
+* **Kassen-Cockpit**: Geld heute (Finances plugin), Erwartet diesen Monat,
+  Offene Rechnungen, offene Spesen (Kasse plugin), Offene Rechnungen nach
+  Alter, Budget dieses Jahr (Finances plugin, module Budgets).
+
+![New dashboard from a template](screenshots/treasurer-cockpit/new-dialog.png)
+![Kassen-Cockpit](screenshots/treasurer-cockpit/cockpit.png)
+
+Templates are listed in `DASHBOARD_TEMPLATES`
+(app/frontend/src/screens/private/dashboard/widgets.tsx).
+
 ## Widgets
 
 | Widget | Shows | Needs |
@@ -73,6 +89,8 @@ the dashboard.
 | Ein- und Austritte | joins and leaves per month of this year (title) | module members, `members.members.read` |
 | Notiz | a text of the owner's | nothing |
 | Offene Rechnungen | how many of the club's invoices are open | module finance, `finance.invoices.read` |
+| Offene Rechnungen nach Alter | open invoices per age (not due, 1–30, 31–60, 61–90, over 90 days overdue), count and amount | module finance, `finance.invoices.read` |
+| Erwartet diesen Monat | what open invoices due by the end of the month (overdue ones included) bring in | module finance, `finance.invoices.read` |
 | Deine Stimme ist gefragt | open polls the member hasn't voted in; nothing when there are none | module polls |
 | Offene Zahlung, Meine Zahlen, Meine Anlässe, Meine Abstimmungen, Meine Präsenz, Meine Gruppen | the member's own invoices, numbers, events, votes, attendance and groups | events, polls or groups for the last four |
 | Zahlen aus Plugins, Karten aus Plugins | what plugins put into the slots `dashboard.stats` and `account.cards` | nothing |

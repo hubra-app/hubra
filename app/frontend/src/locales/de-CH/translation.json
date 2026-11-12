@@ -4556,7 +4556,9 @@
       "myAttendance": "Wie oft du an Trainings und Anlässen dabei warst",
       "myGroups": "Die Gruppen, in denen du bist",
       "pluginStats": "Was installierte Plugins zur Vereinsübersicht beisteuern",
-      "pluginCards": "Was installierte Plugins zu deiner persönlichen Seite beisteuern"
+      "pluginCards": "Was installierte Plugins zu deiner persönlichen Seite beisteuern",
+      "invoiceAgeing": "Offene Rechnungen, gruppiert nach Tagen überfällig, mit Anzahl und Betrag",
+      "expectedIncome": "Was offene Rechnungen bis Monatsende einbringen, überfällige eingeschlossen"
     },
     "delete": "Dashboard löschen",
     "deleteBody": "«{{name}}» und seine Widgets werden gelöscht.",
@@ -4616,7 +4618,9 @@
       "myAttendance": "Meine Präsenz",
       "myGroups": "Meine Gruppen",
       "pluginStats": "Zahlen aus Plugins",
-      "pluginCards": "Karten aus Plugins"
+      "pluginCards": "Karten aus Plugins",
+      "invoiceAgeing": "Offene Rechnungen nach Alter",
+      "expectedIncome": "Erwartet diesen Monat"
     },
     "nothingNow": "{{name}}: gerade nichts anzuzeigen.",
     "home": {
@@ -4646,7 +4650,13 @@
     "visPrivateHint": "Nur du siehst es.",
     "visClubHint": "Alle Mitglieder sehen es, jedes nur mit den Widgets, die es sehen darf.",
     "visGroupsHint": "Nur die Mitglieder dieser Gruppen sehen es, jedes nur mit den Widgets, die es sehen darf.",
-    "sharedGroups": "Geteilt mit {{groups}}"
+    "sharedGroups": "Geteilt mit {{groups}}",
+    "template": "Vorlage",
+    "tpl": {
+      "empty": "Leer",
+      "treasurer": "Kassen-Cockpit",
+      "treasurerHint": "Geld heute, erwartete Einnahmen, offene Rechnungen nach Alter, Budget und offene Spesen"
+    }
   },
   "subscription": {
     "cancelled": "Zahlung abgebrochen, es wurde nichts belastet.",

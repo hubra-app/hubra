@@ -4556,7 +4556,9 @@
       "myAttendance": "How often you were at trainings and events",
       "myGroups": "The groups you are in",
       "pluginStats": "What installed plugins add to the club overview",
-      "pluginCards": "What installed plugins add to your personal page"
+      "pluginCards": "What installed plugins add to your personal page",
+      "invoiceAgeing": "Open invoices grouped by days overdue, with count and amount",
+      "expectedIncome": "What open invoices bring in by the end of the month, overdue ones included"
     },
     "delete": "Delete dashboard",
     "deleteBody": "“{{name}}” and its widgets will be deleted.",
@@ -4616,7 +4618,9 @@
       "myAttendance": "My attendance",
       "myGroups": "My groups",
       "pluginStats": "Numbers from plugins",
-      "pluginCards": "Cards from plugins"
+      "pluginCards": "Cards from plugins",
+      "invoiceAgeing": "Open invoices by age",
+      "expectedIncome": "Expected this month"
     },
     "nothingNow": "{{name}}: nothing to show right now.",
     "home": {
@@ -4646,7 +4650,13 @@
     "visPrivateHint": "Only you see it.",
     "visClubHint": "All members see it, each only with the widgets they may see.",
     "visGroupsHint": "Only the members of these groups see it, each only with the widgets they may see.",
-    "sharedGroups": "Shared with {{groups}}"
+    "sharedGroups": "Shared with {{groups}}",
+    "template": "Template",
+    "tpl": {
+      "empty": "Empty",
+      "treasurer": "Treasurer cockpit",
+      "treasurerHint": "Money today, expected income, open invoices by age, budget and open expense claims"
+    }
   },
   "subscription": {
     "cancelled": "Payment cancelled, nothing was charged.",
