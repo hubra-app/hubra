@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<title>{{ title }}</title>
+<style>
+  @page {
+    size: A4;
+    margin: 34mm 15mm 20mm;
+    @top-left { content: element(letterhead); width: 100%; }
+    @bottom-left { content: element(footer); width: 100%; }
+  }
+  {% if bottom %}
+  /* The first page ends with the slip (QR bill) at the page edge. */
+  @page :first { margin-bottom: 0; @bottom-left { content: none; } }
+  {% endif %}
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 10pt;
+    color: #181818;
+    margin: 0;
+  }
+  .letterhead {
+    position: running(letterhead);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid {{ head.color }};
+    padding: 10mm 0 3mm;
+  }
+  .letterhead .brand { display: flex; align-items: center; gap: 4mm; }
+  .letterhead img { max-height: 14mm; max-width: 40mm; }
+  .letterhead .name { font-size: 13pt; font-weight: 700; color: {{ head.color }}; }
+  .letterhead .address { font-size: 8pt; color: #6b7480; text-align: right; line-height: 1.5; }
+  .footer {
+    position: running(footer);
+    display: flex;
+    justify-content: space-between;
+    font-size: 7.5pt;
+    color: #6b7480;
+    border-top: 1px solid #e3eae6;
+    padding-top: 2mm;
+  }
+  .footer .page::after { content: "{{ 'Seite' if lang == 'de' else 'Page' }} " counter(page) " / " counter(pages); }
+  h1 { font-size: 18pt; margin: 0 0 4mm; }
+  h2 { font-size: 12pt; margin: 5mm 0 2mm; color: {{ head.color }}; }
+  .bottom {
+    position: absolute;
+    bottom: 0;
+    left: -15mm;
+    width: 210mm;
+    height: 106mm;
+  }
+  .bottom svg { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div class="letterhead">
+  <div class="brand">
+    {% if head.logo %}<img src="{{ head.logo }}" alt="">{% endif %}
+    <div class="name">{{ head.name }}</div>
+  </div>
+  <div class="address">
+    {% for line in head.address %}{{ line }}<br>{% endfor %}
+    {% if head.website %}{{ head.website }}{% endif %}
+  </div>
+</div>
+<div class="footer">
+  <span>{{ head.name }}{% if head.email %} · {{ head.email }}{% endif %}</span>
+  <span class="page"></span>
+</div>
+{{ body|safe }}
+{% if bottom %}<div class="bottom">{{ bottom|safe }}</div>{% endif %}
+</body>
+</html>

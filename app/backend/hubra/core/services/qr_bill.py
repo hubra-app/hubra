@@ -192,18 +192,14 @@ def generate_invoice_pdf(invoice: Invoice) -> bytes:
     bill.as_svg(svg_buffer)
     qr_svg = svg_buffer.getvalue()
 
-    # ── 6. Render full invoice HTML ────────────────────────────────────────
+    # ── 6. Render the invoice under the club's letterhead ─────────────────
     from flask import render_template
 
-    html = render_template(
+    from hubra.core.services import pdf
+
+    body = render_template(
         "invoice/invoice.html",
-        club_name=club_name,
         iban=iban,
-        creditor_street=creditor_street,
-        creditor_house_no=creditor_house_no,
-        creditor_pcode=creditor_pcode,
-        creditor_city=creditor_city,
-        creditor_country=creditor_country,
         finance_email=finance_email,
         recipient_name=recipient_name,
         invoice_id=invoice.id,
@@ -213,28 +209,22 @@ def generate_invoice_pdf(invoice: Invoice) -> bytes:
         description=description,
         reference=reference,
         reference_display=format_ref_number(bill) if reference else "",
-        qr_svg=qr_svg,
         lang=lang,
     )
 
     # ── 7. Convert HTML to PDF via WeasyPrint ──────────────────────────────
     try:
-        from weasyprint import HTML as WeasyHTML
-
-        pdf_bytes = WeasyHTML(string=html, url_fetcher=_no_fetch()).write_pdf()
+        pdf_bytes = pdf.render(
+            body,
+            title=f"Rechnung #{invoice.id}",
+            lang=lang,
+            bottom_html=qr_svg,
+        )
     except Exception as exc:
         logger.error("WeasyPrint PDF generation failed: %s", exc)
         raise RuntimeError(f"Failed to generate invoice PDF: {exc}") from exc
 
     return pdf_bytes
-
-
-def _no_fetch():
-    """WeasyPrint's url_fetcher: the invoice is self-contained, so nothing is
-    loaded from disk or the network (only inline data: URIs)."""
-    from weasyprint.urls import URLFetcher
-
-    return URLFetcher(allowed_protocols={"data"})
 
 
 def _description_for(invoice: Invoice, lang: str = _DEFAULT_LANG) -> str:

@@ -159,6 +159,22 @@ the data is still there. An export that fails is listed with an `error`
 and the rest still exports; an erase that fails stops the whole deletion
 (409 `PRIVACY_ERASE_FAILED`), so nothing is half deleted.
 
+## PDFs: one letterhead
+
+Every PDF a club sends carries the same letterhead
+(`hubra/core/services/pdf.py`, template `templates/pdf/base.html`): the
+club's logo and name, the address from Finanzen › Bank & QR-Rechnung and
+its website at the top of each page; its name, finance contact and
+"Seite x / y" at the bottom; headings in its primary colour (Settings ›
+Verein). Invoices use it, with the QR-bill slip at the bottom edge of the
+first page. A plugin calls `pdf.render` with the body as HTML (it escapes
+what members wrote) and gets the PDF back as base64; it never imports core
+or WeasyPrint for it. WeasyPrint loads only `data:` URIs, nothing from disk
+or the network.
+
+![Invoice](screenshots/pdf-letterhead/invoice.png)
+![Two-page document](screenshots/pdf-letterhead/document.png)
+
 ## Versions
 
 `version` is the contract's major version, a whole number. Adding an
@@ -235,6 +251,7 @@ and switch it on. Emitters and handlers don't change.
 
 | Contract | Kind | What it does |
 | --- | --- | --- |
+| `pdf.render` | action | `{title, body_html, lang?}` → `{pdf_base64}`: the HTML on A4 pages under the club's letterhead (logo, name, address, contact line, page numbers, primary colour); see [PDFs](#pdfs-one-letterhead) |
 | `finance.billing_period` | query | `{on}` → `{start, end}`, the club's billing year around that day |
 | `finance.invoice.set_status` | action | `{invoice_id, status: Paid\|Open, actor_id?, book?, payment?: {on, amount, method}}`, with the mails and `invoice.updated`; `book` first announces a paid invoice that has no booking yet, so the books book it; `payment` (only with Paid) gives the invoice's booking the date, amount and method that arrived and completes it, or books the income when nobody booked the invoice; returns `{id, status, transaction_id}`; needs `finance.invoices.update` |
 | `finance.transaction.create` | action | `{booked_on, description, category_id?, amount (above 0), type: income\|expense, method?, payee_name?, member_id?, actor_id?}` → `{id}`: one completed booking (an expense is stored negative), with an audit entry; an unknown category or member (or an archived one) is refused; needs `finance.transactions.create` |
