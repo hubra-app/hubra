@@ -289,7 +289,9 @@ def test_sync_updates_changed_items_pro_rata(stripe, club, db):
     assert "items[1][id]" not in update
 
 
-def test_sponsorship_ends_a_running_subscription_at_period_end(stripe, club, db):
+def test_sponsorship_ends_a_running_subscription_at_period_end(
+    stripe, club, db, monkeypatch
+):
     """A club that pays and then gets a sponsor is not charged any more: its
     subscription runs to the end of the period already paid, then ends."""
     service.apply_subscription(club, stripe.subscription)
@@ -302,7 +304,10 @@ def test_sponsorship_ends_a_running_subscription_at_period_end(stripe, club, db)
     assert service.state(club)["ended_by_terms"] is True
     # The club app learns that nothing on its prices is charged now.
     from hubra.core.billing import self_service
+    from hubra.core.services import quotas
 
+    # The test club has no schema of its own (Postgres would miss its table).
+    monkeypatch.setattr(quotas, "member_count", lambda tenant: 0)
     catalog = self_service.catalog(club)
     assert catalog["sponsorship"] == {"running": True, "name": "Bank", "until": None}
     assert catalog["billed"] is False
