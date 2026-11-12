@@ -251,6 +251,10 @@ need the [contributor licence agreement](CLA.md). Everyone taking part follows
 the [code of conduct](CODE_OF_CONDUCT.md). Report security problems as
 described in [SECURITY.md](SECURITY.md), not in a public issue.
 
+## Support
+
+If Hubra is useful to you, you can [buy me a coffee](https://buymeacoffee.com/bitsandbricks).
+
 ## License
 
 Copyright (c) 2026 Mike Keller. All rights reserved.
