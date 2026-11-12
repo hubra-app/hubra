@@ -1,4 +1,5 @@
 import { apiFetch } from '@hubra/api-client'
+import { withStepUp } from '@/api/stepUp'
 
 export interface ClubSettings {
   club_name?: string
@@ -137,10 +138,12 @@ export function getBankSettings(): Promise<BankSettings> {
 }
 
 export function updateBankSettings(input: BankSettingsInput): Promise<BankSettings> {
-  return apiFetch<BankSettings>('/app/admin/bank-settings', {
-    method: 'PUT',
-    body: JSON.stringify(input),
-  })
+  return withStepUp(() =>
+    apiFetch<BankSettings>('/app/admin/bank-settings', {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    }),
+  )
 }
 
 // ── Club backup key ─────────────────────────────────────────────────────────

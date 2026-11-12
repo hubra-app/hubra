@@ -1539,6 +1539,10 @@ class MembersService:
                 roles = []
             before = {r.id: r for r in (member.roles or [])}
             after = {r.id: r for r in roles}
+            if any(r.is_admin for rid, r in after.items() if rid not in before):
+                from hubra.core.auth.account_token import ensure_club_step_up
+
+                ensure_club_step_up()  # giving admin rights
             check_grant(
                 db.session.get(Member, actor_id) if actor_id else None,
                 given=[r for rid, r in after.items() if rid not in before],

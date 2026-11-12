@@ -1,5 +1,6 @@
 import { apiFetch } from '@hubra/api-client';
 import { clearLookups } from "./lookups";
+import { withStepUp } from "./stepUp";
 import type { AuditEntry } from "../types";
 
 // ── Settings KV ────────────────────────────────────────────────────────────
@@ -107,10 +108,12 @@ export async function updateRole(
   id: string,
   patch: { name: string; description?: string | null; is_admin?: boolean },
 ): Promise<Role> {
-  const b = await apiFetch<BackendRole>(`/app/roles/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify(patch),
-  });
+  const b = await withStepUp(() =>
+    apiFetch<BackendRole>(`/app/roles/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    }),
+  );
   clearLookups();
   return adaptRole(b);
 }

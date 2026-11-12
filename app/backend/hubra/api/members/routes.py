@@ -822,6 +822,9 @@ def unarchive_member(member_id: int):
 @members_bp.delete("/<int:member_id>")
 @permission_required("members", "delete", "Delete members")
 def delete_member_permanent(member_id: int):
+    from hubra.core.auth.account_token import ensure_club_step_up
+
+    ensure_club_step_up()
     actor_id = get_current_member().id
     member = MemberService.delete_permanent(member_id, actor_id)
 

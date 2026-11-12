@@ -109,6 +109,10 @@ def update_role(role_id: int):
             return api_error(
                 "ROLE_LOCKED", "A system role's admin rights cannot be changed", 409
             )
+        if body["is_admin"]:
+            from hubra.core.auth.account_token import ensure_club_step_up
+
+            ensure_club_step_up()  # giving admin rights
         role.is_admin = bool(body["is_admin"])
         log_audit(
             actor_id=get_current_member().id,

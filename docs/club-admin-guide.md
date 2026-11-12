@@ -290,6 +290,15 @@ everything any of them grants.
   who manages only some groups can choose only those and can't move an item
   out of them. Everything stays visible to the whole club, as before.
 
+### Confirming risky actions
+
+A few actions are hard to undo: changing the club's bank details, giving a
+member an admin role (or making a role an admin role), and deleting a member
+for good. For these Hubra asks you to confirm your sign-in first, with your
+password (and the authenticator code, when two-factor is on) or with your
+passkey in a small window. The confirmation counts for ten minutes, for the
+club app and Manage alike.
+
 ## Modules
 
 Settings › Modules lists everything the club can use. Missing one? "Suggest a module" at the end of the list sends the idea to the Hubra team (area "Module"); once it is on the roadmap, every club can vote for it.
