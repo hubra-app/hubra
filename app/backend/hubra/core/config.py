@@ -361,6 +361,14 @@ class ProductionConfig(BaseConfig):
                     key,
                 )
         _require_env("DATABASE_URL")
+        if not os.environ.get("API_PUBLIC_URL"):
+            # Not fatal: a running club must not stop on an upgrade.
+            _cfg_log.warning(
+                "API_PUBLIC_URL is not set; the OAuth issuer and sign-in "
+                "callback addresses then follow the Host header of each "
+                "request. Set it to the API's public origin, e.g. "
+                "https://api.hubra.club."
+            )
         _validate_fernet_keys()
         _validate_backup_keys()
 

@@ -31,7 +31,7 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode, urlsplit, urlunsplit
 
 from flask import current_app, request
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from hubra.core.auth import api_tokens, oidc
 from hubra.core.extensions import db
@@ -84,8 +84,9 @@ def _now() -> datetime:
 
 def issuer() -> str:
     """The authorization server's identifier: the public API origin."""
-    base = current_app.config.get("API_PUBLIC_URL") or request.host_url
-    return base.rstrip("/")
+    from hubra.core.utils import public_api_base
+
+    return public_api_base()
 
 
 def sso_base() -> str:
@@ -597,6 +598,17 @@ def exchange_code(client: OAuthClient, form) -> dict:
     resource = form.get("resource")
     if resource and _canonical(resource) != _canonical(row.resource):
         raise OAuthError("invalid_target", "Not the resource the person agreed to")
+    # Taken in one statement, so two token requests racing with the same code
+    # can't both pass the used_at check above: only one row update wins.
+    claimed = db.session.execute(
+        update(OAuthCode)
+        .where(OAuthCode.id == row.id, OAuthCode.used_at.is_(None))
+        .values(used_at=now)
+        .execution_options(synchronize_session=False)
+    ).rowcount
+    if claimed != 1:
+        db.session.rollback()
+        raise OAuthError("invalid_grant", "This code was already used")
     row.used_at = now
 
     from hubra.core.models.user import User

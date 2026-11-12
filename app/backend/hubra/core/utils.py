@@ -84,3 +84,16 @@ def csv_safe(value):
     ):
         return "'" + value
     return value
+
+
+def public_api_base() -> str:
+    """The API's public origin for addresses outside services keep (OAuth
+    issuer, sign-in callbacks): API_PUBLIC_URL.
+
+    Without it the request's own host stands in, which the client chooses;
+    production warns at start-up (ProductionConfig.validate) so it gets set.
+    """
+    from flask import current_app, request
+
+    base = current_app.config.get("API_PUBLIC_URL") or request.host_url
+    return base.rstrip("/")

@@ -801,3 +801,23 @@ def test_mail_health_not_gated_by_mail_feature(client, db, seeded_db, auth_heade
     assert resp.status_code == 200
     assert gated.status_code == 403
     assert gated.get_json()["error"] == "MODULE_DISABLED"
+
+
+def test_mail_health_asks_wildduck_once_a_minute(client):
+    """The public health check answers from a short cache, so callers can't
+    make it load the mail server."""
+    from unittest.mock import MagicMock
+
+    from hubra.api.mail import routes as mail_routes
+
+    mail_routes._health_cache.clear()
+    wd = MagicMock()
+    with patch("hubra.core.services.wildduck.try_get_client", return_value=wd):
+        first = client.get("/api/v1/mail/health")
+        second = client.get("/api/v1/mail/health")
+    mail_routes._health_cache.clear()
+    assert first.get_json() == second.get_json() == {
+        "status": "ok",
+        "wildduck": "reachable",
+    }
+    assert wd.list_users.call_count == 1

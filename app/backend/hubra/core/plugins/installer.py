@@ -19,6 +19,7 @@ a platform that runs as several processes and pods:
 from __future__ import annotations
 
 import hashlib
+import http.client
 import io
 import ipaddress
 import json
@@ -29,9 +30,7 @@ import shutil
 import socket
 import tempfile
 import time
-import urllib.error
 import urllib.parse
-import urllib.request
 import zipfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -900,53 +899,79 @@ def hold(pid: str, version: str | None) -> None:
 _index_cache: dict = {}
 
 
-def _check_url(url: str) -> None:
+def _check_url(url: str) -> list[str]:
     """Plugin downloads go to public https hosts only, so a manager can't
     point the server at its own network (HUBRA_PLUGINS_ALLOW_PRIVATE=1 lifts
-    the address check for a repository on the local network)."""
+    the address check for a repository on the local network).  Returns the
+    checked addresses: the download connects to one of them, so a second DNS
+    answer can't swap in an internal one (DNS rebinding)."""
     parsed = urllib.parse.urlparse(url)
     if parsed.scheme != "https" or not parsed.hostname:
         raise InstallError(f"{url}: only https:// addresses")
-    if os.environ.get("HUBRA_PLUGINS_ALLOW_PRIVATE") == "1":
-        return
     try:
-        infos = socket.getaddrinfo(parsed.hostname, parsed.port or 443)
+        infos = socket.getaddrinfo(
+            parsed.hostname, parsed.port or 443, type=socket.SOCK_STREAM
+        )
     except OSError as exc:
         raise InstallError(f"{url}: the host name could not be resolved") from exc
+    private_ok = os.environ.get("HUBRA_PLUGINS_ALLOW_PRIVATE") == "1"
+    addrs = []
     for info in infos:
         ip = ipaddress.ip_address(info[4][0])
-        if not ip.is_global:
+        if not ip.is_global and not private_ok:
             raise InstallError(f"{url}: {parsed.hostname} is not a public address")
-
-
-class _CheckedRedirects(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        _check_url(newurl)
-        return super().redirect_request(req, fp, code, msg, headers, newurl)
+        addrs.append(str(ip))
+    if not addrs:
+        raise InstallError(f"{url}: the host name could not be resolved")
+    return addrs
 
 
 # https, a plain host name or address, an optional port, then the path: no
 # user:password@ part and nothing that is not a web address.
 _HTTPS_URL_RE = re.compile(r"https://[A-Za-z0-9.\-]+(?::[0-9]{1,5})?(?:/[^\s#]*)?")
+_MAX_REDIRECTS = 5
+
+
+def _fetch_pinned(url: str, timeout: int, limit: int) -> tuple[int, str, bytes]:
+    """GET *url* from the address _check_url approved; (status, Location, body)."""
+    from hubra.core.webhooks import _PinnedHTTPS
+
+    parts = urllib.parse.urlsplit(url)
+    ip = _check_url(url)[0]
+    path = parts.path or "/"
+    if parts.query:
+        path += "?" + parts.query
+    conn = _PinnedHTTPS(parts.hostname, ip, parts.port or 443, timeout)
+    try:
+        conn.request("GET", path, headers={"User-Agent": "Hubra plugin installer"})
+        resp = conn.getresponse()
+        body = resp.read(limit + 1) if resp.status == 200 else b""
+        return resp.status, resp.getheader("Location") or "", body
+    finally:
+        conn.close()
 
 
 def http_get(url: str, timeout: int = 30, limit: int = MAX_ZIP) -> bytes:
-    if not _HTTPS_URL_RE.fullmatch(url):
-        raise InstallError(f"{url}: only plain https:// addresses")
-    _check_url(url)
-    req = urllib.request.Request(url, headers={"User-Agent": "Hubra plugin installer"})
-    opener = urllib.request.build_opener(_CheckedRedirects)
-    try:
-        with opener.open(req, timeout=timeout) as resp:
-            data = resp.read(limit + 1)
-    except urllib.error.HTTPError as exc:
-        raise InstallError(f"{url}: the server answered HTTP {int(exc.code)}") from exc
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        _log.warning("plugin download %s failed: %s", url, exc)
-        raise InstallError(f"{url}: could not connect") from exc
-    if len(data) > limit:
-        raise InstallError(f"{url}: larger than {limit // 1024 // 1024} MB")
-    return data
+    current = url
+    for _ in range(_MAX_REDIRECTS + 1):
+        if not _HTTPS_URL_RE.fullmatch(current):
+            raise InstallError(f"{current}: only plain https:// addresses")
+        try:
+            status, location, data = _fetch_pinned(current, timeout, limit)
+        except (OSError, http.client.HTTPException) as exc:
+            _log.warning("plugin download %s failed: %s", current, exc)
+            raise InstallError(f"{url}: could not connect") from exc
+        if status in (301, 302, 303, 307, 308) and location:
+            # Each hop is checked and pinned like the first (release assets
+            # redirect to a storage host).
+            current = urllib.parse.urljoin(current, location)
+            continue
+        if status != 200:
+            raise InstallError(f"{url}: the server answered HTTP {int(status)}")
+        if len(data) > limit:
+            raise InstallError(f"{url}: larger than {limit // 1024 // 1024} MB")
+        return data
+    raise InstallError(f"{url}: too many redirects")
 
 
 def _get_index(url: str) -> dict:
