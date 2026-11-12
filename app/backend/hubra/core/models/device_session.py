@@ -90,6 +90,11 @@ class Session(db.Model):
         DateTime(timezone=True), nullable=True
     )
     revoked_reason: Mapped[str | None] = mapped_column(db.String(50), nullable=True)
+    # The account sign-in (public.account_sessions) this club session was
+    # opened from; the account Sessions page shows the club under it.
+    account_sid: Mapped[int | None] = mapped_column(
+        db.Integer, nullable=True, index=True
+    )
 
     device: Mapped["Device"] = relationship("Device", back_populates="sessions")
 

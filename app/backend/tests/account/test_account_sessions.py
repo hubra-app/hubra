@@ -132,12 +132,53 @@ def test_a_club_switch_keeps_the_sign_in(app, db):
     resp = chrome.post("/api/v1/auth/switch-tenant", json={"tenantSlug": "club-a"})
     assert resp.status_code == 200, resp.get_json()
 
+    # One row for the sign-in, with the club opened from it as a tag.
     sessions = _sessions(chrome)
-    current = {(s["club"] or {}).get("slug"): s["id"] for s in sessions if s["current"]}
-    assert current.get(None) == account_sid
-    assert "club-a" in current
+    assert all(s["club"] is None for s in sessions)
+    current = [s for s in sessions if s["current"]]
+    assert [s["id"] for s in current] == [account_sid]
+    assert current[0]["clubs"] == [{"slug": "club-a", "name": "Club A"}]
+    other = next(s for s in sessions if not s["current"])
+    assert other["clubs"] == []
 
     # Ended from another browser: the club token from it stops working too.
     resp = firefox.delete(f"/api/v1/account/account-sessions/{account_sid}")
     assert resp.status_code == 200
     assert chrome.get("/api/v1/account/all-sessions").status_code == 401
+
+
+def test_a_club_session_without_a_sign_in_keeps_its_own_row(app, db):
+    """Club sessions from before the link was recorded are still listed."""
+    from hubra.core.models.device_session import Session
+
+    user = _user(db)
+    chrome = _browser(app, CHROME)
+    _join_club(db, user)
+    resp = chrome.post("/api/v1/auth/switch-tenant", json={"tenantSlug": "club-a"})
+    assert resp.status_code == 200, resp.get_json()
+    for session in db.session.scalars(db.select(Session)).all():
+        session.account_sid = None
+    db.session.commit()
+
+    sessions = _sessions(chrome)
+    clubs = [s["club"] for s in sessions if s["club"] is not None]
+    assert clubs == [{"slug": "club-a", "name": "Club A"}]
+    sign_in = next(s for s in sessions if s["club"] is None)
+    assert sign_in["clubs"] == []
+
+
+def test_a_club_session_of_an_ended_sign_in_is_not_listed(app, db):
+    user = _user(db)
+    chrome = _browser(app, CHROME)
+    firefox = _browser(app, FIREFOX)
+    _join_club(db, user)
+    resp = chrome.post("/api/v1/auth/switch-tenant", json={"tenantSlug": "club-a"})
+    assert resp.status_code == 200, resp.get_json()
+    chrome_sid = next(s["id"] for s in _sessions(chrome) if s["current"])
+
+    resp = firefox.delete(f"/api/v1/account/account-sessions/{chrome_sid}")
+    assert resp.status_code == 200
+    sessions = _sessions(firefox)
+    assert [(s["browserFamily"], s["club"], s["clubs"]) for s in sessions] == [
+        ("Firefox", None, [])
+    ]

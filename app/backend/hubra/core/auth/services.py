@@ -628,12 +628,16 @@ class AuthService:
         fingerprint: str | None = None,
         browser_family: str = "",
         platform: str = "",
+        account_sid: int | None = None,
     ) -> tuple[bool, int | None]:
         """Record a successful login.
 
         Creates or reuses a Device row (identified by stable fingerprint)
         and a Session row. If an active session for the same device exists,
         it is reused: jti is rotated and last_active_at is updated.
+
+        *account_sid* is the account sign-in (SSO) the club was opened
+        from, so the account Sessions page can show the club under it.
 
         Returns (new_device, session_id).
         """
@@ -702,6 +706,7 @@ class AuthService:
             existing_session.jti = secrets.token_hex(16)
             existing_session.last_active_at = datetime.now(timezone.utc)
             existing_session.ip_address = ip[:45] if ip else None
+            existing_session.account_sid = account_sid
             db.session.add(
                 AuditEntry(
                     actor_id=member.id,
@@ -722,6 +727,7 @@ class AuthService:
             jti=secrets.token_hex(16),
             ip_address=ip[:45] if ip else None,
             create_reason=create_reason,
+            account_sid=account_sid,
         )
         db.session.add(session)
         db.session.flush()
