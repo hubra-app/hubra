@@ -21,6 +21,7 @@ import {
   IconDotsVertical,
   IconNews,
   IconPencil,
+  IconTrash,
 } from '@tabler/icons-react'
 import { useToast, useAuth } from '@/context/AppContext'
 import { qk } from '@/data/keys'
