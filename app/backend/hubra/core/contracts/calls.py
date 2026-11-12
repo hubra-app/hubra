@@ -268,8 +268,23 @@ def _widget_output(contract):
     return dataclasses.replace(contract, output=model) if model else contract
 
 
+def _check_access(offer: reg.Offer, member, system: bool) -> None:
+    """A widget shows its module's data: a member whose roles don't include
+    that module (the club hides modules, docs/roles.md) may not see it, the
+    same as the module's own API (modules/gate.py)."""
+    if system or member is None or offer.module_code == "core":
+        return
+    from hubra.core import module_access
+
+    if not module_access.may_use(member, offer.module_code):
+        raise ActionForbidden(
+            f"{offer.contract.name}: the member has no access to {offer.module_code}"
+        )
+
+
 def widgets(actor: Any = CURRENT) -> list[reg.Offer]:
-    """The widgets *actor* may put on a dashboard here: module on, right held."""
+    """The widgets *actor* may put on a dashboard here: module on, right
+    held, and the module among the actor's (module access)."""
     from .base import WIDGET
 
     tid = _tenant_id()
@@ -281,6 +296,7 @@ def widgets(actor: Any = CURRENT) -> list[reg.Offer]:
         try:
             _check_on(offer, tid)
             _check_perm(offer, member, system)
+            _check_access(offer, member, system)
         except (ActionUnavailable, ActionForbidden):
             continue
         out.append(offer)
@@ -300,6 +316,7 @@ def widget_data(name: str, config: Any = None, *, actor: Any = CURRENT):
     _check_on(offer, tid)
     member, system = _actor(actor)
     _check_perm(offer, member, system)
+    _check_access(offer, member, system)
     contract = _widget_output(offer.contract)
     ctx = CallContext(tid, name, "dashboards", actor=member, system=system)
     return _run(
