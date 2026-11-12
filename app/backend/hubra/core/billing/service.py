@@ -166,7 +166,7 @@ def items(tenant: Tenant, today: date | None = None) -> list[dict]:
     from hubra.core.services import club_billing
 
     summary = club_billing.summary(tenant, today)
-    if summary["sponsorship_running"]:
+    if summary["sponsorship_running"] or summary["status"] == "none":
         return []
     months = 12 if yearly() else 1
     out: list[dict] = []
@@ -472,6 +472,7 @@ def cancel(tenant: Tenant) -> None:
             {"cancel_at_period_end": True},
         ),
     )
+    _save_state(tenant, {"ended_by_terms": False})
 
 
 def resume(tenant: Tenant) -> None:
@@ -796,10 +797,38 @@ def sync(tenant: Tenant, force: bool = False) -> bool:
     if not force and s.get("synced") == signature:
         return False
     if not lines:
-        # Nothing to charge any more (say a sponsor took over): leave the
-        # subscription to manage, which cancels it in Stripe.
-        return False
+        # Nothing to charge any more (a sponsor took over, or manage set the
+        # club to "not billed"): the subscription runs to the end of the
+        # period already paid and then ends (Mike, 2026-11-12). Marked, so
+        # it is taken back if there is something to charge again before then.
+        if s.get("cancel_at_period_end"):
+            _save_state(tenant, {"synced": signature})
+            return False
+        apply_subscription(
+            tenant,
+            stripe_api.call(
+                key,
+                "POST",
+                f"/v1/subscriptions/{s['subscription_id']}",
+                {"cancel_at_period_end": True},
+            ),
+        )
+        _save_state(tenant, {"synced": signature, "ended_by_terms": True})
+        return True
     _ensure_products(key, lines)
+    if s.get("ended_by_terms") and s.get("cancel_at_period_end"):
+        # The sponsorship ended (or billing is back) before the period did:
+        # keep the subscription instead of making the club pay again.
+        apply_subscription(
+            tenant,
+            stripe_api.call(
+                key,
+                "POST",
+                f"/v1/subscriptions/{s['subscription_id']}",
+                {"cancel_at_period_end": False},
+            ),
+        )
+        _save_state(tenant, {"ended_by_terms": False})
     sub = stripe_api.call(key, "GET", f"/v1/subscriptions/{s['subscription_id']}")
     changes = _item_changes((sub.get("items") or {}).get("data") or [], lines)
     if not changes:

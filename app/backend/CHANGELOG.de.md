@@ -41,6 +41,7 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ### Fixed
 
+- **Gesponserte Vereine wurden weiter belastet**: Ein Verein, der schon über Stripe bezahlte, wurde voll weiterverrechnet, nachdem manage ihn als gesponsert markiert hatte. Jetzt läuft sein Abo bis zum Ende der bereits bezahlten Periode und endet dann (wird zurückgenommen, wenn das Sponsoring vorher endet). Solange ein Sponsor bezahlt, sagen Einstellungen › Hubra-Abo, Zusatzmodule und Einstellungen › Module nicht mehr, Zusatzmodule kämen auf die nächste Rechnung, sondern wer die Kosten übernimmt. Ein Verein, den manage auf «nicht verrechnet» (Status none) gesetzt hat, kann auch keinen Checkout mehr starten.
 - Dashboard › Verein anpassen schlug fehl, und «Offene Rechnungen» liess sich keinem Dashboard hinzufügen: Widget-Typen mit Grossbuchstaben wurden abgelehnt.
 - **Formulare überarbeitet**: Auswahlfelder leeren sich nicht mehr, wenn man den gewählten Eintrag nochmals anklickt (die Anzahl pro Seite unter Listen konnte auf 0 fallen); durchsuchbare Auswahlfelder zeigen «Keine Ergebnisse.», wenn nichts passt; Einträge wie «Kategorie wählen …» sind Platzhalter statt Auswahl. Dialoge haben eine gemeinsame Fusszeile (Abbrechen, dann die Hauptaktion; Löschen links) und speichern mit Enter, in der Vereins-App und in manage. Geldfelder sehen gleich aus (CHF, zwei Nachkommastellen, ohne Pfeile), Plätze bei Anlässen sind Zahlenfelder, und Einstellungen › Erweitert nutzt die Checkboxen und den Filter der App.
 

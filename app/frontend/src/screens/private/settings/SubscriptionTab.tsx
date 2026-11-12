@@ -363,13 +363,15 @@ export function SubscriptionTab() {
             )}
           </Alert>
         )}
-        {data.stripe.cancelAtPeriodEnd && data.stripe.currentPeriodEnd && (
-          <Alert color="orange" variant="light" icon={<IconInfoCircle size={18} />} mb={16}>
-            {t('subscription.endsOn', 'Das Abo ist gekündigt und endet am {{date}}.', {
-              date: formatDate(data.stripe.currentPeriodEnd),
-            })}
-          </Alert>
-        )}
+        {data.stripe.cancelAtPeriodEnd &&
+          data.stripe.currentPeriodEnd &&
+          !data.sponsorship_running && (
+            <Alert color="orange" variant="light" icon={<IconInfoCircle size={18} />} mb={16}>
+              {t('subscription.endsOn', 'Das Abo ist gekündigt und endet am {{date}}.', {
+                date: formatDate(data.stripe.currentPeriodEnd),
+              })}
+            </Alert>
+          )}
         {data.sponsorship_running && (
           <Alert color="grape" variant="light" icon={<IconInfoCircle size={18} />} mb={16}>
             {data.sponsored_until
@@ -380,6 +382,14 @@ export function SubscriptionTab() {
               : t('subscription.sponsored', '{{name}} bezahlt euer Abo.', {
                   name: data.sponsor_name,
                 })}
+            {data.stripe.hasSubscription &&
+              data.stripe.cancelAtPeriodEnd &&
+              data.stripe.currentPeriodEnd &&
+              ` ${t(
+                'subscription.sponsoredStripeEnds',
+                'Eure Zahlung über Stripe endet deshalb am {{date}}; danach wird nichts mehr belastet.',
+                { date: formatDate(data.stripe.currentPeriodEnd) },
+              )}`}
           </Alert>
         )}
 
@@ -449,12 +459,14 @@ export function SubscriptionTab() {
                 value={formatDate(data.trial_ends)}
               />
             )}
-            {(data.stripe.currentPeriodEnd || data.period_end) && (
-              <Row
-                label={t('subscription.nextInvoice', 'Nächste Rechnung')}
-                value={formatDate((data.stripe.currentPeriodEnd || data.period_end)!)}
-              />
-            )}
+            {(data.stripe.currentPeriodEnd || data.period_end) &&
+              !data.stripe.cancelAtPeriodEnd &&
+              (data.stripe.hasSubscription || Number(data.due_chf) > 0) && (
+                <Row
+                  label={t('subscription.nextInvoice', 'Nächste Rechnung')}
+                  value={formatDate((data.stripe.currentPeriodEnd || data.period_end)!)}
+                />
+              )}
             {data.paymentsFeePercent != null && data.paymentsFeePercent > 0 && (
               <Row
                 label={t('subscription.paymentsFee', 'Hubra-Gebühr auf Online-Zahlungen')}

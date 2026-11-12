@@ -178,6 +178,10 @@ export interface HubraAddonOffer {
 
 export interface HubraCatalog {
   plan: string
+  /** A sponsor pays the club's subscription: nothing on the prices is charged. */
+  sponsorship: { running: boolean; name: string; until: string | null }
+  /** False while a sponsor pays or the club is not billed. */
+  billed: boolean
   members: number
   plans: HubraPlanChoice[]
   addons: HubraAddonOffer[]

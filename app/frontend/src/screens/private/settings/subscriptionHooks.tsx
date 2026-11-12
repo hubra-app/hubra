@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getHubraCatalog, setHubraAddon, type HubraAddonOffer } from '@/api/billing'
+import {
+  getHubraCatalog,
+  setHubraAddon,
+  type HubraAddonOffer,
+  type HubraCatalog,
+} from '@/api/billing'
 import { ConfirmModal } from '@/components/feedback'
 import { useToast } from '@/context/AppContext'
 import { qk } from '@/data/keys'
@@ -29,12 +34,25 @@ export function addonPrice(t: TFn, a: Pick<HubraAddonOffer, 'price_month_chf' | 
 export const addonName = (a: { name_de: string; name_en: string }) =>
   en() ? a.name_en || a.name_de : a.name_de
 
+/** Why the club pays nothing for its modules right now: a sponsor pays its
+ *  subscription, or Hubra doesn't bill it. Null while the club is billed. */
+export function notCharged(t: TFn, catalog: HubraCatalog | undefined): string | null {
+  if (!catalog || catalog.billed !== false) return null
+  if (catalog.sponsorship?.running)
+    return t('subscription.coveredBySponsor', '{{name}} übernimmt die Kosten.', {
+      name: catalog.sponsorship.name,
+    })
+  return t('subscription.notBilled', 'Euer Verein wird zurzeit nicht verrechnet.')
+}
+
 /** Take or drop a paid module, with a confirmation that names the price. */
 export function useAddonSwitch() {
   const { t } = useT()
   const { notify } = useToast()
   const queryClient = useQueryClient()
   const [pending, setPending] = useState<{ addon: HubraAddonOffer; on: boolean } | null>(null)
+  const { data: catalog } = useHubraCatalog()
+  const free = notCharged(t, catalog)
   const [busy, setBusy] = useState<string | null>(null)
 
   const apply = async (code: string, body: { on?: boolean; licenses?: number }) => {
@@ -70,16 +88,27 @@ export function useAddonSwitch() {
             })
       }
       body={
-        pending.on
-          ? t(
-              'subscription.addonOnBody',
-              '{{price}}. Das Modul wird eingeschaltet. Für den Rest des laufenden Monats kommt der Betrag anteilig auf die nächste Rechnung.',
-              { price: addonPrice(t, pending.addon) },
-            )
-          : t(
-              'subscription.addonOffBody',
-              'Das Modul wird ausgeschaltet, seine Daten bleiben. Für den Rest des Monats gibt es auf der nächsten Rechnung eine anteilige Gutschrift.',
-            )
+        free
+          ? pending.on
+            ? t(
+                'subscription.addonOnBodyFree',
+                '{{price}}. Das Modul wird eingeschaltet. {{free}}',
+                { price: addonPrice(t, pending.addon), free },
+              )
+            : t(
+                'subscription.addonOffBodyFree',
+                'Das Modul wird ausgeschaltet, seine Daten bleiben.',
+              )
+          : pending.on
+            ? t(
+                'subscription.addonOnBody',
+                '{{price}}. Das Modul wird eingeschaltet. Für den Rest des laufenden Monats kommt der Betrag anteilig auf die nächste Rechnung.',
+                { price: addonPrice(t, pending.addon) },
+              )
+            : t(
+                'subscription.addonOffBody',
+                'Das Modul wird ausgeschaltet, seine Daten bleiben. Für den Rest des Monats gibt es auf der nächsten Rechnung eine anteilige Gutschrift.',
+              )
       }
       confirmLabel={
         pending.on

@@ -4676,7 +4676,13 @@
     "holderAdd": "Give a licence to",
     "holdersFull": "All licences are assigned. For more members, raise the number of licences.",
     "holdersLine": "{{used}} of {{max}} licences assigned",
-    "holdersEdit": "Assign"
+    "holdersEdit": "Assign",
+    "coveredBySponsor": "{{name}} covers the cost.",
+    "notBilled": "Your club is not being billed at the moment.",
+    "addonOnBodyFree": "{{price}}. The module is switched on. {{free}}",
+    "addonOffBodyFree": "The module is switched off; its data stays.",
+    "addonsHintFree": "Modules with their own price. Adding one switches the module on. {{free}}",
+    "sponsoredStripeEnds": "So your payment via Stripe ends on {{date}}; nothing is charged after that."
   },
   "federation": {
     "invited": "invited",

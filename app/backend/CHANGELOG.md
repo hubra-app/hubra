@@ -39,6 +39,7 @@ section and position, or the apps show that version in English.
 
 ### Fixed
 
+- **Sponsored clubs were still charged**: a club that already paid through Stripe kept being billed in full after manage marked it as sponsored. Now its subscription runs to the end of the period already paid and then ends (taken back if the sponsorship ends before that). While a sponsor pays, Settings › Hubra-Abo, Zusatzmodule and Settings › Module no longer say add-ons go on the next invoice, but who covers the cost. A club manage set to "not billed" (status none) can no longer start Checkout either.
 - Customising Dashboard › Verein failed, and "Offene Rechnungen" couldn't be added to a dashboard: widget types with capital letters were refused.
 - **Forms pass**: dropdowns no longer empty themselves when the chosen entry is clicked again (the page-size picker under lists could go to 0); searchable dropdowns say "Keine Ergebnisse." when nothing matches; "Kategorie wählen …"-style entries are placeholders, not choices. Dialogs share one footer (Abbrechen, then the main action; delete at the left) and save on Enter, in the club app and in manage. Money fields use one style (CHF, two decimals, no arrows), event places are number fields, and Settings › Erweitert uses the app's own checkboxes and filter.
 

@@ -289,6 +289,45 @@ def test_sync_updates_changed_items_pro_rata(stripe, club, db):
     assert "items[1][id]" not in update
 
 
+def test_sponsorship_ends_a_running_subscription_at_period_end(stripe, club, db):
+    """A club that pays and then gets a sponsor is not charged any more: its
+    subscription runs to the end of the period already paid, then ends."""
+    service.apply_subscription(club, stripe.subscription)
+    service.sync(club)
+    club_billing.update(club, {"sponsored": True, "sponsor_name": "Bank"})
+    assert service.sync(club) is True
+    update = stripe.made("POST", "/v1/subscriptions/sub_1")[-1]
+    assert update == {"cancel_at_period_end": "true"}
+    assert service.state(club)["cancel_at_period_end"] is True
+    assert service.state(club)["ended_by_terms"] is True
+    # The club app learns that nothing on its prices is charged now.
+    from hubra.core.billing import self_service
+
+    catalog = self_service.catalog(club)
+    assert catalog["sponsorship"] == {"running": True, "name": "Bank", "until": None}
+    assert catalog["billed"] is False
+    # The hourly sync doesn't touch Stripe again.
+    calls = len(stripe.calls)
+    assert service.sync(club, force=True) is False
+    assert len(stripe.calls) == calls
+
+    # The sponsorship ends before the period does: the subscription stays.
+    club_billing.update(club, {"sponsored": False})
+    assert service.sync(club) is True
+    posts = stripe.made("POST", "/v1/subscriptions/sub_1")
+    assert {"cancel_at_period_end": "false"} in posts[-2:]
+    assert service.state(club)["cancel_at_period_end"] is False
+    assert service.state(club)["ended_by_terms"] is False
+
+
+def test_a_club_that_is_not_billed_has_nothing_to_pay(stripe, club, db):
+    club_billing.update(club, {"status": "none"})
+    assert service.items(club) == []
+    with pytest.raises(ApiError) as err:
+        service.checkout(club, None, "https://s", "https://c")
+    assert err.value.code == "NOTHING_TO_PAY"
+
+
 def test_a_new_member_changes_only_the_quantity(stripe, club, db, monkeypatch):
     from hubra.core.services import quotas
 

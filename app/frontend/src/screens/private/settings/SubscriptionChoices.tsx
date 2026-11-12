@@ -28,7 +28,14 @@ import { useToast } from '@/context/AppContext'
 import { qk } from '@/data/keys'
 import { formatCHF } from '@/format'
 import { useT } from '@/locales/i18n'
-import { addonName, addonPrice, en, useAddonSwitch, useHubraCatalog } from './subscriptionHooks'
+import {
+  addonName,
+  addonPrice,
+  en,
+  notCharged,
+  useAddonSwitch,
+  useHubraCatalog,
+} from './subscriptionHooks'
 
 function PlanTile({
   plan,
@@ -321,10 +328,18 @@ export function AddonsCard() {
         {t('subscription.addonsTitle', 'Zusatzmodule')}
       </Title>
       <Text size="sm" c="dimmed" mb={12}>
-        {t(
-          'subscription.addonsHint',
-          'Module mit eigenem Preis. Dazubuchen schaltet das Modul ein; der Betrag für den Rest des Monats kommt anteilig auf die nächste Rechnung.',
-        )}
+        {notCharged(t, data)
+          ? t(
+              'subscription.addonsHintFree',
+              'Module mit eigenem Preis. Dazubuchen schaltet das Modul ein. {{free}}',
+              {
+                free: notCharged(t, data),
+              },
+            )
+          : t(
+              'subscription.addonsHint',
+              'Module mit eigenem Preis. Dazubuchen schaltet das Modul ein; der Betrag für den Rest des Monats kommt anteilig auf die nächste Rechnung.',
+            )}
       </Text>
       <Stack gap={0}>
         {data.addons.map((a) => {
