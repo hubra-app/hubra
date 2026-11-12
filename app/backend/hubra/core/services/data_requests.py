@@ -355,12 +355,17 @@ def export_member(tenant: Tenant, member_id: int) -> dict:
                     else f"{table.name}.{column.name}"
                 )
                 related.setdefault(key, []).extend(rows)
+        from hubra.core.contracts import privacy
+
         data = {
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "club": {"name": tenant.name, "slug": tenant.slug},
             "account": account,
             "member": _row(member),
             "related": related,
+            # What modules keep beyond their foreign-key rows
+            # (<module>.privacy.export contracts).
+            "modules": privacy.export(member_id),
         }
     return data
 

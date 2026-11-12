@@ -715,6 +715,19 @@ class MemberService:
         assert_source_deletable("member", str(member_id))
         assert_mail_address_owner_deletable("member", member_id)
 
+        # Modules delete what they keep beyond their foreign-key rows
+        # (<module>.privacy.erase contracts); one that can't stops it all.
+        from hubra.core.contracts import privacy
+
+        try:
+            privacy.erase(member_id)
+        except privacy.EraseFailed as exc:
+            raise_error(
+                409,
+                "PRIVACY_ERASE_FAILED",
+                f"The member's data in {exc.module} could not be deleted; try again later",
+            )
+
         from sqlalchemy import update as sql_update
 
         from hubra.core.models.audit import AuditEntry
