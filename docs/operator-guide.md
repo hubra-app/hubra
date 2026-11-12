@@ -158,6 +158,17 @@ Then put the same `POSTGRES_APP_USER` and `POSTGRES_APP_PASSWORD` in `.env`
 and `docker compose up -d` (on Kubernetes, update the Secret and restart). The script also hands the role ownership of the existing schemas
 and tables, which later migrations need.
 
+The app role also needs `CREATEROLE`, so that every club gets its own
+database role ([club-db-roles.md](club-db-roles.md)). New volumes get it;
+on an existing stack run the upgrade script again, or as the superuser:
+
+```sql
+ALTER ROLE hubra_app CREATEROLE;
+```
+
+Without it Hubra works as before and the init step says
+"Club database roles: off".
+
 ## Encryption keys
 
 Hubra stores a few secrets encrypted: door codes, binding values, mailbox
@@ -245,9 +256,14 @@ Backups are a platform task: manage › Backups, global permission
 - Each backup holds one schema: **Global** (`public`: accounts, clubs,
   platform settings) or **one club**. A single club can be restored without
   touching the others.
-- Celery beat makes a scheduled set every day, week and month, and keeps
-  7 daily, 4 weekly and 6 monthly backups per set. Manual backups are kept
-  until you delete them.
+- Celery beat makes a scheduled set every day, week and month. Retention is
+  set in manage › Backups › Einstellungen (`backup.keep_*`): by default each
+  set keeps its newest 7 daily, 4 weekly and 12 monthly backups; manual
+  backups are deleted after 90 days (`backup.keep_manual_days`; 0 keeps
+  them); each backup of a club deleted for good is deleted 30 days after it
+  was made (`backup.keep_deleted_club_days`; 0 lets them follow the counts
+  like any club's). Only completed
+  backups count; pruning runs after each scheduled run.
 - Files are encrypted to `BACKUP_PUBLIC_KEY` ([age](https://age-encryption.org))
   (platform setting, default from env) and stored in the S3 bucket from
   Backups › Storage. The
@@ -321,7 +337,12 @@ store (`hubra.core.files`). Set it in manage › Backups › Storage under
   the bucket only ever holds ciphertext, and a file opens only in its own
   club. A club's files count towards its storage, and deleting a club for
   good deletes its files.
-- `files.max_mb` (default 25) is the largest file a club can upload.
+- The largest file a club can upload is set per plan (All clubs › Tarife &
+  Preise, "Grösste Datei") and, for one club, on its page (Limits ›
+  Anpassen). A plan without its own value uses `files.max_mb` (default 25).
+  Nothing goes above `MAX_UPLOAD_MB` (env, default 100), the largest upload
+  the backend and the frontends' nginx take; on k3s the Ingress in front
+  needs a body size at least that large too.
 - The database backups don't contain the files. Keep the bucket versioned or
   copy it elsewhere; without the database (the club's data keys) a copy of
   the bucket can't be opened.
@@ -370,6 +391,13 @@ Settings › Modules like a built-in module.
   not undo migrations.
 - Uninstalling keeps the plugin's tables unless you tick "also delete its
   data".
+- Usage: manage › Plugin catalogue › **Nutzung** shows, per module and
+  plugin, in how many active clubs it is on, in how many something was
+  written to its tables in the last 30 days, and where it is on but unused,
+  plus installed plugins no club has on. It is counted every night at 04:40
+  (`usage-snapshot-nightly`, `services/module_usage.py`, kept in Redis);
+  **Jetzt zählen** counts at once. Modules without timestamped tables of
+  their own show "nicht messbar".
 
 Details, the trust badges and the CLI: [plugins/README.md](../plugins/README.md).
 

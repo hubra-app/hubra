@@ -1,6 +1,6 @@
 # Hubra
 
-[![CI](https://github.com/hubra-app/hubra/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/hubra-app/hubra/actions/workflows/ci.yml?query=branch%3Amain) [![Images](https://github.com/hubra-app/hubra/actions/workflows/images.yml/badge.svg)](https://github.com/hubra-app/hubra/actions/workflows/images.yml) [![License: all rights reserved](https://img.shields.io/badge/license-all%20rights%20reserved-lightgrey)](LICENSE)
+[![CI](https://github.com/hubra-app/hubra/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/hubra-app/hubra/actions/workflows/ci.yml?query=branch%3Amain) [![Images](https://github.com/hubra-app/hubra/actions/workflows/images.yml/badge.svg)](https://github.com/hubra-app/hubra/actions/workflows/images.yml) [![License: all rights reserved](https://img.shields.io/badge/license-all%20rights%20reserved-lightgrey)](LICENSE) [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-bitsandbricks-ffdd00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/bitsandbricks)
 
 A self-hosted club management platform with member management, finance,
 groups, events and trainings, polls, a member portal with sign-in through one

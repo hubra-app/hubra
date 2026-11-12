@@ -19,7 +19,7 @@ from hubra.core.models.finance import Invoice
 from hubra.core.models.member import Member
 from hubra.core.models.password_reset import PasswordResetToken
 from hubra.core.models.token import TokenBlocklist
-from hubra.core.models.user import User
+from hubra.core.models.user import User, burn_password_check
 from hubra.core.models.user_tenant import UserTenant
 from hubra.core.models.device_session import Device, Session
 from hubra.core.tenant.context import current_tenant
@@ -412,6 +412,9 @@ class AuthService:
         )
 
         if member is None:
+            # As slow as a wrong password, so the time doesn't tell whether
+            # the address has an account.
+            burn_password_check(password)
             _failed_from_address(email)
             raise_error(401, "UNAUTHORIZED", "Invalid credentials")
 
@@ -625,12 +628,16 @@ class AuthService:
         fingerprint: str | None = None,
         browser_family: str = "",
         platform: str = "",
+        account_sid: int | None = None,
     ) -> tuple[bool, int | None]:
         """Record a successful login.
 
         Creates or reuses a Device row (identified by stable fingerprint)
         and a Session row. If an active session for the same device exists,
         it is reused: jti is rotated and last_active_at is updated.
+
+        *account_sid* is the account sign-in (SSO) the club was opened
+        from, so the account Sessions page can show the club under it.
 
         Returns (new_device, session_id).
         """
@@ -699,6 +706,7 @@ class AuthService:
             existing_session.jti = secrets.token_hex(16)
             existing_session.last_active_at = datetime.now(timezone.utc)
             existing_session.ip_address = ip[:45] if ip else None
+            existing_session.account_sid = account_sid
             db.session.add(
                 AuditEntry(
                     actor_id=member.id,
@@ -719,6 +727,7 @@ class AuthService:
             jti=secrets.token_hex(16),
             ip_address=ip[:45] if ip else None,
             create_reason=create_reason,
+            account_sid=account_sid,
         )
         db.session.add(session)
         db.session.flush()

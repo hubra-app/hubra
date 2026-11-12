@@ -1124,7 +1124,14 @@ def require_global_permission(permission_key: str, *, club_list: bool = False):
 
 
 # Support sees a club as the member does, but never changes their account.
-_IMPERSONATION_RESTRICTED_ACTIONS = {"delete_tenant", "change_plan", "change_account"}
+_IMPERSONATION_RESTRICTED_ACTIONS = {
+    "delete_tenant",
+    "change_plan",
+    "change_account",
+    # Hubra staff must not let themselves in: approving support access and
+    # the club setting that asks for it stay with the club's own admins.
+    "support_access",
+}
 
 
 def check_impersonation_restriction(action: str) -> tuple[str, str] | None:

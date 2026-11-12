@@ -19,6 +19,18 @@ const AUDIT_ACTIONS: [string, string][] = [
   ['archive_member', 'Mitglied archiviert'],
   ['approve_application', 'Antrag angenommen'],
   ['decline_application', 'Antrag abgelehnt'],
+  ['support_session_view', 'Support-Zugriff (ansehen)'],
+  ['support_session_change', 'Support-Zugriff (mit Änderungen)'],
+  ['support_session_end', 'Support-Zugriff beendet'],
+  ['support_session_revoked', 'Support-Zugriff vorzeitig beendet'],
+  ['support_access_request', 'Support bittet um Zugriff'],
+  ['support_access_approve', 'Support-Zugriff freigegeben'],
+  ['support_access_decline', 'Support-Zugriff abgelehnt'],
+  ['hide_comment', 'Kommentar ausgeblendet'],
+  ['show_comment', 'Kommentar wieder eingeblendet'],
+  ['keep_comment', 'Gemeldeten Kommentar behalten'],
+  ['mute_commenter', 'Beim Kommentieren stummgeschaltet'],
+  ['unmute_commenter', 'Stummschaltung aufgehoben'],
 ]
 const PAGE_SIZE = 25
 

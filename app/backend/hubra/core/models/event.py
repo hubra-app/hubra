@@ -344,3 +344,31 @@ class EventTemplate(db.Model):
 
     def __repr__(self) -> str:
         return f"<EventTemplate id={self.id} name={self.name!r}>"
+
+
+class EventSessionNote(db.Model):
+    """What a trainer noted on one event date: what was trained (members
+    may read it), a note for the next trainer only, and a link to a guide.
+    Shown on the next date of the same series."""
+
+    __tablename__ = "event_session_notes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    event_id: Mapped[int] = mapped_column(
+        db.Integer,
+        ForeignKey("club_events.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    trained: Mapped[str | None] = mapped_column(Text, nullable=True)
+    trainer_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    guide_url: Mapped[str | None] = mapped_column(db.String(500), nullable=True)
+    updated_by: Mapped[int | None] = mapped_column(
+        db.Integer, ForeignKey("members.id", ondelete="SET NULL"), nullable=True
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )

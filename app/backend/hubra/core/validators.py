@@ -161,8 +161,17 @@ VALIDATORS: dict[str, Callable[[str], str | None]] = {
     "count": lambda v: (
         None if v.isdigit() and int(v) <= 10**9 else "A whole number, or empty"
     ),
+    "grace_days": lambda v: (
+        None if v.isdigit() and int(v) <= 90 else "Whole days, 0 to 90"
+    ),
     "retention_days": lambda v: (
         None if v.isdigit() and 1 <= int(v) <= 365 else "Whole days, 1 to 365"
+    ),
+    "backup_keep": lambda v: (
+        None if v.isdigit() and 1 <= int(v) <= 365 else "Whole number, 1 to 365"
+    ),
+    "keep_days": lambda v: (
+        None if v.isdigit() and int(v) <= 3650 else "Whole days, 0 (keep) to 3650"
     ),
     "age_public_keys": _validate_age_public_keys,
     "qr_iban": _validate_qr_iban,

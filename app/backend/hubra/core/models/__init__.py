@@ -47,11 +47,19 @@ from hubra.core.models.event import (
     EventRegistration,
     EventSeries,
     TrialSignup,
+    EventSessionNote,
     EventTemplate,
     event_attendees,
 )
 from hubra.core.models.poll import Poll, PollOption, PollVote, PollProxy
-from hubra.core.models.post import Post, PostLike, PostComment, PostRead
+from hubra.core.models.post import (
+    CommentMute,
+    CommentReport,
+    Post,
+    PostComment,
+    PostLike,
+    PostRead,
+)
 from hubra.core.models.finance import (
     Account,
     FiscalYear,
@@ -75,6 +83,7 @@ from hubra.core.models.support_case import (
 )
 from hubra.core.models.notification import Notification
 from hubra.core.models.audit import AuditEntry
+from hubra.core.models.support_access import SupportAccessRequest
 from hubra.core.models.token import TokenBlocklist
 from hubra.core.models.device_session import Device, Session
 from hubra.core.models.account_session import AccountSession
@@ -174,6 +183,7 @@ __all__ = [
     "EventAttendance",
     "EventSeries",
     "TrialSignup",
+    "EventSessionNote",
     "EventTemplate",
     "EventRegistration",
     "Poll",
@@ -184,6 +194,8 @@ __all__ = [
     "PostLike",
     "PostComment",
     "PostRead",
+    "CommentReport",
+    "CommentMute",
     "Transaction",
     "Account",
     "FiscalYear",
@@ -204,6 +216,7 @@ __all__ = [
     "RoadmapVote",
     "Notification",
     "AuditEntry",
+    "SupportAccessRequest",
     "TokenBlocklist",
     "Device",
     "Session",

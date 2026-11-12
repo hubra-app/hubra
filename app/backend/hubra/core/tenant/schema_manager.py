@@ -51,6 +51,7 @@ def create_tenant_schema(tenant_id: int) -> None:
     _create_tenant_indexes(schema_name)
     _init_alembic_version(schema_name)
     _init_plugin_versions(schema_name)
+    _give_club_its_role(tenant_id)
 
     db.session.commit()
     _log.info("Tenant schema %s created successfully", schema_name)
@@ -61,7 +62,21 @@ def drop_tenant_schema(tenant_id: int) -> None:
     schema_name = f"tenant_{int(tenant_id)}"
     _log.warning("Dropping tenant schema: %s", schema_name)
     db.session.execute(text(f"DROP SCHEMA IF EXISTS {schema_name} CASCADE"))
+    from . import db_roles
+
+    db_roles.drop_club(db.session.connection(), tenant_id)
     db.session.commit()
+
+
+def _give_club_its_role(tenant_id: int) -> None:
+    """The club's own database role (``db_roles``), where roles can be made."""
+    from . import db_roles
+
+    conn = db.session.connection()
+    if not db_roles.available(conn):
+        return
+    db_roles.sync_public(conn, tables_to_clone())
+    db_roles.ensure_club(conn, tenant_id)
 
 
 # ── Internal helpers ───────────────────────────────────────────────────────

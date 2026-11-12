@@ -74,7 +74,10 @@ booking a trial. Give each poster a tag, for example `bahnhof` or
 `turnhalle`: the QR code carries it, and each request and trial booking
 remembers where the person came from. The table above the button counts
 requests and trials per tag over the last year, so you can see which poster
-works. Print straight from the dialog; only the poster is printed.
+works. The poster carries the club's logo and colours from Settings › Verein ›
+Erscheinungsbild (Hubra violet and gold while the club has none); the QR code
+stays black on white so it scans. Print straight from the dialog; only the
+poster is printed.
 
 ### Leaving
 
@@ -186,6 +189,20 @@ length. The bin next to a template in that list deletes it.
 Templates belong to the club. Saving, listing and deleting them takes the
 club-wide right `events.events.create`.
 
+### Session notes
+
+The attendance dialog of an event (**Anwesenheit**) has room for notes on
+that date: **Was trainiert wurde** (what was trained), a **note for the
+next trainer**, and a **link to a guide** (an `https://` link or a page in
+the app such as a Guides page). On the next date of the same series the
+dialog shows the last notes before it under **Letztes Mal**, so whoever
+trains next knows where the group is.
+
+Writing notes takes the right to take attendance (`events.events.add_attendee`,
+club-wide or for the event's group). Only those see the trainer note; the
+API also gives the event's members what was trained and the guide link.
+Clearing all three fields removes the notes.
+
 ## Posts
 
 ### Scheduled and expiring posts
@@ -216,6 +233,28 @@ Those still missing get one reminder in the bell (and by push and in the
 messengers they turned on) a number of days after the post went out:
 Beiträge › Einstellungen › **Erinnerung bei Lesebestätigung (Tage)**,
 7 by default, 0 for no reminder.
+
+### Comment moderation
+
+Who moderates is a right on the roles page: **Moderate posts and comments**
+(`posts.posts.moderate`). Give it to a role club-wide, or to a role for a
+group so it moderates that group's posts only. Admins always moderate.
+
+Any member can **Melden** (report) someone else's comment from its menu,
+with an optional reason. The first report of a comment tells the moderators
+in the bell. Reporters stay anonymous to everyone but the moderators.
+
+Moderators see how often each comment was reported. From the comment's menu
+they **Ausblenden** (hide) it, so members only see *Von der Moderation
+ausgeblendet* in its place, **Einblenden** (show) it again, or **Behalten**
+(keep) it, which closes its reports. Club-wide moderators also find a
+**Moderation** box above the posts, with the reported comments that are
+still visible and the members who are muted.
+
+**Beim Kommentieren stummschalten** (mute in comments) stops a member from
+commenting for 1 to 30 days, with an optional reason. They can still read
+posts. **Aufheben** (lift) in the Moderation box ends the mute early. Every
+hide, show, keep, mute and lift is in the audit log.
 
 ## Roles and permissions
 
@@ -322,6 +361,18 @@ a year.
 | Privacy | Whether all members see the member directory; whether groups are listed publicly |
 | Membership | Leaving needs approval, notice period (see [Leaving](#leaving)) |
 | Announcement Banner | A line shown at the top of every page, for example for the general meeting |
+| Hubra support | Whether Hubra support must ask before opening the club, and their requests (see below) |
+
+**Hubra support in your club.** When Hubra support opens your club to help
+(as one of your members, for at most two hours, with a banner the whole
+time), the audit log shows it: "Support-Zugriff (ansehen)" or "(mit
+Änderungen)" with the member, the length and the reason, and "Support-Zugriff
+beendet" at the end. With **Support-Zugriff nur mit Freigabe** on, support
+asks first: your admins get a notification, and the request shows under
+Settings › Club › Hubra-Support with **Freigeben** and **Ablehnen**. An
+approval opens one session, as asked (length, look or change), within 24
+hours. Support can't approve its own request or turn the rule off while
+inside your club.
 
 ### Domains
 

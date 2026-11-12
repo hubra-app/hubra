@@ -23,7 +23,7 @@ export const qk = {
   translations: (locale: string) => ['translations', locale] as const,
   translationSuggestions: ['translation-suggestions'] as const,
   notifications: ['notifications'] as const,
-  changelog: (lang: string) => ['changelog', lang] as const,
+  changelog: (lang: string, reader?: string) => ['changelog', lang, reader ?? ''] as const,
   support: {
     all: ['support'] as const,
     mine: ['support', 'mine'] as const,
@@ -50,7 +50,9 @@ export const qk = {
   memberClubs: ['federation', 'clubs'] as const,
   eventPending: (id: string) => ['events', id, 'pending'] as const,
   eventRoll: (id: string) => ['events', id, 'roll'] as const,
+  eventRegistrations: (id: string) => ['events', id, 'registrations'] as const,
   eventParticipants: (id: string) => ['events', id, 'participants'] as const,
+  sessionNotes: (id: string) => ['events', id, 'session-notes'] as const,
   attendance: ['attendance'] as const,
   trialsAll: ['trials'] as const,
   trials: (past: boolean) => ['trials', past] as const,
@@ -65,6 +67,8 @@ export const qk = {
     comments: (id: string | undefined) => ['post-comments', id] as const,
     translation: ['post-translation'] as const,
     reads: (id: string | undefined) => ['post-reads', id] as const,
+    reportedComments: ['post-comment-reports'] as const,
+    commentMutes: ['post-comment-mutes'] as const,
   },
 
   members: {
@@ -140,6 +144,7 @@ export const qk = {
     kv: ['kv-settings'] as const,
     club: ['club-settings'] as const,
     clubMfa: ['club-settings', 'mfa'] as const,
+    supportAccess: ['support-access'] as const,
     bank: ['bank-settings'] as const,
     clubProfile: ['club-profile'] as const,
     domains: ['domains'] as const,
@@ -153,6 +158,7 @@ export const qk = {
     subscriptionInvoices: ['hubra-billing', 'invoices'] as const,
     subscriptionContact: ['hubra-billing', 'contact'] as const,
     subscriptionCatalog: ['hubra-billing', 'catalog'] as const,
+    subscriptionLimits: ['hubra-billing', 'limits'] as const,
     webhookDeliveries: (id: number) => ['webhooks', id, 'deliveries'] as const,
     signInApps: ['api-access', 'sign-in-apps'] as const,
     appConnection: (id: number) => ['connected-apps', id] as const,

@@ -47,6 +47,7 @@ x-frontend-env: &frontend-env
   VITE_SUPPORT_URL: ${SUPPORT_BASE_URL:-http://localhost:8083}
   REAL_IP_FROM: ${REAL_IP_FROM:-}
   CSP: ${CSP:-}
+  HSTS: ${HSTS:-}
 
 services:
   frontend:
@@ -58,7 +59,7 @@ services:
     restart: unless-stopped
     environment: *frontend-env
     ports:
-      - "${HUBRA_BIND:-127.0.0.1}:${FRONTEND_PORT:-8080}:80"
+      - "${HUBRA_BIND:-127.0.0.1}:${FRONTEND_PORT:-8080}:8080"
     depends_on:
       - backend
     networks:
@@ -66,7 +67,7 @@ services:
     security_opt:
       - no-new-privileges:true
     healthcheck:
-      test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:80"]
+      test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:8080"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -85,7 +86,7 @@ services:
     restart: unless-stopped
     environment: *frontend-env
     ports:
-      - "${HUBRA_BIND:-127.0.0.1}:${ADMIN_FRONTEND_PORT:-8081}:80"
+      - "${HUBRA_BIND:-127.0.0.1}:${ADMIN_FRONTEND_PORT:-8081}:8080"
     depends_on:
       - backend
     networks:
@@ -93,7 +94,7 @@ services:
     security_opt:
       - no-new-privileges:true
     healthcheck:
-      test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:80"]
+      test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:8080"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -112,7 +113,7 @@ services:
     restart: unless-stopped
     environment: *frontend-env
     ports:
-      - "${HUBRA_BIND:-127.0.0.1}:${SSO_FRONTEND_PORT:-8082}:80"
+      - "${HUBRA_BIND:-127.0.0.1}:${SSO_FRONTEND_PORT:-8082}:8080"
     depends_on:
       - backend
     networks:
@@ -120,7 +121,7 @@ services:
     security_opt:
       - no-new-privileges:true
     healthcheck:
-      test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:80"]
+      test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:8080"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -140,7 +141,7 @@ services:
     restart: unless-stopped
     environment: *frontend-env
     ports:
-      - "${HUBRA_BIND:-127.0.0.1}:${SUPPORT_FRONTEND_PORT:-8083}:80"
+      - "${HUBRA_BIND:-127.0.0.1}:${SUPPORT_FRONTEND_PORT:-8083}:8080"
     depends_on:
       - backend
     networks:
@@ -148,7 +149,7 @@ services:
     security_opt:
       - no-new-privileges:true
     healthcheck:
-      test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:80"]
+      test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:8080"]
       interval: 30s
       timeout: 10s
       retries: 3

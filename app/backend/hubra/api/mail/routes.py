@@ -2106,20 +2106,38 @@ def trigger_reconcile():
 # ── Health check (no auth required) ─────────────────────────────────────────
 
 
+# One WildDuck call per process per minute at most: the endpoint is public,
+# so without this every request from anyone reached the mail server.
+_HEALTH_TTL = 60.0
+_health_cache: dict = {}
+
+
 @mail_bp.get("/health")
 def mail_health():
     """Return WildDuck reachability status. No authentication required."""
+    import time
+
+    now = time.monotonic()
+    cached = _health_cache.get("result")
+    if cached is not None and now - cached[0] < _HEALTH_TTL:
+        return jsonify(cached[1]), 200
+    result = _check_wildduck()
+    _health_cache["result"] = (now, result)
+    return jsonify(result), 200
+
+
+def _check_wildduck() -> dict:
     from hubra.core.services.wildduck import WildDuckError, try_get_client
 
     wd = try_get_client()
     if wd is None:
-        return jsonify({"status": "degraded", "wildduck": "not_configured"}), 200
+        return {"status": "degraded", "wildduck": "not_configured"}
 
     try:
         wd.list_users(limit=1)
-        return jsonify({"status": "ok", "wildduck": "reachable"}), 200
+        return {"status": "ok", "wildduck": "reachable"}
     except WildDuckError:
         # Public endpoint: the error text (host names, API messages) only
         # goes to the log.
         current_app.logger.warning("WildDuck health check failed", exc_info=True)
-        return jsonify({"status": "degraded", "wildduck": "unreachable"}), 200
+        return {"status": "degraded", "wildduck": "unreachable"}

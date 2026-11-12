@@ -45,7 +45,7 @@ security pages. Voting, reports, ideas, questions, "My reports" and
 | `/meine`, `/meine/<id>` | own cases with answers, reply | `/global/support/cases…` |
 | `/entwickler` | API tokens, Claude connector, public data, plugins | none |
 | `/sicherheit` | how to report a vulnerability | none |
-| `/datenschutz` | download the account, delete it | `/global/account/export`, `/global/account/deletion` |
+| `/datenschutz` | download the account (or everything as ZIP), delete it | `/global/account/export`, `/global/account/export/all`, `/global/account/deletion` |
 | `/.well-known/security.txt` | static file | none |
 
 English paths (`/help`, `/privacy`, …) redirect to the German ones; the
@@ -79,6 +79,20 @@ lists them, and a request that hit a server error links to its error group
 (Diagnostics › Errors, `?q=#<id>`): the error tracker keeps request id → group
 in Redis for 14 days (`error_tracker.groups_for_requests`).
 
+### Shipped mails
+
+When a roadmap item in `app/backend/ROADMAP.yaml` has `status: done` and a
+`version`, and that Hubra version runs, everyone who wanted it gets one mail
+("Out now: …"): who voted for the item, who voted for an idea linked to it
+(manage › idea › "Teil eines geplanten Eintrags") and who reported such an
+idea. The changelog tick (`services.changelogs.announce`) checks the running
+version every minute, so set `version` in the same release that ships the
+item; an item gets its mail once (`roadmap.shipped` in the platform log),
+also after a rollback. The mail links to `/roadmap` here, or to the club
+app's roadmap when `support.url` is not set. In the club app's What's new,
+a release names the items in it that the reader voted for ("Du hast dir
+das gewünscht").
+
 ### My data
 
 - **Download** (`GET /global/account/export`): one JSON file with the
@@ -87,6 +101,12 @@ in Redis for 14 days (`error_tracker.groups_for_requests`).
   their answers. Columns with secrets (passwords, hashes, TOTP, recovery
   codes, token secrets, push keys) are never included
   (`hubra/core/services/account_privacy.py`).
+- **Everything as ZIP** (`GET /global/account/export/all`, 5 per hour):
+  `account.json` as above, plus `clubs/<slug>.json` for every active club
+  the person is an active member of, with what that club keeps about them
+  (the same revDSG export as the club app's own download, recorded the same
+  way as a finished export request). A club that can't be read now is named
+  in `README.txt` instead of failing the whole download.
 - **Delete** (`POST /global/account/deletion` with `currentPassword`): only
   when the account is in no club (`user_tenants` is empty) and has no
   platform role or superadmin flag; `GET /global/account/deletion` lists

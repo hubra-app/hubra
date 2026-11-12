@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Group, SegmentedControl, Text } from '@mantine/core'
+import { Button, Divider, Group, SegmentedControl, Text } from '@mantine/core'
 import { useT } from '@/locales/i18n'
 import { useToast } from '@/context/AppContext'
 import { qk } from '@/data/keys'
 import { Modal } from '@/components/ui'
 import type { ClubEvent } from '@/types'
+import { SessionNotes } from './SessionNotes'
 import { getRoll, saveRoll, type AttendanceStatus, type RollEntry } from '@/api/events'
 
 type Choice = AttendanceStatus | 'none'
@@ -86,6 +87,8 @@ function Roll({ event, onClose }: { event: ClubEvent; onClose: () => void }) {
   const present = rows.filter((r) => choiceOf(r) === 'present').length
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <SessionNotes eventId={event.id} />
+      <Divider />
       {rows.length === 0 ? (
         <Text size="sm" c="dimmed">
           {t(

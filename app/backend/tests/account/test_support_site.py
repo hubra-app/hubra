@@ -276,3 +276,49 @@ def test_staff_answers_reach_the_guest_by_mail(app, db):
     assert args[0] == "someone@example.org"
     assert kwargs["comment"] == "Thanks"
     assert kwargs["with_link"] is False
+
+
+def test_export_all_has_the_account_and_each_clubs_data(client, db, seeded_db):
+    import io
+    import zipfile
+
+    from sqlalchemy import select
+
+    from hubra.core.models.data_request import DataRequest
+
+    admin = seeded_db["admin"]
+    club = Tenant(name="FC X", slug="fcx", status="active")
+    gone = Tenant(name="Old", slug="old", status="suspended")
+    db.session.add_all([club, gone])
+    db.session.flush()
+    db.session.add_all(
+        [
+            UserTenant(user_id=admin.user_id, tenant_id=club.id, is_owner=True),
+            UserTenant(user_id=admin.user_id, tenant_id=gone.id),
+        ]
+    )
+    db.session.commit()
+    client.post(
+        "/api/v1/auth/login",
+        json={"email": "admin@test.ch", "password": "password123"},
+    )
+    with patch("hubra.core.tenant.context.set_search_path"):
+        resp = client.get("/api/v1/global/account/export/all")
+    assert resp.status_code == 200, resp.get_data(as_text=True)[:300]
+    assert resp.headers["Content-Type"] == "application/zip"
+    assert resp.headers["Cache-Control"] == "no-store"
+    zf = zipfile.ZipFile(io.BytesIO(resp.data))
+    names = set(zf.namelist())
+    # Only active clubs; the suspended one is left out.
+    assert {"account.json", "README.txt", "clubs/fcx.json"} <= names
+    assert "clubs/old.json" not in names
+    account = json.loads(zf.read("account.json"))
+    assert account["account"]["email"] == "admin@test.ch"
+    assert json.loads(zf.read("clubs/fcx.json"))
+    # Recorded like a download in the club.
+    req = db.session.scalar(select(DataRequest).where(DataRequest.tenant_id == club.id))
+    assert req is not None and req.kind == "export" and req.status == "done"
+
+
+def test_export_all_needs_a_sign_in(client, db):
+    assert client.get("/api/v1/global/account/export/all").status_code == 401

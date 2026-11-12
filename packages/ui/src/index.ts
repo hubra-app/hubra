@@ -39,6 +39,7 @@ export {
   Roadmap,
   latestReleaseKey,
   visibleReleases,
+  wishedIn,
   type ChangelogEntry,
   type RoadmapItem,
   type RoadmapStatus,

@@ -11,7 +11,9 @@ every loaded plugin. Each new one is sent once:
   get events through the contract outbox, so the delivery is stored in the
   same transaction as the "announced" mark below;
 * to the changelog channel on Hubra's own Discord server
-  (``discord.changelog_channel_id``), when one is set.
+  (``discord.changelog_channel_id``), when one is set;
+* to the people who voted for a roadmap item of the running Hubra version
+  (``services.shipped``, once per item).
 
 "Announced" is a ``changelog.sent`` row in the platform log per
 ``hubra@<version>`` / ``<plugin id>@<version>``, written in the same
@@ -237,6 +239,10 @@ def announce() -> int:
                     )
                     done += 1
                 db.session.commit()
+            # Who wanted an item of this release hears it shipped (once).
+            from hubra.core.services import shipped
+
+            shipped.notify(hubra["version"])
 
         for plugin in plugins:
             mark = key(plugin["plugin_id"], plugin["version"])

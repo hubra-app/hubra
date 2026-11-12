@@ -160,3 +160,85 @@ def test_no_footer_links_without_a_support_site_or_its_text(app, db):
     html = _render_reset(app)
     assert "/melden" not in html
     assert "[mail.email.footer_report]" not in html
+
+
+# ── Whose look: the club's for club mail, Hubra's for platform mail ──────────
+
+
+def _branded_club() -> Tenant:
+    return Tenant(
+        name="Alpha Club",
+        slug="alpha",
+        settings={
+            "branding": {
+                "logo": f"data:image/png;base64,{_PNG}",
+                "primary_color": "#0a7d3b",
+            }
+        },
+    )
+
+
+def _invite_texts(db) -> None:
+    for key, value in {
+        "mail.email.greeting": "Hi {{name}},",
+        "mail.email.club_invite.intro": "Join <strong>{{club_name}}</strong>.",
+        "mail.email.club_invite.button": "Join",
+        "mail.email.button_fallback": "Or open:",
+        "mail.email.footer": "Sent by {{club_name}}.",
+        "mail.email.sent_with": "Sent with",
+        "mail.email.subject.club_invite": "[{{club_name}}] Invite",
+    }.items():
+        db.session.add(Translation(locale="en-GB", key=key, value=value))
+    db.session.commit()
+
+
+def test_club_mail_has_the_clubs_name_logo_and_colour(app, db):
+    _invite_texts(db)
+    g.tenant = _branded_club()
+    try:
+        with app.test_request_context():
+            html, _, subject = render_mail_template(
+                "club_invite",
+                "en-GB",
+                name="Anna",
+                invited_by="Bob",
+                invite_url="https://sso.example/invite#token=x",
+            )
+    finally:
+        g.tenant = None
+    assert subject == "[Alpha Club] Invite"
+    assert f"data:image/png;base64,{_PNG}" in html
+    assert 'bgcolor="#0a7d3b"' in html  # the button
+    assert "#7441e0;\">hubra</span>" in html  # only the footer word is Hubra's
+    assert html.count("#7441e0") == 1
+
+
+def test_platform_mail_is_hubras_even_inside_a_club(app, db):
+    _password_reset_texts(db)
+    g.tenant = _branded_club()
+    try:
+        with app.test_request_context():
+            html, _, _ = render_mail_template(
+                "password_reset",
+                "en-GB",
+                platform_mail=True,
+                name="Anna",
+                club_name="Alpha Club",
+                reset_url="https://sso.example/reset#token=x",
+            )
+    finally:
+        g.tenant = None
+    assert "Alpha Club" not in html
+    assert _PNG not in html
+    assert "#0a7d3b" not in html
+    assert 'bgcolor="#7441e0"' in html
+
+
+def test_a_light_club_colour_keeps_text_readable():
+    from hubra.core.services.mail_i18n import mail_colors
+
+    light = mail_colors("#ffe066")
+    assert light["brand_on"] == "#1a1625"  # dark text on the yellow button
+    assert light["brand_link"] != "#ffe066"  # links darker on white
+    assert mail_colors("nonsense")["brand_color"] == "#7441e0"
+    assert mail_colors("#abc")["brand_color"] == "#aabbcc"

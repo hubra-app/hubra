@@ -23,7 +23,7 @@ def apply_migrations_to_tenant(tenant_id: int) -> None:
     schema = f"tenant_{tenant_id}"
     _log.info("Applying migrations to tenant schema: %s", schema)
 
-    set_search_path(tenant_id)
+    set_search_path(tenant_id, as_club=False)
     db.session.commit()  # ensure search_path is visible to Alembic connection
 
     from flask_migrate import upgrade as _upgrade

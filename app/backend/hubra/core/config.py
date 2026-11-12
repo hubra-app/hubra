@@ -103,7 +103,8 @@ class BaseConfig:
     # ── SQLAlchemy ──────────────────────────────────────────────────────────
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
 
-    # Largest request body Flask accepts (the frontends' nginx allows 25 MB).
+    # Largest request body Flask accepts, except file uploads (multipart),
+    # which may be up to MAX_UPLOAD_MB.
     MAX_CONTENT_LENGTH: int = int(
         os.environ.get("MAX_CONTENT_LENGTH", 25 * 1024 * 1024)
     )
@@ -273,6 +274,11 @@ class BaseConfig:
     FILES_S3_SECRET_KEY: str = os.environ.get("FILES_S3_SECRET_KEY", "")
     FILES_S3_REGION: str = os.environ.get("FILES_S3_REGION", "default")
     FILES_MAX_MB: int = int(os.environ.get("FILES_MAX_MB", "25"))
+    # Largest upload (multipart request) the server takes at all, in MB.  The
+    # frontends' nginx reads the same variable.  A club's or plan's largest
+    # file (services.quotas.max_file_mb) is capped at this; other requests
+    # stay at MAX_CONTENT_LENGTH.
+    MAX_UPLOAD_MB: int = int(os.environ.get("MAX_UPLOAD_MB", "100"))
     # Online payments (payments plugin): the platform's Stripe Connect key.
     # Better set in manage › Payments.
     STRIPE_SECRET_KEY: str = os.environ.get("STRIPE_SECRET_KEY", "")
@@ -355,6 +361,14 @@ class ProductionConfig(BaseConfig):
                     key,
                 )
         _require_env("DATABASE_URL")
+        if not os.environ.get("API_PUBLIC_URL"):
+            # Not fatal: a running club must not stop on an upgrade.
+            _cfg_log.warning(
+                "API_PUBLIC_URL is not set; the OAuth issuer and sign-in "
+                "callback addresses then follow the Host header of each "
+                "request. Set it to the API's public origin, e.g. "
+                "https://api.hubra.club."
+            )
         _validate_fernet_keys()
         _validate_backup_keys()
 

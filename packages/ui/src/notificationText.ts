@@ -40,6 +40,16 @@ const TITLES: Record<string, [string, string, string]> = {
   ],
   'Sign-up declined': ['shell.notif.text.signUpDeclined', 'Anmeldung abgelehnt', 'Sign-up declined'],
   'You got a place': ['shell.notif.text.gotAPlace', 'Du hast einen Platz bekommen', 'You got a place'],
+  'A comment was reported': [
+    'shell.notif.text.commentReported',
+    'Ein Kommentar wurde gemeldet',
+    'A comment was reported',
+  ],
+  'Hubra support asks for access': [
+    'shell.notif.text.supportAsksAccess',
+    'Hubra-Support bittet um Zugriff',
+    'Hubra support asks for access',
+  ],
   'Request to leave': ['shell.notif.text.requestToLeave', 'Austrittsgesuch', 'Request to leave'],
   'New application': [
     'shell.notif.text.newApplication',

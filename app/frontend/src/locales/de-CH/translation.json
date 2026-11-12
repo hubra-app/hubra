@@ -616,7 +616,8 @@
     "searchMembers": "Mitglieder suchen …",
     "noMembersYet": "Noch keine Mitglieder.",
     "remove": "Entfernen",
-    "showAll": "Alle anzeigen"
+    "showAll": "Alle anzeigen",
+    "externalImage": "Bild von {{host}} anzeigen"
   },
   "dashboard": {
     "activeMembers": "Aktive Mitglieder",
@@ -949,7 +950,12 @@
     "status": {
       "pending": "Angefragt",
       "waitlisted": "Warteliste",
-      "joined": "Angemeldet"
+      "joined": "Angemeldet",
+      "registered": "Angemeldet",
+      "approved": "Bestätigt",
+      "attended": "War da",
+      "maybe": "Vielleicht",
+      "declined": "Abgelehnt"
     },
     "pending": {
       "open": "Offene Anmeldungen"
@@ -962,6 +968,17 @@
     "noMine": "Du bist für keinen Anlass angemeldet.",
     "emptyHint": "Plane den nächsten Anlass, die Mitglieder können sich hier gleich anmelden.",
     "emptyMember": "Sobald ein Anlass geplant ist, kannst du dich hier anmelden.",
+    "detail": {
+      "back": "Zu den Anlässen",
+      "meeting": "Online teilnehmen",
+      "copied": "Link kopiert",
+      "copyLink": "Link kopieren",
+      "about": "Beschreibung",
+      "signUps": "Anmeldungen",
+      "noSignUps": "Noch niemand angemeldet.",
+      "plusGuests_one": "+{{count}} Gast",
+      "plusGuests_other": "+{{count}} Gäste"
+    },
     "view": {
       "list": "Liste",
       "month": "Monat"
@@ -972,6 +989,18 @@
       "today": "Heute",
       "more": "+{{count}} weitere",
       "none": "Keine Anlässe an diesem Tag."
+    },
+    "notes": {
+      "guide": "Anleitung öffnen",
+      "previous": "Letztes Mal ({{date}})",
+      "forTrainer": "Für Trainer:",
+      "saved": "Notizen gespeichert",
+      "trained": "Was trainiert wurde",
+      "trainedHint": "Erscheint beim nächsten Termin der Serie.",
+      "trainerNote": "Notiz für die nächste Trainerin, den nächsten Trainer",
+      "trainerNoteHint": "Nur wer die Anwesenheit führt, sieht sie.",
+      "guideUrl": "Link zur Anleitung",
+      "save": "Notizen speichern"
     }
   },
   "finance": {
@@ -2512,7 +2541,43 @@
       "scheduled": "Geplant",
       "noneUnread": "Alles gelesen und bestätigt."
     },
-    "noMatch": "Keine Beiträge gefunden."
+    "noMatch": "Keine Beiträge gefunden.",
+    "moderation": {
+      "report": "Melden",
+      "shown": "Kommentar wieder eingeblendet",
+      "hidden": "Kommentar ausgeblendet",
+      "show": "Einblenden",
+      "hide": "Ausblenden",
+      "kept": "Kommentar bleibt",
+      "keep": "Behalten (Meldungen erledigt)",
+      "keepShort": "Behalten",
+      "mute": "Beim Kommentieren stummschalten …",
+      "hiddenBadge": "Ausgeblendet",
+      "reportedCount": "{{count}}× gemeldet",
+      "reportedByMe": "Gemeldet",
+      "menu": "Aktionen zum Kommentar",
+      "hiddenText": "Von der Moderation ausgeblendet.",
+      "reportTitle": "Kommentar melden",
+      "reportHint": "Die Moderation sieht deine Meldung und entscheidet, ob der Kommentar ausgeblendet wird. Wer gemeldet hat, sieht nur die Moderation.",
+      "reason": "Grund (freiwillig)",
+      "reported": "Gemeldet. Danke!",
+      "muteTitle": "{{name}} stummschalten",
+      "muteHint": "Während dieser Zeit kann {{name}} Beiträge lesen, aber nicht kommentieren. Das Audit-Log hält fest, wer stummgeschaltet hat.",
+      "muteFor": "Dauer",
+      "days": "{{count}} Tage",
+      "muted": "Stummgeschaltet",
+      "muteConfirm": "Stummschalten",
+      "onPost": "zu",
+      "reasons": "Gründe: {{reasons}}",
+      "title": "Moderation",
+      "openHint": "Gemeldete Kommentare, die noch sichtbar sind.",
+      "mutedTitle": "Stummgeschaltet in Kommentaren",
+      "until": "bis {{date}}",
+      "unmuted": "Stummschaltung aufgehoben",
+      "unmute": "Aufheben",
+      "days_one": "{{count}} Tag",
+      "days_other": "{{count}} Tage"
+    }
   },
   "settings": {
     "changePassword": "Passwort ändern",
@@ -2743,7 +2808,9 @@
         "feeConfirmed": "Grund für eigenen Beitrag bestätigt",
         "memberFeeEnded": "Eigener Beitrag eines Mitglieds abgelaufen",
         "eventReinstated": "Anlass findet doch statt",
-        "confirmRead": "Bitte Lesen bestätigen"
+        "confirmRead": "Bitte Lesen bestätigen",
+        "supportAsksAccess": "Hubra-Support bittet um Zugriff",
+        "commentReported": "Ein Kommentar wurde gemeldet"
       }
     },
     "notifPanel": {
@@ -3462,7 +3529,19 @@
       "leave_declined": "Austritt abgelehnt",
       "approve_registration": "Anmeldung bestätigt",
       "delete_application": "Antrag gelöscht",
-      "create_member": "Mitglied erstellt"
+      "create_member": "Mitglied erstellt",
+      "support_session_view": "Support-Zugriff (ansehen)",
+      "support_session_change": "Support-Zugriff (mit Änderungen)",
+      "support_session_end": "Support-Zugriff beendet",
+      "support_access_request": "Support bittet um Zugriff",
+      "support_access_approve": "Support-Zugriff freigegeben",
+      "support_access_decline": "Support-Zugriff abgelehnt",
+      "support_session_revoked": "Support-Zugriff vorzeitig beendet",
+      "hide_comment": "Kommentar ausgeblendet",
+      "show_comment": "Kommentar wieder eingeblendet",
+      "keep_comment": "Gemeldeten Kommentar behalten",
+      "mute_commenter": "Beim Kommentieren stummgeschaltet",
+      "unmute_commenter": "Stummschaltung aufgehoben"
     },
     "systemActor": "System (automatisch)",
     "backToLog": "Zurück zum Protokoll",
@@ -4788,5 +4867,50 @@
       "noteLabel": "Deine Bestätigung",
       "confirm": "Grund trifft noch zu"
     }
+  },
+  "supportAccess": {
+    "title": "Hubra-Support",
+    "requireApproval": "Support-Zugriff nur mit Freigabe",
+    "requireApprovalHint": "Ein: Bevor der Hubra-Support euren Verein öffnet, fragt er hier an, und eine Admin-Person gibt den Zugriff frei (einmal, innerhalb von 24 Stunden). Jeder Zugriff steht im Audit-Log.",
+    "none": "Noch keine Anfragen vom Hubra-Support.",
+    "staff": "Hubra-Support",
+    "minutes": "{{count}} Min.",
+    "mayChange": "darf Änderungen machen",
+    "lookOnly": "nur ansehen",
+    "decidedBy": "entschieden von {{name}}",
+    "approve": "Freigeben",
+    "decline": "Ablehnen",
+    "approved": "Zugriff freigegeben",
+    "declined": "Zugriff abgelehnt",
+    "failed": "Nicht gespeichert",
+    "status": {
+      "pending": "Offen",
+      "approved": "Freigegeben",
+      "declined": "Abgelehnt",
+      "used": "Genutzt",
+      "expired": "Abgelaufen"
+    }
+  },
+  "limits": {
+    "kind": {
+      "members": "Mitglieder",
+      "mail": "Mails in diesem Monat",
+      "storage": "Speicher"
+    },
+    "banner": {
+      "grace": "Euer Verein hat das Limit von {{limit}} Mitgliedern erreicht. Neue Mitglieder kommen noch bis {{date}} dazu.",
+      "full": "Euer Verein hat das Limit von {{limit}} Mitgliedern erreicht. Neue Mitglieder können erst mit einem grösseren Tarif beitreten.",
+      "near": "Euer Verein ist nahe am Limit seines Tarifs: {{tight}}."
+    },
+    "fits": {
+      "unlimited": "{{name}} hat kein Mitgliederlimit",
+      "members": "{{name}} hat Platz für {{limit}} Mitglieder"
+    },
+    "perMonth": "pro Monat",
+    "switchTo": "Zu {{name}} wechseln",
+    "seePlans": "Tarife ansehen",
+    "confirmTitle": "Zu {{name}} wechseln?",
+    "newPrice": "Neu: {{price}} pro Monat.",
+    "switch": "Wechseln"
   }
 }

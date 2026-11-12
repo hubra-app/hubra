@@ -222,3 +222,34 @@ export async function setHubraLicenseHolders(
     body: JSON.stringify({ memberIds }),
   })
 }
+
+export type LimitKind = 'members' | 'mail_month' | 'storage_mb'
+
+export interface LimitRow {
+  used: number
+  limit: number | null
+  percent: number | null
+  level: 'ok' | 'warning' | 'over'
+}
+
+/** GET /app/billing/limits: usage against the limits, the member grace period and the plan that fits. */
+export interface HubraLimits {
+  plan: string | null
+  limits: Record<LimitKind, LimitRow>
+  warn_percent: number
+  grace_days: number
+  /** When new members stop joining at the member limit (ISO); null without a grace period. */
+  grace_until: string | null
+  suggestion: {
+    key: string
+    name_de: string
+    name_en: string
+    price_month_chf: string | null
+    limits: Record<LimitKind, number | null>
+  } | null
+  code: 'LIMIT_NEAR' | null
+}
+
+export async function getHubraLimits(): Promise<HubraLimits> {
+  return apiFetch('/app/billing/limits')
+}

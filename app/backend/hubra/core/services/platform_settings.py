@@ -22,7 +22,9 @@ through the fallback, e.g. Brevo's SMTP relay, from the same sender.  See
 ``email._send_via_smtp``.
 
 Backups (the global one and one per club) are the platform's, so where they
-are stored (``backup.s3.*``) is the platform's to decide, not a club's.
+are stored (``backup.s3.*``) and how long they are kept (``backup.keep_*``,
+see ``BackupService.run_retention_cleanup``) is the platform's to decide,
+not a club's.
 
 Files (``files.*``): where clubs' files (documents, attachments of plugins)
 are kept, ``hubra.core.files``.  With ``files.s3.bucket`` set they go to
@@ -34,9 +36,10 @@ every device out of push (they have to turn it on again).
 
 Performance (``perf.*``): the thresholds of ``services.perf_monitor``.
 
-Limits (``limits.warn_percent``): when clubs are warned about their
-limits (``services.quotas``).  The limits and prices of each plan are on the
-plan (``services.plans``); a club can have its own on top, set in manage.
+Limits (``limits.warn_percent``, ``limits.grace_days``): when clubs are
+warned about their limits, and how long a club at its member limit still
+takes new members (``services.quotas``).  The limits and prices of each plan
+are on the plan (``services.plans``); a club can have its own on top, set in manage.
 
 Billing (``billing.*``): whether clubs pay Hubra through Stripe Billing,
 monthly or yearly, its Stripe keys and the webhook secrets
@@ -180,6 +183,43 @@ SPECS: tuple[Spec, ...] = (
         "age_public_keys",
     ),
     Spec(
+        "backup.keep_daily",
+        "Daily backups kept",
+        "Newest daily backups kept per set (the global one and each club's), "
+        "1 to 365",
+        lambda cfg: "7",
+        "backup_keep",
+    ),
+    Spec(
+        "backup.keep_weekly",
+        "Weekly backups kept",
+        "Newest weekly backups (Sunday) kept per set, 1 to 365",
+        lambda cfg: "4",
+        "backup_keep",
+    ),
+    Spec(
+        "backup.keep_monthly",
+        "Monthly backups kept",
+        "Newest monthly backups (the 1st) kept per set, 1 to 365",
+        lambda cfg: "12",
+        "backup_keep",
+    ),
+    Spec(
+        "backup.keep_manual_days",
+        "Manual backups kept for",
+        "Days a backup made by hand is kept; 0 keeps it until someone deletes it",
+        lambda cfg: "90",
+        "keep_days",
+    ),
+    Spec(
+        "backup.keep_deleted_club_days",
+        "Backups of deleted clubs kept for",
+        "Days each backup of a club deleted for good is kept, counted from "
+        "the day it was made; 0 keeps them like any other club's",
+        lambda cfg: "30",
+        "keep_days",
+    ),
+    Spec(
         "backup.s3.endpoint",
         "S3 endpoint",
         "S3-compatible endpoint URL, e.g. https://eu2.contabostorage.com",
@@ -249,8 +289,9 @@ SPECS: tuple[Spec, ...] = (
     ),
     Spec(
         "files.max_mb",
-        "Largest file",
-        "Largest file a club can upload, in MB",
+        "Largest file (default)",
+        "Largest file a club can upload, in MB, when its plan sets none "
+        "(plans and clubs can have their own under All clubs)",
         lambda cfg: str(cfg.get("FILES_MAX_MB") or 25),
         "count",
     ),
@@ -699,6 +740,14 @@ SPECS: tuple[Spec, ...] = (
         "share of a limit (%). The second warning comes at 100 %",
         lambda cfg: "80",
         "percent",
+    ),
+    Spec(
+        "limits.grace_days",
+        "Grace period at the member limit",
+        "Days a club at its member limit still takes new members, while its "
+        "admins see which plan fits. 0: no new member past the limit",
+        lambda cfg: "14",
+        "grace_days",
     ),
     Spec(
         "translate.deepl_key",

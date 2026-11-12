@@ -67,6 +67,7 @@ from hubra.core.services.email import _get_sso_base_url
 from hubra.core.auth.account_guard import club_member_only
 from hubra.core.notifications import account as account_notifications
 from hubra.core.tenant.context import current_tenant
+from hubra.core.timeutil import as_utc
 
 _log = logging.getLogger(__name__)
 
@@ -426,6 +427,14 @@ def _complete_login(
     if current_tenant() is not None and mfa.club_blocks(current_tenant(), member, user):
         mfa.club_refusal()
 
+    # New-device alerts belong to sign-ins to the account (SSO), not to a
+    # club: a club sign-in neither alerts nor marks the browser as known.
+    account_sid = None
+    if user is not None:
+        # A club sign-in is an account sign-in too: the account token below
+        # needs a session the person (or an admin) can end.
+        account_sid = _record_account_login(user)
+
     raw_ua = request.headers.get("User-Agent", "")[:512]
     _new_device, session_id = AuthService.record_login(
         member,
@@ -434,14 +443,8 @@ def _complete_login(
         fingerprint=_club_device_fingerprint(),
         browser_family=_extract_browser_family(request.headers),
         platform=_extract_platform(request.headers),
+        account_sid=account_sid,
     )
-    # New-device alerts belong to sign-ins to the account (SSO), not to a
-    # club: a club sign-in neither alerts nor marks the browser as known.
-    account_sid = None
-    if user is not None:
-        # A club sign-in is an account sign-in too: the account token below
-        # needs a session the person (or an admin) can end.
-        account_sid = _record_account_login(user)
 
     try:
         db.session.commit()
@@ -835,6 +838,11 @@ def switch_tenant():
         fingerprint=compute_fingerprint(request.headers),
         browser_family=_extract_browser_family(request.headers),
         platform=_extract_platform(request.headers),
+        account_sid=(
+            int(claims["account_sid"])
+            if claims.get("account_sid") is not None
+            else None
+        ),
     )
     db.session.commit()
     additional_claims = {"user_id": user_id, "tenant_slug": target_slug}
@@ -1888,6 +1896,26 @@ def export_account():
     return response
 
 
+@account_bp.get("/export/all")
+@jwt_required()
+@limiter.limit("5 per hour")
+def export_account_all():
+    """The account and, per club, what that club keeps about the member, as
+    one ZIP (revDSG). Each club export is recorded in that club."""
+    from hubra.core.services import account_privacy
+
+    _not_while_impersonating()
+    user = _signed_in_user()
+    data = account_privacy.export_all(user)
+    response = make_response(data, 200)
+    response.headers["Content-Type"] = "application/zip"
+    response.headers["Content-Disposition"] = (
+        f'attachment; filename="hubra-daten-{user.id}.zip"'
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 @account_bp.get("/deletion")
 @jwt_required()
 def account_deletion_check():
@@ -2184,28 +2212,51 @@ def _current_account_sid() -> int | None:
 @account_bp.get("/all-sessions")
 @jwt_required()
 def list_all_sessions():
-    """The account's sessions: its own sign-ins (SSO portal, ``club`` null)
-    and those in every club, newest first."""
+    """The account's sign-ins, newest first, each with the clubs opened from
+    it (``clubs``). Ending a sign-in ends those club sessions too (the club
+    tokens carry its ``account_sid``), so they get no rows of their own.
+
+    Only club sessions not linked to a sign-in (from before the link was
+    recorded) are listed by themselves, with ``club`` set."""
     user = _signed_in_user()
     current_slug, current_sid = _current_session_key()
     current_account_sid = _current_account_sid()
-    out = [
-        {
+    sign_ins = {
+        s.id: {
             **session_service.serialize_account_session(s),
             "club": None,
+            "clubs": [],
             "current": s.id == current_account_sid,
         }
         for s in session_service.list_account_sessions(user, current_account_sid)
-    ]
+    }
+    out = list(sign_ins.values())
     for tenant, member in account_svc.memberships(user.id):
         for s in session_service.list_sessions(member.id):
+            if s.account_sid is not None:
+                sign_in = sign_ins.get(s.account_sid)
+                if sign_in is None:
+                    continue  # its sign-in has ended, and so has the session
+                club = {"slug": tenant.slug, "name": tenant.name}
+                if club not in sign_in["clubs"]:
+                    sign_in["clubs"].append(club)
+                last = as_utc(s.last_active_at)
+                if last is not None and (
+                    sign_in["lastActiveAt"] is None
+                    or last > as_utc(datetime.fromisoformat(sign_in["lastActiveAt"]))
+                ):
+                    sign_in["lastActiveAt"] = last.isoformat()
+                continue
             out.append(
                 {
                     **session_service.serialize_session(s),
                     "club": {"slug": tenant.slug, "name": tenant.name},
+                    "clubs": [],
                     "current": tenant.slug == current_slug and str(s.id) == current_sid,
                 }
             )
+    for sign_in in sign_ins.values():
+        sign_in["clubs"].sort(key=lambda c: c["name"].lower())
     out.sort(key=lambda s: s["lastActiveAt"] or "", reverse=True)
     return jsonify(out), 200
 
