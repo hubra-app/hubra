@@ -31,7 +31,10 @@ class Post(db.Model):
     )
     # The group the post is for: a role held for that group may manage it.
     group_id: Mapped[int | None] = mapped_column(
-        db.Integer, ForeignKey("groups.id", ondelete="SET NULL"), nullable=True, index=True
+        db.Integer,
+        ForeignKey("groups.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
 
     # Scheduled: members see the post from this time on; until then only
@@ -139,6 +142,13 @@ class PostComment(db.Model):
         db.Integer, ForeignKey("members.id", ondelete="CASCADE"), nullable=False
     )
     body: Mapped[str] = mapped_column(Text, nullable=False)
+    # Hidden by a moderator: members see that a comment was here, not its text.
+    hidden_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    hidden_by_id: Mapped[int | None] = mapped_column(
+        db.Integer, ForeignKey("members.id", ondelete="SET NULL"), nullable=True
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -171,7 +181,10 @@ class PostRead(db.Model):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     post_id: Mapped[int] = mapped_column(
-        db.Integer, ForeignKey("posts.id", ondelete="CASCADE"), nullable=False, index=True
+        db.Integer,
+        ForeignKey("posts.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     member_id: Mapped[int] = mapped_column(
         db.Integer, ForeignKey("members.id", ondelete="CASCADE"), nullable=False
@@ -184,3 +197,53 @@ class PostRead(db.Model):
 
     def __repr__(self) -> str:
         return f"<PostRead post_id={self.post_id} member_id={self.member_id}>"
+
+
+class CommentReport(db.Model):
+    """A member reported a comment to the moderators (once per comment)."""
+
+    __tablename__ = "comment_reports"
+    __table_args__ = (
+        UniqueConstraint("comment_id", "member_id", name="uq_comment_report_member"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    comment_id: Mapped[int] = mapped_column(
+        db.Integer,
+        ForeignKey("post_comments.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    member_id: Mapped[int] = mapped_column(
+        db.Integer, ForeignKey("members.id", ondelete="CASCADE"), nullable=False
+    )
+    reason: Mapped[str | None] = mapped_column(db.String(300), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+
+class CommentMute(db.Model):
+    """A member who may not comment until ``until`` (set by a moderator)."""
+
+    __tablename__ = "comment_mutes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    member_id: Mapped[int] = mapped_column(
+        db.Integer,
+        ForeignKey("members.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    by_id: Mapped[int | None] = mapped_column(
+        db.Integer, ForeignKey("members.id", ondelete="SET NULL"), nullable=True
+    )
+    reason: Mapped[str | None] = mapped_column(db.String(300), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
