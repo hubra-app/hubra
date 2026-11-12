@@ -1896,6 +1896,26 @@ def export_account():
     return response
 
 
+@account_bp.get("/export/all")
+@jwt_required()
+@limiter.limit("5 per hour")
+def export_account_all():
+    """The account and, per club, what that club keeps about the member, as
+    one ZIP (revDSG). Each club export is recorded in that club."""
+    from hubra.core.services import account_privacy
+
+    _not_while_impersonating()
+    user = _signed_in_user()
+    data = account_privacy.export_all(user)
+    response = make_response(data, 200)
+    response.headers["Content-Type"] = "application/zip"
+    response.headers["Content-Disposition"] = (
+        f'attachment; filename="hubra-daten-{user.id}.zip"'
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 @account_bp.get("/deletion")
 @jwt_required()
 def account_deletion_check():
