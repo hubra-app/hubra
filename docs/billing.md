@@ -217,6 +217,23 @@ inherited module says which plan it comes from (`inherited_from`).
 Settings › Hubra subscription, marked *For your club*, and can switch to
 it themselves; other clubs and the website never see it.
 
+**Near a limit: the plan that fits.** When a club reaches the warning line
+of a plan limit (`limits.warn_percent`, members, mails this month or
+storage), its billing admins see a banner at the top of the club app. It
+names the cheapest plan the club may pick whose limits hold what it uses
+now with room (below the new plan's warning line), with its price, and
+switches to it in one click (after a confirm; the same `PUT /plan`). No
+plan fits: the banner links to the plans. Dismissed, it comes back when a
+level changes.
+
+**Grace period at the member limit.** The first join past the member limit
+starts a grace period (`limits.grace_days` in manage › Settings › Limits,
+14 days by default, up to 90). During it new members still join; after it
+nobody new joins (409 `MEMBER_LIMIT_REACHED`) until the club is under the
+limit again or on a bigger plan, and either ends the grace period, so the
+next time starts a new one. `0` days is a hard stop at the limit, as
+before. Platform staff adding someone in manage are never stopped.
+
 ## Hubra fee on online payments
 
 With the **Online payments** plugin, members pay their club through the
@@ -390,6 +407,7 @@ Club app (`billing.billing.manage`):
 | POST | `/api/v1/app/billing/resume` | Take the cancellation back while the period runs (409 `NO_SUBSCRIPTION`) |
 | POST | `/api/v1/app/billing/refresh` | Read the subscription from Stripe again (after Checkout) |
 | GET | `/api/v1/app/billing/invoices` | The last 12 Stripe invoices with PDF links |
+| GET | `/api/v1/app/billing/limits` | Members, mails and storage against the limits, `grace_days`, `grace_until` (when new members stop joining), `suggestion` (the cheapest plan that fits, or null) and `code` `LIMIT_NEAR` when a limit is close or reached |
 | GET | `/api/v1/app/billing/catalog` | Plans the club can pick and paid modules with prices; any member (the modules page shows prices) |
 | PUT | `/api/v1/app/billing/plan` | `{plan}`: switch to a plan the club may pick (400, 409 `PLAN_TOO_SMALL`) |
 | PUT | `/api/v1/app/billing/licenses/<code>` | `{memberIds}`: the members who hold the module's licences (409 `TOO_MANY_HOLDERS`, 404 not licensed) |

@@ -99,7 +99,7 @@ const DISCORD_SUPPORT = ['discord.support_channel_id', 'discord.support_add_repo
 const PERF = ['perf.slow_request_ms', 'perf.slow_query_ms', 'perf.p95_warning_ms']
 const ERRORS = ['errors.auto_resolve']
 const UPGRADES = ['upgrades.post_deploy_steps']
-const LIMITS = ['limits.warn_percent']
+const LIMITS = ['limits.warn_percent', 'limits.grace_days']
 const MCP = ['mcp.url']
 const OAUTH = ['oauth.dynamic_clients', 'oauth.dynamic_redirect_hosts']
 const SUPPORT = ['support.url']
@@ -417,6 +417,10 @@ const FIELD_DE: Record<string, [string, string]> = {
   'limits.warn_percent': [
     'Warnen ab (%)',
     'Inhaber und Plattform bekommen eine Meldung, wenn ein Verein diesen Anteil eines Limits erreicht. Die zweite kommt bei 100 %',
+  ],
+  'limits.grace_days': [
+    'Kulanzfrist am Mitgliederlimit (Tage)',
+    'So lange nimmt ein Verein am Mitgliederlimit noch neue Mitglieder auf, ab dem ersten Beitritt darüber. Die Admins sehen dabei, welcher Tarif passt. 0: kein neues Mitglied über dem Limit',
   ],
   'discord.log_channel_id': [
     'Kanal für das Plattform-Log',
@@ -909,11 +913,14 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
               </Group>
               <Text size="xs" c="dimmed" mb={12}>
                 {tr(
-                  'Die Limits stehen bei jedem Tarif (oben). Ist das Mitgliederlimit erreicht, kommt niemand Neues dazu (Einladungen, Anträge); Plattform-Staff kann in manage trotzdem hinzufügen. Mails pro Monat und Speicher werden nur gemeldet, nichts wird gesperrt. Einzelne Vereine bekommen eigene Limits auf ihrer Seite.',
-                  'The limits are on each plan (above). At the member limit nobody new can join (invites, applications); platform staff can still add people in manage. Mails per month and storage are only reported, nothing is blocked. A club gets its own limits on its page.',
+                  'Die Limits stehen bei jedem Tarif (oben). Am Mitgliederlimit läuft eine Kulanzfrist: Neue Mitglieder kommen noch dazu, die Admins sehen, welcher Tarif passt, und wechseln mit einem Klick. Danach kommt niemand Neues dazu (Einladungen, Anträge); Plattform-Staff kann in manage trotzdem hinzufügen. Mails pro Monat und Speicher werden nur gemeldet, nichts wird gesperrt. Einzelne Vereine bekommen eigene Limits auf ihrer Seite.',
+                  'The limits are on each plan (above). At the member limit a grace period runs: new members still join, the admins see which plan fits and switch in one click. After it nobody new can join (invites, applications); platform staff can still add people in manage. Mails per month and storage are only reported, nothing is blocked. A club gets its own limits on its page.',
                 )}
               </Text>
-              <Stack gap="md">{field('limits.warn_percent')}</Stack>
+              <Stack gap="md">
+                {field('limits.warn_percent')}
+                {field('limits.grace_days')}
+              </Stack>
             </Paper>
           )}
 

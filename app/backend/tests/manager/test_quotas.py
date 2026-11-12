@@ -131,6 +131,7 @@ def test_limits_api_needs_platform_rights(client, auth_headers, club):
 
 def test_a_full_club_takes_no_new_members(sqlite_only, app, client, db, seeded_db, club):
     club.settings = {"limits": {"members": 1}}  # the owner is the one member
+    platform_settings.set_many({"limits.grace_days": "0"})  # a hard stop
     db.session.commit()
     client.post(
         "/api/v1/auth/login",

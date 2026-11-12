@@ -36,9 +36,10 @@ every device out of push (they have to turn it on again).
 
 Performance (``perf.*``): the thresholds of ``services.perf_monitor``.
 
-Limits (``limits.warn_percent``): when clubs are warned about their
-limits (``services.quotas``).  The limits and prices of each plan are on the
-plan (``services.plans``); a club can have its own on top, set in manage.
+Limits (``limits.warn_percent``, ``limits.grace_days``): when clubs are
+warned about their limits, and how long a club at its member limit still
+takes new members (``services.quotas``).  The limits and prices of each plan
+are on the plan (``services.plans``); a club can have its own on top, set in manage.
 
 Billing (``billing.*``): whether clubs pay Hubra through Stripe Billing,
 monthly or yearly, its Stripe keys and the webhook secrets
@@ -739,6 +740,14 @@ SPECS: tuple[Spec, ...] = (
         "share of a limit (%). The second warning comes at 100 %",
         lambda cfg: "80",
         "percent",
+    ),
+    Spec(
+        "limits.grace_days",
+        "Grace period at the member limit",
+        "Days a club at its member limit still takes new members, while its "
+        "admins see which plan fits. 0: no new member past the limit",
+        lambda cfg: "14",
+        "grace_days",
     ),
     Spec(
         "translate.deepl_key",

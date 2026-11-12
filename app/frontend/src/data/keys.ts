@@ -155,6 +155,7 @@ export const qk = {
     subscriptionInvoices: ['hubra-billing', 'invoices'] as const,
     subscriptionContact: ['hubra-billing', 'contact'] as const,
     subscriptionCatalog: ['hubra-billing', 'catalog'] as const,
+    subscriptionLimits: ['hubra-billing', 'limits'] as const,
     webhookDeliveries: (id: number) => ['webhooks', id, 'deliveries'] as const,
     signInApps: ['api-access', 'sign-in-apps'] as const,
     appConnection: (id: number) => ['connected-apps', id] as const,

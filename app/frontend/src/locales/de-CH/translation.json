@@ -4830,5 +4830,27 @@
       "used": "Genutzt",
       "expired": "Abgelaufen"
     }
+  },
+  "limits": {
+    "kind": {
+      "members": "Mitglieder",
+      "mail": "Mails in diesem Monat",
+      "storage": "Speicher"
+    },
+    "banner": {
+      "grace": "Euer Verein hat das Limit von {{limit}} Mitgliedern erreicht. Neue Mitglieder kommen noch bis {{date}} dazu.",
+      "full": "Euer Verein hat das Limit von {{limit}} Mitgliedern erreicht. Neue Mitglieder können erst mit einem grösseren Tarif beitreten.",
+      "near": "Euer Verein ist nahe am Limit seines Tarifs: {{tight}}."
+    },
+    "fits": {
+      "unlimited": "{{name}} hat kein Mitgliederlimit",
+      "members": "{{name}} hat Platz für {{limit}} Mitglieder"
+    },
+    "perMonth": "pro Monat",
+    "switchTo": "Zu {{name}} wechseln",
+    "seePlans": "Tarife ansehen",
+    "confirmTitle": "Zu {{name}} wechseln?",
+    "newPrice": "Neu: {{price}} pro Monat.",
+    "switch": "Wechseln"
   }
 }

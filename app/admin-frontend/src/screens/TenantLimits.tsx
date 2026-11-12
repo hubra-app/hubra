@@ -138,8 +138,8 @@ export function TenantLimits({ tenantId }: { tenantId: number }) {
       <Text size="sm" c="dimmed" mb={16}>
         {anyLimit
           ? tr(
-              `Tarif ${planLabel(data.plan, tr)}. Ab ${data.warn_percent} % und bei 100 % bekommen die Inhaber eine Meldung. Ist das Mitgliederlimit erreicht, kommt niemand Neues dazu; Mails und Speicher werden nur gemeldet.`,
-              `${planLabel(data.plan, tr)} plan. The owners are told at ${data.warn_percent} % and at 100 %. At the member limit nobody new can join; mail and storage are only reported.`,
+              `Tarif ${planLabel(data.plan, tr)}. Ab ${data.warn_percent} % und bei 100 % bekommen die Inhaber eine Meldung. Am Mitgliederlimit kommen während der Kulanzfrist noch neue Mitglieder dazu, danach niemand mehr; Mails und Speicher werden nur gemeldet.`,
+              `${planLabel(data.plan, tr)} plan. The owners are told at ${data.warn_percent} % and at 100 %. At the member limit new members still join during the grace period, after it nobody; mail and storage are only reported.`,
             )
           : tr(
               `Tarif ${planLabel(data.plan, tr)}, ohne Limits. Limits pro Tarif unter Alle Vereine › Tarife & Preise.`,

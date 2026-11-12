@@ -149,6 +149,19 @@ def put_contact():
     return jsonify(data), 200
 
 
+@billing_bp.get("/limits")
+@permission_required(*PERM)
+def get_limits():
+    """Members, mails and storage against the club's limits, the grace period
+    at the member limit and the cheapest plan that fits (``LIMIT_NEAR`` in
+    ``code`` when a limit is close or reached)."""
+    from hubra.core.services import quotas
+
+    view = quotas.club_view(current_tenant())
+    tight = any(r["level"] != "ok" for r in view["limits"].values())
+    return jsonify({**view, "code": "LIMIT_NEAR" if tight else None}), 200
+
+
 @billing_bp.get("/catalog")
 @require_member
 def get_catalog():
