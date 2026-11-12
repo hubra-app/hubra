@@ -4522,5 +4522,11 @@
   "events.month.today": "Today",
   "events.month.more": "+{{count}} more",
   "events.month.none": "No events on this day.",
-  "common.externalImage": "Show image from {{host}}"
+  "common.externalImage": "Show image from {{host}}",
+  "subscription.coveredBySponsor": "{{name}} covers the cost.",
+  "subscription.notBilled": "Your club is not being billed at the moment.",
+  "subscription.addonOnBodyFree": "{{price}}. The module is switched on. {{free}}",
+  "subscription.addonOffBodyFree": "The module is switched off; its data stays.",
+  "subscription.addonsHintFree": "Modules with their own price. Adding one switches the module on. {{free}}",
+  "subscription.sponsoredStripeEnds": "So your payment via Stripe ends on {{date}}; nothing is charged after that."
 }

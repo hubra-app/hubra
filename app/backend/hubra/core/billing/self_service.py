@@ -80,8 +80,19 @@ def catalog(tenant: Tenant) -> dict:
                 "holders": held.get(code, []) if unit == "license" else None,
             }
         )
+    summary = club_billing.summary(tenant)
     return {
         "plan": tenant.plan,
+        # Nothing on these prices is charged while a sponsor pays or the
+        # club is not billed: the club app says so instead of "next invoice".
+        "sponsorship": {
+            "running": summary["sponsorship_running"],
+            "name": summary["sponsor_name"] if summary["sponsorship_running"] else "",
+            "until": summary["sponsored_until"]
+            if summary["sponsorship_running"]
+            else None,
+        },
+        "billed": not summary["sponsorship_running"] and summary["status"] != "none",
         "members": quotas.member_count(tenant),
         "plans": [
             {

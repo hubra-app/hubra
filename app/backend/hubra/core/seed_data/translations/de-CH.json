@@ -4522,5 +4522,11 @@
   "events.month.today": "Heute",
   "events.month.more": "+{{count}} weitere",
   "events.month.none": "Keine Anlässe an diesem Tag.",
-  "common.externalImage": "Bild von {{host}} anzeigen"
+  "common.externalImage": "Bild von {{host}} anzeigen",
+  "subscription.coveredBySponsor": "{{name}} übernimmt die Kosten.",
+  "subscription.notBilled": "Euer Verein wird zurzeit nicht verrechnet.",
+  "subscription.addonOnBodyFree": "{{price}}. Das Modul wird eingeschaltet. {{free}}",
+  "subscription.addonOffBodyFree": "Das Modul wird ausgeschaltet, seine Daten bleiben.",
+  "subscription.addonsHintFree": "Module mit eigenem Preis. Dazubuchen schaltet das Modul ein. {{free}}",
+  "subscription.sponsoredStripeEnds": "Eure Zahlung über Stripe endet deshalb am {{date}}; danach wird nichts mehr belastet."
 }

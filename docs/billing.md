@@ -36,9 +36,17 @@ before.
   (All clubs › club › Billing), a club changing its plan or add-ons, and
   the hourly member count update only the subscription items that changed,
   with `create_prorations` (see "Changes during the month"). **Sync with
-  Stripe** does the same on demand and reads Stripe's state first. A running
-  sponsorship has nothing to charge: the club can't start Checkout and the
-  items aren't pushed.
+  Stripe** does the same on demand and reads Stripe's state first.
+- **Sponsored and not-billed clubs pay nothing.** While a sponsorship runs,
+  or while manage has the club on status *none* (not billed), there is
+  nothing to charge: the club can't start Checkout. A subscription that
+  already runs is set to end at the end of the period already paid
+  (`cancel_at_period_end`, Mike's choice 2026-11-12), so nothing more is
+  charged; if the sponsorship ends (or billing starts again) before that,
+  the cancellation is taken back and the items are updated as usual. After
+  the subscription has ended, the club pays again through Checkout. The
+  club app says who covers the cost instead of "next invoice"
+  (`GET /app/billing/catalog` has `sponsorship` and `billed`).
 - **Stripe's state is followed.** The webhook and an hourly reconcile
   (`reconcile-billing-hourly`, minute 35) copy the subscription's status,
   period end and trial end into the club's terms. Stripe's

@@ -34,7 +34,7 @@ import { localizeModule } from '@/modules/labels'
 import { qk } from '@/data/keys'
 import { openReport } from '@/screens/private/support/reportStore'
 import type { HubraAddonOffer } from '@/api/billing'
-import { addonPrice, useAddonSwitch, useHubraCatalog } from './subscriptionHooks'
+import { addonPrice, notCharged, useAddonSwitch, useHubraCatalog } from './subscriptionHooks'
 
 type FormValue = string | number | boolean | null
 
@@ -263,6 +263,8 @@ function ModuleCard({
   onConfigure: () => void
 }) {
   const { t } = useT()
+  const { data: catalog } = useHubraCatalog()
+  const free = notCharged(t, catalog)
   const on = m.switchedOn && m.allowed
   const blocker = !m.allowed
     ? t('settings.modules.blocked', 'Für diesen Verein nicht verfügbar')
@@ -309,6 +311,7 @@ function ModuleCard({
                       price: addonPrice(t, offer),
                     })
                   : addonPrice(t, offer)}
+              {free && offer.source !== 'included' ? ` · ${free}` : ''}
             </Text>
           )}
         </Stack>
