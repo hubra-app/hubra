@@ -66,6 +66,8 @@ export const qk = {
     comments: (id: string | undefined) => ['post-comments', id] as const,
     translation: ['post-translation'] as const,
     reads: (id: string | undefined) => ['post-reads', id] as const,
+    reportedComments: ['post-comment-reports'] as const,
+    commentMutes: ['post-comment-mutes'] as const,
   },
 
   members: {

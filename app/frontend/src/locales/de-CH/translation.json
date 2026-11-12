@@ -2529,7 +2529,43 @@
       "scheduled": "Geplant",
       "noneUnread": "Alles gelesen und bestätigt."
     },
-    "noMatch": "Keine Beiträge gefunden."
+    "noMatch": "Keine Beiträge gefunden.",
+    "moderation": {
+      "report": "Melden",
+      "shown": "Kommentar wieder eingeblendet",
+      "hidden": "Kommentar ausgeblendet",
+      "show": "Einblenden",
+      "hide": "Ausblenden",
+      "kept": "Kommentar bleibt",
+      "keep": "Behalten (Meldungen erledigt)",
+      "keepShort": "Behalten",
+      "mute": "Beim Kommentieren stummschalten …",
+      "hiddenBadge": "Ausgeblendet",
+      "reportedCount": "{{count}}× gemeldet",
+      "reportedByMe": "Gemeldet",
+      "menu": "Aktionen zum Kommentar",
+      "hiddenText": "Von der Moderation ausgeblendet.",
+      "reportTitle": "Kommentar melden",
+      "reportHint": "Die Moderation sieht deine Meldung und entscheidet, ob der Kommentar ausgeblendet wird. Wer gemeldet hat, sieht nur die Moderation.",
+      "reason": "Grund (freiwillig)",
+      "reported": "Gemeldet. Danke!",
+      "muteTitle": "{{name}} stummschalten",
+      "muteHint": "Während dieser Zeit kann {{name}} Beiträge lesen, aber nicht kommentieren. Das Audit-Log hält fest, wer stummgeschaltet hat.",
+      "muteFor": "Dauer",
+      "days": "{{count}} Tage",
+      "muted": "Stummgeschaltet",
+      "muteConfirm": "Stummschalten",
+      "onPost": "zu",
+      "reasons": "Gründe: {{reasons}}",
+      "title": "Moderation",
+      "openHint": "Gemeldete Kommentare, die noch sichtbar sind.",
+      "mutedTitle": "Stummgeschaltet in Kommentaren",
+      "until": "bis {{date}}",
+      "unmuted": "Stummschaltung aufgehoben",
+      "unmute": "Aufheben",
+      "days_one": "{{count}} Tag",
+      "days_other": "{{count}} Tage"
+    }
   },
   "settings": {
     "changePassword": "Passwort ändern",
@@ -2761,7 +2797,8 @@
         "memberFeeEnded": "Eigener Beitrag eines Mitglieds abgelaufen",
         "eventReinstated": "Anlass findet doch statt",
         "confirmRead": "Bitte Lesen bestätigen",
-        "supportAsksAccess": "Hubra-Support bittet um Zugriff"
+        "supportAsksAccess": "Hubra-Support bittet um Zugriff",
+        "commentReported": "Ein Kommentar wurde gemeldet"
       }
     },
     "notifPanel": {
@@ -3487,7 +3524,12 @@
       "support_access_request": "Support bittet um Zugriff",
       "support_access_approve": "Support-Zugriff freigegeben",
       "support_access_decline": "Support-Zugriff abgelehnt",
-      "support_session_revoked": "Support-Zugriff vorzeitig beendet"
+      "support_session_revoked": "Support-Zugriff vorzeitig beendet",
+      "hide_comment": "Kommentar ausgeblendet",
+      "show_comment": "Kommentar wieder eingeblendet",
+      "keep_comment": "Gemeldeten Kommentar behalten",
+      "mute_commenter": "Beim Kommentieren stummgeschaltet",
+      "unmute_commenter": "Stummschaltung aufgehoben"
     },
     "systemActor": "System (automatisch)",
     "backToLog": "Zurück zum Protokoll",

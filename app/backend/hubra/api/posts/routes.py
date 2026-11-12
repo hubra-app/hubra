@@ -17,6 +17,7 @@ from hubra.core.permissions import (
     row_group,
     scoped_permission_keys,
 )
+from hubra.api.posts import moderation
 from hubra.api.posts.services import PostService, PostsService, read_counts
 from hubra.core.errors import api_error, raise_error, validation_error
 from hubra.core.extensions import db, limiter
@@ -51,6 +52,14 @@ def _is_author_or_moderator(item, member_id: int) -> bool:
     if item.author_id == member_id:
         return True
     return member_has_permission(_current_member(), _MODERATE)
+
+
+def _may_moderate(post: Post) -> bool:
+    """Hide others' comments, keep reported ones: a club-wide moderator, or
+    one whose role for the post's group may moderate."""
+    if member_has_permission(_current_member(), _MODERATE):
+        return True
+    return _MODERATE in _group_keys(post.group_id)
 
 
 def _group_keys(group_id: int | None) -> set[str]:
@@ -319,9 +328,30 @@ def unlike_post(post_id: int):
 @posts_bp.get("/<int:post_id>/comments")
 @permission_required("posts", "read", "View posts")
 def list_comments(post_id: int):
-    _shown_post(post_id)  # 404 if not found
+    post = _shown_post(post_id)  # 404 if not found
     comments = PostService.list_comments(post_id)
-    return jsonify(_comments_schema.dump(comments)), 200
+    return jsonify(_dump_comments(post, comments)), 200
+
+
+def _dump_comments(post: Post, comments: list) -> list[dict]:
+    """Comments as JSON. A hidden comment keeps its place but not its text,
+    except for moderators; moderators also see how often each was reported."""
+    me = get_current_member().id
+    moderator = _may_moderate(post)
+    ids = [c.id for c in comments]
+    counts = moderation.report_counts(ids) if moderator else {}
+    mine = moderation.reported_by(me, ids)
+    out = _comments_schema.dump(comments)
+    for row, comment in zip(out, comments, strict=True):
+        hidden = comment.hidden_at is not None
+        row["hidden"] = hidden
+        row.pop("hidden_by_id", None)
+        if hidden and not moderator:
+            row["body"] = ""
+        row["reported_by_me"] = comment.id in mine
+        if moderator:
+            row["reports"] = counts.get(comment.id, 0)
+    return out
 
 
 # ── POST /posts/<id>/comments ─────────────────────────────────────────────────
@@ -332,6 +362,7 @@ def list_comments(post_id: int):
 def add_comment(post_id: int):
     _shown_post(post_id)  # 404 if not found
     member_id = get_current_member().id
+    moderation.ensure_may_comment(member_id)
 
     body = request.get_json(silent=True) or {}
     try:
@@ -377,3 +408,104 @@ def delete_comment(post_id: int, comment_id: int):
         raise
 
     return "", 204
+
+
+# ── Comment moderation (moderation.py) ────────────────────────────────────────
+
+
+def _comment_on(post_id: int, comment_id: int):
+    post = _shown_post(post_id)
+    comment = PostService.get_comment(comment_id)
+    if comment.post_id != post_id:
+        raise_error(
+            404, "NOT_FOUND", f"Comment {comment_id} not found on post {post_id}"
+        )
+    return post, comment
+
+
+def _moderated_comment(post_id: int, comment_id: int):
+    post, comment = _comment_on(post_id, comment_id)
+    if not _may_moderate(post):
+        raise_error(403, "FORBIDDEN", "Only moderators can do this")
+    return comment
+
+
+def _one_comment(post_id: int, comment) -> dict:
+    db.session.refresh(comment)
+    return _dump_comments(PostService.get(post_id), [comment])[0]
+
+
+@posts_bp.post("/<int:post_id>/comments/<int:comment_id>/report")
+@permission_required("posts", "read", "View posts")
+@limiter.limit("30 per hour")
+def report_comment(post_id: int, comment_id: int):
+    """Report a comment to the moderators (``{reason?}``)."""
+    _, comment = _comment_on(post_id, comment_id)
+    body = request.get_json(silent=True) or {}
+    moderation.report(comment, get_current_member().id, body.get("reason"))
+    db.session.commit()
+    return jsonify(_one_comment(post_id, comment)), 200
+
+
+@posts_bp.post("/<int:post_id>/comments/<int:comment_id>/hide")
+@permission_required("posts", "read", "View posts")
+def hide_comment(post_id: int, comment_id: int):
+    comment = _moderated_comment(post_id, comment_id)
+    moderation.set_hidden(comment, True, get_current_member().id)
+    db.session.commit()
+    return jsonify(_one_comment(post_id, comment)), 200
+
+
+@posts_bp.post("/<int:post_id>/comments/<int:comment_id>/show")
+@permission_required("posts", "read", "View posts")
+def show_comment(post_id: int, comment_id: int):
+    comment = _moderated_comment(post_id, comment_id)
+    moderation.set_hidden(comment, False, get_current_member().id)
+    db.session.commit()
+    return jsonify(_one_comment(post_id, comment)), 200
+
+
+@posts_bp.delete("/<int:post_id>/comments/<int:comment_id>/reports")
+@permission_required("posts", "read", "View posts")
+def keep_comment(post_id: int, comment_id: int):
+    """A moderator keeps a reported comment: its reports are done."""
+    comment = _moderated_comment(post_id, comment_id)
+    moderation.clear_reports(comment, get_current_member().id)
+    db.session.commit()
+    return jsonify(_one_comment(post_id, comment)), 200
+
+
+@posts_bp.get("/comments/reports")
+@permission_required("posts", "moderate", "Moderate posts and comments")
+def list_reported_comments():
+    """Reported comments that are still shown, for the moderation list."""
+    return jsonify({"items": moderation.open_reports(_may_moderate)}), 200
+
+
+@posts_bp.get("/comments/mutes")
+@permission_required("posts", "moderate", "Moderate posts and comments")
+def list_comment_mutes():
+    return jsonify({"items": moderation.active_mutes()}), 200
+
+
+@posts_bp.post("/comments/mutes")
+@permission_required("posts", "moderate", "Moderate posts and comments")
+def mute_commenter():
+    """``{member_id, days, reason?}``: the member may not comment for *days*."""
+    body = request.get_json(silent=True) or {}
+    moderation.mute(
+        body.get("member_id"),
+        body.get("days"),
+        body.get("reason"),
+        get_current_member().id,
+    )
+    db.session.commit()
+    return jsonify({"items": moderation.active_mutes()}), 200
+
+
+@posts_bp.delete("/comments/mutes/<int:member_id>")
+@permission_required("posts", "moderate", "Moderate posts and comments")
+def unmute_commenter(member_id: int):
+    moderation.unmute(member_id, get_current_member().id)
+    db.session.commit()
+    return jsonify({"items": moderation.active_mutes()}), 200

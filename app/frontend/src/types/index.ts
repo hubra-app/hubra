@@ -221,6 +221,11 @@ export interface PostComment {
   body: string;
   createdAt: string;
   time: string;
+  /** Hidden by a moderator: the body is empty for members. */
+  hidden?: boolean;
+  reportedByMe?: boolean;
+  /** Only for moderators: how often it was reported. */
+  reports?: number;
 }
 
 export interface Post {

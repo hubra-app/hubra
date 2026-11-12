@@ -8,7 +8,6 @@ import {
   IconClock,
   IconHeart,
   IconMessage2,
-  IconTrash,
 } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
 import { useToast, useAuth } from '@/context/AppContext'
@@ -20,6 +19,7 @@ import { PostReadsModal } from './PostReadsModal'
 import { MarkdownRenderer } from '@/components/MarkdownRenderer'
 import type { ContentLanguage, Post, PostComment as PostCommentType } from '@/types'
 import { useLanguageNames } from './contentLanguages'
+import { CommentItem } from './CommentItem'
 import {
   getPost,
   likePost,
@@ -301,63 +301,20 @@ export function PostDetailScreen() {
             }}
           >
             {comments.map((comment) => (
-              <div key={comment.id} style={{ display: 'flex', gap: 8 }}>
-                <Avatar
-                  name={comment.author}
-                  color={comment.avatarColor}
-                  size={28}
-                />
-                <div style={{ flex: 1 }}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      marginBottom: 2,
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: 'var(--mantine-font-size-xs)',
-                        fontWeight: 600,
-                        color: 'var(--hb-text)',
-                      }}
-                    >
-                      {comment.author}
-                    </span>
-                    <span
-                      className="num"
-                      style={{
-                        fontSize: 'var(--mantine-font-size-xs)',
-                        color: 'var(--hb-text-3)',
-                      }}
-                    >
-                      {comment.time}
-                    </span>
-                    {((canComment &&
-                      (comment.authorId === currentUser?.id || canModerate)) ||
-                      isAdmin) && (
-                      <Button
-                        size="compact-xs"
-                        variant="subtle"
-                        style={{ color: 'var(--mantine-color-red-text)', marginLeft: 'auto' }}
-                        onClick={() => removeComment(comment.id)}
-                      >
-                        <IconTrash size={12} />
-                      </Button>
-                    )}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 'var(--mantine-font-size-sm)',
-                      color: 'var(--hb-text)',
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    {comment.body}
-                  </div>
-                </div>
-              </div>
+              <CommentItem
+                key={comment.id}
+                postId={id!}
+                comment={comment}
+                canDelete={
+                  (canComment && (comment.authorId === currentUser?.id || canModerate)) || isAdmin
+                }
+                onDelete={() => removeComment(comment.id)}
+                onChange={(updated) =>
+                  queryClient.setQueryData<PostCommentType[]>(qk.posts.comments(id), (prev) =>
+                    (prev ?? []).map((c) => (c.id === updated.id ? updated : c)),
+                  )
+                }
+              />
             ))}
           </div>
         )}
