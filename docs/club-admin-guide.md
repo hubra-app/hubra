@@ -416,8 +416,16 @@ same values safely.
 
 ### Translations (Übersetzungen)
 
-Every text in the app can be changed for your club, per language. Texts the
-app uses but nobody has translated yet are marked, so you can fill them in.
+The texts of the app belong to the platform and are the same for every club.
+Here you suggest a better wording for a text; a platform admin accepts it
+(for every club) or rejects it with a reason.
+
+**Abdeckung** (coverage) shows, for Hubra and every plugin, how many of its
+texts each language has. A language with gaps shows how many are missing;
+click it to list them, each with the text in the other language, and
+**Vorschlagen** starts a suggestion for that text.
+
+![Translation coverage](screenshots/translation-coverage/coverage.png)
 
 ## Records and history
 

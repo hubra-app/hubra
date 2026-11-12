@@ -4104,7 +4104,17 @@
       "pending": "Offen"
     },
     "was": "Vorher",
-    "reason": "Begründung"
+    "reason": "Begründung",
+    "coverage": {
+      "title": "Abdeckung",
+      "desc": "Wie viele Texte es in jeder Sprache gibt, für Hubra und jedes Plugin. Fehlt einer, kannst du ihn vorschlagen.",
+      "source": "Bereich",
+      "texts": "{{count}} Texte",
+      "missingIn": "Fehlt in {{lang}} ({{source}})",
+      "suggest": "Vorschlagen",
+      "more": "und {{count}} weitere",
+      "missing": "{{pct}} % · {{count}} fehlen"
+    }
   },
   "apps": {
     "connectFailed": "Nicht verbunden",

@@ -4104,7 +4104,17 @@
       "pending": "Open"
     },
     "was": "Before",
-    "reason": "Reason"
+    "reason": "Reason",
+    "coverage": {
+      "title": "Coverage",
+      "desc": "How many texts each language has, for Hubra and every plugin. If one is missing, you can suggest it.",
+      "source": "Source",
+      "texts": "{{count}} texts",
+      "missingIn": "Missing in {{lang}} ({{source}})",
+      "suggest": "Suggest",
+      "more": "and {{count}} more",
+      "missing": "{{pct}} % · {{count}} missing"
+    }
   },
   "apps": {
     "activity": "Recent activity",
