@@ -37,7 +37,7 @@ test('a weekly training: series, attendance and overview', async ({ page }) => {
     await page.getByRole('menuitem', { name: 'Anwesenheit erfassen' }).click()
     const dialog = page.getByRole('dialog')
     await dialog.getByRole('button', { name: 'Übrige anwesend' }).click()
-    await dialog.getByRole('button', { name: 'Speichern' }).click()
+    await dialog.getByRole('button', { name: 'Speichern', exact: true }).click()
     await expect(dialog).toBeHidden()
 
     // The overview is a tab of Anlässe.

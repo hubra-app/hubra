@@ -680,3 +680,38 @@ export async function inviteTrial(id: number): Promise<TrialSignup> {
 export async function deleteTrial(id: number): Promise<void> {
   await apiFetch(`/app/events/trials/${id}`, { method: "DELETE" });
 }
+
+// ── Session notes (what was trained, a note for the next trainer) ────────────
+
+export interface SessionNote {
+  trained: string | null
+  /** Only for those who take attendance. */
+  trainer_note?: string | null
+  guide_url: string | null
+  updated_at: string
+  updated_by_name: string | null
+  /** On the previous date: which one. */
+  event_id?: number
+  date?: string
+}
+
+export interface SessionNotes {
+  note: SessionNote | null
+  /** The last notes on an earlier date of the same series. */
+  previous: SessionNote | null
+  can_edit: boolean
+}
+
+export async function getSessionNotes(eventId: string): Promise<SessionNotes> {
+  return apiFetch(`/app/events/${eventId}/session-notes`)
+}
+
+export async function saveSessionNotes(
+  eventId: string,
+  body: { trained: string; trainer_note: string; guide_url: string },
+): Promise<SessionNotes> {
+  return apiFetch(`/app/events/${eventId}/session-notes`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
+}
