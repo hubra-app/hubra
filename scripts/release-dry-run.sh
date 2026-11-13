@@ -10,7 +10,11 @@ tag="v$version"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 echo "== check $tag"
-GITHUB_OUTPUT="" python3 scripts/release_check.py check "$tag"
+# A pull request that bumps the version (RELEASE_BUMP=true from ci.yml) must
+# have folded app/backend/changes/ into the changelog, like the tag push.
+strict=()
+if [ "${RELEASE_BUMP:-}" = true ]; then strict=(--no-fragments); fi
+GITHUB_OUTPUT="" python3 scripts/release_check.py check "$tag" "${strict[@]}"
 # Placeholder images: the real block comes from the promote job.
 printf 'images:\n  - name: ghcr.io/example/backend\n    newTag: "%s"\n    digest: sha256:0\n' "$version" > "$tmp/images.yaml"
 echo "== plugins $tag"

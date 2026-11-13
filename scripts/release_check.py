@@ -10,8 +10,10 @@ moved. As a file, the same code runs on pull requests (ci.yml, job
     release_check.py check v1.3.0
         The tag is vX.Y.Z or vX.Y.Z-<pre>, matches app/backend/pyproject.toml,
         and a release (not a pre-release) has a non-empty [X.Y.Z] section in
-        app/backend/CHANGELOG.md. Writes version, prerelease and minor to
-        $GITHUB_OUTPUT (or prints them).
+        app/backend/CHANGELOG.md. With --no-fragments (always on a tag
+        push) app/backend/changes/ must be empty: its entries belong in the
+        changelog before the version bump. Writes version, prerelease and
+        minor to $GITHUB_OUTPUT (or prints them).
 
     release_check.py notes v1.3.0 --images out/images.yaml --out out
         Writes out/CHANGELOG.md (this version's section) and notes.md (the
@@ -36,11 +38,14 @@ import re
 import sys
 from pathlib import Path
 
+import importlib.util
 import json
 import tomllib
 import urllib.request
 
 CHANGELOG = "app/backend/CHANGELOG.md"
+CHANGES = "app/backend/changes"
+FRAGMENTS = "app/backend/hubra/core/changelog_fragments.py"
 PYPROJECT = "app/backend/pyproject.toml"
 TAG_RE = re.compile(r"v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)(?P<pre>-[0-9A-Za-z.-]+)?")
 
@@ -67,7 +72,18 @@ def section_of(log: str, name: str) -> str | None:
     return m.group(1).strip() if m else None
 
 
-def check(tag: str, root: Path) -> dict[str, str]:
+def _fragments(root: Path):
+    """app/backend/hubra/core/changelog_fragments.py, loaded by path (the
+    hubra package needs Flask; this module only the standard library)."""
+    spec = importlib.util.spec_from_file_location("changelog_fragments", root / FRAGMENTS)
+    if spec is None or spec.loader is None or not (root / FRAGMENTS).exists():
+        return None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def check(tag: str, root: Path, no_fragments: bool = False) -> dict[str, str]:
     info = parse_tag(tag)
     version = str(info["version"])
     with open(root / PYPROJECT, "rb") as f:
@@ -75,6 +91,16 @@ def check(tag: str, root: Path) -> dict[str, str]:
     if declared != version:
         raise ReleaseError(f"tag {tag}, but {PYPROJECT} says version {declared}")
     if not info["prerelease"]:
+        frag = _fragments(root)
+        waiting = frag.files(root / CHANGES) if frag else []
+        # Fragments are normal between releases; at a version bump (the
+        # release pull request) or a tag push they must be in the changelog.
+        if waiting and no_fragments:
+            names = ", ".join(p.name for p in waiting)
+            raise ReleaseError(
+                f"{CHANGES} still has entries ({names}); run "
+                f"`python3 {FRAGMENTS} fold` before the version bump"
+            )
         section = section_of((root / CHANGELOG).read_text(), version)
         if section is None:
             raise ReleaseError(f"{CHANGELOG} has no [{version}] section; move [Unreleased] there first")
@@ -92,6 +118,10 @@ def notes(tag: str, root: Path, images: Path, out: Path, body: str = "", repo: s
     info = parse_tag(tag)
     v = str(info["version"])
     log = (root / CHANGELOG).read_text()
+    frag = _fragments(root)
+    if frag and info["prerelease"]:
+        # A pre-release ships the waiting fragments with [Unreleased].
+        log = frag.fold_into(log, frag.collected(root / CHANGES)["en"])
     # A release has its own [X.Y.Z] section (check insists); a pre-release
     # may not yet, then it ships what [Unreleased] says.
     section = section_of(log, v) or (section_of(log, "Unreleased") if info["prerelease"] else "") or ""
@@ -214,6 +244,11 @@ def main(argv: list[str] | None = None) -> int:
     c = sub.add_parser("check", help="check a tag against pyproject.toml and the changelog")
     c.add_argument("tag")
     c.add_argument("--root", type=Path, default=Path("."))
+    c.add_argument(
+        "--no-fragments",
+        action="store_true",
+        help="fail while app/backend/changes/ has entries (always on for a tag push)",
+    )
     n = sub.add_parser("notes", help="write the release's CHANGELOG.md and notes.md")
     n.add_argument("tag")
     n.add_argument("--root", type=Path, default=Path("."))
@@ -252,7 +287,8 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 1 if a.strict and impact["blocked"] else 0
         if a.cmd == "check":
-            result = check(a.tag, a.root)
+            strict = a.no_fragments or os.environ.get("GITHUB_REF_TYPE") == "tag"
+            result = check(a.tag, a.root, no_fragments=strict)
             lines = "".join(f"{k}={v}\n" for k, v in result.items())
             if os.environ.get("GITHUB_OUTPUT"):
                 with open(os.environ["GITHUB_OUTPUT"], "a") as f:

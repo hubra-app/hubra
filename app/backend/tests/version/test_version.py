@@ -13,6 +13,14 @@ from hubra.core.services.version import VersionService
 _PYPROJECT = Path(__file__).resolve().parents[2] / "pyproject.toml"
 
 
+@pytest.fixture(autouse=True)
+def _no_fragments(tmp_path_factory, monkeypatch):
+    # The sample changelogs below must not pick up app/backend/changes/.
+    monkeypatch.setattr(
+        "hubra.core.services.version._CHANGES_DIR", tmp_path_factory.mktemp("changes")
+    )
+
+
 def test_get_version_reads_pyproject_toml():
     # Compared with the file, not a fixed number, so a version bump needs no
     # test change (CI skips the tests on version-only pull requests).

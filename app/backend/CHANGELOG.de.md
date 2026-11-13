@@ -6,6 +6,8 @@ gleiche Abschnitte (die Überschriften `### Added`, `### Changed`, `### Fixed` �
 bleiben englisch, die Apps übersetzen sie) und gleich viele Einträge pro
 Abschnitt, in derselben Reihenfolge. Weicht eine Version davon ab, zeigen die
 Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt ist.
+Neue Einträge kommen nach app/backend/changes/ (eine Datei pro Pull Request);
+ein Release übernimmt sie hierher (app/backend/changes/README.md).
 
 ## [Unreleased]
 

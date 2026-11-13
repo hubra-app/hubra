@@ -66,10 +66,12 @@ The repository layout is described in the [README](README.md#project-structure).
 4. **Database changes** need an Alembic migration in
    `app/backend/migrations/` (`flask db migrate`). Check that there is only
    one head after merging `main`.
-5. **Changelog.** Anything a user or operator would notice gets an entry
-   under `## [Unreleased]` in `app/backend/CHANGELOG.md` **and** the same
-   entry, in German, in the same place in `app/backend/CHANGELOG.de.md`.
-   The apps show these under "What's new".
+5. **Changelog.** Anything a user or operator would notice gets an entry in
+   a new file `app/backend/changes/<topic>.md`: English, then the same
+   entry in German after a `<!-- de -->` line (see
+   [app/backend/changes/README.md](app/backend/changes/README.md)). The apps
+   show these under "What's new"; the release moves them into
+   `CHANGELOG.md` and `CHANGELOG.de.md`.
 6. **Docs.** Update the page in `docs/` that describes what you changed, and
    the README table if you add a page.
 7. **Screenshots.** For a change you can see, commit screenshots under
