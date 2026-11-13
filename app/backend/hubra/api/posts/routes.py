@@ -167,6 +167,19 @@ def translate_post_text():
     return jsonify({"title": title[:255], "summary": summary[:500] or None, "body": text}), 200
 
 
+# ── GET /posts/channels ──────────────────────────────────────────────────────
+
+
+@posts_bp.get("/channels")
+@permission_required("posts", "create", "Create posts")
+def list_channels():
+    """Where a post can be announced: ``app`` and each module that posts
+    them (Discord, Messengers), for the editor's "Send to"."""
+    from .services import channels
+
+    return jsonify(channels()), 200
+
+
 # ── GET /posts/<id> ───────────────────────────────────────────────────────────
 
 

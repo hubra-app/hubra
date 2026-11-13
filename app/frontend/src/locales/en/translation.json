@@ -2577,6 +2577,12 @@
       "unmute": "Lift",
       "days_one": "{{count}} day",
       "days_other": "{{count}} days"
+    },
+    "channels": {
+      "label": "Send to",
+      "hint": "The post is always in the feed. Each channel also follows its own settings.",
+      "app": "Hubra notification (bell and push)",
+      "none": "No notification: only in the feed."
     }
   },
   "settings": {

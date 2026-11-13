@@ -60,6 +60,10 @@ class EventChanged(_Payload):
 
 class PostRef(_Payload):
     post_id: int
+    # ``post.published``: the channels the author picked (None: all). Core
+    # only calls the modules picked; a module can read it to tell apart
+    # its own channels.
+    channels: list[str] | None = None
 
 
 class PollRef(_Payload):

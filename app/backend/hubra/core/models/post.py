@@ -56,6 +56,12 @@ class Post(db.Model):
     read_reminder_sent_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # Where the post is announced: None for every channel the club has
+    # (``app`` for the bell and push, plus each module that announces
+    # posts, e.g. ``discord``); a list for only those.
+    channels: Mapped[list[str] | None] = mapped_column(
+        JSONB().with_variant(JSON, "sqlite"), nullable=True
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

@@ -120,6 +120,13 @@ class PostCreateSchema(ma.Schema):
     )
     # Members confirm they read it ("please confirm").
     must_read = fields.Bool(load_default=False)
+    # Where it is announced (``GET /posts/channels``); empty/None: everywhere.
+    channels = fields.List(
+        fields.Str(validate=validate.Length(min=1, max=64)),
+        allow_none=True,
+        load_default=None,
+        validate=validate.Length(max=20),
+    )
 
     @post_load
     def _translations(self, data, **_kwargs):
@@ -144,6 +151,12 @@ class PostUpdateSchema(ma.Schema):
     publish_at = fields.AwareDateTime(allow_none=True, default_timezone=timezone.utc)
     hide_after = fields.AwareDateTime(allow_none=True, default_timezone=timezone.utc)
     must_read = fields.Bool()
+    # Only while it is scheduled: once out, it has been announced.
+    channels = fields.List(
+        fields.Str(validate=validate.Length(min=1, max=64)),
+        allow_none=True,
+        validate=validate.Length(max=20),
+    )
 
 
 class CommentCreateSchema(ma.Schema):

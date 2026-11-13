@@ -36,7 +36,7 @@ the address it checked, and doesn't follow redirects.
 | `invoice.deleted` | An invoice was deleted | `invoice_id`, `transaction_id` |
 | `event.published` | An event was published | `event_id` |
 | `event.changed` | An event was changed, called off or deleted (one per date of a series) | `event_id`, `deleted` when it is gone, `cancelled` and `reason` when it was called off (`cancelled: false` when it takes place again) |
-| `post.published` | A post was published | `post_id` |
+| `post.published` | A post was published | `post_id`, `channels` (the author's pick, `null` for all) |
 | `poll.published` | A poll was published | `poll_id` |
 | `poll.closed` | An organiser closed a poll early | `poll_id` |
 | `group.membership_changed` | Someone joined or left a group | `group_id`, `member_id`, `action` |

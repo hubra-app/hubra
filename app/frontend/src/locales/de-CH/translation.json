@@ -2577,6 +2577,12 @@
       "unmute": "Aufheben",
       "days_one": "{{count}} Tag",
       "days_other": "{{count}} Tage"
+    },
+    "channels": {
+      "label": "Senden an",
+      "hint": "Der Beitrag steht immer im Feed. Jeder Kanal folgt zusätzlich seinen eigenen Einstellungen.",
+      "app": "Mitteilung in Hubra (Glocke und Push)",
+      "none": "Ohne Benachrichtigung: nur im Feed."
     }
   },
   "settings": {

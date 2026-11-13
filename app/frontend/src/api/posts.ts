@@ -22,6 +22,7 @@ interface BackendPost {
   publish_at?: string | null;
   hide_after?: string | null;
   must_read?: boolean;
+  channels?: string[] | null;
   read_count?: number;
   read_by_me?: boolean;
 }
@@ -103,6 +104,7 @@ function adaptPost(b: BackendPost): Post {
     publishAt: b.publish_at ?? null,
     hideAfter: b.hide_after ?? null,
     mustRead: b.must_read ?? false,
+    channels: b.channels ?? null,
     readCount: b.read_count ?? 0,
     readByMe: b.read_by_me ?? false,
   };
@@ -148,6 +150,8 @@ export interface PostCreate {
   hideAfter?: string | null;
   /** Members confirm they read it. */
   mustRead?: boolean;
+  /** Where it is announced; null: every channel. */
+  channels?: string[] | null;
 }
 
 export async function createPost(input: PostCreate): Promise<Post> {
@@ -162,6 +166,7 @@ export async function createPost(input: PostCreate): Promise<Post> {
       ...(input.publishAt ? { publish_at: input.publishAt } : {}),
       ...(input.hideAfter ? { hide_after: input.hideAfter } : {}),
       ...(input.mustRead ? { must_read: true } : {}),
+      ...(input.channels ? { channels: input.channels } : {}),
       ...(input.groupId !== undefined
         ? { group_id: input.groupId ? Number(input.groupId) : null }
         : {}),
@@ -181,6 +186,19 @@ export interface PostUpdate {
   publishAt?: string | null;
   hideAfter?: string | null;
   mustRead?: boolean;
+  /** A scheduled post only. */
+  channels?: string[] | null;
+}
+
+/** A channel a post can be announced on: ``app`` (bell and push) or a
+ * module that posts them (Discord, Messengers). */
+export interface PostChannel {
+  key: string;
+  name: string;
+}
+
+export async function getPostChannels(): Promise<PostChannel[]> {
+  return apiFetch("/app/posts/channels");
 }
 
 /** Whether the platform set up machine translation. */
