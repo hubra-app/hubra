@@ -94,6 +94,12 @@ class User(db.Model):
     dm_prefs: Mapped[dict | None] = mapped_column(
         JSONB().with_variant(JSON, "sqlite"), nullable=True
     )
+    # Quiet hours (core/notifications/quiet.py): {"from": "22:00",
+    # "to": "07:00", "tz": "Europe/Zurich"}; push and direct messages wait
+    # until they end. None: no quiet hours.
+    quiet_hours: Mapped[dict | None] = mapped_column(
+        JSONB().with_variant(JSON, "sqlite"), nullable=True
+    )
 
     # The person's member badge number ("HB-7K3M-Q9TX"): one per account,
     # the same in every club. Given on first use (core/services/member_badge.py).

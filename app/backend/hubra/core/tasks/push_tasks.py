@@ -20,7 +20,26 @@ def send_push_task(
     title: str,
     msg: str,
     link: str | None = None,
+    held: bool = False,
 ) -> dict:
     from hubra.core.notifications.push import deliver
+    from hubra.core.notifications.quiet import wait_for_user
 
+    # In the account's quiet hours the push waits until they end (once).
+    wait = 0 if held else wait_for_user(user_id)
+    if wait:
+        send_push_task.apply_async(
+            kwargs={
+                "user_id": user_id,
+                "tenant_id": tenant_id,
+                "notification_id": notification_id,
+                "kind": kind,
+                "title": title,
+                "msg": msg,
+                "link": link,
+                "held": True,
+            },
+            countdown=wait,
+        )
+        return {"held": wait}
     return deliver(user_id, tenant_id, notification_id, kind, title, msg, link)

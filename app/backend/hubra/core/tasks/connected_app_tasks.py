@@ -52,11 +52,24 @@ def push_all_role_connections() -> int:
     name="hubra.core.tasks.connected_app_tasks.deliver_app_notification",
     ignore_result=True,
 )
-def deliver_app_notification(provider: str, member_id: int, payload: dict) -> int:
+def deliver_app_notification(
+    provider: str, member_id: int, payload: dict, held: bool = False
+) -> int:
     """Hand one bell notification to a connected app's ``deliver_notification``
     hook (inside the club; the tenant comes with the task)."""
+    from hubra.core.extensions import db
+    from hubra.core.models.member import Member
     from hubra.core.notifications.channels import deliver
+    from hubra.core.notifications.quiet import wait_for_user
 
+    # In the account's quiet hours the message waits until they end (once).
+    member = db.session.get(Member, member_id)
+    wait = 0 if held else wait_for_user(member.user_id if member else None)
+    if wait:
+        deliver_app_notification.apply_async(
+            args=(provider, member_id, payload, True), countdown=wait
+        )
+        return 0
     return deliver(provider, member_id, payload)
 
 

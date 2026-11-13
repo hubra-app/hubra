@@ -706,6 +706,25 @@ export async function setDiscordDms(
   })
 }
 
+export interface QuietHours {
+  from: string
+  to: string
+  tz: string
+}
+
+/** No push or direct message in this window; they wait until it ends. */
+export async function getQuietHours(): Promise<QuietHours | null> {
+  return (await apiFetch<{ quiet: QuietHours | null }>('/global/account/quiet-hours')).quiet
+}
+
+export async function setQuietHours(quiet: QuietHours | null): Promise<QuietHours | null> {
+  const out = await apiFetch<{ quiet: QuietHours | null }>('/global/account/quiet-hours', {
+    method: 'PUT',
+    body: JSON.stringify({ quiet }),
+  })
+  return out.quiet
+}
+
 /** "This wasn't me" from a new-device alert: ends every session. */
 export async function notMe(token: string): Promise<{ ok: boolean; ended: number }> {
   return apiFetch('/global/auth/not-me', {

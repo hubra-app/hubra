@@ -1531,6 +1531,36 @@ def set_account_dms():
     return jsonify(account_dm.prefs_for(user)), 200
 
 
+# ── /account/quiet-hours (no push or direct message at night) ─────────────────
+
+
+@account_bp.get("/quiet-hours")
+@jwt_required()
+def get_quiet_hours():
+    """``{quiet: {from, to, tz} | null}`` for every club of the account."""
+    from hubra.core.notifications import quiet
+
+    return jsonify({"quiet": quiet.get(_signed_in_user())}), 200
+
+
+@account_bp.put("/quiet-hours")
+@jwt_required()
+def set_quiet_hours():
+    """Body ``{quiet: {from: "22:00", to: "07:00", tz?} | null}``."""
+    from hubra.core.notifications import quiet
+
+    refuse_during_impersonation()
+    user = _signed_in_user()
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict) or "quiet" not in body:
+        raise_error(422, "VALIDATION_ERROR", "Send {quiet: {...} | null}")
+    if err := quiet.validate(body["quiet"]):
+        raise_error(422, "VALIDATION_ERROR", err)
+    quiet.apply(user, body["quiet"])
+    db.session.commit()
+    return jsonify({"quiet": quiet.get(user)}), 200
+
+
 # ── /account/badge (the person's member badge) ───────────────────────────────
 
 
