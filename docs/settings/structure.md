@@ -86,7 +86,7 @@ belongs to no single page, and lists the rest.
 | Meldungen & Ideen | support site address below the list | unchanged (page draws its own heading; see questions) |
 | Wartung | maintenance mode | unchanged (an action, not a setting) |
 
-Old URLs redirect (`LEGACY_REDIRECTS` in `app/admin-frontend/src/nav.tsx`),
+Old URLs redirect (`LEGACY_REDIRECTS` in `app/admin-frontend/src/nav/index.tsx`),
 so links in old Discord messages and mails keep working.
 
 ## Done in this round
@@ -118,3 +118,14 @@ All eight questions were answered yes:
 8. A module manifest may name `settings_page="/app/…"`. Einstellungen › Module
    then opens that page (button and `?module=<code>`) instead of the form.
    Finance uses it; plugins can too.
+
+## Where the code lives
+
+- Each manage page is its own file, `app/admin-frontend/src/nav/pages/<page>.tsx`
+  (`definePage(section, position, () => page)`); the sections and their order are in
+  `nav/registry.tsx`. A new page is a new file; nothing else changes.
+- A settings group that is only fields (title, description, fields, reset) is its own file,
+  `app/admin-frontend/src/screens/platform/settings/<group>.ts` (`defineSettings`), with the
+  German labels of its keys. Show it with `<SettingsSection section="<group>" />` in the page's
+  settings tab. Groups with buttons of their own (mail relay test, Discord channels) stay in
+  `SettingsSection.tsx`.
