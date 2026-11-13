@@ -1,0 +1,76 @@
+{
+  "activeMembers": "Aktive Mitglieder",
+  "allPaid": "Alles bezahlt",
+  "buttons": {
+    "addMember": "Mitglied hinzufügen",
+    "newEvent": "Neuer Anlass"
+  },
+  "eyebrow": {
+    "organization": "Verein",
+    "personal": "Persönlich"
+  },
+  "global": "Vereinsübersicht",
+  "goodAfternoon": "Guten Tag",
+  "goodEvening": "Guten Abend",
+  "goodMorning": "Guten Morgen",
+  "incomeMinusExpenses": "Einnahmen – Ausgaben",
+  "manageInventory": "Inventar verwalten",
+  "memberStats": "Mitgliederstatistik",
+  "myEvents": "Meine Anlässe",
+  "netThisMonth": "Netto diesen Monat",
+  "nextEvent": "Nächster: {{title}}",
+  "noPolls": "Keine offenen Umfragen",
+  "noUpcomingEvents": "Keine bevorstehenden Anlässe",
+  "noneScheduled": "Nichts geplant",
+  "openInvoices": "Offene Rechnungen",
+  "outstanding": "{{count}} offen",
+  "quickActions": "Schnellzugriff",
+  "recent": {
+    "activity": "Letzte Aktivitäten",
+    "polls": "Aktuelle Umfragen"
+  },
+  "recentActivity": "Letzte Aktivitäten",
+  "recentPolls": "Aktuelle Umfragen",
+  "recentPosts": {
+    "comingSoon": "Beiträge folgen bald.",
+    "title": "Neueste Beiträge"
+  },
+  "recentPostsCard": {
+    "comingSoon": "Beiträge folgen bald.",
+    "noComments": "Noch keine Kommentare.",
+    "noLikes": "Noch keine Likes.",
+    "noPosts": "Noch keine Beiträge.",
+    "title": "Neueste Beiträge"
+  },
+  "tabs": {
+    "account": "Persönlich",
+    "overview": "Verein"
+  },
+  "thisMonth": "Diesen Monat",
+  "joinedLast30": "+{{count}} in den letzten 30 Tagen",
+  "thisWeek": "Diese Woche",
+  "title": "Dashboard",
+  "today": "Heute",
+  "upcomingEvents": {
+    "title": "Nächste Anlässe"
+  },
+  "upcomingEventsCard": {
+    "title": "Nächste Anlässe"
+  },
+  "upcomingEventsLabel": "Nächste Anlässe",
+  "viewAll": "Alle ansehen",
+  "viewGroups": "Gruppen ansehen",
+  "viewInvoices": "Rechnungen ansehen",
+  "viewMail": "Mail ansehen",
+  "viewMembers": "Mitglieder ansehen",
+  "voteNeeded": {
+    "closesIn": "Endet in {{days}} T.",
+    "closesOn": "Endet am {{date}}",
+    "options": "{{count}} Optionen",
+    "pollsRequire": "{{count}} offene Umfragen warten auf deine Stimme",
+    "title": "Deine Stimme ist gefragt",
+    "vote": "Abstimmen"
+  },
+  "welcome": "Willkommen zurück, {{name}}",
+  "welcomeShort": "Willkommen"
+}

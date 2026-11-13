@@ -42,13 +42,13 @@ def deliver():
 
 
 def _seed_mail_texts(db) -> None:
-    import json
     from pathlib import Path
 
     from hubra.core.models.translation import Translation
+    from hubra.core.seeds import load_shipped_translations
 
     seeds = Path(__file__).resolve().parents[2] / "hubra/core/seed_data/translations"
-    texts = json.loads((seeds / "de-CH.json").read_text(encoding="utf-8"))
+    texts = load_shipped_translations(seeds, "de-CH")
     for key, value in texts.items():
         if key.startswith("mail.email."):
             db.session.add(Translation(locale="de-CH", key=key, value=value))

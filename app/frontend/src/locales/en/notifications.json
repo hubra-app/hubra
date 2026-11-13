@@ -1,0 +1,10 @@
+{
+  "invoicePaid": "Invoice paid",
+  "joinedEvent": "Joined an event",
+  "leftEvent": "Left an event",
+  "markAllRead": "Mark all as read",
+  "noNotifications": "No notifications.",
+  "reminderSent": "Reminder sent",
+  "title": "Notifications",
+  "voteCast": "Voted"
+}

@@ -66,10 +66,13 @@ plugins and mails. The old dialect texts are retired: don't bring back
 
 ## Where texts live
 
-- Club app: `app/frontend/src/locales/{de-CH,en}/translation.json` and the
-  seed files `app/backend/hubra/core/seed_data/translations/{de-CH,en-GB}.json`
-  (same keys and values; `tests/i18n` checks them). When you change a
-  shipped value, add the old one to `superseded.json`.
+- Club app: one file per feature, `app/frontend/src/locales/{de-CH,en}/<feature>.json`
+  (the texts under `<feature>.`), and the seed files
+  `app/backend/hubra/core/seed_data/translations/{de-CH,en-GB}/<feature>.json`
+  (flat keys starting with `<feature>.`; same keys and values, `tests/i18n`
+  checks them). A new feature gets new files instead of adding to another
+  feature's. When you change a shipped value, add the old one to
+  `superseded.json`.
 - Manage, SSO and support: `tr('Deutsch', 'English')` in the code.
 - API errors: `packages/api-client/src/errors.ts` (German by message, pattern
   or code).

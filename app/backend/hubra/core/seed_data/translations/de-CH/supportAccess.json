@@ -1,0 +1,21 @@
+{
+  "supportAccess.approve": "Freigeben",
+  "supportAccess.approved": "Zugriff freigegeben",
+  "supportAccess.decidedBy": "entschieden von {{name}}",
+  "supportAccess.decline": "Ablehnen",
+  "supportAccess.declined": "Zugriff abgelehnt",
+  "supportAccess.failed": "Nicht gespeichert",
+  "supportAccess.lookOnly": "nur ansehen",
+  "supportAccess.mayChange": "darf Änderungen machen",
+  "supportAccess.minutes": "{{count}} Min.",
+  "supportAccess.none": "Noch keine Anfragen vom Hubra-Support.",
+  "supportAccess.requireApproval": "Support-Zugriff nur mit Freigabe",
+  "supportAccess.requireApprovalHint": "Ein: Bevor der Hubra-Support euren Verein öffnet, fragt er hier an, und eine Admin-Person gibt den Zugriff frei (einmal, innerhalb von 24 Stunden). Jeder Zugriff steht im Audit-Log.",
+  "supportAccess.staff": "Hubra-Support",
+  "supportAccess.status.approved": "Freigegeben",
+  "supportAccess.status.declined": "Abgelehnt",
+  "supportAccess.status.expired": "Abgelaufen",
+  "supportAccess.status.pending": "Offen",
+  "supportAccess.status.used": "Genutzt",
+  "supportAccess.title": "Hubra-Support"
+}

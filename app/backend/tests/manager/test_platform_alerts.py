@@ -232,14 +232,14 @@ def test_overview_is_staff_only(client, auth_headers):
 
 
 def test_alert_mail_uses_the_hubra_layout(db, staff, deliver):
-    import json
     from email import message_from_string
     from pathlib import Path
 
     from hubra.core.models.translation import Translation
+    from hubra.core.seeds import load_shipped_translations
 
     seeds = Path(__file__).resolve().parents[2] / "hubra/core/seed_data/translations"
-    texts = json.loads((seeds / "de-CH.json").read_text(encoding="utf-8"))
+    texts = load_shipped_translations(seeds, "de-CH")
     for key, value in texts.items():
         if key.startswith("mail.email.platform_alert.") or key in {
             "mail.email.greeting",

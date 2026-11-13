@@ -1,0 +1,12 @@
+{
+  "status.Open": "Open",
+  "status.Overdue": "Overdue",
+  "status.Paid": "Paid",
+  "status.active": "Active",
+  "status.archived": "Archived",
+  "status.disabled": "Disabled",
+  "status.inactive": "Inactive",
+  "status.pending": "Pending",
+  "status.suspended": "Suspended",
+  "status.trial": "Trial"
+}

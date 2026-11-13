@@ -1,0 +1,6 @@
+{
+  "error": "Verification failed. The link may be expired.",
+  "success": "Email verified! You can now log in.",
+  "title": "Verify Email",
+  "verifying": "Verifying your email..."
+}

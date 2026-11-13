@@ -1,0 +1,19 @@
+{
+  "app.backend.unreachable": "Server unreachable",
+  "app.backend.unreachableMsg": "The server is not responding. Check that it is running and try again.",
+  "app.backendUnreachable": "Server unreachable",
+  "app.backendUnreachableMsg": "The server is not responding. Check that it is running and try again.",
+  "app.checking": "Checking…",
+  "app.errorReload": "An unexpected error occurred. Please reload the page.",
+  "app.errorText": "An unexpected error occurred while loading this page.",
+  "app.errorTitle": "Something went wrong",
+  "app.notSetUp": "This club is not set up yet",
+  "app.notSetUpHint": "An administrator needs to run this command on the server:",
+  "app.reload": "Reload page",
+  "app.retry": "Try again",
+  "app.maintenance.title": "Maintenance",
+  "app.maintenance.text": "Hubra is being updated. It will be back in a few minutes.",
+  "app.maintenance.until": "Expected back at {{time}}.",
+  "app.maintenance.reload": "This page reloads by itself.",
+  "app.maintenance.status": "System status"
+}

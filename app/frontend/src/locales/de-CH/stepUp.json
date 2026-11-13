@@ -1,0 +1,18 @@
+{
+  "titleAction": "Aktion bestätigen",
+  "titlePassword": "Passwort bestätigen",
+  "hintPasskey": "Diese Aktion lässt sich schwer rückgängig machen (Bankdaten, Admin-Rechte, endgültig löschen). Bestätige mit deinem Passkey oder deinem Passwort; das gilt dann zehn Minuten.",
+  "hintPassword": "Diese Aktion lässt sich schwer rückgängig machen (Bankdaten, Admin-Rechte, endgültig löschen). Bestätige dein Passwort; das gilt dann zehn Minuten.",
+  "popupBlocked": "Das Fenster für den Passkey wurde blockiert. Erlaube Pop-ups für diese Seite oder bestätige mit deinem Passwort.",
+  "alsoCode": "Gib auch den Code aus deiner Authenticator-App ein.",
+  "alsoRecovery": "Gib auch einen Wiederherstellungscode ein.",
+  "failed": "Bestätigung fehlgeschlagen",
+  "waiting": "Bestätige im Passkey-Fenster …",
+  "openAgain": "Erneut öffnen",
+  "withPasskey": "Mit Passkey bestätigen",
+  "orPassword": "oder mit Passwort",
+  "password": "Passwort",
+  "code": "Code aus der Authenticator-App",
+  "recovery": "Wiederherstellungscode",
+  "withPassword": "Mit Passwort bestätigen"
+}

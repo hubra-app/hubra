@@ -1,0 +1,16 @@
+{
+  "associations.accept": "Join",
+  "associations.decline": "Decline",
+  "associations.failed": "Not saved",
+  "associations.intro": "Umbrella associations your club is a member of. You decide here what an association sees.",
+  "associations.invitation": "Invitation",
+  "associations.inviteText": "Invited you as a member club on {{date}}. The association then sees how many active members you have, and you see its shared events in Events.",
+  "associations.leave": "Leave",
+  "associations.leaveBody": "{{name}} no longer sees your club, and you no longer see its events.",
+  "associations.leaveTitle": "Leave the association",
+  "associations.seesCount": "The association sees your number of active members and no other member data.",
+  "associations.shareContacts": "Share the contacts of our functions",
+  "associations.shareContactsHint": "Name and club address of everyone holding a function (e.g. president, treasurer). Never private e-mail addresses.",
+  "associations.since": "Member since {{date}}",
+  "associations.title": "Associations"
+}

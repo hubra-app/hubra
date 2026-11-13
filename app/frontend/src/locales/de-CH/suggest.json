@@ -1,0 +1,31 @@
+{
+  "title": "Übersetzung vorschlagen",
+  "desc": "Die Texte der App gelten für alle Vereine und werden von der Plattform gepflegt. Schlage hier eine bessere Formulierung vor; die Plattform-Verwaltung entscheidet.",
+  "mine": "Vorschläge des Vereins",
+  "none": "Noch keine Vorschläge.",
+  "sent": "Vorschlag gesendet",
+  "sentMsg": "Die Plattform-Verwaltung prüft ihn.",
+  "new": "Neuer Vorschlag",
+  "search": "Text suchen, den du ändern möchtest …",
+  "current": "Heute",
+  "proposed": "Dein Vorschlag",
+  "note": "Warum? (optional)",
+  "send": "Vorschlag senden",
+  "status": {
+    "accepted": "Angenommen",
+    "rejected": "Abgelehnt",
+    "pending": "Offen"
+  },
+  "was": "Vorher",
+  "reason": "Begründung",
+  "coverage": {
+    "title": "Abdeckung",
+    "desc": "Wie viele Texte es in jeder Sprache gibt, für Hubra und jedes Plugin. Fehlt einer, kannst du ihn vorschlagen.",
+    "source": "Bereich",
+    "texts": "{{count}} Texte",
+    "missingIn": "Fehlt in {{lang}} ({{source}})",
+    "suggest": "Vorschlagen",
+    "more": "und {{count}} weitere",
+    "missing": "{{pct}} % · {{count}} fehlen"
+  }
+}

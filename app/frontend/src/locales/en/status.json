@@ -1,0 +1,12 @@
+{
+  "active": "Active",
+  "trial": "Trial",
+  "inactive": "Inactive",
+  "suspended": "Suspended",
+  "pending": "Pending",
+  "archived": "Archived",
+  "disabled": "Disabled",
+  "Paid": "Paid",
+  "Open": "Open",
+  "Overdue": "Overdue"
+}

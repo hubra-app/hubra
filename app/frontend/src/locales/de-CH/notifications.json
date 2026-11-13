@@ -1,0 +1,10 @@
+{
+  "invoicePaid": "Rechnung bezahlt",
+  "joinedEvent": "Hat sich für einen Anlass angemeldet",
+  "leftEvent": "Hat sich von einem Anlass abgemeldet",
+  "markAllRead": "Alle als gelesen markieren",
+  "noNotifications": "Keine Benachrichtigungen.",
+  "reminderSent": "Erinnerung gesendet",
+  "title": "Benachrichtigungen",
+  "voteCast": "Hat abgestimmt"
+}

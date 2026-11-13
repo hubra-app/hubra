@@ -1,0 +1,6 @@
+{
+  "verifyEmail.error": "Verification failed. The link may be expired.",
+  "verifyEmail.success": "Email verified! You can now log in.",
+  "verifyEmail.title": "Verify Email",
+  "verifyEmail.verifying": "Verifying your email..."
+}

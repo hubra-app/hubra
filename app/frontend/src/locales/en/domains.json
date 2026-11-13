@@ -1,0 +1,40 @@
+{
+  "added": "Domain added",
+  "addedMsg": "Add the TXT record to verify ownership.",
+  "addFailed": "Failed to add domain",
+  "verified": "Domain verified",
+  "verifyFailed": "Verification failed",
+  "removed": "Domain removed",
+  "removeFailed": "Failed to remove domain",
+  "primarySet": "Primary domain set",
+  "primaryFailed": "Failed to set primary",
+  "title": "Custom Domains",
+  "add": "Add Domain",
+  "loading": "Loading domains...",
+  "empty": "No domains configured.",
+  "domain": "Domain",
+  "primary": "Primary",
+  "verify": "Verify",
+  "txtHint": "Add this TXT record to your domain's DNS:",
+  "removeTitle": "Remove Domain",
+  "remove": "Remove",
+  "txtAfter": "We check it automatically for 72 hours, or click \"Verify\". A domain that isn't verified within 7 days is removed.",
+  "removeConfirm": "Do you really want to remove {{domain}}?",
+  "status": {
+    "verified": "Verified",
+    "pending": "Pending",
+    "failed": "Failed"
+  },
+  "recordName": "Name",
+  "recordType": "Type",
+  "recordValue": "Value",
+  "showRecord": "DNS record",
+  "recordTitle": "DNS record for {{domain}}",
+  "serving": {
+    "ready": "Live",
+    "pending": "Certificate pending",
+    "failed": "No certificate"
+  },
+  "cnameHint": "To bring visitors on {{domain}} to your club, point the domain at Hubra with this record:",
+  "cnameAfter": "Many providers don't allow a CNAME on a bare domain (club.ch); use a subdomain like members.club.ch instead. Once the domain is verified and points at Hubra we fetch a certificate, which usually takes a few minutes."
+}

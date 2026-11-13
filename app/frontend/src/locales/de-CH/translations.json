@@ -1,0 +1,81 @@
+{
+  "addFailed": "Schlüssel konnte nicht hinzugefügt werden",
+  "addKey": {
+    "desc": "Einen neuen Schlüssel zu dieser Sprache hinzufügen"
+  },
+  "addKeyLabel": "Schlüssel hinzufügen",
+  "addLanguage": {
+    "desc": "Eine neue Sprache anlegen und alle Schlüssel einer bestehenden Sprache übernehmen"
+  },
+  "addLanguageLabel": "Sprache hinzufügen",
+  "added": "Schlüssel hinzugefügt",
+  "alias": {
+    "failed": "Verknüpfen fehlgeschlagen",
+    "link": "Schlüssel verknüpfen",
+    "linked": "Verknüpft",
+    "removed": "Verknüpfung aufgehoben",
+    "resolved": "Verweist auf",
+    "target": "Verweist auf",
+    "targetHint": "Der Zielschlüssel in derselben Sprache",
+    "unlink": "Verknüpfung aufheben"
+  },
+  "copyDefaults": {
+    "done": "Standardwerte übernommen",
+    "failed": "Übernehmen fehlgeschlagen",
+    "hint": "Leere Werte mit den Standardwerten füllen"
+  },
+  "copyDefaultsLabel": "Standardwerte übernehmen",
+  "copyValues": {
+    "off": "Die Schlüssel werden mit leeren Werten angelegt, die du dann ausfüllst.",
+    "on": "Alle Werte werden unverändert übernommen. Passe sie danach für die neue Sprache an."
+  },
+  "copyValuesLabel": "Werte aus der Quelle übernehmen",
+  "createLanguage": "Sprache anlegen",
+  "default": "Standard",
+  "delete": "Löschen",
+  "deleteCascade": {
+    "warning": "{{count}} Verknüpfungen werden ebenfalls gelöscht."
+  },
+  "deleteConfirm": "Diese Übersetzung löschen?",
+  "deleteFailed": "Schlüssel konnte nicht gelöscht werden",
+  "deleted": "Schlüssel gelöscht",
+  "description": "Schlüssel und Texte für alle Sprachen verwalten",
+  "duplicateFailed": "Sprache konnte nicht angelegt werden",
+  "duplicated": "Sprache angelegt",
+  "editValue": "Wert bearbeiten",
+  "empty": "leer",
+  "entries": "Einträge",
+  "exportFailed": "Export fehlgeschlagen",
+  "exported": "Exportiert",
+  "flagged": {
+    "count": "{{count}} markiert",
+    "empty": "leer",
+    "missing": "fehlt",
+    "none": "Keine markierten Übersetzungen",
+    "showAll": "Alle anzeigen",
+    "showFlagged": "Nur markierte anzeigen",
+    "title": "Übersetzungen, die Aufmerksamkeit brauchen"
+  },
+  "format": {
+    "csv": "CSV",
+    "json": "JSON"
+  },
+  "importFailed": "Import fehlgeschlagen",
+  "imported": "Importiert",
+  "key": "Schlüssel",
+  "keys": "Schlüssel",
+  "lastUsed": "Zuletzt verwendet",
+  "loading": "Übersetzungen werden geladen …",
+  "loadingLanguages": "Sprachen werden geladen …",
+  "localeExists": "Diese Sprache gibt es schon",
+  "noResults": "Keine Übersetzungen gefunden",
+  "save": "Änderungen speichern",
+  "saveFailed": "Speichern fehlgeschlagen",
+  "saved": "Übersetzungen gespeichert",
+  "saving": "Wird gespeichert …",
+  "searchPlaceholder": "Schlüssel oder Texte suchen …",
+  "sourceLocale": "Quellsprache",
+  "targetLocale": "Code der neuen Sprache",
+  "title": "Übersetzungen",
+  "value": "Wert"
+}

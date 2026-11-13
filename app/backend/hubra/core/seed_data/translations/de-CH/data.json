@@ -1,0 +1,13 @@
+{
+  "data.filter": "Filter",
+  "data.filterDone": "Fertig",
+  "data.filterKeyValue": "Nach Schlüssel oder Wert filtern …",
+  "data.filterRemove": "{{chip}} entfernen",
+  "data.filterReset": "Zurücksetzen",
+  "data.key": "Schlüssel",
+  "data.noData": "Keine Daten",
+  "data.nothingHere": "Hier ist noch nichts.",
+  "data.value": "Wert",
+  "data.viewCards": "Karten",
+  "data.viewList": "Liste"
+}

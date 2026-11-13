@@ -621,15 +621,15 @@ def test_suspended_club_is_not_offered_or_opened(client, db, seeded_db):
 
 def _request_and_sign_in_staff(client, db, slug):
     """A user's pending request for *slug*, then a superadmin signed in."""
-    import json
     from pathlib import Path
 
     import hubra
     from hubra.core.models.translation import Translation
     from hubra.core.models.user import User
+    from hubra.core.seeds import load_shipped_translations
 
-    seed = Path(hubra.__file__).parent / "core/seed_data/translations/de-CH.json"
-    for key, value in json.loads(seed.read_text()).items():
+    seeds = Path(hubra.__file__).parent / "core/seed_data/translations"
+    for key, value in load_shipped_translations(seeds, "de-CH").items():
         if key.startswith("mail.email."):
             db.session.add(Translation(locale="de-CH", key=key, value=value))
 
