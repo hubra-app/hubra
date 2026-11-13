@@ -402,7 +402,7 @@ def _register_cli(app: Flask) -> None:
             click.echo("Running migrations…")
             from flask_migrate import upgrade as db_upgrade
 
-            db_upgrade()
+            db_upgrade(revision="heads")
             click.echo("Migrations complete.")
 
         from hubra.core.seeds import run_seeds

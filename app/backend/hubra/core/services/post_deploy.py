@@ -123,7 +123,7 @@ def _init_lock():
 def _migrate() -> str:
     from flask_migrate import upgrade
 
-    upgrade()
+    upgrade(revision="heads")
     return "Migrations applied."
 
 

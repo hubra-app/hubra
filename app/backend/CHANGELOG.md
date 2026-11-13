@@ -10,6 +10,7 @@ section and position, or the apps show that version in English.
 ### Changed
 
 - **manage: one file per page and per settings group**: each manage page is its own file in `app/admin-frontend/src/nav/pages/`, and settings groups that are only fields are their own files in `screens/platform/settings/`, instead of one shared list each, so pull requests that add pages or settings no longer clash. Nothing changes in manage. docs/settings/structure.md. <!-- for: staff -->
+- **Migrations from parallel pull requests no longer need a merge migration**: `flask db upgrade` (and the deploy, `flask seed` and new clubs) applies every Alembic head, and `flask db migrate` bases a new migration on all of them. A test fails when two unjoined heads change the same table. Operators: Compose runs `flask db upgrade heads`; a deploy that calls `flask db upgrade head` itself must say `heads`. docs/migrations.md. <!-- for: staff -->
 - **Texts in one file per feature**: the club app's built-in texts are in `app/frontend/src/locales/<language>/<feature>.json` and the shipped seed texts in `seed_data/translations/<locale>/<feature>.json`, instead of one big file per language, so pull requests that add texts to different features no longer clash. Nothing changes in the apps. <!-- for: staff -->
 
 ## [0.2.6] - 2026-11-13
