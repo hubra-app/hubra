@@ -189,11 +189,43 @@ the member lacks, is left out, and one that fails is named under `failed`
 while the rest still shows. Ranges are at most 400 days, and a module
 answers at most 1000 items per range.
 
-The calendar and privacy contracts are the two whose input and output are
-Hubra's own models; a plugin may offer them (the handler stays its own
+The calendar, search and privacy contracts are the ones whose input and
+output are Hubra's own models; a plugin may offer them (the handler stays its own
 code).
 
 ![Club calendar](screenshots/club-calendar/month.png)
+
+## Search: one box for the club
+
+The search in the club app's top bar (Ctrl K) asks the server
+(`GET /api/v1/app/search/?q=`) and every module answers for itself. Each
+module offers one query named after its module code, made with
+`hubra.core.contracts.search.search_contract`:
+
+```python
+from hubra.core.contracts.search import search_contract
+
+provides=(
+    search_contract("inventory", "hubra_inventory.search:hits", perm="inventory.items.read"),
+)
+```
+
+| Contract | Kind | In → out |
+| --- | --- | --- |
+| `<module>.search` | query | `{q, limit}` → `{hits: [{id, label, sub?, date?, path, kind}]}`, at most `limit` (≤ 10) |
+
+A hit matches when every word of `q` is somewhere in it, case ignored.
+`kind` ("member", "event", "invoice", ...) is the badge in the result list;
+`date` is shown in the club's date format before `sub`. The search asks each
+module as the viewing member, skips a module that is off or whose `perm`
+the member lacks, and names one that fails under `failed`. Hubra itself
+offers `members.search` (names, plus email and phone for those who manage
+members), `groups.search`, `events.search`, `posts.search`, `polls.search`
+and `finance.search` (invoices by number, description or who pays).
+Page names, the audit log and plugin lists registered in the browser
+(a plugin's `search` list in its frontend) are still searched in the app.
+
+![Search](screenshots/club-search/results.png)
 
 ## PDFs: one letterhead
 

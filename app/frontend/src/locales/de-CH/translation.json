@@ -2836,7 +2836,8 @@
       "member": "Mitglied",
       "poll": "Umfrage",
       "transaction": "Buchung",
-      "page": "Seite"
+      "page": "Seite",
+      "post": "Beitrag"
     },
     "searchNoResults": "Keine Ergebnisse für «{{query}}»",
     "searchPlaceholder": "Mitglieder, Rechnungen, Inventar suchen …",

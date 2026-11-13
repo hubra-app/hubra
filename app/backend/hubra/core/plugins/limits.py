@@ -109,10 +109,14 @@ def club_prefix(prefix: str) -> str:
     return APP + new[len(V1) :]
 
 
-# Contracts every module offers in the same shape (the club calendar, the
+# Contracts every module offers in the same shape (the club calendar, search,
 # privacy export): a plugin's input and output may be Hubra's models there;
 # the handler is still its own code.
-SHARED_SHAPES = ("hubra.core.contracts.calendar", "hubra.core.contracts.privacy")
+SHARED_SHAPES = (
+    "hubra.core.contracts.calendar",
+    "hubra.core.contracts.privacy",
+    "hubra.core.contracts.search",
+)
 
 
 def _shared_shape(ref: str, handler: str | None) -> bool:

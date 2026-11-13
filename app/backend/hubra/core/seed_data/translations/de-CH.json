@@ -2386,6 +2386,7 @@
   "shell.searchKind.invoice": "Rechnung",
   "shell.searchKind.member": "Mitglied",
   "shell.searchKind.poll": "Umfrage",
+  "shell.searchKind.post": "Beitrag",
   "shell.searchKind.transaction": "Buchung",
   "shell.searchNoResults": "Keine Ergebnisse für «{{query}}»",
   "shell.searchPlaceholder": "Mitglieder, Rechnungen, Inventar suchen …",

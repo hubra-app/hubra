@@ -50,6 +50,7 @@ module = Module(
             "dashboard_bp",
             "/api/v1/app/dashboard",
         ),
+        Blueprint("hubra.api.search.routes", "search_bp", "/api/v1/app/search"),
         Blueprint(
             "hubra.api.calendar.routes",
             "calendar_bp",

@@ -8,6 +8,7 @@ booking, so they live in every club schema either way.
 
 from hubra.core.contracts import action_contract, query_contract, widget_contract
 from hubra.core.modules import Blueprint, Module, NavItem, SettingField
+from hubra.core.contracts.search import search_contract
 
 module = Module(
     code="finance",
@@ -150,6 +151,7 @@ module = Module(
         "fiscal_years",
     ),
     provides=(
+        search_contract("finance", "hubra.api.search.sources:invoices", perm="finance.invoices.read"),
         query_contract(
             "finance.billing_period",
             "hubra.api.finance.contracts:billing_period",

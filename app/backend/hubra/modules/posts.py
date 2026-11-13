@@ -1,6 +1,7 @@
 """Posts: announcements with likes and comments."""
 
 from hubra.core.modules import Blueprint, Module, NavItem, Schedule, SettingField
+from hubra.core.contracts.search import search_contract
 
 module = Module(
     code="posts",
@@ -61,5 +62,8 @@ module = Module(
             "hubra.api.posts.tasks.remind_unread_posts_task",
             3600,
         ),
+    ),
+    provides=(
+        search_contract("posts", "hubra.api.search.sources:posts", perm="posts.posts.read"),
     ),
 )

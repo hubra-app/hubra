@@ -2836,7 +2836,8 @@
       "member": "Member",
       "poll": "Poll",
       "transaction": "Transaction",
-      "page": "Page"
+      "page": "Page",
+      "post": "Post"
     },
     "searchNoResults": "No results for \"{{query}}\"",
     "searchPlaceholder": "Search members, invoices, inventory…",
