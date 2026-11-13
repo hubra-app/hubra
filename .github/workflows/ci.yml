@@ -173,7 +173,7 @@ jobs:
           # mail templates) are left out before the browser paths are checked.
           all=$files
           files=$(echo "$all" | grep -vE '^app/backend/(tests/|hubra/core/tasks/|hubra/templates/)' || true)
-          out browser       'app/(frontend|admin-frontend|sso-frontend|support-frontend)/|packages/|plugins/|app/backend/(hubra/|migrations/|Dockerfile$|requirements\.lock$|gunicorn\.conf\.py$|wsgi\.py$|ROADMAP\.yaml$)|app/deploy/|docker-compose\.yml$|settings\.yaml$|\.github/e2e/|scripts/(init-env|smoke-test|e2e-accounts)\.sh$' "$changelog"
+          out browser       'app/(frontend|admin-frontend|sso-frontend|support-frontend)/|packages/|plugins/|app/backend/(hubra/|migrations/|Dockerfile$|requirements\.lock$|gunicorn\.conf\.py$|wsgi\.py$|ROADMAP\.yaml$)|app/deploy/|docker-compose\.yml$|settings\.yaml$|\.github/e2e/|scripts/(init-env|smoke-test|e2e-accounts|pg-start)\.sh$' "$changelog"
           files=$all
           out lint_backend  'app/backend/|plugins/'
           out lint_frontend 'app/frontend/|packages/|plugins/'
@@ -265,7 +265,7 @@ jobs:
           docker compose -f docker-compose.yml -f .github/e2e/docker-compose.e2e.yml config -q
       - name: Shell scripts
         if: ${{ !cancelled() && needs.changes.outputs.lint_deploy != 'false' }}
-        run: shellcheck scripts/init-env.sh scripts/smoke-test.sh scripts/image-reuse.sh scripts/e2e-accounts.sh app/deploy/nginx/40-hubra-runtime.sh
+        run: shellcheck scripts/init-env.sh scripts/smoke-test.sh scripts/pg-start.sh scripts/pg-upgrade-18.sh scripts/image-reuse.sh scripts/e2e-accounts.sh app/deploy/nginx/40-hubra-runtime.sh
 
   # Backend unit tests on in-memory SQLite (TestingConfig); no services needed.
   # pytest -n auto runs them on every CPU of the runner (pytest-xdist); each
@@ -293,16 +293,16 @@ jobs:
 
   # The same suite on Postgres (schema per club, search_path, advisory locks,
   # the outbox lease and the database limits only behave for real there).
-  # About a minute with -n auto. A full run (release-checks.yml) skips it:
-  # release checks run the suite on Postgres 18, the version production runs,
-  # so a release does not run it on Postgres twice.
+  # About a minute with -n auto. Postgres 18, the version Compose and
+  # production run. A full run (release-checks.yml) skips it: release checks
+  # run it with the pg_dump 18 client too, so a release runs it only once.
   backend-postgres:
     needs: changes
     if: "!inputs.full && needs.changes.outputs.backend == 'true'"
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_USER: hubra
           POSTGRES_PASSWORD: hubra
