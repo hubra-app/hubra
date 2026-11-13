@@ -2,10 +2,11 @@ import { useMemo, useState } from 'react'
 import { ActionIcon, Badge, Button, Chip, Group, Paper, SegmentedControl, Stack, Text, UnstyledButton } from '@mantine/core'
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react'
 import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { PluginBoundary, usePluginTabs } from '@/plugins'
 import { qk } from '@/data/keys'
 import { getCalendar, type CalendarItem } from '@/api/calendar'
-import { ErrorBanner, PageHead } from '@/components/ui'
+import { ErrorBanner, PageHead, Tabs } from '@/components/ui'
 import { formatMonthYear, formatWeekdayShort, formatDate } from '@/format'
 import { useT } from '@/locales/i18n'
 import { isoDay, itemsOn, monthWeeks, timeOf, viewRange, weekDays } from './calendarGrid'
@@ -21,14 +22,59 @@ function shift(d: Date, view: View, n: number): Date {
     : new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7 * n)
 }
 
-/** The club calendar: events, bookings, fixtures and duties of every module
- * the member may see, by month or week, filtered by kind. */
+/**
+ * Kalender: every calendar of the club on one page. "Alles" lays the dated
+ * things of every module side by side (events, bookings, who is on site);
+ * plugins add their own full calendars as tabs (screen "calendar"), such as
+ * Booking's Vor Ort and room bookings, each at /app/calendar/<tab>.
+ */
 export function CalendarScreen() {
   const { t } = useT()
+  const location = useLocation()
   const navigate = useNavigate()
+  const pluginTabs = usePluginTabs('calendar')
+  const parts = [
+    { id: 'all', label: t('calendar.all', 'Alles') },
+    ...pluginTabs.map((pt) => ({ id: pt.id, label: t(pt.label) })),
+  ]
+  // The path may start with the club's slug: /<club>/app/calendar/<tab>.
+  const rest = (location.pathname.split('/app/calendar')[1] ?? '').replace(/^\//, '')
+  const active = parts.find((p) => p.id === rest)?.id ?? 'all'
+  const tab = pluginTabs.find((pt) => pt.id === active)
+
+  return (
+    <div>
+      <PageHead title={t('shell.nav.calendar', 'Kalender')} />
+      {parts.length > 1 && (
+        <Tabs
+          tabs={parts}
+          activeTab={active}
+          onTabChange={(id) => navigate(id === 'all' ? '/app/calendar' : `/app/calendar/${id}`)}
+        />
+      )}
+      {tab ? (
+        <PluginBoundary key={tab.id} plugin={tab.plugin} notice>
+          <tab.component />
+        </PluginBoundary>
+      ) : (
+        <CalendarOverview />
+      )}
+    </div>
+  )
+}
+
+/** The club calendar: events, bookings, fixtures and duties of every module
+ * the member may see, by month or week, filtered by kind. ``?only=<kind>``
+ * opens it with only that kind shown (Anlässe links here with ``event``). */
+function CalendarOverview() {
+  const { t } = useT()
+  const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const only = params.get('only')
   const [view, setView] = useState<View>('month')
   const [anchor, setAnchor] = useState(() => new Date())
   const [hidden, setHidden] = useState<string[]>([])
+  const [onlyKind, setOnlyKind] = useState(only)
 
   const weeks = useMemo(() => (view === 'month' ? monthWeeks(anchor) : [weekDays(anchor)]), [view, anchor])
   const range = viewRange(weeks.flat())
@@ -38,7 +84,9 @@ export function CalendarScreen() {
   })
   const items = data?.items ?? []
   const kinds = [...new Set(items.map((i) => i.kind))].sort()
-  const shown = items.filter((i) => !hidden.includes(i.kind))
+  // ?only=<kind> hides the other kinds once, until the member changes the chips.
+  const off = onlyKind ? kinds.filter((k) => k !== onlyKind) : hidden
+  const shown = items.filter((i) => !off.includes(i.kind))
   const today = isoDay(new Date())
   const kindLabel = (kind: string) => t(`calendar.kind.${kind}`, kind)
 
@@ -76,19 +124,6 @@ export function CalendarScreen() {
 
   return (
     <div>
-      <PageHead
-        title={t('shell.nav.calendar', 'Kalender')}
-        actions={
-          <SegmentedControl
-            value={view}
-            onChange={(v) => setView(v as View)}
-            data={[
-              { value: 'month', label: t('calendar.month', 'Monat') },
-              { value: 'week', label: t('calendar.week', 'Woche') },
-            ]}
-          />
-        }
-      />
       {error && <ErrorBanner message={error.message} />}
       {data && data.failed.length > 0 && (
         <Text size="sm" c="dimmed" mb="xs">
@@ -111,12 +146,25 @@ export function CalendarScreen() {
           <Text fw={600} ml="xs" data-testid="calendar-title">
             {title}
           </Text>
+          <SegmentedControl
+            size="xs"
+            ml="xs"
+            value={view}
+            onChange={(v) => setView(v as View)}
+            data={[
+              { value: 'month', label: t('calendar.month', 'Monat') },
+              { value: 'week', label: t('calendar.week', 'Woche') },
+            ]}
+          />
         </Group>
         {kinds.length > 1 && (
           <Chip.Group
             multiple
-            value={kinds.filter((k) => !hidden.includes(k))}
-            onChange={(on) => setHidden(kinds.filter((k) => !on.includes(k)))}
+            value={kinds.filter((k) => !off.includes(k))}
+            onChange={(on) => {
+              setOnlyKind(null)
+              setHidden(kinds.filter((k) => !on.includes(k)))
+            }}
           >
             <Group gap="xs">
               {kinds.map((k) => (

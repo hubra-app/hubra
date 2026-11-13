@@ -269,7 +269,7 @@ function PrivateRoutes() {
             >
               <Routes>
                 <Route path="dashboard" element={<DashboardScreen />} />
-                <Route path="calendar" element={<CalendarScreen />} />
+                <Route path="calendar/*" element={<CalendarScreen />} />
                 <Route path="dashboard/global" element={<DashboardScreen />} />
                 <Route path="dashboard/me" element={<DashboardScreen />} />
                 <Route path="dashboard/d/:id" element={<DashboardScreen />} />

@@ -173,6 +173,13 @@ struck through. Clicking an entry opens it on its own page. Every member
 sees what their roles let them see: someone without the right to view
 events sees no events there.
 
+Every calendar of the club lives on this page. **Alles** is the grid above;
+plugins add their own full calendars as tabs next to it, with all their
+actions: Booking brings **Vor Ort** (who is in which room on which day) and
+**Buchungen** (book a room or an item). Anlässe › **Kalender** opens
+**Alles** with only the events shown. The old addresses (the month view of
+Anlässe, Anlässe › Vor Ort, the booking calendar) forward here.
+
 ### One calendar for all clubs
 
 Members who are in several clubs find **Kalender aller Vereine** in their
