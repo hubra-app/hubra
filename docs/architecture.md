@@ -107,7 +107,7 @@ On plain-HTTP localhost, set `JWT_COOKIE_SECURE=false` and leave
 | `celery-beat`      | `backend`            | Periodic job scheduler                        |
 | `discord-gateway`  | `backend`            | Discord bot gateway (`discord` profile)       |
 | `mcp`              | `mcp`                | Claude connector, port 8090 (`mcp` profile)   |
-| `postgres`         | `postgres:16-alpine` | Database                                      |
+| `postgres`         | `postgres:18-alpine` | Database                                      |
 | `redis`            | `redis:7-alpine`     | Celery broker, rate limits                    |
 
 Images without a tag are `ghcr.io/hubra-app/hubra/<name>`.

@@ -138,6 +138,38 @@ go out. `flask maintenance off` afterwards; it also ends on its own.
 Pin a version for production. `latest` follows the newest release, and
 `sha-<commit>` is one exact build.
 
+### PostgreSQL 18 (Compose)
+
+The Compose stack runs PostgreSQL 18, in the volume `pg18_data`. Stacks from
+before kept PostgreSQL 16 in `pg_data`. A major version can't read the
+other's files, so the data is moved once, with a dump and restore. Until
+then the `postgres` service doesn't start: `docker compose logs postgres`
+says so, instead of Hubra coming up as an empty new install.
+
+1. Back up (step 2 above).
+2. Switch the version as usual (`HUBRA_VERSION`, new `docker-compose.yml`).
+3. From the directory with `docker-compose.yml` and `.env`:
+
+   ```sh
+   scripts/pg-upgrade-18.sh
+   ```
+
+   It stops the stack, starts PostgreSQL 16 on `pg_data` (Compose profile
+   `pg-upgrade`) and an empty PostgreSQL 18, copies everything with
+   `pg_dumpall` (roles and their passwords, so `.env` stays as it is, the
+   database and every club schema), checks that both have the same roles,
+   tables and row counts, and starts the stack. It needs about as long as a
+   backup of the whole database, and stops with nothing changed if the
+   check fails.
+4. Check the stack (step 5 above). Then delete the dump the script left in
+   the directory (`pg16-dumpall-<date>.sql`, every club's data).
+
+`pg_data` stays as it was. Going back is the previous `docker-compose.yml`
+and Hubra version. Once you don't need that any more, empty it with
+`docker volume rm <project>_pg_data` (`docker volume ls` shows the name).
+Kubernetes and managed databases run their own PostgreSQL. Their upgrade
+is the provider's (`pg_upgrade`, or a dump and restore like the script).
+
 ### The app's database role
 
 New stacks connect to Postgres as `POSTGRES_APP_USER` (default `hubra_app`),

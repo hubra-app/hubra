@@ -174,7 +174,7 @@ some club backups, and club tables take their ids from sequences in public).
 # `docker compose down && docker compose up -d postgres`
 docker run -d --name restore-test \
     -e POSTGRES_PASSWORD=temppass -e POSTGRES_DB=club_db \
-    -p 5433:5432 postgres:16-alpine
+    -p 5433:5432 postgres:18-alpine
 sleep 3
 export PGHOST=localhost PGPORT=5433 PGUSER=postgres PGPASSWORD=temppass PGDATABASE=club_db
 
