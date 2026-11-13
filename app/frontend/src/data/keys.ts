@@ -46,6 +46,7 @@ export const qk = {
 
   events: ['events'] as const,
   eventTemplates: ['event-templates'] as const,
+  eventChannels: ['event-channels'] as const,
   associationEvents: ['events', 'from-associations'] as const,
   memberClubs: ['federation', 'clubs'] as const,
   eventPending: (id: string) => ['events', id, 'pending'] as const,

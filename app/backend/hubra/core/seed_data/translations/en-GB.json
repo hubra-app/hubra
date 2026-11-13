@@ -4581,5 +4581,7 @@
   "subscription.addonOnBodyFree": "{{price}}. The module is switched on. {{free}}",
   "subscription.addonOffBodyFree": "The module is switched off; its data stays.",
   "subscription.addonsHintFree": "Modules with their own price. Adding one switches the module on. {{free}}",
-  "subscription.sponsoredStripeEnds": "So your payment via Stripe ends on {{date}}; nothing is charged after that."
+  "subscription.sponsoredStripeEnds": "So your payment via Stripe ends on {{date}}; nothing is charged after that.",
+  "events.channels.hint": "The event is always in the calendar. Each channel also follows its own settings.",
+  "events.channels.none": "No notification: only in the calendar."
 }

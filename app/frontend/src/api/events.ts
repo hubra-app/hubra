@@ -143,6 +143,9 @@ export interface EventCreate {
   groupId?: string | null;
   /** Repeat weekly (new events; edits with scope "following"). */
   recurrence?: Recurrence;
+  /** Where a new event is announced (GET /events/channels); null or
+   * undefined: every channel. Only when it is created. */
+  channels?: string[] | null;
 }
 
 /** For a date of a series: just this one, or it and all later ones. */
@@ -175,6 +178,7 @@ export async function createEvent(input: EventCreate): Promise<ClubEvent> {
   if (input.groupId !== undefined)
     body.group_id = input.groupId ? Number(input.groupId) : null;
   if (input.recurrence) body.recurrence = recurrenceBody(input.recurrence);
+  if (input.channels) body.channels = input.channels;
 
   const b = await apiFetch<BackendEvent>("/app/events/", {
     method: "POST",
@@ -183,7 +187,13 @@ export async function createEvent(input: EventCreate): Promise<ClubEvent> {
   return adapt(b);
 }
 
-export type EventUpdate = Partial<EventCreate>;
+export type EventUpdate = Partial<Omit<EventCreate, "channels">>;
+
+/** Where a new event can be announced: ``app`` (bell and push) or a module
+ * that announces events (Discord, Messengers). */
+export async function getEventChannels(): Promise<{ key: string; name: string }[]> {
+  return apiFetch("/app/events/channels");
+}
 
 export async function updateEvent(
   id: string,

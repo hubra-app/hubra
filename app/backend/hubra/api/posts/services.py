@@ -37,48 +37,27 @@ def _check_times(publish_at: datetime | None, hide_after: datetime | None) -> No
         )
 
 
-# The bell and push in the app; the other channels are the modules that
-# announce posts (they listen to ``post.published``).
-APP_CHANNEL = "app"
-
-
 def channels() -> list[dict]:
-    """Where a post can go in this club: the app, then each module on here
-    that announces posts (Discord, Messengers, ...), as ``{key, name}``."""
-    from hubra.core.modules.registry import registry
-    from hubra.core.modules.state import is_enabled
+    """Where a post can go in this club (announce_channels.py)."""
+    from hubra.core.services.announce_channels import channels as of
 
-    registry.load()
-    out = [{"key": APP_CHANNEL, "name": "Hubra"}]
-    for module, _target in registry.subscribers(POST_PUBLISHED):
-        if module.code != "posts" and is_enabled(module.code):
-            out.append({"key": module.code, "name": module.name})
-    return out
+    return of(POST_PUBLISHED, "posts")
 
 
 def check_channels(value: list[str] | None) -> list[str] | None:
-    """400 unless every channel in *value* is one this club has. A list
-    naming all of them is stored as None (every channel, also ones added
-    later)."""
-    if value is None:
-        return None
-    known = [c["key"] for c in channels()]
-    unknown = sorted(set(value) - set(known))
-    if unknown:
-        raise_error(
-            400, "VALIDATION_ERROR", f"channels: unknown channel {', '.join(unknown)}"
-        )
-    if set(known) <= set(value):
-        return None
-    return [k for k in known if k in value]
+    from hubra.core.services.announce_channels import check_channels as check
+
+    return check(value, POST_PUBLISHED, "posts")
 
 
 def announce(post: Post, skip_member_id: int | None = None) -> None:
     """Tell the club a post is out on the channels the author chose: the
     bell and push (unless switched off) and ``post.published`` for Discord
     and the messengers. The club's webhooks always hear it."""
+    from hubra.core.services.announce_channels import to_app, to_modules
+
     picked = post.channels
-    if picked is None or APP_CHANNEL in picked:
+    if to_app(picked):
         notify_on_publish(
             "posts",
             "info",
@@ -91,7 +70,7 @@ def announce(post: Post, skip_member_id: int | None = None) -> None:
         POST_PUBLISHED,
         post_id=post.id,
         channels=picked,
-        to_modules=None if picked is None else [c for c in picked if c != APP_CHANNEL],
+        to_modules=to_modules(picked),
     )
 
 

@@ -294,6 +294,14 @@ class ClubEventCreateSchema(ma.Schema):
     group_id = fields.Int(allow_none=True, load_default=None, validate=_valid_group)
     # Repeat the event weekly; each date becomes an event of its own.
     recurrence = fields.Nested(RecurrenceSchema, allow_none=True, load_default=None)
+    # Where the new event is announced (``GET /events/channels``); None:
+    # everywhere. Only when it is created: an event is out at once.
+    channels = fields.List(
+        fields.Str(validate=validate.Length(min=1, max=64)),
+        allow_none=True,
+        load_default=None,
+        validate=validate.Length(max=20),
+    )
 
 
 class ClubEventUpdateSchema(ma.Schema):

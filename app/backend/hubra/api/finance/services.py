@@ -6,7 +6,7 @@ from __future__ import annotations
 from datetime import date, datetime, timedelta, timezone
 from math import ceil
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import selectinload
 
 from hubra.core.utils import escape_like, id_from_body, log_audit
@@ -325,6 +325,17 @@ class InvoiceService:
         linked_tx_id = invoice.transaction_id
         invoice.transaction_id = None
         _delete_send_history(invoice.id)
+        # Its open items wait for the next invoice again (what the foreign
+        # key's SET NULL does on Postgres, here on every database), so the
+        # module that handed one over can still take it back.
+        from hubra.core.models.finance import OpenItem
+
+        db.session.execute(
+            update(OpenItem)
+            .where(OpenItem.invoice_id == invoice.id)
+            .values(invoice_id=None)
+            .execution_options(synchronize_session="fetch")
+        )
         db.session.flush()
         db.session.delete(invoice)
         db.session.flush()

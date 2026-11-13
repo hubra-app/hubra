@@ -101,6 +101,20 @@ def create_event():
     return jsonify(_event_schema.dump(event)), 201
 
 
+# ── GET /events/channels ─────────────────────────────────────────────────────
+
+
+@events_bp.get("/channels")
+@permission_required("events", "create", "Create events")
+def list_event_channels():
+    """Where a new event can be announced: ``app`` and each module that
+    announces events (Discord, Messengers), for the form's "Send to"."""
+    from hubra.core.modules.events import EVENT_PUBLISHED
+    from hubra.core.services.announce_channels import channels
+
+    return jsonify(channels(EVENT_PUBLISHED, "events")), 200
+
+
 # ── /events/templates — save an event as a template, start from one ─────────
 
 

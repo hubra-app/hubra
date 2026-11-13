@@ -953,6 +953,13 @@ class EventsService:
     def create(data: dict, actor_id: int) -> ClubEvent:
         """Create a new event."""
         _check_dates(data.get("date"), data.get("end_date"))
+        from hubra.core.services.announce_channels import (
+            check_channels,
+            to_app,
+            to_modules,
+        )
+
+        picked = check_channels(data.get("channels"), EVENT_PUBLISHED, "events")
         event = ClubEvent(
             title=data["title"],
             date=data["date"],
@@ -983,15 +990,22 @@ class EventsService:
 
             create_series(event, data["recurrence"], actor_id)
 
-        notify_on_publish(
-            "events",
-            "info",
-            "New event",
-            event.title,
-            skip_member_id=actor_id,
-            link=event_link(event.id),
+        # On the channels the author picked (all unless they chose).
+        if to_app(picked):
+            notify_on_publish(
+                "events",
+                "info",
+                "New event",
+                event.title,
+                skip_member_id=actor_id,
+                link=event_link(event.id),
+            )
+        emit(
+            EVENT_PUBLISHED,
+            event_id=event.id,
+            channels=picked,
+            to_modules=to_modules(picked),
         )
-        emit(EVENT_PUBLISHED, event_id=event.id)
 
         log_audit(
             actor_id=actor_id,

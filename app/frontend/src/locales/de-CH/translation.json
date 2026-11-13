@@ -993,6 +993,10 @@
       "trainerNoteHint": "Nur wer die Anwesenheit führt, sieht sie.",
       "guideUrl": "Link zur Anleitung",
       "save": "Notizen speichern"
+    },
+    "channels": {
+      "hint": "Der Anlass steht immer im Kalender. Jeder Kanal folgt zusätzlich seinen eigenen Einstellungen.",
+      "none": "Ohne Benachrichtigung: nur im Kalender."
     }
   },
   "finance": {

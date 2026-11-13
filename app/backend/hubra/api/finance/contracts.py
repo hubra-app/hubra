@@ -361,6 +361,10 @@ class OpenItemIn(BaseModel):
     source_ref: str | None = Field(default=None, max_length=80)
     category_id: int | None = None
     day: date | None = None
+    # With collecting off the item is billed at once: its invoice is due
+    # after this many days (else the club's payment term). A collected
+    # invoice always takes the club's term.
+    due_days: int | None = Field(default=None, ge=0, le=365)
     actor_id: int | None = None
 
 
@@ -378,6 +382,15 @@ class OpenItemRemoved(BaseModel):
     removed: bool
 
 
+def _item_source(ctx) -> str:
+    """Who hands an open item over: the plugin's id ("kasse", "booking"),
+    the same from every file of the plugin; "finance" for Hubra itself.
+    (``ctx.caller`` is the calling Python module, e.g. hubra_kasse.routes.)"""
+    from hubra.core.contracts.registry import plugin_of
+
+    return plugin_of(ctx.caller or "") or "finance"
+
+
 def add_open_item(ctx, data: OpenItemIn) -> OpenItemOut:
     from hubra.api.finance import open_items
 
@@ -385,10 +398,11 @@ def add_open_item(ctx, data: OpenItemIn) -> OpenItemOut:
         member_id=data.member_id,
         amount=data.amount,
         text=data.text,
-        source=ctx.caller or "finance",
+        source=_item_source(ctx),
         source_ref=data.source_ref,
         category_id=data.category_id,
         day=data.day,
+        due_days=data.due_days,
         actor_id=_actor_id(ctx, data.actor_id),
     )
     return OpenItemOut(id=item.id, invoice_id=item.invoice_id)
@@ -404,7 +418,7 @@ def remove_open_item(ctx, data: OpenItemRef) -> OpenItemRemoved:
 
     item = db.session.scalar(
         select(OpenItem).where(
-            OpenItem.source == (ctx.caller or "finance"),
+            OpenItem.source == _item_source(ctx),
             OpenItem.source_ref == data.source_ref,
         )
     )
