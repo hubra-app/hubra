@@ -1,0 +1,13 @@
+{
+  "validation.contentRequired": "Content is required",
+  "validation.currentPasswordRequired": "Current password is required",
+  "validation.dateRequired": "Date is required",
+  "validation.displayNameRequired": "Display name is required",
+  "validation.dueRequired": "Due date is required",
+  "validation.invalidEmail": "Invalid email",
+  "validation.passwordMin": "Password must be at least 8 characters",
+  "validation.passwordsMismatch": "Passwords do not match",
+  "validation.questionRequired": "Question is required",
+  "validation.titleRequired": "Title is required",
+  "validation.wholeNumber": "Please enter a whole number"
+}

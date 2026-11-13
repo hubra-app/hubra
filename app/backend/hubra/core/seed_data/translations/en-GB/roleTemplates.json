@@ -1,0 +1,18 @@
+{
+  "roleTemplates.roleNames.boardmember": "Board Member",
+  "roleTemplates.roleNames.operator": "Operator",
+  "roleTemplates.standard-club.name": "Standard club",
+  "roleTemplates.standard-club.description": "A typical club setup with Admin, Board Member and Member roles.",
+  "roleTemplates.standard-club.roles.admin": "Full system access, bypasses all permission checks",
+  "roleTemplates.standard-club.roles.boardmember": "Elevated access: can manage members, groups, events and finances",
+  "roleTemplates.standard-club.roles.member": "Basic read-only access to club resources",
+  "roleTemplates.small-association.name": "Small association",
+  "roleTemplates.small-association.description": "Minimal setup for small associations: Admin and Member roles only.",
+  "roleTemplates.small-association.roles.admin": "Full system access",
+  "roleTemplates.small-association.roles.member": "Can view members and events, and vote in polls",
+  "roleTemplates.makerspace.name": "Makerspace",
+  "roleTemplates.makerspace.description": "Makerspace setup with Admin, Operator and Member roles.",
+  "roleTemplates.makerspace.roles.admin": "Full system access",
+  "roleTemplates.makerspace.roles.operator": "Can manage inventory, events and member access, but not finances",
+  "roleTemplates.makerspace.roles.member": "Can view resources, use inventory and take part"
+}

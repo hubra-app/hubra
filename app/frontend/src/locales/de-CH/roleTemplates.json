@@ -1,0 +1,32 @@
+{
+  "roleNames": {
+    "boardmember": "Vorstand",
+    "operator": "Betrieb"
+  },
+  "standard-club": {
+    "name": "Standardverein",
+    "description": "Eine übliche Aufstellung mit Administration, Vorstand und Mitgliedern.",
+    "roles": {
+      "admin": "Voller Zugriff, umgeht alle Berechtigungsprüfungen",
+      "boardmember": "Erweiterter Zugriff: verwaltet Mitglieder, Gruppen, Anlässe und Finanzen",
+      "member": "Grundlegender Lesezugriff auf die Vereinsdaten"
+    }
+  },
+  "small-association": {
+    "name": "Kleiner Verein",
+    "description": "Schlanke Aufstellung für kleine Vereine: nur Administration und Mitglieder.",
+    "roles": {
+      "admin": "Voller Zugriff",
+      "member": "Sieht Mitglieder und Anlässe und stimmt bei Umfragen ab"
+    }
+  },
+  "makerspace": {
+    "name": "Makerspace",
+    "description": "Für Makerspaces: Administration, Betrieb und Mitglieder.",
+    "roles": {
+      "admin": "Voller Zugriff",
+      "operator": "Verwaltet Inventar, Anlässe und Zugänge der Mitglieder, aber keine Finanzen",
+      "member": "Sieht Ressourcen, nutzt das Inventar und macht mit"
+    }
+  }
+}

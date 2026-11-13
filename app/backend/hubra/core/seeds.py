@@ -6,6 +6,21 @@ import json
 from sqlalchemy import select
 
 
+def load_shipped_translations(seeds_dir, locale: str) -> dict[str, str]:
+    """The shipped texts of *locale*: every ``<locale>/<feature>.json`` merged.
+
+    One file per feature (the first part of the key) so that pull requests
+    adding texts to different features don't edit the same file.
+    """
+    import pathlib as _pathlib
+
+    texts: dict[str, str] = {}
+    for path in sorted((_pathlib.Path(seeds_dir) / locale).glob("*.json")):
+        with open(path, encoding="utf-8") as f:
+            texts.update(json.load(f))
+    return texts
+
+
 def run_seeds(db):
     from hubra.core.models.setting import Setting
     from hubra.core.models.translation import Translation
@@ -472,11 +487,9 @@ def run_seeds(db):
 
     _seeds_dir = _pathlib.Path(__file__).resolve().parent / "seed_data" / "translations"
     for locale in ("en-GB", "de-CH"):
-        path = _seeds_dir / f"{locale}.json"
-        if not path.exists():
+        data = load_shipped_translations(_seeds_dir, locale)
+        if not data:
             continue
-        with open(path, encoding="utf-8") as f:
-            data = json.load(f)
         # One query for the keys already there, not two per shipped key
         # (about 3,400 per locale): new keys are added as upsert_translation
         # would add them, and the ETag bumps once.
@@ -527,10 +540,9 @@ def refresh_shipped_translations(session, seeds_dir) -> None:
         superseded = json.load(f)
     current: dict[str, dict[str, str]] = {}
     for locale in superseded.get("values", {}):
-        current_path = _pathlib.Path(seeds_dir) / f"{locale}.json"
-        if current_path.exists():
-            with open(current_path, encoding="utf-8") as f:
-                current[locale] = json.load(f)
+        shipped = load_shipped_translations(seeds_dir, locale)
+        if shipped:
+            current[locale] = shipped
     retired = set(superseded.get("retired", []))
 
     def refresh_schema() -> int:

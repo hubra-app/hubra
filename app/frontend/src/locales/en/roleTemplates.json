@@ -1,0 +1,32 @@
+{
+  "roleNames": {
+    "boardmember": "Board Member",
+    "operator": "Operator"
+  },
+  "standard-club": {
+    "name": "Standard club",
+    "description": "A typical club setup with Admin, Board Member and Member roles.",
+    "roles": {
+      "admin": "Full system access, bypasses all permission checks",
+      "boardmember": "Elevated access: can manage members, groups, events and finances",
+      "member": "Basic read-only access to club resources"
+    }
+  },
+  "small-association": {
+    "name": "Small association",
+    "description": "Minimal setup for small associations: Admin and Member roles only.",
+    "roles": {
+      "admin": "Full system access",
+      "member": "Can view members and events, and vote in polls"
+    }
+  },
+  "makerspace": {
+    "name": "Makerspace",
+    "description": "Makerspace setup with Admin, Operator and Member roles.",
+    "roles": {
+      "admin": "Full system access",
+      "operator": "Can manage inventory, events and member access, but not finances",
+      "member": "Can view resources, use inventory and take part"
+    }
+  }
+}

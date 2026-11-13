@@ -1,0 +1,18 @@
+{
+  "month": "Month",
+  "week": "Week",
+  "today": "Today",
+  "previous": "Previous",
+  "next": "Next",
+  "more": "+{{count}} more",
+  "empty": "Nothing in the calendar for this period.",
+  "failed": "Not everything loaded: {{modules}} is not answering right now.",
+  "kind": {
+    "event": "Events",
+    "booking": "Bookings",
+    "fixture": "Fixtures",
+    "duty": "Duties",
+    "onsite": "On site"
+  },
+  "all": "All"
+}

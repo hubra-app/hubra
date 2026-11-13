@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 
 from hubra.core.models.managed_mail import ManagedMailAddress
 from hubra.core.models.setting import Setting
+from hubra.core.seeds import load_shipped_translations
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -655,7 +656,6 @@ def test_api_update_forwarding_catchall_400(client, app, db, seeded_db, auth_hea
 
 def test_translations_contain_system_mail_keys():
     """en-GB and de-CH translation files contain system mail keys."""
-    import json as _json
     import pathlib
 
     seeds_dir = (
@@ -679,8 +679,7 @@ def test_translations_contain_system_mail_keys():
     ]
 
     for locale in ("en-GB", "de-CH"):
-        with open(seeds_dir / f"{locale}.json", encoding="utf-8") as f:
-            translations = _json.load(f)
+        translations = load_shipped_translations(seeds_dir, locale)
         for key in required_keys:
             assert key in translations, f"Missing key {key} in {locale}.json"
 

@@ -1,0 +1,90 @@
+{
+  "functions": {
+    "name": "Functions",
+    "description": "Club offices and who holds them"
+  },
+  "members": {
+    "name": "Members",
+    "description": "Member directory, profiles, applications and membership tiers"
+  },
+  "mail": {
+    "name": "Mail",
+    "description": "Club mailboxes and aliases (needs the self-hosted mail stack)"
+  },
+  "groups": {
+    "name": "Groups",
+    "description": "Teams, committees and interest groups"
+  },
+  "polls": {
+    "name": "Polls",
+    "description": "Member polls and voting"
+  },
+  "backups": {
+    "name": "Backups",
+    "description": "Encrypted database backups"
+  },
+  "posts": {
+    "name": "Posts",
+    "description": "Club announcements and community posts"
+  },
+  "core": {
+    "name": "Core",
+    "description": "Sign-in, accounts, settings, dashboard, audit log and notifications"
+  },
+  "finance": {
+    "name": "Finance",
+    "description": "Transactions, invoices with Swiss QR-bill, and reminders",
+    "settings": {
+      "collect_items": {
+        "label": "Bill small items together",
+        "description": "Drinks, booking fees and other open items go on one invoice per member each month or quarter; off: each on its own"
+      },
+      "collect_min_amount": {
+        "label": "Smallest collected invoice (CHF)",
+        "description": "Below it the items wait for the next time"
+      }
+    },
+    "choices": {
+      "collect_items": {
+        "off": "Off",
+        "monthly": "Monthly",
+        "quarterly": "Quarterly"
+      }
+    }
+  },
+  "bindings": {
+    "name": "Bindings",
+    "description": "Sync club data with external APIs"
+  },
+  "inventory": {
+    "name": "Inventory",
+    "description": "Tools, machines and materials, checkouts and inductions",
+    "settings": {
+      "checkout_max_days": {
+        "label": "Longest checkout (days)",
+        "description": "Default due date for new checkouts"
+      },
+      "require_induction": {
+        "label": "Only inducted members can check out",
+        "description": "Applies to items marked as needing instruction"
+      },
+      "block_when_overdue": {
+        "label": "Block checkouts while an invoice is overdue",
+        "description": "More than 7 days past due; needs the Finance module"
+      }
+    }
+  },
+  "events": {
+    "name": "Events",
+    "description": "Events, workshops and gatherings with registration"
+  },
+  "codes": {
+    "name": "Codes",
+    "description": "Encrypted door codes and passcodes"
+  },
+  "roles": {
+    "name": "Roles & permissions",
+    "description": "Roles and the permissions they grant"
+  },
+  "pluginFailed": "This extension could not be shown."
+}

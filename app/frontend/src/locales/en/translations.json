@@ -1,0 +1,81 @@
+{
+  "addFailed": "Failed to add key",
+  "addKey": {
+    "desc": "Add a new translation key to this locale"
+  },
+  "addKeyLabel": "Add key",
+  "addLanguage": {
+    "desc": "Create a new locale by copying all keys from an existing language"
+  },
+  "addLanguageLabel": "Add language",
+  "added": "Key added",
+  "alias": {
+    "failed": "Linking failed",
+    "link": "Link key",
+    "linked": "Linked",
+    "removed": "Unlinked",
+    "resolved": "Alias for",
+    "target": "Alias for",
+    "targetHint": "The target key in the same locale",
+    "unlink": "Unlink"
+  },
+  "copyDefaults": {
+    "done": "Defaults copied",
+    "failed": "Copy failed",
+    "hint": "Fill empty values from the defaults"
+  },
+  "copyDefaultsLabel": "Copy defaults",
+  "copyValues": {
+    "off": "Keys will be created with empty placeholder values for you to fill in.",
+    "on": "All source values will be copied as-is. Edit them afterwards for this locale."
+  },
+  "copyValuesLabel": "Copy values from source",
+  "createLanguage": "Create language",
+  "default": "Default",
+  "delete": "Delete",
+  "deleteCascade": {
+    "warning": "{{count}} linked keys will also be deleted."
+  },
+  "deleteConfirm": "Delete this translation?",
+  "deleteFailed": "Failed to delete key",
+  "deleted": "Key deleted",
+  "description": "Manage translation keys and values for all locales",
+  "duplicateFailed": "Failed to create language",
+  "duplicated": "Language created",
+  "editValue": "Edit value",
+  "empty": "empty",
+  "entries": "entries",
+  "exportFailed": "Export failed",
+  "exported": "Exported",
+  "flagged": {
+    "count": "{{count}} flagged",
+    "empty": "empty",
+    "missing": "missing",
+    "none": "No flagged translations",
+    "showAll": "Show all",
+    "showFlagged": "Show flagged only",
+    "title": "Translations needing attention"
+  },
+  "format": {
+    "csv": "CSV",
+    "json": "JSON"
+  },
+  "importFailed": "Import failed",
+  "imported": "Imported",
+  "key": "Key",
+  "keys": "keys",
+  "lastUsed": "Last used",
+  "loading": "Loading translations…",
+  "loadingLanguages": "Loading languages…",
+  "localeExists": "This locale already exists",
+  "noResults": "No translations found",
+  "save": "Save changes",
+  "saveFailed": "Failed to save translations",
+  "saved": "Translations saved",
+  "saving": "Saving…",
+  "searchPlaceholder": "Search keys or values…",
+  "sourceLocale": "Source locale",
+  "targetLocale": "Target locale code",
+  "title": "Translations",
+  "value": "Value"
+}

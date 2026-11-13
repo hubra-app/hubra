@@ -22,14 +22,14 @@ LONG_AGO = NOW - timedelta(days=7)
 @pytest.fixture(autouse=True)
 def mail_texts(db):
     """The shipped mail texts (tests start with an empty translation table)."""
-    import json
     from pathlib import Path
 
     from hubra.core.models.translation import Translation
+    from hubra.core.seeds import load_shipped_translations
 
     seed = Path(reminder_tasks.__file__).parents[1] / "seed_data" / "translations"
     for locale in ("de-CH", "en-GB"):
-        texts = json.loads((seed / f"{locale}.json").read_text())
+        texts = load_shipped_translations(seed, locale)
         for key, value in texts.items():
             if key.startswith("mail.email."):
                 db.session.add(Translation(locale=locale, key=key, value=value))

@@ -1,0 +1,18 @@
+{
+  "email": {
+    "confirmedMsg": "Deine E-Mail-Adresse ist bestätigt.",
+    "error": "Bestätigung fehlgeschlagen. Der Link ist vielleicht abgelaufen.",
+    "success": "E-Mail bestätigt! Du kannst dich jetzt anmelden.",
+    "title": "E-Mail bestätigen",
+    "verified": "E-Mail bestätigt",
+    "verifying": "Deine E-Mail-Adresse wird bestätigt …"
+  },
+  "login": "Anmelden",
+  "missingToken": "Der Link ist unvollständig.",
+  "pleaseWait": "Bitte warten …",
+  "verification": {
+    "failed": "Bestätigung fehlgeschlagen",
+    "failedTitle": "Bestätigung fehlgeschlagen"
+  },
+  "verifyingEmail": "E-Mail wird bestätigt …"
+}

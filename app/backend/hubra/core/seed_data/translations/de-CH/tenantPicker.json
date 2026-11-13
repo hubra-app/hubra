@@ -1,0 +1,8 @@
+{
+  "tenantPicker.createNew": "Neuen Verein gründen",
+  "tenantPicker.loading": "Wird geladen …",
+  "tenantPicker.noTenants": "Du bist noch keinem Verein zugeordnet.",
+  "tenantPicker.open": "Öffnen",
+  "tenantPicker.subtitle": "Wähle den Verein, in dem du arbeiten möchtest.",
+  "tenantPicker.title": "Verein wählen"
+}

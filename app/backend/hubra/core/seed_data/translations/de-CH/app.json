@@ -1,0 +1,19 @@
+{
+  "app.backend.unreachable": "Server nicht erreichbar",
+  "app.backend.unreachableMsg": "Der Server antwortet nicht. Prüfe, ob er läuft, und versuche es nochmals.",
+  "app.backendUnreachable": "Server nicht erreichbar",
+  "app.backendUnreachableMsg": "Der Server antwortet nicht. Prüfe, ob er läuft, und versuche es nochmals.",
+  "app.checking": "Wird geprüft …",
+  "app.errorReload": "Ein unerwarteter Fehler ist aufgetreten. Bitte lade die Seite neu.",
+  "app.errorText": "Beim Laden dieser Seite ist ein unerwarteter Fehler aufgetreten.",
+  "app.errorTitle": "Etwas ist schiefgelaufen",
+  "app.notSetUp": "Dieser Verein ist noch nicht eingerichtet",
+  "app.notSetUpHint": "Eine Administratorin oder ein Administrator muss auf dem Server diesen Befehl ausführen:",
+  "app.reload": "Seite neu laden",
+  "app.retry": "Nochmals versuchen",
+  "app.maintenance.title": "Wartungsarbeiten",
+  "app.maintenance.text": "Hubra wird gerade aktualisiert. In wenigen Minuten geht es weiter.",
+  "app.maintenance.until": "Voraussichtlich zurück um {{time}} Uhr.",
+  "app.maintenance.reload": "Diese Seite lädt sich von selbst neu.",
+  "app.maintenance.status": "Systemstatus"
+}

@@ -1,0 +1,16 @@
+{
+  "calendar.empty": "Nothing in the calendar for this period.",
+  "calendar.failed": "Not everything loaded: {{modules}} is not answering right now.",
+  "calendar.all": "All",
+  "calendar.kind.booking": "Bookings",
+  "calendar.kind.duty": "Duties",
+  "calendar.kind.event": "Events",
+  "calendar.kind.onsite": "On site",
+  "calendar.kind.fixture": "Fixtures",
+  "calendar.month": "Month",
+  "calendar.more": "+{{count}} more",
+  "calendar.next": "Next",
+  "calendar.previous": "Previous",
+  "calendar.today": "Today",
+  "calendar.week": "Week"
+}

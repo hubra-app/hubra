@@ -1,0 +1,13 @@
+{
+  "filterKeyValue": "Nach Schlüssel oder Wert filtern …",
+  "nothingHere": "Hier ist noch nichts.",
+  "key": "Schlüssel",
+  "value": "Wert",
+  "noData": "Keine Daten",
+  "viewCards": "Karten",
+  "viewList": "Liste",
+  "filter": "Filter",
+  "filterReset": "Zurücksetzen",
+  "filterDone": "Fertig",
+  "filterRemove": "{{chip}} entfernen"
+}

@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -187,11 +186,12 @@ def test_the_changelog_tick_checks_the_running_version(app, db, monkeypatch):
 def test_the_mail_renders_in_both_languages(app, db):
     import hubra
     from hubra.core.models.translation import Translation
+    from hubra.core.seeds import load_shipped_translations
     from hubra.core.services.mail_i18n import render_mail_template
 
     seeds = Path(hubra.__file__).parent / "core" / "seed_data" / "translations"
     for locale in ("de-CH", "en-GB"):
-        texts = json.loads((seeds / f"{locale}.json").read_text())
+        texts = load_shipped_translations(seeds, locale)
         for key, value in texts.items():
             if "roadmap_shipped" in key:
                 db.session.add(Translation(locale=locale, key=key, value=value))

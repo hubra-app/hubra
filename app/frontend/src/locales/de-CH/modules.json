@@ -1,0 +1,90 @@
+{
+  "backups": {
+    "name": "Backups",
+    "description": "Verschlüsselte Datenbank-Backups"
+  },
+  "bindings": {
+    "name": "Verknüpfungen",
+    "description": "Vereinsdaten mit externen Schnittstellen abgleichen"
+  },
+  "codes": {
+    "name": "Codes",
+    "description": "Verschlüsselte Türcodes und Zugangscodes"
+  },
+  "core": {
+    "name": "Basis",
+    "description": "Anmeldung, Konten, Einstellungen, Dashboard, Protokoll und Mitteilungen"
+  },
+  "events": {
+    "name": "Anlässe",
+    "description": "Anlässe, Workshops und Treffen mit Anmeldung"
+  },
+  "finance": {
+    "name": "Finanzen",
+    "description": "Buchungen, Rechnungen mit Schweizer QR-Rechnung und Zahlungserinnerungen",
+    "settings": {
+      "collect_items": {
+        "label": "Kleine Posten sammeln",
+        "description": "Getränke, Buchungsgebühren und andere offene Posten kommen pro Mitglied jeden Monat oder jedes Quartal auf eine Rechnung; aus: jeder auf eine eigene"
+      },
+      "collect_min_amount": {
+        "label": "Kleinste Sammelrechnung (CHF)",
+        "description": "Darunter warten die Posten auf das nächste Mal"
+      }
+    },
+    "choices": {
+      "collect_items": {
+        "off": "Aus",
+        "monthly": "Monatlich",
+        "quarterly": "Vierteljährlich"
+      }
+    }
+  },
+  "functions": {
+    "name": "Funktionen",
+    "description": "Vereinsämter und wer sie innehat"
+  },
+  "groups": {
+    "name": "Gruppen",
+    "description": "Teams, Kommissionen und Interessengruppen"
+  },
+  "inventory": {
+    "name": "Inventar",
+    "description": "Werkzeuge, Maschinen und Material, Ausleihen und Einweisungen",
+    "settings": {
+      "checkout_max_days": {
+        "label": "Längste Ausleihe (Tage)",
+        "description": "Standard-Rückgabefrist für neue Ausleihen"
+      },
+      "require_induction": {
+        "label": "Nur eingewiesene Mitglieder dürfen ausleihen",
+        "description": "Gilt für Gegenstände, die eine Einweisung brauchen"
+      },
+      "block_when_overdue": {
+        "label": "Ausleihen sperren, solange eine Rechnung überfällig ist",
+        "description": "Mehr als 7 Tage überfällig; braucht das Modul Finanzen"
+      }
+    }
+  },
+  "mail": {
+    "name": "Mail",
+    "description": "Vereinspostfächer und Aliasse (braucht den eigenen Mailserver)"
+  },
+  "members": {
+    "name": "Mitglieder",
+    "description": "Mitgliederverzeichnis, Profile, Anträge und Mitgliedschaftsstufen"
+  },
+  "polls": {
+    "name": "Umfragen",
+    "description": "Umfragen und Abstimmungen unter Mitgliedern"
+  },
+  "posts": {
+    "name": "Beiträge",
+    "description": "Vereinsmitteilungen und Beiträge aus der Community"
+  },
+  "roles": {
+    "name": "Rollen und Berechtigungen",
+    "description": "Rollen und die Berechtigungen, die sie vergeben"
+  },
+  "pluginFailed": "Diese Erweiterung konnte nicht angezeigt werden."
+}

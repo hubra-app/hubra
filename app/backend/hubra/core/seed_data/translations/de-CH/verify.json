@@ -1,0 +1,14 @@
+{
+  "verify.email.confirmedMsg": "Deine E-Mail-Adresse ist bestätigt.",
+  "verify.email.error": "Bestätigung fehlgeschlagen. Der Link ist vielleicht abgelaufen.",
+  "verify.email.success": "E-Mail bestätigt! Du kannst dich jetzt anmelden.",
+  "verify.email.title": "E-Mail bestätigen",
+  "verify.email.verified": "E-Mail bestätigt",
+  "verify.email.verifying": "Deine E-Mail-Adresse wird bestätigt …",
+  "verify.login": "Anmelden",
+  "verify.missingToken": "Der Link ist unvollständig.",
+  "verify.pleaseWait": "Bitte warten …",
+  "verify.verification.failed": "Bestätigung fehlgeschlagen",
+  "verify.verification.failedTitle": "Bestätigung fehlgeschlagen",
+  "verify.verifyingEmail": "E-Mail wird bestätigt …"
+}

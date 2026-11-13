@@ -1,0 +1,84 @@
+{
+  "plans": {
+    "add": "Add payment plan",
+    "hint": "Let members pay this tier in instalments. Without a plan they are billed on the tier cycle.",
+    "intervals": {
+      "half_yearly": "Half-yearly",
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "yearly": "Yearly"
+    },
+    "name": "Name",
+    "namePlaceholder": "Quarterly",
+    "per": {
+      "half_yearly": "per half-year",
+      "monthly": "per month",
+      "quarterly": "per quarter",
+      "yearly": "per year"
+    },
+    "surcharge": "Surcharge",
+    "title": "Payment plans",
+    "visible": "Members can pick"
+  },
+  "form": {
+    "name": "Tier name",
+    "namePlaceholder": "e.g. Full Access",
+    "priceType": "Price type",
+    "billingCycle": "Billing cycle",
+    "price": "Price (CHF)",
+    "percentage": "Percentage value (%)",
+    "coefficient": "Coefficient",
+    "roundTo": "Round to",
+    "deduct": "Deduct tier fees from",
+    "perPeriod": "Per {{period}}",
+    "percentageHint": "e.g. 2.5 means 2.5% of yearly expenses per member per year",
+    "coefficientHint": "e.g. 0.70 to deduct 70% of other tier fees",
+    "roundHint": "Round up to nearest (e.g. 5 → next 5 CHF)",
+    "deductHint": "Tiers whose fees are deducted in the formula",
+    "noOtherTiers": "No other tiers available",
+    "groups": "Members join the groups",
+    "groupsHint": "Anyone on this tier is in these groups. When their tier changes, their groups change too.",
+    "noGroups": "No group"
+  },
+  "type": {
+    "fixed": "Fixed",
+    "percentage": "Percentage",
+    "formula": "Formula"
+  },
+  "cycle": {
+    "none": "None (manual)",
+    "monthly": "Monthly",
+    "yearly": "Yearly"
+  },
+  "newTitle": "New membership tier",
+  "editTitle": "Edit tier",
+  "per": {
+    "monthly": "month",
+    "yearly": "year",
+    "period": "period"
+  },
+  "updated": "Tier updated",
+  "memberMoved": "{{member}} moved to {{tier}}.",
+  "moveMember": "Move member to this tier",
+  "searchMembers": "Search members…",
+  "created": "Tier created",
+  "createdMsg": "The {{name}} tier is active.",
+  "updatedMsg": "{{name}} has been updated.",
+  "deleted": "Tier deleted",
+  "deletedMsg": "{{name}} has been removed.",
+  "memberCount_one": "{{count}} member",
+  "memberCount_other": "{{count}} members",
+  "new": "New tier",
+  "price": "Price",
+  "noType": "No type",
+  "members": "Members",
+  "create": "Create tier",
+  "deleteTitle": "Delete the \"{{name}}\" tier?",
+  "deleteBody": "Members assigned to this tier will need to be reassigned. This cannot be undone.",
+  "noPrice": "No fee",
+  "backToTiers": "Back to tiers",
+  "notFound": "This tier does not exist (any more).",
+  "detail": {
+    "pricing": "Fee"
+  }
+}

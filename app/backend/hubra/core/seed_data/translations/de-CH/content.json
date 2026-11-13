@@ -1,0 +1,13 @@
+{
+  "content.language": "Sprache des Beitrags",
+  "content.languages.de": "Deutsch",
+  "content.languages.en": "Englisch",
+  "content.languages.fr": "Französisch",
+  "content.languages.it": "Italienisch",
+  "content.languagesHint": "Schreibst du für Mitglieder in mehreren Sprachen? Füge eine Sprache hinzu. Jedes Mitglied sieht den Beitrag in seiner Sprache, sonst im Original.",
+  "content.readIn": "Sprache",
+  "content.removeLanguage": "Sprache entfernen",
+  "content.translate": "Aus {{lang}} übersetzen",
+  "content.group": "Gruppe",
+  "content.groupHint": "Wer eine Rolle für diese Gruppe hat, kann den Eintrag verwalten. Sichtbar bleibt er für alle."
+}

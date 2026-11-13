@@ -1,0 +1,18 @@
+{
+  "roleTemplates.roleNames.boardmember": "Vorstand",
+  "roleTemplates.roleNames.operator": "Betrieb",
+  "roleTemplates.standard-club.name": "Standardverein",
+  "roleTemplates.standard-club.description": "Eine übliche Aufstellung mit Administration, Vorstand und Mitgliedern.",
+  "roleTemplates.standard-club.roles.admin": "Voller Zugriff, umgeht alle Berechtigungsprüfungen",
+  "roleTemplates.standard-club.roles.boardmember": "Erweiterter Zugriff: verwaltet Mitglieder, Gruppen, Anlässe und Finanzen",
+  "roleTemplates.standard-club.roles.member": "Grundlegender Lesezugriff auf die Vereinsdaten",
+  "roleTemplates.small-association.name": "Kleiner Verein",
+  "roleTemplates.small-association.description": "Schlanke Aufstellung für kleine Vereine: nur Administration und Mitglieder.",
+  "roleTemplates.small-association.roles.admin": "Voller Zugriff",
+  "roleTemplates.small-association.roles.member": "Sieht Mitglieder und Anlässe und stimmt bei Umfragen ab",
+  "roleTemplates.makerspace.name": "Makerspace",
+  "roleTemplates.makerspace.description": "Für Makerspaces: Administration, Betrieb und Mitglieder.",
+  "roleTemplates.makerspace.roles.admin": "Voller Zugriff",
+  "roleTemplates.makerspace.roles.operator": "Verwaltet Inventar, Anlässe und Zugänge der Mitglieder, aber keine Finanzen",
+  "roleTemplates.makerspace.roles.member": "Sieht Ressourcen, nutzt das Inventar und macht mit"
+}

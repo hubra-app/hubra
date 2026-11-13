@@ -134,16 +134,16 @@ def test_cancel_needs_the_update_right(client, auth_headers, seeded_db):
 
 
 def test_cancel_mail_renders_in_both_languages(app, db):
-    import json
     from pathlib import Path
 
     import hubra
     from hubra.core.models.translation import Translation
+    from hubra.core.seeds import load_shipped_translations
     from hubra.core.services.mail_i18n import render_mail_template
 
     seeds = Path(hubra.__file__).parent / "core" / "seed_data" / "translations"
     for locale in ("de-CH", "en-GB"):
-        texts = json.loads((seeds / f"{locale}.json").read_text())
+        texts = load_shipped_translations(seeds, locale)
         for key, value in texts.items():
             if "event_cancelled" in key or "event_reminder" in key:
                 db.session.add(Translation(locale=locale, key=key, value=value))

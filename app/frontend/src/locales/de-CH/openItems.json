@@ -1,0 +1,18 @@
+{
+  "tab": "Offene Posten",
+  "billed": "Abgerechnet",
+  "billedMsg": "{{count}} Rechnungen erstellt.",
+  "cycleOff": "Jeder Posten kommt sofort auf eine eigene Rechnung. Unter Einstellungen lassen sie sich sammeln.",
+  "cycleMonthly": "Am 1. jedes Monats kommen die Posten jedes Mitglieds auf eine Rechnung.",
+  "cycleQuarterly": "Am 1. jedes Quartals kommen die Posten jedes Mitglieds auf eine Rechnung.",
+  "minimum": "Unter {{amount}} warten sie auf das nächste Mal.",
+  "add": "Posten erfassen",
+  "billNow": "Jetzt abrechnen",
+  "empty": "Keine offenen Posten.",
+  "day": "Datum",
+  "text": "Posten",
+  "source": "Von",
+  "amount": "Betrag",
+  "amountHint": "Negativ für eine Gutschrift.",
+  "totalFor": "Total {{name}}"
+}

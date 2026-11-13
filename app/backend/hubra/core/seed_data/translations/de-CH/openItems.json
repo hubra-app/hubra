@@ -1,0 +1,18 @@
+{
+  "openItems.add": "Posten erfassen",
+  "openItems.amount": "Betrag",
+  "openItems.amountHint": "Negativ für eine Gutschrift.",
+  "openItems.billNow": "Jetzt abrechnen",
+  "openItems.billed": "Abgerechnet",
+  "openItems.billedMsg": "{{count}} Rechnungen erstellt.",
+  "openItems.cycleMonthly": "Am 1. jedes Monats kommen die Posten jedes Mitglieds auf eine Rechnung.",
+  "openItems.cycleOff": "Jeder Posten kommt sofort auf eine eigene Rechnung. Unter Einstellungen lassen sie sich sammeln.",
+  "openItems.cycleQuarterly": "Am 1. jedes Quartals kommen die Posten jedes Mitglieds auf eine Rechnung.",
+  "openItems.day": "Datum",
+  "openItems.empty": "Keine offenen Posten.",
+  "openItems.minimum": "Unter {{amount}} warten sie auf das nächste Mal.",
+  "openItems.source": "Von",
+  "openItems.tab": "Offene Posten",
+  "openItems.text": "Posten",
+  "openItems.totalFor": "Total {{name}}"
+}

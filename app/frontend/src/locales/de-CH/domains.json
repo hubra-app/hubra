@@ -1,0 +1,40 @@
+{
+  "added": "Domain hinzugefügt",
+  "addedMsg": "Füge den TXT-Eintrag hinzu, um die Domain zu bestätigen.",
+  "addFailed": "Domain konnte nicht hinzugefügt werden",
+  "verified": "Domain bestätigt",
+  "verifyFailed": "Bestätigung fehlgeschlagen",
+  "removed": "Domain entfernt",
+  "removeFailed": "Domain konnte nicht entfernt werden",
+  "primarySet": "Hauptdomain festgelegt",
+  "primaryFailed": "Hauptdomain konnte nicht festgelegt werden",
+  "title": "Eigene Domains",
+  "add": "Domain hinzufügen",
+  "loading": "Domains werden geladen …",
+  "empty": "Noch keine eigenen Domains eingerichtet.",
+  "domain": "Domain",
+  "primary": "Hauptdomain",
+  "verify": "Bestätigen",
+  "txtHint": "Füge diesen TXT-Eintrag im DNS deiner Domain hinzu:",
+  "removeTitle": "Domain entfernen",
+  "remove": "Entfernen",
+  "txtAfter": "Wir prüfen ihn 72 Stunden lang automatisch, oder klicke auf «Bestätigen». Eine Domain, die nicht innert 7 Tagen bestätigt ist, wird entfernt.",
+  "removeConfirm": "Willst du {{domain}} wirklich entfernen?",
+  "status": {
+    "verified": "Bestätigt",
+    "pending": "Ausstehend",
+    "failed": "Fehlgeschlagen"
+  },
+  "recordName": "Name",
+  "recordType": "Typ",
+  "recordValue": "Wert",
+  "showRecord": "DNS-Eintrag",
+  "recordTitle": "DNS-Eintrag für {{domain}}",
+  "serving": {
+    "ready": "Erreichbar",
+    "pending": "Zertifikat ausstehend",
+    "failed": "Kein Zertifikat"
+  },
+  "cnameHint": "Damit Besucher auf {{domain}} zu eurem Verein kommen, zeigt die Domain mit diesem Eintrag auf Hubra:",
+  "cnameAfter": "Für eine Domain ohne Subdomain (verein.ch) erlauben viele Anbieter keinen CNAME; nimm dann eine Subdomain wie mitglieder.verein.ch. Sobald die Domain bestätigt ist und auf Hubra zeigt, holen wir ein Zertifikat; das dauert meist wenige Minuten."
+}

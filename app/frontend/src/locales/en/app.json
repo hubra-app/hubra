@@ -1,0 +1,23 @@
+{
+  "maintenance": {
+    "title": "Maintenance",
+    "text": "Hubra is being updated. It will be back in a few minutes.",
+    "until": "Expected back at {{time}}.",
+    "reload": "This page reloads by itself.",
+    "status": "System status"
+  },
+  "backend": {
+    "unreachable": "Server unreachable",
+    "unreachableMsg": "The server is not responding. Check that it is running and try again."
+  },
+  "backendUnreachable": "Server unreachable",
+  "backendUnreachableMsg": "The server is not responding. Check that it is running and try again.",
+  "checking": "Checking…",
+  "retry": "Try again",
+  "notSetUp": "This club is not set up yet",
+  "notSetUpHint": "An administrator needs to run this command on the server:",
+  "errorTitle": "Something went wrong",
+  "errorText": "An unexpected error occurred while loading this page.",
+  "errorReload": "An unexpected error occurred. Please reload the page.",
+  "reload": "Reload page"
+}

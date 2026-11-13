@@ -1,0 +1,23 @@
+{
+  "maintenance": {
+    "title": "Wartungsarbeiten",
+    "text": "Hubra wird gerade aktualisiert. In wenigen Minuten geht es weiter.",
+    "until": "Voraussichtlich zurück um {{time}} Uhr.",
+    "reload": "Diese Seite lädt sich von selbst neu.",
+    "status": "Systemstatus"
+  },
+  "backend": {
+    "unreachable": "Server nicht erreichbar",
+    "unreachableMsg": "Der Server antwortet nicht. Prüfe, ob er läuft, und versuche es nochmals."
+  },
+  "backendUnreachable": "Server nicht erreichbar",
+  "backendUnreachableMsg": "Der Server antwortet nicht. Prüfe, ob er läuft, und versuche es nochmals.",
+  "checking": "Wird geprüft …",
+  "retry": "Nochmals versuchen",
+  "notSetUp": "Dieser Verein ist noch nicht eingerichtet",
+  "notSetUpHint": "Eine Administratorin oder ein Administrator muss auf dem Server diesen Befehl ausführen:",
+  "errorTitle": "Etwas ist schiefgelaufen",
+  "errorText": "Beim Laden dieser Seite ist ein unerwarteter Fehler aufgetreten.",
+  "errorReload": "Ein unerwarteter Fehler ist aufgetreten. Bitte lade die Seite neu.",
+  "reload": "Seite neu laden"
+}
