@@ -223,3 +223,32 @@ def test_the_pdf_lists_the_items(
     )
     assert resp.status_code == 200, resp.get_json()
     assert [line["text"] for line in seen["lines"]] == ["Kaffee", "Gipfeli"]
+
+
+def test_a_deleted_invoice_gives_its_items_back(app, member_id):
+    """Deleting the invoice puts its open items back (on every database),
+    so the module that handed one over can take it back."""
+    from hubra.api.finance.services import InvoiceService
+
+    out = call(
+        "finance.open_item.add",
+        {"member_id": member_id, "amount": "20", "text": "Buchung", "source_ref": "b-1"},
+        actor=SYSTEM,
+    )
+    item = db.session.scalar(select(OpenItem).where(OpenItem.source_ref == "b-1"))
+    assert item.invoice_id == out["invoice_id"] and item.source == "finance"
+    InvoiceService.delete(out["invoice_id"], member_id)
+    assert db.session.get(OpenItem, item.id).invoice_id is None
+    assert call("finance.open_item.remove", {"source_ref": "b-1"}, actor=SYSTEM)[
+        "removed"
+    ]
+
+
+def test_an_item_billed_at_once_can_say_when_it_is_due(app, member_id):
+    out = call(
+        "finance.open_item.add",
+        {"member_id": member_id, "amount": "8", "text": "Bier", "due_days": 10},
+        actor=SYSTEM,
+    )
+    invoice = db.session.get(Invoice, out["invoice_id"])
+    assert (invoice.due - invoice.issued).days == 10

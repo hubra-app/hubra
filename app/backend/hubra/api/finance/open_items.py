@@ -12,7 +12,7 @@ its own straight away, as before.
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 from sqlalchemy import select
@@ -58,6 +58,7 @@ def add(
     source_ref: str | None = None,
     category_id: int | None = None,
     day: date | None = None,
+    due_days: int | None = None,
     actor_id: int | None = None,
 ) -> OpenItem:
     """Store an open item; with collecting off it is billed at once. A
@@ -87,7 +88,7 @@ def add(
     db.session.add(item)
     db.session.flush()
     if settings()["cycle"] == "off" and amount > 0:
-        _bill(member, [item], actor_id)
+        _bill(member, [item], actor_id, due_days)
     return item
 
 
@@ -135,7 +136,12 @@ def bill(
     return invoices
 
 
-def _bill(member: Member, items: list[OpenItem], actor_id: int | None) -> Invoice:
+def _bill(
+    member: Member,
+    items: list[OpenItem],
+    actor_id: int | None,
+    due_days: int | None = None,
+) -> Invoice:
     from hubra.api.finance.services import InvoicesService, default_due_date
 
     total = sum((i.amount for i in items), Decimal(0))
@@ -152,7 +158,9 @@ def _bill(member: Member, items: list[OpenItem], actor_id: int | None) -> Invoic
         {
             "member_id": member.id,
             "issued": today,
-            "due": default_due_date(today),
+            "due": default_due_date(today)
+            if due_days is None
+            else today + timedelta(days=due_days),
             "amount": total,
             "purpose": "other",
             "description": description,
