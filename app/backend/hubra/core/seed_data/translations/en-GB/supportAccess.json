@@ -1,0 +1,21 @@
+{
+  "supportAccess.approve": "Approve",
+  "supportAccess.approved": "Access approved",
+  "supportAccess.decidedBy": "decided by {{name}}",
+  "supportAccess.decline": "Decline",
+  "supportAccess.declined": "Access declined",
+  "supportAccess.failed": "Not saved",
+  "supportAccess.lookOnly": "look only",
+  "supportAccess.mayChange": "may change things",
+  "supportAccess.minutes": "{{count}} min",
+  "supportAccess.none": "No requests from Hubra support yet.",
+  "supportAccess.requireApproval": "Support access only when approved",
+  "supportAccess.requireApprovalHint": "On: before Hubra support opens your club, they ask here and an admin approves (once, within 24 hours). Every access is in the audit log.",
+  "supportAccess.staff": "Hubra support",
+  "supportAccess.status.approved": "Approved",
+  "supportAccess.status.declined": "Declined",
+  "supportAccess.status.expired": "Expired",
+  "supportAccess.status.pending": "Open",
+  "supportAccess.status.used": "Used",
+  "supportAccess.title": "Hubra support"
+}

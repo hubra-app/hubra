@@ -7,6 +7,10 @@ section and position, or the apps show that version in English.
 
 ## [Unreleased]
 
+### Changed
+
+- **Texts in one file per feature**: the club app's built-in texts are in `app/frontend/src/locales/<language>/<feature>.json` and the shipped seed texts in `seed_data/translations/<locale>/<feature>.json`, instead of one big file per language, so pull requests that add texts to different features no longer clash. Nothing changes in the apps. <!-- for: staff -->
+
 ## [0.2.6] - 2026-11-13
 
 ### Added

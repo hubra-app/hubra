@@ -11,14 +11,14 @@ FIREFOX = "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.
 
 def _seed_mail_texts(db):
     """The shipped mail texts, as flask seed puts them in the database."""
-    import json
     from pathlib import Path
 
     from hubra.core.models.translation import Translation
+    from hubra.core.seeds import load_shipped_translations
 
     seeds = Path(__file__).parents[2] / "hubra" / "core" / "seed_data" / "translations"
     for locale in ("en-GB", "de-CH"):
-        texts = json.loads((seeds / f"{locale}.json").read_text(encoding="utf-8"))
+        texts = load_shipped_translations(seeds, locale)
         for key, value in texts.items():
             if key.startswith("mail.email."):
                 db.session.add(Translation(locale=locale, key=key, value=value))

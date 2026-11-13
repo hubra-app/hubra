@@ -1,0 +1,12 @@
+{
+  "active": "Aktiv",
+  "trial": "Probezeit",
+  "inactive": "Inaktiv",
+  "suspended": "Gesperrt",
+  "pending": "Ausstehend",
+  "archived": "Archiviert",
+  "disabled": "Deaktiviert",
+  "Paid": "Bezahlt",
+  "Open": "Offen",
+  "Overdue": "Überfällig"
+}

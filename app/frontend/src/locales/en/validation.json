@@ -1,0 +1,13 @@
+{
+  "displayNameRequired": "Display name is required",
+  "invalidEmail": "Invalid email",
+  "currentPasswordRequired": "Current password is required",
+  "passwordMin": "Password must be at least 8 characters",
+  "passwordsMismatch": "Passwords do not match",
+  "titleRequired": "Title is required",
+  "contentRequired": "Content is required",
+  "dateRequired": "Date is required",
+  "questionRequired": "Question is required",
+  "dueRequired": "Due date is required",
+  "wholeNumber": "Please enter a whole number"
+}

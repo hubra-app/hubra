@@ -5,7 +5,6 @@ The app had asked for ``invoices.invoices.create`` while the API checks
 buttons, so a Treasurer role seemed to do nothing.
 """
 
-import json
 import re
 from pathlib import Path
 
@@ -13,6 +12,7 @@ import pytest
 
 from hubra.core.fields import iter_field_perms
 from hubra.core.permissions import _derive_perm_key, extra_permissions
+from hubra.core.seeds import load_shipped_translations
 
 REPO = Path(__file__).resolve().parents[4]
 FRONTEND = REPO / "app/frontend/src"
@@ -51,7 +51,7 @@ def test_club_app_asks_for_existing_keys(app):
 
 @pytest.mark.parametrize("locale", ["de-CH", "en-GB"])
 def test_every_permission_has_a_name(app, locale):
-    seed = json.loads((SEEDS / f"{locale}.json").read_text(encoding="utf-8"))
+    seed = load_shipped_translations(SEEDS, locale)
     named = {k.removeprefix("roles.perms.") for k in seed if k.startswith("roles.perms.")}
     # Module access keys (module.<code>.access) share one name, "Use the module".
     assert "moduleAccess" in named

@@ -1,0 +1,7 @@
+{
+  "backups.delete": "Delete backup",
+  "backups.size": "Size",
+  "backups.tables": "Tables",
+  "backups.verified": "Verified",
+  "backups.verify": "Verify backup"
+}

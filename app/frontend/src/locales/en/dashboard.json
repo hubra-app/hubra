@@ -1,0 +1,76 @@
+{
+  "activeMembers": "Active members",
+  "allPaid": "All paid",
+  "buttons": {
+    "addMember": "Add member",
+    "newEvent": "New event"
+  },
+  "eyebrow": {
+    "organization": "Club",
+    "personal": "Personal"
+  },
+  "global": "Club overview",
+  "goodAfternoon": "Good afternoon",
+  "goodEvening": "Good evening",
+  "goodMorning": "Good morning",
+  "incomeMinusExpenses": "Income – expenses",
+  "manageInventory": "Manage Inventory",
+  "memberStats": "Member Statistics",
+  "myEvents": "My Events",
+  "netThisMonth": "Net this month",
+  "nextEvent": "Next: {{title}}",
+  "noPolls": "No open polls",
+  "noUpcomingEvents": "No upcoming events",
+  "noneScheduled": "None scheduled",
+  "openInvoices": "Open invoices",
+  "outstanding": "{{count}} outstanding",
+  "quickActions": "Quick Actions",
+  "recent": {
+    "activity": "Recent Activity",
+    "polls": "Recent Polls"
+  },
+  "recentActivity": "Recent Activity",
+  "recentPolls": "Recent Polls",
+  "recentPosts": {
+    "comingSoon": "Posts coming soon.",
+    "title": "Recent posts"
+  },
+  "recentPostsCard": {
+    "comingSoon": "Posts coming soon.",
+    "noComments": "No comments yet.",
+    "noLikes": "No likes yet.",
+    "noPosts": "No posts yet.",
+    "title": "Recent posts"
+  },
+  "tabs": {
+    "account": "Personal",
+    "overview": "Club"
+  },
+  "thisMonth": "This Month",
+  "joinedLast30": "+{{count}} in the last 30 days",
+  "thisWeek": "This Week",
+  "title": "Dashboard",
+  "today": "Today",
+  "upcomingEvents": {
+    "title": "Upcoming events"
+  },
+  "upcomingEventsCard": {
+    "title": "Upcoming events"
+  },
+  "upcomingEventsLabel": "Upcoming events",
+  "viewAll": "View All",
+  "viewGroups": "View Groups",
+  "viewInvoices": "View Invoices",
+  "viewMail": "View Mail",
+  "viewMembers": "View Members",
+  "voteNeeded": {
+    "closesIn": "Closes in {{days}}d",
+    "closesOn": "Closes {{date}}",
+    "options": "{{count}} options",
+    "pollsRequire": "{{count}} open polls need your vote",
+    "title": "Your vote is needed",
+    "vote": "Vote"
+  },
+  "welcome": "Welcome back, {{name}}",
+  "welcomeShort": "Welcome"
+}

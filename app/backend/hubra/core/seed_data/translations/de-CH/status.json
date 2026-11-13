@@ -1,0 +1,12 @@
+{
+  "status.Open": "Offen",
+  "status.Overdue": "Überfällig",
+  "status.Paid": "Bezahlt",
+  "status.active": "Aktiv",
+  "status.archived": "Archiviert",
+  "status.disabled": "Deaktiviert",
+  "status.inactive": "Inaktiv",
+  "status.pending": "Ausstehend",
+  "status.suspended": "Gesperrt",
+  "status.trial": "Probezeit"
+}

@@ -1,0 +1,15 @@
+{
+  "group": "Group",
+  "groupHint": "Anyone with a role for this group can manage it. Everyone can still see it.",
+  "languages": {
+    "de": "German",
+    "fr": "French",
+    "it": "Italian",
+    "en": "English"
+  },
+  "language": "Language of the post",
+  "languagesHint": "Writing for members in several languages? Add a language. Each member sees the post in their language, otherwise in the original.",
+  "translate": "Translate from {{lang}}",
+  "removeLanguage": "Remove language",
+  "readIn": "Language"
+}

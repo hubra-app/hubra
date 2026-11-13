@@ -1,0 +1,16 @@
+{
+  "failed": "Nicht gespeichert",
+  "invitation": "Einladung",
+  "inviteText": "Lädt euch am {{date}} als Mitgliedverein ein. Der Verband sieht dann, wie viele aktive Mitglieder ihr habt, und ihr seht seine geteilten Anlässe unter Anlässe.",
+  "shareContacts": "Kontakte unserer Ämter teilen",
+  "shareContactsHint": "Name und Vereinsadresse von allen, die ein Amt halten (z. B. Präsidium, Kassier). Private E-Mail-Adressen nie.",
+  "accept": "Beitreten",
+  "decline": "Ablehnen",
+  "title": "Verbände",
+  "intro": "Dachverbände, in denen euer Verein Mitglied ist. Was ein Verband sieht, entscheidet ihr hier.",
+  "since": "Mitglied seit {{date}}",
+  "leave": "Austreten",
+  "seesCount": "Der Verband sieht die Zahl eurer aktiven Mitglieder, sonst keine Mitgliederdaten.",
+  "leaveTitle": "Aus dem Verband austreten",
+  "leaveBody": "{{name}} sieht euren Verein nicht mehr, und ihr seht seine Anlässe nicht mehr."
+}

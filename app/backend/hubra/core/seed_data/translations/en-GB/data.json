@@ -1,0 +1,13 @@
+{
+  "data.filter": "Filter",
+  "data.filterDone": "Done",
+  "data.filterKeyValue": "Filter by key or value…",
+  "data.filterRemove": "Remove {{chip}}",
+  "data.filterReset": "Reset",
+  "data.key": "Key",
+  "data.noData": "No data",
+  "data.nothingHere": "Nothing here.",
+  "data.value": "Value",
+  "data.viewCards": "Cards",
+  "data.viewList": "List"
+}

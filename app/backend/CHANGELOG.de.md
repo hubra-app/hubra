@@ -9,6 +9,10 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ## [Unreleased]
 
+### Changed
+
+- **Texte in einer Datei pro Bereich**: die eingebauten Texte der Vereins-App liegen in `app/frontend/src/locales/<Sprache>/<Bereich>.json` und die mitgelieferten Seed-Texte in `seed_data/translations/<Locale>/<Bereich>.json` statt in einer grossen Datei pro Sprache, damit Pull Requests, die Texte in verschiedenen Bereichen ergänzen, nicht mehr kollidieren. In den Apps ändert sich nichts. <!-- for: staff -->
+
 ## [0.2.6] - 2026-11-13
 
 ### Added

@@ -1,0 +1,14 @@
+{
+  "verify.email.confirmedMsg": "Your email address is confirmed.",
+  "verify.email.error": "Verification failed. The link may be expired.",
+  "verify.email.success": "Email verified! You can now log in.",
+  "verify.email.title": "Verify Email",
+  "verify.email.verified": "Email verified",
+  "verify.email.verifying": "Verifying your email...",
+  "verify.login": "Sign in",
+  "verify.missingToken": "The link is incomplete.",
+  "verify.pleaseWait": "Please wait…",
+  "verify.verification.failed": "Verification failed",
+  "verify.verification.failedTitle": "Verification failed",
+  "verify.verifyingEmail": "Verifying email…"
+}

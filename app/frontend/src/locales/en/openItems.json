@@ -1,0 +1,18 @@
+{
+  "tab": "Open items",
+  "billed": "Billed",
+  "billedMsg": "{{count}} invoices created.",
+  "cycleOff": "Each item goes on an invoice of its own straight away. Under Settings they can be collected.",
+  "cycleMonthly": "On the 1st of each month each member's items go on one invoice.",
+  "cycleQuarterly": "On the 1st of each quarter each member's items go on one invoice.",
+  "minimum": "Below {{amount}} they wait for the next time.",
+  "add": "Add item",
+  "billNow": "Bill now",
+  "empty": "No open items.",
+  "day": "Date",
+  "text": "Item",
+  "source": "From",
+  "amount": "Amount",
+  "amountHint": "Negative for a credit.",
+  "totalFor": "Total {{name}}"
+}

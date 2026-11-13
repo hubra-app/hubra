@@ -1,0 +1,13 @@
+{
+  "content.language": "Language of the post",
+  "content.languages.de": "German",
+  "content.languages.en": "English",
+  "content.languages.fr": "French",
+  "content.languages.it": "Italian",
+  "content.languagesHint": "Writing for members in several languages? Add a language. Each member sees the post in their language, otherwise in the original.",
+  "content.readIn": "Language",
+  "content.removeLanguage": "Remove language",
+  "content.translate": "Translate from {{lang}}",
+  "content.group": "Group",
+  "content.groupHint": "Anyone with a role for this group can manage it. Everyone can still see it."
+}

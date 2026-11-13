@@ -1,12 +1,12 @@
 """Tests for the mail i18n translation function and template rendering."""
 
-import json
 import re
 from pathlib import Path
 
 from markupsafe import Markup
 
 from hubra.core.services.mail_i18n import get_mail_translator, render_mail_template
+from hubra.core.seeds import load_shipped_translations
 
 
 class _FakeRow:
@@ -150,11 +150,8 @@ def _load_seed_keys(locale: str) -> set[str]:
         / "core"
         / "seed_data"
         / "translations"
-        / f"{locale}.json"
     )
-    with open(seed_path, encoding="utf-8") as f:
-        data = json.load(f)
-    return set(data.keys())
+    return set(load_shipped_translations(seed_path, locale))
 
 
 def test_all_email_template_keys_exist_in_seeds():

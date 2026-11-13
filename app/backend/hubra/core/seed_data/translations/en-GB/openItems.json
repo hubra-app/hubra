@@ -1,0 +1,18 @@
+{
+  "openItems.add": "Add item",
+  "openItems.amount": "Amount",
+  "openItems.amountHint": "Negative for a credit.",
+  "openItems.billNow": "Bill now",
+  "openItems.billed": "Billed",
+  "openItems.billedMsg": "{{count}} invoices created.",
+  "openItems.cycleMonthly": "On the 1st of each month each member's items go on one invoice.",
+  "openItems.cycleOff": "Each item goes on an invoice of its own straight away. Under Settings they can be collected.",
+  "openItems.cycleQuarterly": "On the 1st of each quarter each member's items go on one invoice.",
+  "openItems.day": "Date",
+  "openItems.empty": "No open items.",
+  "openItems.minimum": "Below {{amount}} they wait for the next time.",
+  "openItems.source": "From",
+  "openItems.tab": "Open items",
+  "openItems.text": "Item",
+  "openItems.totalFor": "Total {{name}}"
+}

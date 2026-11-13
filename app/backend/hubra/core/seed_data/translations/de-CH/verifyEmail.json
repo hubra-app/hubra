@@ -1,0 +1,6 @@
+{
+  "verifyEmail.error": "Bestätigung fehlgeschlagen. Der Link ist vielleicht abgelaufen.",
+  "verifyEmail.success": "E-Mail bestätigt! Du kannst dich jetzt anmelden.",
+  "verifyEmail.title": "E-Mail bestätigen",
+  "verifyEmail.verifying": "Deine E-Mail-Adresse wird bestätigt …"
+}

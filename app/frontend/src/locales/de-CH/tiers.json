@@ -1,0 +1,84 @@
+{
+  "plans": {
+    "add": "Zahlungsplan hinzufügen",
+    "hint": "Mitglieder können diese Stufe in Raten bezahlen. Ohne Plan wird im Rhythmus der Stufe abgerechnet.",
+    "intervals": {
+      "half_yearly": "Halbjährlich",
+      "monthly": "Monatlich",
+      "quarterly": "Vierteljährlich",
+      "yearly": "Jährlich"
+    },
+    "name": "Name",
+    "namePlaceholder": "Vierteljährlich",
+    "per": {
+      "half_yearly": "pro Halbjahr",
+      "monthly": "pro Monat",
+      "quarterly": "pro Quartal",
+      "yearly": "pro Jahr"
+    },
+    "surcharge": "Zuschlag",
+    "title": "Zahlungspläne",
+    "visible": "Mitglieder können wählen"
+  },
+  "form": {
+    "name": "Name der Stufe",
+    "namePlaceholder": "z. B. Vollzugang",
+    "priceType": "Preisart",
+    "billingCycle": "Abrechnung",
+    "price": "Preis (CHF)",
+    "percentage": "Prozentsatz (%)",
+    "coefficient": "Koeffizient",
+    "roundTo": "Runden auf",
+    "deduct": "Beiträge abziehen von",
+    "perPeriod": "Pro {{period}}",
+    "percentageHint": "z. B. 2.5 heisst 2.5 % der jährlichen Ausgaben pro Mitglied und Jahr",
+    "coefficientHint": "z. B. 0.70, um 70 % der Beiträge anderer Stufen abzuziehen",
+    "roundHint": "Aufrunden auf (z. B. 5 → nächste 5 CHF)",
+    "deductHint": "Stufen, deren Beiträge in der Formel abgezogen werden",
+    "noOtherTiers": "Keine anderen Stufen vorhanden",
+    "groups": "Mitglieder kommen in die Gruppen",
+    "groupsHint": "Wer diese Stufe hat, ist in diesen Gruppen. Bei einem Stufenwechsel wechseln auch die Gruppen.",
+    "noGroups": "Keine Gruppe"
+  },
+  "type": {
+    "fixed": "Fester Betrag",
+    "percentage": "Prozentual",
+    "formula": "Formel"
+  },
+  "cycle": {
+    "none": "Keine (manuell)",
+    "monthly": "Monatlich",
+    "yearly": "Jährlich"
+  },
+  "newTitle": "Neue Mitgliedschaftsstufe",
+  "editTitle": "Stufe bearbeiten",
+  "per": {
+    "monthly": "Monat",
+    "yearly": "Jahr",
+    "period": "Periode"
+  },
+  "updated": "Stufe aktualisiert",
+  "memberMoved": "{{member}} ist jetzt in {{tier}}.",
+  "moveMember": "Mitglied in diese Stufe verschieben",
+  "searchMembers": "Mitglieder suchen …",
+  "created": "Stufe erstellt",
+  "createdMsg": "Die Stufe {{name}} ist aktiv.",
+  "updatedMsg": "{{name}} wurde gespeichert.",
+  "deleted": "Stufe gelöscht",
+  "deletedMsg": "{{name}} wurde entfernt.",
+  "memberCount_one": "{{count}} Mitglied",
+  "memberCount_other": "{{count}} Mitglieder",
+  "new": "Neue Stufe",
+  "price": "Preis",
+  "noType": "Kein Typ",
+  "members": "Mitglieder",
+  "create": "Stufe erstellen",
+  "deleteTitle": "Stufe «{{name}}» löschen?",
+  "deleteBody": "Mitglieder in dieser Stufe müssen einer anderen Stufe zugewiesen werden. Das kann nicht rückgängig gemacht werden.",
+  "noPrice": "Kein Beitrag",
+  "backToTiers": "Zurück zu den Stufen",
+  "notFound": "Diese Stufe gibt es nicht (mehr).",
+  "detail": {
+    "pricing": "Beitrag"
+  }
+}

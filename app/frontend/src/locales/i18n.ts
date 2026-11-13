@@ -1,8 +1,6 @@
 import { useMemo } from "react";
 import i18n from "i18next";
 import { initReactI18next, useTranslation } from "react-i18next";
-import en from "./en/translation.json";
-import deCH from "./de-CH/translation.json";
 import {
   fetchTranslations,
   fetchLanguages,
@@ -10,6 +8,27 @@ import {
 } from "@/api/i18n";
 
 const STORAGE_KEY = "cms_language";
+
+// One file per feature (<lang>/<feature>.json holds the texts under
+// <feature>), so pull requests that add texts to different features don't
+// edit the same file. Put back together, they are the old translation.json.
+type Texts = Record<string, unknown>;
+const files = import.meta.glob<Texts>("./*/*.json", {
+  eager: true,
+  import: "default",
+});
+
+function bundle(lang: string): Texts {
+  const out: Texts = {};
+  for (const [path, texts] of Object.entries(files)) {
+    const m = path.match(/^\.\/([^/]+)\/([^/]+)\.json$/);
+    if (m && m[1] === lang) out[m[2]] = texts;
+  }
+  return out;
+}
+
+const en = bundle("en");
+const deCH = bundle("de-CH");
 
 export const resources = {
   "en-GB": { translation: en },
