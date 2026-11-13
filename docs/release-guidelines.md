@@ -33,8 +33,9 @@ commit, with every image built from source. Then, per image,
 commit it was built from (the `org.opencontainers.image.revision` label):
 
 - **Files changed since then:** build, push and scan, as before. Text files
-  (Markdown, `README`, `.gitignore`) do not count, except `CHANGELOG.md` and
-  `CHANGELOG.de.md`, which the backend image serves as "What's new".
+  (Markdown, `README`, `.gitignore`) do not count, except `CHANGELOG.md`,
+  `CHANGELOG.de.md` and `app/backend/changes/`, which the backend image
+  serves as "What's new".
 - **Unchanged:** no build. The last build gets this run's tags with
   `docker buildx imagetools create`, which copies tags in the registry and
   keeps the digest. Trivy still scans it.
@@ -93,9 +94,10 @@ always names a full set that passed the release checks together.
   `release/1.4` by hand first and tag there; the workflow leaves an existing
   branch alone ([ci.md](ci.md)).
 - **Version and changelog:** in a pull request just before tagging, set
-  `version` in `app/backend/pyproject.toml` (the tag must match it) and move `[Unreleased]` in
-  `CHANGELOG.md` and `CHANGELOG.de.md` to the new version, so what's new
-  matches the deployed version.
+  `version` in `app/backend/pyproject.toml` (the tag must match it), fold
+  `app/backend/changes/` into the changelogs (`changelog_fragments.py fold`)
+  and move `[Unreleased]` in `CHANGELOG.md` and `CHANGELOG.de.md` to the new
+  version, so what's new matches the deployed version.
 
 ## Options considered (2026-11-02)
 

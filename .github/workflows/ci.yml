@@ -87,6 +87,7 @@ jobs:
       lint_support: ${{ steps.diff.outputs.lint_support }}
       lint_deploy: ${{ steps.diff.outputs.lint_deploy }}
       release: ${{ steps.diff.outputs.release }}
+      bump: ${{ steps.diff.outputs.bump }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -102,15 +103,23 @@ jobs:
             for o in backend mcp frontends browser release lint lint_backend lint_frontend lint_admin lint_sso lint_support lint_deploy; do
               echo "$o=true" >> "$GITHUB_OUTPUT"
             done
+            echo "bump=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           echo "$files"
           # The release check reads the version and the changelog, so it runs
           # before any text file or version-only line is left out below.
-          if echo "$files" | grep -qE '^(\.github/workflows/(release|ci)\.yml|scripts/(test_)?release_check\.py|app/backend/(pyproject\.toml|CHANGELOG(\.de)?\.md))$'; then
+          if echo "$files" | grep -qE '^(\.github/workflows/(release|ci)\.yml|scripts/(test_)?release_check\.py|app/backend/(pyproject\.toml|CHANGELOG(\.de)?\.md|hubra/core/changelog_fragments\.py))$'; then
             echo "release=true" >> "$GITHUB_OUTPUT"
           else
             echo "release=false" >> "$GITHUB_OUTPUT"
+          fi
+          # A pull request that changes the version is a release: the release
+          # check then insists app/backend/changes/ is folded into the changelog.
+          if git diff -U0 "$BASE...$HEAD" -- app/backend/pyproject.toml | grep -qE '^\+version = '; then
+            echo "bump=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "bump=false" >> "$GITHUB_OUTPUT"
           fi
           # A version bump (bnb bump) changes only the version line in
           # app/backend/pyproject.toml and adds a "## [x.y.z] - date" heading
@@ -133,6 +142,10 @@ jobs:
           # count for the browser tests before the text files are dropped,
           # unless the change only adds version headings.
           changelog=false
+          # Changelog entries waiting for the release (app/backend/changes/).
+          if echo "$files" | grep -E '^app/backend/changes/[^/]+\.md$' | grep -qvx 'app/backend/changes/README.md'; then
+            changelog=true
+          fi
           for f in app/backend/CHANGELOG.md app/backend/CHANGELOG.de.md; do
             if echo "$files" | grep -qx "$f" \
               && ! only_lines "$f" '## \[[0-9][^]]*\]( - [0-9-]+)?'; then
@@ -486,6 +499,8 @@ jobs:
       - name: Unit tests
         run: python -m unittest discover -s scripts -p 'test_release_check.py' -v
       - name: Check and notes for this version
+        env:
+          RELEASE_BUMP: ${{ needs.changes.outputs.bump }}
         run: scripts/release-dry-run.sh
 
   # The one test check branch protection requires. It passes when every test

@@ -98,6 +98,53 @@ class CheckTest(unittest.TestCase):
         self.assertIn("::error::", p.stderr)
 
 
+FRAGMENT = "### Added\n\n- From a fragment.\n\n<!-- de -->\n\n### Added\n\n- Aus einem Fragment.\n"
+
+
+class FragmentRepo(Repo):
+    """A Repo with app/backend/changes/ and the real fragment module."""
+
+    def __init__(self, version: str, log: str = LOG):
+        super().__init__(version, log)
+        real = Path(__file__).resolve().parent.parent / rc.FRAGMENTS
+        (self.root / rc.FRAGMENTS).parent.mkdir(parents=True)
+        (self.root / rc.FRAGMENTS).write_text(real.read_text())
+        (self.root / rc.CHANGES).mkdir()
+        (self.root / rc.CHANGES / "README.md").write_text("how to")
+
+    def add(self):
+        (self.root / rc.CHANGES / "thing.md").write_text(FRAGMENT)
+
+
+class FragmentTest(unittest.TestCase):
+    def test_fragments_are_fine_between_releases(self):
+        r = FragmentRepo("1.3.0")
+        r.add()
+        self.assertEqual(rc.check("v1.3.0", r.root)["version"], "1.3.0")
+
+    def test_bump_or_tag_refuses_waiting_fragments(self):
+        r = FragmentRepo("1.3.0")
+        self.assertEqual(rc.check("v1.3.0", r.root, no_fragments=True)["version"], "1.3.0")
+        r.add()
+        with self.assertRaisesRegex(rc.ReleaseError, "thing.md.*fold"):
+            rc.check("v1.3.0", r.root, no_fragments=True)
+        env = {**os.environ, "GITHUB_REF_TYPE": "tag", "GITHUB_OUTPUT": ""}
+        p = subprocess.run([sys.executable, str(Path(rc.__file__)), "check", "v1.3.0", "--root", str(r.root)],
+                           capture_output=True, text=True, check=False, env=env)
+        self.assertEqual(p.returncode, 1)
+        self.assertIn("fold", p.stderr)
+
+    def test_prerelease_notes_include_fragments(self):
+        r = FragmentRepo("1.4.0-rc.1")
+        r.add()
+        images = r.root / "images.yaml"
+        images.write_text("images: []\n")
+        text = rc.notes("v1.4.0-rc.1", r.root, images, r.root / "out")
+        self.assertIn("- Something new.", text)
+        self.assertIn("- From a fragment.", text)
+        self.assertNotIn("Aus einem Fragment", text)
+
+
 class NotesTest(unittest.TestCase):
     def setUp(self):
         self.r = Repo("1.3.0")

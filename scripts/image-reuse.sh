@@ -48,9 +48,10 @@ from="$(docker buildx imagetools inspect "$image@$digest" --format '{{json .Imag
 git cat-file -e "$from^{commit}" 2>/dev/null || build "commit ${from:0:7} of the last build is not in this history"
 
 # Text files (Markdown, README, .gitignore) need no new image. The changelogs
-# are the exception: the backend image serves them as "What's new".
+# and the entries waiting in app/backend/changes/ are the exception: the
+# backend image serves them as "What's new".
 changed="$(git diff --name-only "$from" HEAD -- "${paths[@]}" |
-  awk -F/ '$NF ~ /^CHANGELOG.*\.md$/ || ($NF !~ /\.md$/ && $NF != "README" && $NF != ".gitignore")')"
+  awk -F/ '$NF ~ /^CHANGELOG.*\.md$/ || $0 ~ /^app\/backend\/changes\/[^\/]+\.md$/ || ($NF !~ /\.md$/ && $NF != "README" && $NF != ".gitignore")')"
 if [ -n "$changed" ]; then
   build "changed since ${from:0:7}: $(echo "$changed" | head -n 5 | paste -sd ' ' -)"
 fi

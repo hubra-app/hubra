@@ -79,9 +79,11 @@ install the backend with `pip install -r app/backend/requirements-dev.txt`
 - Fill in the [pull request template](.github/pull_request_template.md). For
   a change you can see, commit screenshots under `docs/screenshots/<topic>/`
   and embed them in the pull request.
-- Anything a user or operator would notice gets an entry under
-  `## [Unreleased]` in `app/backend/CHANGELOG.md` **and** the same entry in
-  German in `app/backend/CHANGELOG.de.md`.
+- Anything a user or operator would notice gets a changelog entry: a new
+  file `app/backend/changes/<topic>.md`, English then German after
+  `<!-- de -->` ([app/backend/changes/README.md](app/backend/changes/README.md)).
+  Don't edit `CHANGELOG.md`/`CHANGELOG.de.md` in a feature pull request:
+  every open pull request clashes there; the release folds the files in.
   Mark who it is for (`<!-- for: events -->`, `admins`, `staff`) as in
   [docs/releases.md](docs/releases.md#who-a-change-is-for).
 - Update the page in `docs/` that describes what you changed.

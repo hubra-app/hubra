@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 The German version is CHANGELOG.de.md: add each entry there too, in the same
 section and position, or the apps show that version in English.
+New entries go into app/backend/changes/ (one file per pull request); a
+release folds them in here (app/backend/changes/README.md).
 
 ## [Unreleased]
 

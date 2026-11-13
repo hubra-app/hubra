@@ -8,11 +8,15 @@ the checks themselves in [ci.md](ci.md).
 
 ## Cutting a release
 
-1. In a pull request, set `version` in `app/backend/pyproject.toml` to the
-   new version and move `[Unreleased]` in `app/backend/CHANGELOG.md` and
-   `CHANGELOG.de.md` to `## [1.3.0] - <date>`. Merge it. CI's
-   `release-check` job runs the tag check and the release notes for that
-   version on the pull request already.
+1. In a pull request, first move the waiting entries into the changelogs:
+   `python3 app/backend/hubra/core/changelog_fragments.py fold` (appends
+   every `app/backend/changes/*.md` to `[Unreleased]` in both changelogs
+   and deletes the files). Then set `version` in `app/backend/pyproject.toml`
+   to the new version and move `[Unreleased]` in `app/backend/CHANGELOG.md`
+   and `CHANGELOG.de.md` to `## [1.3.0] - <date>` (`mason bump` does both).
+   Merge it. CI's `release-check` job runs the tag check and the release
+   notes for that version on the pull request already, and fails while
+   `app/backend/changes/` still has entries (so does the tag push).
 2. Optional: Actions > **Release dry run** > Run workflow on `main` runs the
    same check on the merged commit and also says whether the tag or the
    release exists already (`scripts/release-dry-run.sh` does the first part
@@ -63,7 +67,8 @@ on top. A published release is never changed: release a new version.
 ## Who a change is for
 
 What's new in the club app shows a reader only what concerns them. Mark a
-changelog item in `app/backend/CHANGELOG.md` at the end of its bullet:
+changelog item (in `app/backend/changes/<topic>.md`, later in
+`app/backend/CHANGELOG.md`) at the end of its bullet:
 
 ```markdown
 - **Event templates**: save an event as a template … <!-- for: events -->

@@ -10,10 +10,15 @@ from typing import Any
 
 import yaml
 
+from hubra.core import changelog_fragments
+
 _BACKEND_ROOT = Path(__file__).resolve().parents[3]
 _PYPROJECT_PATH = _BACKEND_ROOT / "pyproject.toml"
 _CHANGELOG_PATH = _BACKEND_ROOT / "CHANGELOG.md"
 _CHANGELOG_DE_PATH = _BACKEND_ROOT / "CHANGELOG.de.md"
+# Entries of pull requests merged since the last release, one file each
+# (hubra.core.changelog_fragments); shown under [Unreleased].
+_CHANGES_DIR = _BACKEND_ROOT / "changes"
 _ROADMAP_PATH = _BACKEND_ROOT / "ROADMAP.yaml"
 
 # Roadmap columns, in the order the apps show them.
@@ -31,8 +36,9 @@ _FOR_RE = re.compile(r"\s*<!--\s*for:\s*(?P<tags>[^>]*?)\s*-->\s*", re.IGNORECAS
 AUDIENCES = ("admins", "staff")
 
 _version_cache: str | None = None
-# Parsed changelog files by path, each with the mtime it was read at.
-_changelog_cache: dict[Path, tuple[float, list[dict]]] = {}
+# Parsed changelog files by path, each with what it was read from (the
+# file's and the fragments' mtimes).
+_changelog_cache: dict[Path, tuple[tuple, list[dict]]] = {}
 _roadmap_cache: tuple[float, list[dict]] | None = None
 
 
@@ -160,14 +166,30 @@ def _same_shape(english: dict, translated: dict) -> bool:
     return a == b
 
 
+def _fragment_text(path: Path) -> str:
+    """The changelog at *path* with the waiting fragments under [Unreleased]."""
+    text = path.read_text(encoding="utf-8")
+    lang = "de" if path == _CHANGELOG_DE_PATH else "en"
+    try:
+        extra = changelog_fragments.collected(_CHANGES_DIR)[lang]
+    except changelog_fragments.FragmentError:
+        # tests/test_changelog_fragments.py fails on it; What's new still works.
+        return text
+    return changelog_fragments.fold_into(text, extra)
+
+
 def _parse_changelog(path: Path) -> list[dict]:
-    """Parse a Keep-a-Changelog file into entries, cached until it changes."""
+    """Parse a Keep-a-Changelog file into entries, cached until it or a
+    fragment changes."""
     if not path.exists():
         return []
 
-    mtime = path.stat().st_mtime
+    stamp = (
+        path.stat().st_mtime,
+        tuple((f.name, f.stat().st_mtime) for f in changelog_fragments.files(_CHANGES_DIR)),
+    )
     cached = _changelog_cache.get(path)
-    if cached is not None and cached[0] == mtime:
+    if cached is not None and cached[0] == stamp:
         return cached[1]
 
     entries: list[dict] = []
@@ -176,7 +198,7 @@ def _parse_changelog(path: Path) -> list[dict]:
     # True while the lines below belong to the last bullet (a wrapped item).
     in_item = False
 
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in _fragment_text(path).splitlines():
         version_match = _VERSION_HEADING_RE.match(line)
         if version_match:
             current = {
@@ -219,7 +241,7 @@ def _parse_changelog(path: Path) -> list[dict]:
                 marks.append(found)
             entry["tags"][name] = marks
 
-    _changelog_cache[path] = (mtime, entries)
+    _changelog_cache[path] = (stamp, entries)
     return entries
 
 
