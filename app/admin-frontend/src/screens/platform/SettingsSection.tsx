@@ -25,6 +25,7 @@ import {
   updatePlatformSettings,
   type PlatformSetting,
 } from '@/api/platform'
+import { SETTINGS_GROUPS } from '@/screens/platform/settings/registry'
 
 const RELAY = ['mail.relay.host', 'mail.relay.port', 'mail.relay.user', 'mail.relay.password']
 const FALLBACK = [
@@ -34,58 +35,8 @@ const FALLBACK = [
   'mail.fallback.password',
 ]
 const SENDER = ['mail.system.sender_email', 'mail.system.sender_name']
-const BACKUP = [
-  'backup.public_key',
-  'backup.s3.endpoint',
-  'backup.s3.bucket',
-  'backup.s3.region',
-  'backup.s3.access_key',
-  'backup.s3.secret_key',
-]
-const RETENTION = [
-  'backup.keep_daily',
-  'backup.keep_weekly',
-  'backup.keep_monthly',
-  'backup.keep_manual_days',
-  'backup.keep_deleted_club_days',
-]
-const FILES = [
-  'files.s3.endpoint',
-  'files.s3.bucket',
-  'files.s3.region',
-  'files.s3.access_key',
-  'files.s3.secret_key',
-  'files.max_mb',
-]
 
-const DOMAINS = [
-  'domains.serving',
-  'domains.cname_target',
-  'domains.cluster_issuer',
-  'domains.ingress_class',
-  'domains.service',
-]
-const PAYMENTS = [
-  'stripe.mode',
-  'payments.stripe.secret_key',
-  'payments.stripe.sandbox_secret_key',
-  'payments.fee_percent',
-]
 // stripe.mode sits under Online payments, on the same page; it applies to both.
-const BILLING = [
-  'billing.enabled',
-  'billing.yearly',
-  'billing.stripe.secret_key',
-  'billing.stripe.webhook_secret',
-  'billing.stripe.sandbox_secret_key',
-  'billing.stripe.sandbox_webhook_secret',
-]
-const DISCORD = [
-  'discord.client_id',
-  'discord.public_key',
-  'discord.client_secret',
-  'discord.bot_token',
-]
 
 const DISCORD_LOG = [
   'discord.log_channel_id',
@@ -100,24 +51,11 @@ const PERF = ['perf.slow_request_ms', 'perf.slow_query_ms', 'perf.p95_warning_ms
 const ERRORS = ['errors.auto_resolve']
 const UPGRADES = ['upgrades.post_deploy_steps']
 const LIMITS = ['limits.warn_percent', 'limits.grace_days']
-const MCP = ['mcp.url']
 const OAUTH = ['oauth.dynamic_clients', 'oauth.dynamic_redirect_hosts']
-const SUPPORT = ['support.url']
-const LEGAL = ['legal.privacy_url', 'legal.terms_url', 'legal.imprint_url']
-const TRANSLATE = ['translate.deepl_key', 'translate.deepl_url']
-const WALLET = [
-  'wallet.google.issuer_id',
-  'wallet.google.class_id',
-  'wallet.google.service_account',
-  'wallet.google.logo_url',
-]
 const BUILT_IN = [
-  'domains.serving',
-  'domains.cluster_issuer',
-  'domains.ingress_class',
-  'domains.service',
-  'alerts.cooldown_minutes', 'alerts.retention_days', 'translate.deepl_url', ...RETENTION, ...PERF, ...ERRORS, ...UPGRADES, ...LIMITS, ...OAUTH, ...LEGAL]
-const ALERTS = ['alerts.cooldown_minutes', 'alerts.retention_days', 'alerts.manage_url']
+  ...PERF, ...ERRORS, ...UPGRADES, ...LIMITS, ...OAUTH,
+  ...Object.values(SETTINGS_GROUPS).flatMap((g) => g.builtIn ?? []),
+]
 
 
 // View Channel + Send Messages + Embed Links
@@ -130,47 +68,27 @@ const MANAGE_ROLES = 1 << 28
 const THREAD_PERMISSIONS = 2 ** 0 + 2 ** 16 + 2 ** 34 + 2 ** 36 + 2 ** 38
 
 /** One group of platform settings; each is shown on the page it configures. */
-export type SettingsSectionId =
+type OwnSectionId =
   | 'relay'
   | 'sender'
-  | 'backups'
-  | 'backup-retention'
-  | 'files'
-  | 'payments'
-  | 'billing'
-  | 'domains'
-  | 'discord-app'
   | 'discord-channels'
-  | 'alerts'
   | 'performance'
   | 'limits'
-  | 'mcp'
   | 'oauth'
-  | 'support'
-  | 'legal'
-  | 'translate'
-  | 'wallet'
-/** The keys each section saves. */
-const SECTION_KEYS: Record<SettingsSectionId, string[]> = {
+/**
+ * One group of platform settings, shown on the page it configures: one of
+ * the groups below, or a plain one from settings/ (see settings/registry.ts).
+ */
+export type SettingsSectionId = OwnSectionId | (string & {})
+
+/** The keys each section below saves. */
+const SECTION_KEYS: Record<OwnSectionId, string[]> = {
   relay: [...RELAY, ...FALLBACK],
   sender: SENDER,
-  backups: BACKUP,
-  'backup-retention': RETENTION,
-  files: FILES,
-  payments: PAYMENTS,
-  billing: BILLING,
-  domains: DOMAINS,
-  'discord-app': DISCORD,
   'discord-channels': [...DISCORD_LOG, ...DISCORD_ROLES, ...DISCORD_SUPPORT],
-  alerts: ALERTS,
   performance: [...PERF, ...ERRORS],
   limits: LIMITS,
-  mcp: MCP,
   oauth: OAUTH,
-  support: SUPPORT,
-  legal: LEGAL,
-  translate: TRANSLATE,
-  wallet: WALLET,
 }
 
 function SourceBadge({ s }: { s: PlatformSetting }) {
@@ -223,176 +141,9 @@ const FIELD_DE: Record<string, [string, string]> = {
     'Absender für Anmelde-, SSO- und Plattform-Mails',
   ],
   'mail.system.sender_name': ['Absendername des Systems', 'Angezeigter Name des Systemabsenders'],
-  'backup.public_key': [
-    'Öffentlicher Backup-Schlüssel',
-    'age-Schlüssel (age1…), mit dem jedes Backup verschlüsselt wird (flask backups keygen). Der private Schlüssel bleibt ausserhalb des Servers; die Wiederherstellung fragt danach',
-  ],
-  'backup.s3.endpoint': [
-    'S3-Endpunkt',
-    'S3-kompatible Adresse, z. B. https://eu2.contabostorage.com',
-  ],
-  'backup.s3.bucket': ['S3-Bucket', 'Bucket, in den die verschlüsselten Backups gehen'],
-  'backup.s3.region': ['S3-Region', "Bei Contabo meist 'default'"],
-  'backup.s3.access_key': ['S3-Access-Key', 'Wird verschlüsselt gespeichert'],
-  'backup.s3.secret_key': ['S3-Secret-Key', 'Wird verschlüsselt gespeichert'],
-  'files.s3.endpoint': [
-    'S3-Endpunkt für Dateien',
-    'S3-kompatible Adresse für Vereinsdateien, z. B. https://eu2.contabostorage.com. Leer: Dateien bleiben auf dem Server',
-  ],
-  'files.s3.bucket': [
-    'S3-Bucket für Dateien',
-    'Bucket für Vereinsdateien (nicht der Backup-Bucket). Jede Datei wird mit dem Schlüssel ihres Vereins verschlüsselt, bevor sie den Server verlässt',
-  ],
-  'files.s3.region': ['S3-Region für Dateien', "Bei Contabo meist 'default'"],
-  'files.s3.access_key': ['S3-Access-Key für Dateien', 'Wird verschlüsselt gespeichert'],
-  'files.s3.secret_key': ['S3-Secret-Key für Dateien', 'Wird verschlüsselt gespeichert'],
-  'files.max_mb': [
-    'Grösste Datei (Standard)',
-    'Grösste Datei, die ein Verein hochladen kann, in MB, wenn sein Tarif keine eigene Grenze hat',
-  ],
-  'backup.keep_daily': [
-    'Tägliche Backups behalten',
-    'So viele der neuesten täglichen Backups bleiben pro Satz (das globale und das jedes Vereins), 1 bis 365',
-  ],
-  'backup.keep_weekly': [
-    'Wöchentliche Backups behalten',
-    'So viele der neuesten wöchentlichen Backups (Sonntag) bleiben pro Satz, 1 bis 365',
-  ],
-  'backup.keep_monthly': [
-    'Monatliche Backups behalten',
-    'So viele der neuesten monatlichen Backups (am 1.) bleiben pro Satz, 1 bis 365',
-  ],
-  'backup.keep_manual_days': [
-    'Manuelle Backups behalten (Tage)',
-    'So viele Tage bleibt ein von Hand erstelltes Backup; 0 behält es, bis es jemand löscht',
-  ],
-  'backup.keep_deleted_club_days': [
-    'Backups gelöschter Vereine behalten (Tage)',
-    'So viele Tage bleibt jedes Backup eines endgültig gelöschten Vereins, ab dem Tag, an dem es erstellt wurde; 0 behält sie wie die jedes anderen Vereins',
-  ],
-  'domains.serving': [
-    'Vereinsdomains ausliefern',
-    'on: jede bestätigte Vereinsdomain bekommt ein Zertifikat und ein eigenes Ingress (k3s mit cert-manager), Besucher werden zum Verein weitergeleitet. off: die Ingresses werden entfernt (Notschalter)',
-  ],
-  'domains.cname_target': [
-    'Ziel für Vereinsdomains',
-    'Der Host, auf den Vereine ihre Domain zeigen lassen (CNAME), z. B. clubs.hubra.club; wird den Vereinen angezeigt',
-  ],
-  'domains.cluster_issuer': ['Zertifikats-Aussteller', 'Der ClusterIssuer von cert-manager für Vereinsdomains'],
-  'domains.ingress_class': ['Ingress-Klasse', 'Die Ingress-Klasse der Vereinsdomains'],
-  'domains.service': [
-    'Service für Vereinsdomains',
-    "Der Service (Port 'http'), an den Vereinsdomains gehen; er leitet Besucher zum Verein weiter",
-  ],
-  'stripe.mode': [
-    'Stripe-Modus',
-    'Sandbox: alle Vereine nutzen die Sandbox-Schlüssel (sk_test_), es fliesst kein echtes Geld. Live: die Vereine nutzen die Live-Schlüssel; Sandbox-Vereine (Verein › Sandbox-Verein) bleiben immer auf den Sandbox-Schlüsseln. Gilt für Online-Zahlungen und die Abrechnung',
-  ],
-  'payments.stripe.secret_key': [
-    'Stripe-Live-Key',
-    'Der Live-Schlüssel des Plattform-Kontos (Connect, sk_live_). Wird verschlüsselt gespeichert',
-  ],
-  'payments.stripe.sandbox_secret_key': [
-    'Stripe-Sandbox-Key',
-    'Der Sandbox-Schlüssel des Plattform-Kontos (Connect, sk_test_), im Sandbox-Modus und immer für Sandbox-Vereine. Wird verschlüsselt gespeichert',
-  ],
-  'billing.enabled': [
-    'Vereine über Stripe abrechnen',
-    'on: Admins eines Vereins sehen Einstellungen › Hubra-Abo und bezahlen ihren Tarif über Stripe Checkout, mit dem Stripe-Schlüssel unten; der Stand wird stündlich bei Stripe gelesen. off: Konditionen werden nur festgehalten',
-  ],
-  'billing.yearly': [
-    'Jährlich abrechnen',
-    'on: neue Abos werden einmal im Jahr belastet (12 × der Monatspreis). off: monatlich. Laufende Abos wechseln beim nächsten Abgleich',
-  ],
-  'billing.stripe.secret_key': [
-    'Live-Key der Abrechnung',
-    'Live-Secret- oder Restricted-Key (sk_live_/rk_live_) des Stripe-Kontos, das den Vereinen Hubra verrechnet. Leer: der Live-Key der Online-Zahlungen. Wird verschlüsselt gespeichert',
-  ],
-  'billing.stripe.webhook_secret': [
-    'Live-Webhook-Secret der Abrechnung',
-    'Signing Secret (whsec_…) des Live-Webhooks auf /api/v1/global/billing/stripe/webhook. Ohne es folgt der Status Stripe nur über die stündliche Prüfung. Wird verschlüsselt gespeichert',
-  ],
-  'billing.stripe.sandbox_secret_key': [
-    'Sandbox-Key der Abrechnung',
-    'Sandbox-Key (sk_test_/rk_test_) des Abrechnungskontos, im Sandbox-Modus und immer für Sandbox-Vereine. Leer: der Sandbox-Key der Online-Zahlungen. Wird verschlüsselt gespeichert',
-  ],
-  'billing.stripe.sandbox_webhook_secret': [
-    'Sandbox-Webhook-Secret der Abrechnung',
-    'Signing Secret (whsec_…) desselben Webhooks in der Stripe-Sandbox. Wird verschlüsselt gespeichert',
-  ],
-  'payments.fee_percent': [
-    'Hubra-Gebühr',
-    'Anteil jeder Online-Zahlung für Hubra (%), zusätzlich zu den Stripe-Gebühren. Der Verein trägt beide oder gibt sie als Zuschlag an die Mitglieder weiter. 0: keine',
-  ],
-  'discord.client_id': [
-    'Discord-Application-ID',
-    'Developer Portal › deine App › General Information › Application ID',
-  ],
-  'discord.public_key': [
-    'Discord-Public-Key',
-    'General Information › Public Key; prüft, dass Interaktionen von Discord kommen',
-  ],
-  'discord.client_secret': [
-    'Discord-Client-Secret',
-    'OAuth2 › Client Secret. Wird verschlüsselt gespeichert',
-  ],
-  'discord.bot_token': ['Discord-Bot-Token', 'Bot › Token. Wird verschlüsselt gespeichert'],
-  'alerts.cooldown_minutes': [
-    'Pause zwischen Warnmails (Minuten)',
-    'So lange kommt dieselbe Art Warnung nicht noch einmal per Mail. 0: jedes Mal. Ausfälle und Wiederherstellungen kommen immer',
-  ],
-  'alerts.retention_days': [
-    'Ereignisprotokoll aufbewahren (Tage)',
-    'So lange bleiben gesendete und fehlgeschlagene Mails, Ausfälle und Warnungen im Protokoll (1 bis 365)',
-  ],
-  'mcp.url': [
-    'Adresse des Claude-Connectors',
-    'Wo der MCP-Server (app/mcp) erreichbar ist; manage zeigt damit den Befehl zum Verbinden (https://mcp.hubra.club). Leer: nicht eingerichtet',
-  ],
   'oauth.dynamic_redirect_hosts': [
     'Rücksprung-Adressen für selbst angemeldete Apps',
     'Hosts, zu denen eine selbst angemeldete App zurückführen darf, durch Komma getrennt (Subdomains zählen mit). Leer: jeder https-Host',
-  ],
-  'support.url': [
-    'Adresse der Support-Seite',
-    'Hilfe, Roadmap, Status und Meldungen (Image support-frontend), z. B. https://support.hubra.club. Mails an Meldende verlinken dorthin. Leer: auf die Meldungen in der Vereins-App',
-  ],
-  'legal.privacy_url': [
-    'Datenschutzerklärung',
-    'Hubras Datenschutzerklärung. Verlinkt bei der Registrierung, in den Fussleisten und im Stripe Checkout. Leer: kein Link',
-  ],
-  'legal.terms_url': [
-    'Nutzungsbedingungen',
-    'Hubras Nutzungsbedingungen. Verlinkt bei der Registrierung, in den Fussleisten und im Stripe Checkout. Leer: kein Link',
-  ],
-  'translate.deepl_key': [
-    'DeepL-API-Schlüssel',
-    'Maschinelle Übersetzung für Beiträge in mehreren Sprachen. Leer: keine maschinelle Übersetzung, Vereine schreiben jede Sprache selbst. Wird verschlüsselt gespeichert',
-  ],
-  'translate.deepl_url': [
-    'DeepL-API-Adresse',
-    'https://api-free.deepl.com für einen kostenlosen Schlüssel, https://api.deepl.com für einen bezahlten',
-  ],
-  'wallet.google.issuer_id': [
-    'Aussteller-ID',
-    'Die lange Nummer in der Google Pay & Wallet Console. Leer: kein Knopf «Zu Google Wallet hinzufügen»',
-  ],
-  'wallet.google.class_id': [
-    'Klassen-ID',
-    'Die ID der generischen Klasse aus der Console, mit oder ohne Aussteller-ID davor',
-  ],
-  'wallet.google.service_account': [
-    'Schlüssel des Dienstkontos',
-    'Der ganze JSON-Schlüssel eines Google-Cloud-Dienstkontos mit der Rolle Developer im Aussteller-Konto. Wird verschlüsselt gespeichert',
-  ],
-  'wallet.google.logo_url': [
-    'Logo auf dem Pass',
-    'Öffentliche https-Adresse eines quadratischen PNG (660 px empfohlen). Standard: das App-Symbol der Anmeldeseite',
-  ],
-  'legal.imprint_url': ['Impressum', 'Hubras Impressum, verlinkt in den Fussleisten. Leer: kein Link'],
-  'alerts.manage_url': [
-    'Adresse von manage',
-    'Für den Knopf «Warnungen öffnen» in Warnmails, z. B. https://manage.hubra.club. Leer: kein Knopf',
   ],
   'perf.slow_request_ms': [
     'Langsame Anfrage (ms)',
@@ -448,12 +199,20 @@ const FIELD_DE: Record<string, [string, string]> = {
   ],
 }
 
+// German labels of the plain groups in settings/, for a field shown elsewhere.
+const GROUP_DE: Record<string, [string, string]> = Object.assign(
+  {},
+  ...Object.values(SETTINGS_GROUPS).map((g) => g.de ?? {}),
+)
+
 /**
  * One group of platform settings (not of one club), shown on the page it
  * belongs to: the mail relay under Mail, the backup storage under Backups,
  * plan limits under All clubs, and so on. Each section saves on its own.
  */
 export function SettingsSection({ section }: { section: SettingsSectionId }) {
+  const group = SETTINGS_GROUPS[section]
+  const sectionKeys = group?.keys ?? SECTION_KEYS[section as OwnSectionId] ?? []
   const { notify } = useAdmin()
   const { tr } = useLang()
   const queryClient = useQueryClient()
@@ -474,7 +233,7 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
   // fields count, so a half-edited field elsewhere is never saved here.
   const changed = settings.filter(
     (s) =>
-      SECTION_KEYS[section].includes(s.key) &&
+      sectionKeys.includes(s.key) &&
       (s.secret ? !!draft[s.key] : s.key in draft && draft[s.key] !== s.value),
   )
 
@@ -569,7 +328,7 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
   const field = (key: string) => {
     const s = byKey[key]
     if (!s) return null
-    const de = FIELD_DE[key]
+    const de = FIELD_DE[key] ?? GROUP_DE[key]
     const label = (
       <Group gap={6} component="span">
         {de ? tr(de[0], s.label) : s.label}
@@ -709,22 +468,6 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
             </Paper>
           )}
 
-          {section === 'alerts' && (
-            <Paper withBorder p="lg">
-              <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Versand der Warnungen', 'Alert delivery')}</Title>
-                {resetButton(ALERTS)}
-              </Group>
-              <Text size="xs" c="dimmed" mb={12}>
-                {tr(
-                  'Warnmails gehen an Plattform-Admins (Superadmins und Rollen mit Plattform-Einstellungen), nicht an Support. Jede Person wählt unter Warnungen › Meine Warnungen, welche sie bekommt.',
-                  'Alert mails go to platform admins (superadmins and roles with platform settings), not to Support. Each person picks which ones they get under Alerts › My alerts.',
-                )}
-              </Text>
-              <Stack gap="sm">{ALERTS.map(field)}</Stack>
-            </Paper>
-          )}
-
           {section === 'performance' && (
             <Paper withBorder p="lg">
               <Group justify="space-between" mb={4}>
@@ -797,22 +540,6 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
             </Paper>
           )}
 
-          {section === 'mcp' && (
-            <Paper withBorder p="lg">
-              <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Adresse des Connectors', 'Connector address')}</Title>
-                {resetButton(MCP)}
-              </Group>
-              <Text size="xs" c="dimmed" mb={12}>
-                {tr(
-                  'Wo der MCP-Server (Image mcp) läuft. Er hat keinen Datenbankzugriff und keine eigenen Zugangsdaten: jede Anfrage nutzt das Token der Person.',
-                  'Where the MCP server (the mcp image) runs. It has no database access and no credentials of its own: every request uses the person\'s token.',
-                )}
-              </Text>
-              <Stack gap="sm">{MCP.map(field)}</Stack>
-            </Paper>
-          )}
-
           {section === 'oauth' && (
             <Paper withBorder p="lg">
               <Group justify="space-between" mb={4}>
@@ -841,67 +568,16 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
             </Paper>
           )}
 
-          {section === 'support' && (
+          {group && (
             <Paper withBorder p="lg">
               <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Support-Seite', 'Support site')}</Title>
-                {resetButton(SUPPORT)}
+                <Title order={3}>{group.title()}</Title>
+                {resetButton(group.keys)}
               </Group>
               <Text size="xs" c="dimmed" mb={12}>
-                {tr(
-                  'Wo die Support-Seite läuft. Antworten auf Meldungen und die Mail nach einer Passwortänderung verlinken dorthin.',
-                  'Where the support site runs. Answers to reports and the password-changed mail link there.',
-                )}
+                {group.desc()}
               </Text>
-              <Stack gap="sm">{SUPPORT.map(field)}</Stack>
-            </Paper>
-          )}
-
-          {section === 'translate' && (
-            <Paper withBorder p="lg">
-              <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Maschinelle Übersetzung', 'Machine translation')}</Title>
-                {resetButton(TRANSLATE)}
-              </Group>
-              <Text size="xs" c="dimmed" mb={12}>
-                {tr(
-                  'Mit einem DeepL-Schlüssel können Vereine Beiträge in weitere Sprachen übersetzen lassen.',
-                  'With a DeepL key, clubs can have posts translated into more languages.',
-                )}
-              </Text>
-              <Stack gap="sm">{TRANSLATE.map(field)}</Stack>
-            </Paper>
-          )}
-
-          {section === 'wallet' && (
-            <Paper withBorder p="lg">
-              <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Google Wallet', 'Google Wallet')}</Title>
-                {resetButton(WALLET)}
-              </Group>
-              <Text size="xs" c="dimmed" mb={12}>
-                {tr(
-                  'Mit allen drei Angaben zeigt «Mein Konto» unter dem Mitgliederausweis den Knopf «Zu Google Wallet hinzufügen». Der Pass zeigt Name, Ausweisnummer mit QR-Code und die Vereine und wird bei Änderungen nachgeführt. Solange das Aussteller-Konto im Demo-Modus ist, können nur Testkonten aus der Console den Pass speichern.',
-                  'With all three set, My Account shows "Add to Google Wallet" under the member badge. The pass shows the name, badge number with QR code and the clubs, and follows changes. While the issuer account is in demo mode, only test accounts from the console can save it.',
-                )}
-              </Text>
-              <Stack gap="sm">{WALLET.map(field)}</Stack>
-            </Paper>
-          )}
-
-          {section === 'legal' && (
-            <Paper withBorder p="lg">
-              <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Rechtliches', 'Legal pages')}</Title>
-                {resetButton(LEGAL)}
-              </Group>
-              <Text size="xs" c="dimmed" mb={12}>
-                {tr(
-                  'Wo Hubras Datenschutzerklärung, Nutzungsbedingungen und Impressum stehen. Stripe fragt nach denselben Adressen: im Dashboard unter Einstellungen › Öffentliche Angaben und bei Connect › Plattformprofil.',
-                  "Where Hubra's privacy policy, terms of service and imprint are. Stripe asks for the same addresses: in the dashboard under Settings › Public details and in Connect › Platform profile.",
-                )}
-              </Text>
-              <Stack gap="sm">{LEGAL.map(field)}</Stack>
+              <Stack gap="sm">{group.keys.map(field)}</Stack>
             </Paper>
           )}
 
@@ -921,118 +597,6 @@ export function SettingsSection({ section }: { section: SettingsSectionId }) {
                 {field('limits.warn_percent')}
                 {field('limits.grace_days')}
               </Stack>
-            </Paper>
-          )}
-
-          {section === 'backups' && (
-            <Paper withBorder p="lg">
-              <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Backup-Speicher', 'Backup storage')}</Title>
-                {resetButton(BACKUP)}
-              </Group>
-              <Text size="xs" c="dimmed" mb={12}>
-                {tr(
-                  'Hierhin gehen das globale Backup und die Backups jedes Vereins, verschlüsselt mit dem öffentlichen Backup-Schlüssel. Er ist nicht geheim; den privaten Schlüssel braucht es nur zum Öffnen, und er gehört nicht auf den Server.',
-                  'The global backup and every club backup go here, encrypted to the backup public key. It is not secret; the private key is only needed to open a backup and does not belong on the server.',
-                )}
-              </Text>
-              <Stack gap="sm">{BACKUP.map(field)}</Stack>
-            </Paper>
-          )}
-
-          {section === 'backup-retention' && (
-            <Paper withBorder p="lg">
-              <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Aufbewahrung', 'Retention')}</Title>
-                {resetButton(RETENTION)}
-              </Group>
-              <Text size="xs" c="dimmed" mb={12}>
-                {tr(
-                  'Jede Nacht um 3 Uhr entsteht ein globales Backup und eines pro Verein, sonntags zusätzlich ein wöchentliches, am 1. ein monatliches. Danach löscht Hubra, was diese Regeln nicht mehr behalten, auch im Bucket. Gezählt wird pro Satz, also für jeden Verein für sich. Fehlgeschlagene Backups zählen nicht.',
-                  'Every night at 3:00 Hubra makes a global backup and one per club, plus a weekly one on Sundays and a monthly one on the 1st. Afterwards it deletes what these rules no longer keep, in the bucket too. Counts are per set, so each club on its own. Failed backups do not count.',
-                )}
-              </Text>
-              <Stack gap="sm">{RETENTION.map(field)}</Stack>
-            </Paper>
-          )}
-
-          {section === 'files' && (
-            <Paper withBorder p="lg">
-              <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Dateispeicher', 'File storage')}</Title>
-                {resetButton(FILES)}
-              </Group>
-              <Text size="xs" c="dimmed" mb={12}>
-                {tr(
-                  'Hierhin gehen die Dateien der Vereine (z. B. die Dokumentenablage), jede verschlüsselt mit dem Schlüssel ihres Vereins. Ohne Bucket liegen sie im Ordner FILES_DIR auf dem Server; das reicht nur für einen einzelnen Server.',
-                  "Clubs' files go here (e.g. the document library), each encrypted with its club's key. Without a bucket they stay in the folder FILES_DIR on the server, which only suits a single server.",
-                )}
-              </Text>
-              <Stack gap="sm">{FILES.map(field)}</Stack>
-            </Paper>
-          )}
-
-          {section === 'domains' && (
-            <Paper withBorder p="lg">
-              <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Vereinsdomains', 'Club domains')}</Title>
-                {resetButton(DOMAINS)}
-              </Group>
-              <Text size="xs" c="dimmed" mb={12}>
-                {tr(
-                  'Vereine bestätigen ihre Domain mit einem TXT-Eintrag und lassen sie per CNAME auf die Plattform zeigen. Ist das Ausliefern eingeschaltet, legt der Plattform-Worker alle zwei Minuten pro bestätigter Domain ein Zertifikat (cert-manager) und, sobald es ausgestellt ist, ein Ingress an; Besucher werden zum Verein in der App weitergeleitet. Nur auf k3s, mit dem Service-Account aus deploy/app/domains-rbac.yaml. Fehlt nach einem Tag das Zertifikat, kommt eine Systemwarnung.',
-                  'Clubs verify their domain with a TXT record and point it at the platform with a CNAME. With serving on, the platform worker creates a certificate (cert-manager) for each verified domain every two minutes and, once it is issued, an Ingress; visitors are sent on to the club in the app. k3s only, with the service account from deploy/app/domains-rbac.yaml. A domain without a certificate after a day raises a system alert.',
-                )}
-              </Text>
-              <Stack gap="sm">{DOMAINS.map(field)}</Stack>
-            </Paper>
-          )}
-
-          {section === 'payments' && (
-            <Paper withBorder p="lg">
-              <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Online-Zahlungen (Stripe)', 'Online payments (Stripe)')}</Title>
-                {resetButton(PAYMENTS)}
-              </Group>
-              <Text size="xs" c="dimmed" mb={12}>
-                {tr(
-                  'Mit dem Plugin «Online-Zahlungen» verbindet jeder Verein sein eigenes Stripe-Konto mit diesem Plattform-Konto (Stripe Connect). Mitglieder zahlen ihre Rechnungen dann mit Karte oder TWINT, das Geld geht direkt an den Verein. Im Stripe-Dashboard muss Connect eingeschaltet sein.',
-                  "With the «Online payments» plugin each club connects its own Stripe account to this platform account (Stripe Connect). Members then pay their invoices by card or TWINT and the money goes straight to the club. Connect must be turned on in the Stripe dashboard.",
-                )}
-              </Text>
-              <Stack gap="sm">{PAYMENTS.map(field)}</Stack>
-            </Paper>
-          )}
-
-          {section === 'billing' && (
-            <Paper withBorder p="lg">
-              <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Abrechnung der Vereine (Stripe Billing)', 'Club billing (Stripe Billing)')}</Title>
-                {resetButton(BILLING)}
-              </Group>
-              <Text size="xs" c="dimmed" mb={12}>
-                {tr(
-                  'Hubra verrechnet den Vereinen ihren Tarif über ein eigenes Stripe-Konto (oder, ohne eigenen Schlüssel, das der Online-Zahlungen). Im Stripe-Dashboard einen Webhook auf /api/v1/global/billing/stripe/webhook anlegen (checkout.session.completed, customer.subscription.*, invoice.paid, invoice.payment_failed) und das Kundenportal einschalten. Siehe docs/billing.md.',
-                  "Hubra bills clubs for their plan through its own Stripe account (or, without its own key, the Online payments one). In the Stripe dashboard add a webhook to /api/v1/global/billing/stripe/webhook (checkout.session.completed, customer.subscription.*, invoice.paid, invoice.payment_failed) and turn on the customer portal. See docs/billing.md.",
-                )}
-              </Text>
-              <Stack gap="sm">{BILLING.map(field)}</Stack>
-            </Paper>
-          )}
-
-          {section === 'discord-app' && (
-            <Paper withBorder p="lg">
-              <Group justify="space-between" mb={4}>
-                <Title order={3}>{tr('Discord-App', 'Discord app')}</Title>
-                {resetButton(DISCORD)}
-              </Group>
-              <Text size="xs" c="dimmed" mb={12}>
-                {tr(
-                  'Die eine Hubra-App auf Discord: Vereine fügen damit den Bot zu ihrem Server hinzu, Mitglieder verknüpfen ihr Konto. Einrichtung in docs/discord.md. Ohne diese Werte ist Discord für Vereine nicht verfügbar.',
-                  'The one Hubra application on Discord: clubs add the bot to their server with it, members link their account. Setup in docs/discord.md. Without these values Discord is not available to clubs.',
-                )}
-              </Text>
-              <Stack gap="sm">{DISCORD.map(field)}</Stack>
             </Paper>
           )}
 
