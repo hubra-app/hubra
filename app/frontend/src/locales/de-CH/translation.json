@@ -4003,7 +4003,24 @@
     },
     "finance": {
       "name": "Finanzen",
-      "description": "Buchungen, Rechnungen mit Schweizer QR-Rechnung und Zahlungserinnerungen"
+      "description": "Buchungen, Rechnungen mit Schweizer QR-Rechnung und Zahlungserinnerungen",
+      "settings": {
+        "collect_items": {
+          "label": "Kleine Posten sammeln",
+          "description": "Getränke, Buchungsgebühren und andere offene Posten kommen pro Mitglied jeden Monat oder jedes Quartal auf eine Rechnung; aus: jeder auf eine eigene"
+        },
+        "collect_min_amount": {
+          "label": "Kleinste Sammelrechnung (CHF)",
+          "description": "Darunter warten die Posten auf das nächste Mal"
+        }
+      },
+      "choices": {
+        "collect_items": {
+          "off": "Aus",
+          "monthly": "Monatlich",
+          "quarterly": "Vierteljährlich"
+        }
+      }
     },
     "functions": {
       "name": "Funktionen",
@@ -4968,5 +4985,23 @@
       "onsite": "Vor Ort"
     },
     "all": "Alles"
+  },
+  "openItems": {
+    "tab": "Offene Posten",
+    "billed": "Abgerechnet",
+    "billedMsg": "{{count}} Rechnungen erstellt.",
+    "cycleOff": "Jeder Posten kommt sofort auf eine eigene Rechnung. Unter Einstellungen lassen sie sich sammeln.",
+    "cycleMonthly": "Am 1. jedes Monats kommen die Posten jedes Mitglieds auf eine Rechnung.",
+    "cycleQuarterly": "Am 1. jedes Quartals kommen die Posten jedes Mitglieds auf eine Rechnung.",
+    "minimum": "Unter {{amount}} warten sie auf das nächste Mal.",
+    "add": "Posten erfassen",
+    "billNow": "Jetzt abrechnen",
+    "empty": "Keine offenen Posten.",
+    "day": "Datum",
+    "text": "Posten",
+    "source": "Von",
+    "amount": "Betrag",
+    "amountHint": "Negativ für eine Gutschrift.",
+    "totalFor": "Total {{name}}"
   }
 }

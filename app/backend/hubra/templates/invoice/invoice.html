@@ -53,10 +53,19 @@
     </tr>
   </thead>
   <tbody>
+    {% if lines %}
+    {% for line in lines %}
+    <tr>
+      <td>{{ line.day }} · {{ line.text }}</td>
+      <td class="amount">CHF {{ "%.2f"|format(line.amount) }}</td>
+    </tr>
+    {% endfor %}
+    {% else %}
     <tr>
       <td>{{ description }}</td>
       <td class="amount">CHF {{ "%.2f"|format(amount_float) }}</td>
     </tr>
+    {% endif %}
     <tr class="total-row">
       <td>Total</td>
       <td class="amount">CHF {{ "%.2f"|format(amount_float) }}</td>

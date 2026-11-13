@@ -42,19 +42,14 @@ export function InvoiceDetailScreen() {
   })
 
   const inv =
-    invoices.find((i) => i.id === selectedInvoice?.id) ??
-    selectedInvoice ??
-    fetchedInvoice
+    invoices.find((i) => i.id === selectedInvoice?.id) ?? selectedInvoice ?? fetchedInvoice
   if (!inv) {
     return (
       <div>
         <PageHead
           title={t('finance.invoice.notFound', 'Rechnung nicht gefunden')}
           actions={
-            <Button
-              variant="subtle"
-              onClick={() => go('/app/finance/invoices')}
-            >
+            <Button variant="subtle" onClick={() => go('/app/finance/invoices')}>
               <IconArrowLeft size={16} />
               {t('finance.backToInvoices', 'Zurück zu den Rechnungen')}
             </Button>
@@ -76,13 +71,13 @@ export function InvoiceDetailScreen() {
           to: formatDate(inv.periodEnd),
         })
       : inv.purpose === 'membership'
-      ? t('finance.monthlyMembershipFee', 'Mitgliederbeitrag {{month}}', {
-          month: new Date(inv.issued).toLocaleString(i18n.language, {
-            month: 'long',
-            year: 'numeric',
-          }),
-        })
-      : t('finance.invoice.defaultDescription', 'Rechnung'))
+        ? t('finance.monthlyMembershipFee', 'Mitgliederbeitrag {{month}}', {
+            month: new Date(inv.issued).toLocaleString(i18n.language, {
+              month: 'long',
+              year: 'numeric',
+            }),
+          })
+        : t('finance.invoice.defaultDescription', 'Rechnung'))
 
   return (
     <div>
@@ -90,10 +85,7 @@ export function InvoiceDetailScreen() {
         title={t('finance.invoice.pageTitle', 'Rechnung Nr. {{n}}', { n: inv.id })}
         actions={
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            <Button
-              variant="subtle"
-              onClick={() => go('/app/finance/invoices')}
-            >
+            <Button variant="subtle" onClick={() => go('/app/finance/invoices')}>
               <IconArrowLeft size={16} />
               {t('finance.allInvoices', 'Alle Rechnungen')}
             </Button>
@@ -115,10 +107,7 @@ export function InvoiceDetailScreen() {
               </Button>
             )}
             {!isPaid && (
-              <Button
-                variant="subtle"
-                onClick={() => sendReminderMutation.mutate(inv.id)}
-              >
+              <Button variant="subtle" onClick={() => sendReminderMutation.mutate(inv.id)}>
                 <IconBell size={16} />
                 {t('finance.sendReminder', 'Erinnerung senden')}
               </Button>
@@ -140,11 +129,7 @@ export function InvoiceDetailScreen() {
       <div className="detail-grid-end">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Paper withBorder>
-            <Group
-              p="md"
-              gap="sm"
-              style={{ borderBottom: '1px solid var(--hb-border)' }}
-            >
+            <Group p="md" gap="sm" style={{ borderBottom: '1px solid var(--hb-border)' }}>
               <Text fw={700} fz="md">
                 {t('finance.lineItems', 'Positionen')}
               </Text>
@@ -160,21 +145,34 @@ export function InvoiceDetailScreen() {
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
-                  <Table.Tr>
-                    <Table.Td
-                      data-label={t('common.description', 'Beschreibung')}
-                    >
-                      {lineItemDesc}
-                    </Table.Td>
-                    <Table.Td
-                      data-label={t('finance.amount', 'Betrag')}
-                      style={{ textAlign: 'right' }}
-                    >
-                      <span className="num" style={{ fontWeight: 600 }}>
-                        CHF {formatCHF(inv.amount)}
-                      </span>
-                    </Table.Td>
-                  </Table.Tr>
+                  {inv.lines?.map((line) => (
+                    <Table.Tr key={line.id}>
+                      <Table.Td data-label={t('common.description', 'Beschreibung')}>
+                        {formatDate(line.day)} · {line.text}
+                      </Table.Td>
+                      <Table.Td
+                        data-label={t('finance.amount', 'Betrag')}
+                        style={{ textAlign: 'right' }}
+                      >
+                        <span className="num">CHF {formatCHF(line.amount)}</span>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                  {!inv.lines?.length && (
+                    <Table.Tr>
+                      <Table.Td data-label={t('common.description', 'Beschreibung')}>
+                        {lineItemDesc}
+                      </Table.Td>
+                      <Table.Td
+                        data-label={t('finance.amount', 'Betrag')}
+                        style={{ textAlign: 'right' }}
+                      >
+                        <span className="num" style={{ fontWeight: 600 }}>
+                          CHF {formatCHF(inv.amount)}
+                        </span>
+                      </Table.Td>
+                    </Table.Tr>
+                  )}
                 </Table.Tbody>
               </Table>
             </div>
@@ -210,11 +208,7 @@ export function InvoiceDetailScreen() {
           </Paper>
 
           <Paper withBorder>
-            <Group
-              p="md"
-              gap="sm"
-              style={{ borderBottom: '1px solid var(--hb-border)' }}
-            >
+            <Group p="md" gap="sm" style={{ borderBottom: '1px solid var(--hb-border)' }}>
               <IconBell size={16} style={{ color: 'var(--hb-text-2)' }} />
               <Text fw={700} fz="md">
                 {t('finance.reminder.history', 'Versendete Erinnerungen')}
@@ -265,10 +259,7 @@ export function InvoiceDetailScreen() {
                           color: 'var(--hb-text)',
                         }}
                       >
-                        {t(
-                          'finance.reminder.emailSent',
-                          'Zahlungserinnerung per E-Mail gesendet',
-                        )}
+                        {t('finance.reminder.emailSent', 'Zahlungserinnerung per E-Mail gesendet')}
                       </div>
                       <div
                         style={{
@@ -295,10 +286,7 @@ export function InvoiceDetailScreen() {
           </Paper>
         </div>
 
-        <Paper
-          withBorder
-          style={{ padding: '20px 24px' }}
-        >
+        <Paper withBorder style={{ padding: '20px 24px' }}>
           <div style={{ marginBottom: 20 }}>
             <InvoicePill status={inv.status} />
           </div>

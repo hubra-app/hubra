@@ -47,6 +47,11 @@ const DE: Record<string, { name: string; description: string; settings?: Record<
         'Ersten Beitrag bei Eintritt während des Jahres kürzen',
         'Nach verbleibenden Monaten, der Eintrittsmonat zählt ganz',
       ],
+      collect_items: [
+        'Kleine Posten sammeln',
+        'Getränke, Buchungsgebühren und andere offene Posten kommen pro Mitglied jeden Monat oder jedes Quartal auf eine Rechnung; aus: jeder auf eine eigene',
+      ],
+      collect_min_amount: ['Kleinste Sammelrechnung (CHF)', 'Darunter warten die Posten auf das nächste Mal'],
       statement_enabled: ['Jeden Monat einen Kontoauszug senden', 'Am 1. für den Vormonat, als PDF'],
       statement_email: ['Kontoauszug an', ''],
       fee_basis_source: ['Jährliche Ausgaben aus', 'Grundlage der Prozent- und Formel-Stufen'],
@@ -134,6 +139,7 @@ const DE: Record<string, { name: string; description: string; settings?: Record<
 // Names of choice values, under modules.<code>.choices.<field>.<value>.
 const CHOICES: Record<string, Record<string, Record<string, string>>> = {
   finance: {
+    collect_items: { off: 'Aus', monthly: 'Monatlich', quarterly: 'Vierteljährlich' },
     fee_basis_source: {
       manual: 'Fester Betrag',
       recurring: 'Wiederkehrende Ausgaben',

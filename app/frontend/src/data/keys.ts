@@ -62,6 +62,7 @@ export const qk = {
   polls: ['polls'] as const,
   pollProxy: (id: string) => ['poll-proxy', id] as const,
   calendar: (start: string, end: string) => ['calendar', start, end] as const,
+  openItems: ['open-items'] as const,
   posts: {
     all: ['posts'] as const,
     one: (id: string | undefined) => ['post', id] as const,

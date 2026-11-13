@@ -12,6 +12,7 @@ from hubra.core.auth.helpers import get_current_member
 
 from hubra.core.permissions import member_is_admin, permission_required, require_member
 from marshmallow import ValidationError
+from pydantic import ValidationError as PydanticValidationError
 from hubra.core.errors import api_error, validation_error
 from hubra.core.extensions import db
 from hubra.core.schemas.finance import (
@@ -138,8 +139,12 @@ def fee_run_preview():
 @finance_bp.get("/invoices/<int:id>")
 @permission_required("invoices", "read", "View invoices")
 def get_invoice(id: int):
+    from hubra.api.finance import open_items
+
     invoice = InvoiceService.get(id)
-    return jsonify(_invoice_schema.dump(invoice)), 200
+    out = _invoice_schema.dump(invoice)
+    out["items"] = [open_items.dump(i) for i in open_items.items_of(invoice.id)]
+    return jsonify(out), 200
 
 
 @finance_bp.post("/invoices")
@@ -244,6 +249,85 @@ def list_invoice_reminders(id: int):
     InvoiceService.get(id)  # ensure invoice exists
     history = InvoiceReminderHistoryService.list_by_invoice(id)
     return jsonify(history), 200
+
+
+# ── Open items: one statement per member ─────────────────────────────────────
+
+
+@finance_bp.get("/open-items")
+@permission_required("invoices", "read", "View invoices")
+def list_open_items():
+    """What members owe that is not on an invoice yet, with the club's
+    collecting settings (``open_items.py``)."""
+    from hubra.api.finance import open_items
+
+    conf = open_items.settings()
+    member_id = request.args.get("member_id", type=int)
+    return jsonify(
+        {
+            "items": [open_items.dump(i) for i in open_items.unbilled(member_id)],
+            "cycle": conf["cycle"],
+            "min_amount": float(conf["min_amount"]),
+        }
+    ), 200
+
+
+@finance_bp.post("/open-items")
+@permission_required("invoices", "create", "Create invoices")
+def add_open_item():
+    """An item by hand: ``{member_id, amount, text, day?, category_id?}``."""
+    from hubra.api.finance import open_items
+    from hubra.api.finance.contracts import OpenItemIn
+
+    body = request.get_json(silent=True) or {}
+    try:
+        data = OpenItemIn.model_validate({**body, "source_ref": None, "actor_id": None})
+    except PydanticValidationError as exc:
+        return api_error("VALIDATION_ERROR", str(exc.errors()[0]["msg"]), 400)
+    actor = get_current_member().id
+    item = open_items.add(
+        member_id=data.member_id,
+        amount=data.amount,
+        text=data.text,
+        source="finance",
+        category_id=data.category_id,
+        day=data.day,
+        actor_id=actor,
+    )
+    db.session.commit()
+    return jsonify(open_items.dump(item)), 201
+
+
+@finance_bp.delete("/open-items/<int:item_id>")
+@permission_required("invoices", "delete", "Delete invoices")
+def delete_open_item(item_id: int):
+    from hubra.api.finance import open_items
+    from hubra.core.models.finance import OpenItem
+
+    item = db.session.get(OpenItem, item_id)
+    if item is None:
+        return api_error("NOT_FOUND", f"Open item {item_id} not found", 404)
+    open_items.remove(item)
+    db.session.commit()
+    return "", 204
+
+
+@finance_bp.post("/open-items/bill")
+@permission_required("invoices", "bulk_create", "Bulk create invoices")
+def bill_open_items():
+    """Bill now: one invoice per member with a positive total, without
+    waiting for the first of the month and below the minimum too."""
+    from hubra.api.finance import open_items
+
+    body = request.get_json(silent=True) or {}
+    member_id = body.get("member_id")
+    if member_id is not None and not isinstance(member_id, int):
+        return api_error("VALIDATION_ERROR", "member_id must be a number", 400)
+    invoices = open_items.bill(
+        member_id=member_id, force=True, actor_id=get_current_member().id
+    )
+    db.session.commit()
+    return jsonify({"invoices": [i.id for i in invoices]}), 200
 
 
 @finance_bp.get("/invoices/mine")

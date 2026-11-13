@@ -9,6 +9,9 @@
   invoice to a member or an outside party, booked like one made in the app.
 - ``finance.external_party.save`` (action): create an outside party, or keep
   one up to date.
+- ``finance.open_item.add`` / ``finance.open_item.remove`` (actions):
+  something a member owes, for their next collected invoice
+  (``open_items.py``), and taking it back before it is billed.
 
 Plugins that offer a source for the fee basis do it the other way round:
 they offer a query named ``<module>.fee_basis.<source>`` with the shapes
@@ -342,3 +345,70 @@ class FeeBasisOut(BaseModel):
     # Why there are no lines, as a code the page shows (NO_BUDGET: no
     # approved budget for the year); None when there is nothing to say.
     note: str | None = None
+
+
+# ── Open items: one statement per member ─────────────────────────────────────
+
+
+class OpenItemIn(BaseModel):
+    """Something a member owes. ``source_ref`` is the caller's own
+    reference (a tab id, a booking id): each is accepted once, and
+    ``finance.open_item.remove`` takes it back by it."""
+
+    member_id: int
+    amount: Decimal = Field(max_digits=12, decimal_places=2)
+    text: str = Field(min_length=1, max_length=200)
+    source_ref: str | None = Field(default=None, max_length=80)
+    category_id: int | None = None
+    day: date | None = None
+    actor_id: int | None = None
+
+
+class OpenItemOut(BaseModel):
+    id: int
+    # Set when it was billed at once (collecting off).
+    invoice_id: int | None = None
+
+
+class OpenItemRef(BaseModel):
+    source_ref: str = Field(min_length=1, max_length=80)
+
+
+class OpenItemRemoved(BaseModel):
+    removed: bool
+
+
+def add_open_item(ctx, data: OpenItemIn) -> OpenItemOut:
+    from hubra.api.finance import open_items
+
+    item = open_items.add(
+        member_id=data.member_id,
+        amount=data.amount,
+        text=data.text,
+        source=ctx.caller or "finance",
+        source_ref=data.source_ref,
+        category_id=data.category_id,
+        day=data.day,
+        actor_id=_actor_id(ctx, data.actor_id),
+    )
+    return OpenItemOut(id=item.id, invoice_id=item.invoice_id)
+
+
+def remove_open_item(ctx, data: OpenItemRef) -> OpenItemRemoved:
+    """False when there is none; Refused ALREADY_BILLED once it is billed."""
+    from sqlalchemy import select
+
+    from hubra.api.finance import open_items
+    from hubra.core.extensions import db
+    from hubra.core.models.finance import OpenItem
+
+    item = db.session.scalar(
+        select(OpenItem).where(
+            OpenItem.source == (ctx.caller or "finance"),
+            OpenItem.source_ref == data.source_ref,
+        )
+    )
+    if item is None:
+        return OpenItemRemoved(removed=False)
+    open_items.remove(item)
+    return OpenItemRemoved(removed=True)

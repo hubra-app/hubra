@@ -136,6 +136,8 @@ export async function deleteExternalParty(id: string): Promise<void> {
 
 interface BackendInvoice {
   id: number;
+  /** A collected invoice's open items (detail only). */
+  items?: { id: number; day: string; text: string; amount: number }[];
   member_id: number | null;
   member_name: string | null;
   external_party_id: number | null;
@@ -177,6 +179,7 @@ function adaptInvoice(b: BackendInvoice): Invoice {
     periodEnd: b.period_end ?? null,
     transactionId: b.transaction_id != null ? String(b.transaction_id) : null,
     createdAt: b.created_at ?? "",
+    lines: (b.items ?? []).map((i) => ({ id: String(i.id), day: i.day, text: i.text, amount: i.amount })),
   };
 }
 

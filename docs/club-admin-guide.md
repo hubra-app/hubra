@@ -142,6 +142,28 @@ nothing, and uses the same planning as the run itself.
 
 Right: `finance.invoices.bulk_create`.
 
+### One statement per member (Offene Posten)
+
+Small amounts a member owes (a drinks tab, a booking fee, a course
+material) don't need an invoice each. Plugins hand them over as **open
+items**, and the treasurer can add one by hand under Finanzen › Rechnungen
+› **Offene Posten** (a negative amount is a credit). Finanzen ›
+Einstellungen › **Kleine Posten sammeln** decides what happens with them:
+
+- **Aus** (default): each item goes on an invoice of its own straight away,
+  as before.
+- **Monatlich** or **Vierteljährlich**: on the 1st of each month (or of
+  January, April, July and October) each member's items go on one invoice,
+  with one line per item on the invoice page and the PDF. **Kleinste
+  Sammelrechnung** holds back a total below it until the next time.
+
+**Jetzt abrechnen** bills all open items at once, below the minimum too. An
+item can be deleted until it is on an invoice. Rights: listing
+`finance.invoices.read`, adding `finance.invoices.create`, deleting
+`finance.invoices.delete`, billing now `finance.invoices.bulk_create`.
+
+![Open items](screenshots/open-items/list.png)
+
 ## Events
 
 ### Calling an event off

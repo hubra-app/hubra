@@ -313,6 +313,8 @@ export interface Transaction {
 
 export interface Invoice {
   id: string;
+  /** A collected invoice's items (open items), on the detail page; empty otherwise. */
+  lines?: { id: string; day: string; text: string; amount: number }[];
   member: string;
   memberId: string | null;
   externalPartyId: string | null;
