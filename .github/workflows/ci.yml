@@ -23,7 +23,8 @@ on:
   push:
     branches: [main]
   # release-checks.yml runs this file with full: true, which runs every job
-  # whatever the change touched.
+  # whatever the change touched, except the ones release checks run their own
+  # way (browser-tests, backend-postgres).
   workflow_call:
     inputs:
       full:
@@ -279,10 +280,12 @@ jobs:
 
   # The same suite on Postgres (schema per club, search_path, advisory locks,
   # the outbox lease and the database limits only behave for real there).
-  # About a minute with -n auto. release-checks.yml runs it on Postgres 18 too.
+  # About a minute with -n auto. A full run (release-checks.yml) skips it:
+  # release checks run the suite on Postgres 18, the version production runs,
+  # so a release does not run it on Postgres twice.
   backend-postgres:
     needs: changes
-    if: needs.changes.outputs.backend == 'true'
+    if: "!inputs.full && needs.changes.outputs.backend == 'true'"
     runs-on: ubuntu-latest
     services:
       postgres:
