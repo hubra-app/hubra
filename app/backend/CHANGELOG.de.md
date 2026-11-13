@@ -11,6 +11,7 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ### Changed
 
+- **manage: eine Datei pro Seite und pro Einstellungsgruppe**: jede Seite von manage ist eine eigene Datei in `app/admin-frontend/src/nav/pages/`, und Einstellungsgruppen, die nur aus Feldern bestehen, sind eigene Dateien in `screens/platform/settings/`, statt je einer gemeinsamen Liste, damit Pull Requests, die Seiten oder Einstellungen ergänzen, nicht mehr kollidieren. In manage ändert sich nichts. docs/settings/structure.md. <!-- for: staff -->
 - **Texte in einer Datei pro Bereich**: die eingebauten Texte der Vereins-App liegen in `app/frontend/src/locales/<Sprache>/<Bereich>.json` und die mitgelieferten Seed-Texte in `seed_data/translations/<Locale>/<Bereich>.json` statt in einer grossen Datei pro Sprache, damit Pull Requests, die Texte in verschiedenen Bereichen ergänzen, nicht mehr kollidieren. In den Apps ändert sich nichts. <!-- for: staff -->
 
 ## [0.2.6] - 2026-11-13
