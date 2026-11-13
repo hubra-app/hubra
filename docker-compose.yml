@@ -185,7 +185,7 @@ services:
     <<: *backend-app
     restart: "no"
     command: >
-      python -m hubra.core.startup_lock sh -c "flask db upgrade && flask sync-tenant-schemas && flask sync-permissions && flask seed --skip-migrate && flask ensure-superadmins && flask plugins sync && flask modules seal-secrets"
+      python -m hubra.core.startup_lock sh -c "flask db upgrade heads && flask sync-tenant-schemas && flask sync-permissions && flask seed --skip-migrate && flask ensure-superadmins && flask plugins sync && flask modules seal-secrets"
     depends_on:
       postgres:
         condition: service_started
