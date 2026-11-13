@@ -47,6 +47,9 @@ class InvoiceDeleted(_Payload):
 
 class EventRef(_Payload):
     event_id: int
+    # ``event.published``: the channels the author picked (None: all). Core
+    # only calls the modules picked.
+    channels: list[str] | None = None
 
 
 class EventChanged(_Payload):

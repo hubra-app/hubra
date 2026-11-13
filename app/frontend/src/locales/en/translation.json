@@ -993,6 +993,10 @@
       "trainerNoteHint": "Only those who take attendance see it.",
       "guideUrl": "Link to a guide",
       "save": "Save notes"
+    },
+    "channels": {
+      "hint": "The event is always in the calendar. Each channel also follows its own settings.",
+      "none": "No notification: only in the calendar."
     }
   },
   "finance": {

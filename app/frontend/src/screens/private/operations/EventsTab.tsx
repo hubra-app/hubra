@@ -68,6 +68,8 @@ import { RecurrenceFields } from './RecurrenceFields'
 import { GroupField } from './ContentGroupFields'
 import { useContentGroups } from './contentGroups'
 import { defaultRepeat, type RepeatState } from './recurrence'
+import { PostChannelsField } from './PostChannelsField'
+import type { ChannelPick } from './postChannels'
 
 /* ── Events ─────────────────────────────────── */
 const eventSchema = z.object({
@@ -197,6 +199,8 @@ export function EventsTab() {
   const [mineOnly, setMineOnly] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<ClubEvent | null>(null)
+  // Where a new event is announced (null: every channel).
+  const [channels, setChannels] = useState<ChannelPick>(null)
   const [deleteTarget, setDeleteTarget] = useState<ClubEvent | null>(null)
   const form = useForm<EventForm>({
     validate: zod4Resolver(eventSchema),
@@ -280,6 +284,7 @@ export function EventsTab() {
     })
     setRepeat(defaultRepeat(new Date().toISOString().slice(0, 10)))
     setFromTemplate(null)
+    setChannels(null)
     setAddOpen(true)
   }
   const openFromTemplate = (tpl: EventTemplate) => {
@@ -391,6 +396,7 @@ export function EventsTab() {
               skipDates: repeat.skipDates,
             }
           : undefined,
+        channels,
       })
       if (repeat.on) {
         // The other dates of the series come with the list.
@@ -706,6 +712,10 @@ export function EventsTab() {
           )}
           {...form.getInputProps('federationShared', { type: 'checkbox' })}
         />
+      )}
+      {/* An event is out once it is saved: the channels only when it is new. */}
+      {!editTarget && (
+        <PostChannelsField kind="events" value={channels} onChange={setChannels} />
       )}
       {(!editTarget || followingScope) && (
         <>

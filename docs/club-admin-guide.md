@@ -166,6 +166,17 @@ item can be deleted until it is on an invoice. Rights: listing
 
 ## Events
 
+### Where a new event is announced
+
+**Senden an** in the form of a new event lists where it goes besides the
+calendar, as for posts: **Mitteilung in Hubra** (the bell and push) and
+every module on in the club that announces events, such as Discord and
+Messengers. All are ticked; untick one to leave it out, or untick all to
+put the event only in the calendar without telling anyone. Each channel
+still follows its own settings. An event is out once it is saved, so the
+choice is only in the form of a new one. Webhooks always get
+`event.published`, with `channels` in the payload (`null` for all).
+
 ### Calling an event off
 
 When an event can't take place (rain, the pitch is closed, too few sign-ups),

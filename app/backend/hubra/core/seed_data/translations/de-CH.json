@@ -4581,5 +4581,7 @@
   "subscription.addonOnBodyFree": "{{price}}. Das Modul wird eingeschaltet. {{free}}",
   "subscription.addonOffBodyFree": "Das Modul wird ausgeschaltet, seine Daten bleiben.",
   "subscription.addonsHintFree": "Module mit eigenem Preis. Dazubuchen schaltet das Modul ein. {{free}}",
-  "subscription.sponsoredStripeEnds": "Eure Zahlung über Stripe endet deshalb am {{date}}; danach wird nichts mehr belastet."
+  "subscription.sponsoredStripeEnds": "Eure Zahlung über Stripe endet deshalb am {{date}}; danach wird nichts mehr belastet.",
+  "events.channels.hint": "Der Anlass steht immer im Kalender. Jeder Kanal folgt zusätzlich seinen eigenen Einstellungen.",
+  "events.channels.none": "Ohne Benachrichtigung: nur im Kalender."
 }
