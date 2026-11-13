@@ -9,6 +9,8 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-11-13
+
 ### Added
 
 - **Buchungs-Contract ohne Kategorie, und prüft das Mitglied**: `finance.transaction.create`: `category_id` ist jetzt freiwillig (die Kasse zahlt Spesen ohne Kategorie aus), und eine unbekannte oder archivierte `member_id` wird abgelehnt statt gebucht. docs/contracts.md.

@@ -7,6 +7,8 @@ section and position, or the apps show that version in English.
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-11-13
+
 ### Added
 
 - **Booking contract without a category, and checks the member**: `finance.transaction.create`: `category_id` is optional now (Kasse pays expense claims that have none), and an unknown or archived `member_id` is refused instead of booked. docs/contracts.md.
