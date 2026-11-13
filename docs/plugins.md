@@ -90,7 +90,8 @@ A plugin can add a tab to a screen of the club app (`tabs` in
 | Screen | Where | Notes |
 | --- | --- | --- |
 | `finance` | Finanzen, `/app/finance/<id>` | `group` puts it under a page tab: `overview`, `invoices`, `bookings`, `planning`, `annual` or `setup` |
-| `events` | Anlässe, `/app/operations/events/<id>` | after the event list, before Anwesenheit; Booking's Vor Ort lives here |
+| `events` | Anlässe, `/app/operations/events/<id>` | after the event list, before Anwesenheit |
+| `calendar` | Kalender, `/app/calendar/<id>` | after **Alles**; a module's full calendar with its actions (Booking's Vor Ort and Buchungen). `/app/operations/events/<id>` forwards to a calendar tab of the same id |
 
 ## Route paths
 

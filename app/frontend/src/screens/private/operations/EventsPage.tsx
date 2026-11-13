@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@mantine/core'
 import { IconSettings } from '@tabler/icons-react'
 import { useT } from '@/locales/i18n'
@@ -31,6 +31,8 @@ export function EventsPage() {
   // Group leaders take the roll of their own group's events.
   const rollScope = useContentGroups('events.events.add_attendee')
   const pluginTabs = usePluginTabs('events')
+  // Calendars moved to Kalender (Vor Ort among them); old links follow them.
+  const calendarTabs = usePluginTabs('calendar')
 
   const seesAttendance = rollScope.canAny
 
@@ -72,6 +74,9 @@ export function EventsPage() {
 
   // /app/operations/events/<id>: one event on its own page.
   if (/^\d+$/.test(rest)) return <EventDetail id={rest} />
+  if (!parts.some((p) => p.id === rest) && calendarTabs.some((ct) => ct.id === rest)) {
+    return <Navigate to={`/app/calendar/${rest}`} replace />
+  }
 
   return (
     <div>

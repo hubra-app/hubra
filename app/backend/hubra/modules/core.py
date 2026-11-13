@@ -51,6 +51,11 @@ module = Module(
             "/api/v1/app/dashboard",
         ),
         Blueprint(
+            "hubra.api.calendar.routes",
+            "calendar_bp",
+            "/api/v1/app/calendar",
+        ),
+        Blueprint(
             "hubra.api.notifications.routes",
             "notifications_bp",
             "/api/v1/app/notifications",
@@ -164,6 +169,13 @@ module = Module(
     ),
     nav=(
         NavItem("/app/dashboard", "shell.nav.dashboard", "dashboard", order=0),
+        NavItem(
+            "/app/calendar",
+            "shell.nav.calendar",
+            "calendar",
+            section="activities",
+            order=5,
+        ),
         NavItem(
             "/app/settings",
             "shell.nav.settings",

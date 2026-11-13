@@ -980,15 +980,7 @@
       "plusGuests_other": "+{{count}} Gäste"
     },
     "view": {
-      "list": "Liste",
-      "month": "Monat"
-    },
-    "month": {
-      "prev": "Vorheriger Monat",
-      "next": "Nächster Monat",
-      "today": "Heute",
-      "more": "+{{count}} weitere",
-      "none": "Keine Anlässe an diesem Tag."
+      "calendar": "Kalender"
     },
     "notes": {
       "guide": "Anleitung öffnen",
@@ -2756,7 +2748,8 @@
       "recurring": "Wiederkehrend",
       "feeBasis": "Beitragsgrundlage",
       "annualAccounts": "Jahresrechnung",
-      "federation": "Verband"
+      "federation": "Verband",
+      "calendar": "Kalender"
     },
     "noPermission": "Du hast keine Berechtigung für diese Seite.",
     "notif": {
@@ -4956,5 +4949,23 @@
     "code": "Code aus der Authenticator-App",
     "recovery": "Wiederherstellungscode",
     "withPassword": "Mit Passwort bestätigen"
+  },
+  "calendar": {
+    "month": "Monat",
+    "week": "Woche",
+    "today": "Heute",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "more": "+{{count}} weitere",
+    "empty": "In diesem Zeitraum steht nichts im Kalender.",
+    "failed": "Nicht alles geladen: {{modules}} antwortet gerade nicht.",
+    "kind": {
+      "event": "Anlässe",
+      "booking": "Buchungen",
+      "fixture": "Spiele",
+      "duty": "Ämtli",
+      "onsite": "Vor Ort"
+    },
+    "all": "Alles"
   }
 }

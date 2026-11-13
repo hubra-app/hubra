@@ -181,9 +181,7 @@ def on_club_event(tenant_id, event_id=None, **_):
     CALLS.append(("club_event", event_id))
 
 
-def test_an_events_own_event_id_wins_over_the_delivery_id(
-    wired, db, monkeypatch
-):
+def test_an_events_own_event_id_wins_over_the_delivery_id(wired, db, monkeypatch):
     """Club events carry ``event_id`` (the ClubEvent): the handler must get
     that one, not the outbox's delivery id (or the call fails twice over)."""
     monkeypatch.setitem(
@@ -477,6 +475,34 @@ def test_limits_contract_names_and_code(tmp_path):
             {},
             set(),
         )
+
+
+def test_limits_shared_shapes_are_allowed(tmp_path):
+    """The calendar and privacy contracts use Hubra's input and output
+    models; the handler must still be the plugin's own."""
+    from hubra.core.contracts.calendar import calendar_contract
+    from hubra.core.contracts.privacy import privacy_contracts
+
+    ok = Module(
+        code="demo",
+        name="D",
+        provides=(
+            calendar_contract("demo", "hubra_demo.calendar:items"),
+            *privacy_contracts(
+                "demo",
+                export="hubra_demo.privacy:export",
+                erase="hubra_demo.privacy:erase",
+            ),
+        ),
+    )
+    assert check(ok, _spec(tmp_path), {}, set()) is not None
+    bad = Module(
+        code="demo",
+        name="D",
+        provides=(calendar_contract("demo", "hubra.core.contracts.calendar:items"),),
+    )
+    with pytest.raises(LimitError, match="outside"):
+        check(bad, _spec(tmp_path), {}, set())
 
 
 def test_limits_contracts_need_the_area(tmp_path):

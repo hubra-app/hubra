@@ -980,15 +980,7 @@
       "plusGuests_other": "+{{count}} guests"
     },
     "view": {
-      "list": "List",
-      "month": "Month"
-    },
-    "month": {
-      "prev": "Previous month",
-      "next": "Next month",
-      "today": "Today",
-      "more": "+{{count}} more",
-      "none": "No events on this day."
+      "calendar": "Calendar"
     },
     "notes": {
       "guide": "Open guide",
@@ -2756,7 +2748,8 @@
       "recurring": "Recurring",
       "feeBasis": "Fee basis",
       "annualAccounts": "Annual accounts",
-      "federation": "Association"
+      "federation": "Association",
+      "calendar": "Calendar"
     },
     "noPermission": "You don't have permission to view this page.",
     "notif": {
@@ -4956,5 +4949,23 @@
     "code": "Code from the authenticator app",
     "recovery": "Recovery code",
     "withPassword": "Confirm with password"
+  },
+  "calendar": {
+    "month": "Month",
+    "week": "Week",
+    "today": "Today",
+    "previous": "Previous",
+    "next": "Next",
+    "more": "+{{count}} more",
+    "empty": "Nothing in the calendar for this period.",
+    "failed": "Not everything loaded: {{modules}} is not answering right now.",
+    "kind": {
+      "event": "Events",
+      "booking": "Bookings",
+      "fixture": "Fixtures",
+      "duty": "Duties",
+      "onsite": "On site"
+    },
+    "all": "All"
   }
 }
