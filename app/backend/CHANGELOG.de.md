@@ -15,6 +15,10 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 - **Migrationen aus parallelen Pull Requests brauchen keine Merge-Migration mehr**: `flask db upgrade` (und das Deployment, `flask seed` und neue Vereine) wendet jeden Alembic-Head an, und `flask db migrate` setzt eine neue Migration auf alle. Ein Test schlägt fehl, wenn zwei nicht zusammengeführte Heads dieselbe Tabelle ändern. Betrieb: Compose ruft `flask db upgrade heads` auf; ein Deployment, das selbst `flask db upgrade head` aufruft, muss `heads` verwenden. docs/migrations.md. <!-- for: staff -->
 - **Texte in einer Datei pro Bereich**: die eingebauten Texte der Vereins-App liegen in `app/frontend/src/locales/<Sprache>/<Bereich>.json` und die mitgelieferten Seed-Texte in `seed_data/translations/<Locale>/<Bereich>.json` statt in einer grossen Datei pro Sprache, damit Pull Requests, die Texte in verschiedenen Bereichen ergänzen, nicht mehr kollidieren. In den Apps ändert sich nichts. <!-- for: staff -->
 
+### Fixed
+
+- **Eine Anmeldung hält nicht mehr ewig**: eine Anmeldung endet jetzt eine feste Zeit nach der Anmeldung selbst: 30 Tage mit «Angemeldet bleiben», 24 Stunden ohne, auch wenn man Hubra laufend nutzt. Vorher begann jede Token-Erneuerung neue 30 Tage, ein Browser, der Hubra mindestens einmal im Monat öffnete, musste sich also nie mehr anmelden, und das Öffnen eines Vereins oder von manage setzte 30-Tage-Cookies, auch ohne «Angemeldet bleiben». Betrieb: die beiden Dauern stehen in `REFRESH_TOKEN_DAYS` (Standard 30) und im neuen `SHORT_SESSION_HOURS` (Standard 24). Browser, die vor diesem Release angemeldet waren, bekommen noch einmal die volle Dauer. docs/configuration.md.
+
 ## [0.2.6] - 2026-11-13
 
 ### Added

@@ -17,13 +17,11 @@ from argon2.exceptions import VerifyMismatchError as _VerifyMismatchError
 from flask import Blueprint, current_app, jsonify, make_response, request
 from flask_jwt_extended import (
     create_access_token,
-    create_refresh_token,
     current_user,
     get_jwt,
     get_jwt_identity,
     jwt_required,
     set_access_cookies,
-    set_refresh_cookies,
     unset_jwt_cookies,
 )
 from sqlalchemy import select
@@ -39,7 +37,14 @@ from hubra.core.auth.services import (
     _extract_platform,
 )
 from hubra.core.services.email_verification import looks_like_email
-from hubra.core.auth import account_token, known_devices, mfa, passkeys, session_service
+from hubra.core.auth import (
+    account_token,
+    known_devices,
+    lifetime,
+    mfa,
+    passkeys,
+    session_service,
+)
 from hubra.core.models.passkey import Passkey
 from hubra.core.permissions import (
     require_password_changed,
@@ -378,7 +383,7 @@ def _complete_login(
         additional_claims = {
             "user_id": user.id,
             "account_sid": _record_account_login(user),
-            "keep": keep_signed_in,
+            **lifetime.start_claims(keep_signed_in),
         }
         device_token, new_device = _note_device(user, _time_zone())
         if new_device:
@@ -389,10 +394,6 @@ def _complete_login(
             identity=f"user:{user.id}",
             additional_claims=additional_claims,
         )
-        refresh_token = create_refresh_token(
-            identity=f"user:{user.id}",
-            additional_claims=additional_claims,
-        )
         if tenants:
             body = {"requiresTenantSelection": True, "tenants": tenants}
         else:
@@ -400,15 +401,14 @@ def _complete_login(
         body["user"] = {"email": user.email, "name": user.name}
         response = make_response(jsonify(body), 200)
         set_access_cookies(response, access_token)
-        refresh_max_age = 30 * 24 * 3600 if keep_signed_in else 24 * 3600
-        set_refresh_cookies(response, refresh_token, max_age=refresh_max_age)
+        lifetime.set_refresh(response, f"user:{user.id}", additional_claims)
         _set_remembered_email_cookie(response, user.email)
         _set_theme_cookie(response, user.theme)
         if device_token is not None:
             known_devices.set_cookie(response, device_token)
         # The account token the manager portal runs on: /auth/switch-tenant
         # replaces the standard cookie with a club token, this one it keeps.
-        account_token.issue(response, user, additional_claims["account_sid"])
+        account_token.issue(response, user, additional_claims)
         return response
 
     # The same gate as /auth/switch-tenant: no club opens before the address
@@ -455,7 +455,7 @@ def _complete_login(
     session = db.session.get(Session, session_id)
     tenant = current_tenant()
     additional_claims = {"sid": session_id} if session else {}
-    additional_claims["keep"] = keep_signed_in
+    additional_claims.update(lifetime.start_claims(keep_signed_in))
     if user:
         additional_claims["user_id"] = user.id
     if account_sid is not None:
@@ -465,10 +465,6 @@ def _complete_login(
         additional_claims["tenant_slug"] = tenant.slug
 
     access_token = create_access_token(
-        identity=str(member.id),
-        additional_claims=additional_claims,
-    )
-    refresh_token = create_refresh_token(
         identity=str(member.id),
         additional_claims=additional_claims,
     )
@@ -482,12 +478,13 @@ def _complete_login(
         200,
     )
     set_access_cookies(response, access_token)
-    refresh_max_age = 30 * 24 * 3600 if keep_signed_in else 24 * 3600
-    set_refresh_cookies(response, refresh_token, max_age=refresh_max_age)
+    lifetime.set_refresh(response, str(member.id), additional_claims)
     _set_remembered_email_cookie(response, user.email if user else member.email)
     if user is not None:
         _set_theme_cookie(response, user.theme)
-        account_token.issue(response, user, account_sid)
+        account_token.issue(
+            response, user, {**additional_claims, "account_sid": account_sid}
+        )
     return response
 
 
@@ -539,15 +536,11 @@ def signup():
     additional_claims = {
         "user_id": user.id,
         "account_sid": _record_account_login(user),
-        "keep": keep_signed_in,
+        **lifetime.start_claims(keep_signed_in),
     }
     device_token, _ = _note_device(user)  # the account's first device
     db.session.commit()
     access_token = create_access_token(
-        identity=f"user:{user.id}",
-        additional_claims=additional_claims,
-    )
-    refresh_token = create_refresh_token(
         identity=f"user:{user.id}",
         additional_claims=additional_claims,
     )
@@ -559,12 +552,11 @@ def signup():
         201,
     )
     set_access_cookies(response, access_token)
-    refresh_max_age = 30 * 24 * 3600 if keep_signed_in else 24 * 3600
-    set_refresh_cookies(response, refresh_token, max_age=refresh_max_age)
+    lifetime.set_refresh(response, f"user:{user.id}", additional_claims)
     _set_remembered_email_cookie(response, user.email)
     if user is not None:
         _set_theme_cookie(response, user.theme)
-        account_token.issue(response, user, additional_claims["account_sid"])
+        account_token.issue(response, user, additional_claims)
     if device_token is not None:
         known_devices.set_cookie(response, device_token)
     return response
@@ -589,6 +581,8 @@ _SESSION_CLAIMS = (
     # Whether "keep me signed in" was ticked: rotated refresh cookies keep
     # the lifetime the sign-in chose.
     "keep",
+    # When the sign-in happened: its lifetime counts from here.
+    "signed_in_at",
 )
 
 
@@ -602,14 +596,11 @@ def _renew_this_session(response) -> None:
         session_service.touch_account_session(int(kept["account_sid"]))
         db.session.commit()
     identity = get_jwt_identity()
+    lifetime.carry(claims, kept)
     set_access_cookies(
         response, create_access_token(identity=identity, additional_claims=kept)
     )
-    set_refresh_cookies(
-        response,
-        create_refresh_token(identity=identity, additional_claims=kept),
-        max_age=30 * 24 * 3600,
-    )
+    lifetime.set_refresh(response, identity, kept)
 
 
 @auth_bp.post("/refresh")
@@ -643,6 +634,13 @@ def refresh():
     # without user_id a superadmin loses the manager portal, and without
     # tenant_slug a member token is refused in its own club.
     refresh_claims = get_jwt()
+    if lifetime.seconds_left(refresh_claims) <= 0:
+        # The sign-in reached its lifetime: sign in again.
+        response = make_response(
+            jsonify({"error": "UNAUTHORIZED", "message": "Sign-in expired"}), 401
+        )
+        unset_jwt_cookies(response)
+        return response
     sid = refresh_claims.get("sid")
 
     if sid is not None:
@@ -665,6 +663,7 @@ def refresh():
         for key in _SESSION_CLAIMS
         if refresh_claims.get(key) is not None
     }
+    lifetime.carry(refresh_claims, additional_claims)
     access_token = create_access_token(
         identity=identity,
         additional_claims=additional_claims,
@@ -682,14 +681,7 @@ def refresh():
 
     response = make_response(jsonify(ok=True), 200)
     set_access_cookies(response, access_token)
-    refresh_max_age = (
-        24 * 3600 if refresh_claims.get("keep") is False else 30 * 24 * 3600
-    )
-    set_refresh_cookies(
-        response,
-        create_refresh_token(identity=identity, additional_claims=additional_claims),
-        max_age=refresh_max_age,
-    )
+    lifetime.set_refresh(response, identity, additional_claims)
     return response
 
 
@@ -850,14 +842,10 @@ def switch_tenant():
         additional_claims["sid"] = sid
     if claims.get("account_sid") is not None:
         additional_claims["account_sid"] = claims["account_sid"]
-    if claims.get("keep") is not None:
-        additional_claims["keep"] = claims["keep"]
+    # A club switch keeps the sign-in's lifetime, it does not restart it.
+    lifetime.carry(claims, additional_claims)
 
     access_token = create_access_token(
-        identity=str(member.id),
-        additional_claims=additional_claims,
-    )
-    refresh_token = create_refresh_token(
         identity=str(member.id),
         additional_claims=additional_claims,
     )
@@ -870,7 +858,7 @@ def switch_tenant():
         200,
     )
     set_access_cookies(response, access_token)
-    set_refresh_cookies(response, refresh_token, max_age=30 * 24 * 3600)
+    lifetime.set_refresh(response, str(member.id), additional_claims)
     return response
 
 

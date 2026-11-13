@@ -9,17 +9,15 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from flask import current_app, g, jsonify, make_response, request
+from flask import g, jsonify, make_response
 from flask_jwt_extended import (
     create_access_token,
-    create_refresh_token,
     set_access_cookies,
-    set_refresh_cookies,
     unset_jwt_cookies,
 )
 from sqlalchemy import select
 
-from hubra.core.auth import mfa, session_service
+from hubra.core.auth import lifetime, mfa, session_service
 from hubra.core.extensions import db
 from hubra.core.models.member import Member
 from hubra.core.models.token import TokenBlocklist
@@ -116,7 +114,7 @@ def register_jwt_callbacks(jwt_manager) -> None:
             return None
         # The club turned on "two-factor required" after this sign-in.
         if mfa.club_blocks(tenant, member, member.user):
-            g.mfa_required_by_club = (member.user_id, jwt_data.get("account_sid"))
+            g.mfa_required_by_club = (member.user_id, jwt_data)
             return None
         return member
 
@@ -143,7 +141,8 @@ def club_requires_mfa(response):
     blocked = g.get("mfa_required_by_club")
     if response.status_code != 401 or not blocked:
         return response
-    user_id, account_sid = blocked
+    user_id, jwt_data = blocked
+    account_sid = jwt_data.get("account_sid")
     refused = make_response(
         jsonify(
             {
@@ -157,29 +156,14 @@ def club_requires_mfa(response):
     claims = {"user_id": user_id}
     if account_sid is not None:
         claims["account_sid"] = account_sid
+    # The swapped account session ends when the club one would have.
+    lifetime.carry(jwt_data, claims)
     set_access_cookies(
         refused,
         create_access_token(identity=f"user:{user_id}", additional_claims=claims),
     )
-    set_refresh_cookies(
-        refused,
-        create_refresh_token(identity=f"user:{user_id}", additional_claims=claims),
-        max_age=_refresh_left(),
-    )
+    lifetime.set_refresh(refused, f"user:{user_id}", claims)
     return refused
-
-
-def _refresh_left() -> int:
-    """Seconds the browser's refresh cookie still has, so the swapped
-    account session ends when the club one would have (one day if unknown)."""
-    from flask_jwt_extended import decode_token
-
-    name = current_app.config.get("JWT_REFRESH_COOKIE_NAME", "refresh_token_cookie")
-    try:
-        exp = int(decode_token(request.cookies.get(name, ""))["exp"])
-    except Exception:
-        return 24 * 3600
-    return max(60, exp - int(datetime.now(timezone.utc).timestamp()))
 
 
 def token_still_valid(user: User | None, jwt_data: dict) -> bool:
