@@ -138,6 +138,9 @@ class BaseConfig:
     JWT_REFRESH_TOKEN_EXPIRES: timedelta = timedelta(
         days=int(os.environ.get("REFRESH_TOKEN_DAYS", 30))
     )
+    # A sign-in without "keep me signed in" ends after this many hours.
+    # Both lifetimes count from the sign-in, not from the last visit.
+    SHORT_SESSION_HOURS: int = int(os.environ.get("SHORT_SESSION_HOURS", 24))
     JWT_TOKEN_LOCATION: list = ["cookies"]
     JWT_COOKIE_SECURE: bool = (
         os.environ.get("JWT_COOKIE_SECURE", "").lower() in ("true", "1", "yes")

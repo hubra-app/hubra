@@ -20,6 +20,7 @@ mail variables blank.
 | Redis       | `REDIS_URL`, `RATE_LIMIT_STORAGE`                                          | Always (Celery broker + rate limiting)                   |
 | CORS        | `CORS_ORIGINS`                                                             | Always (comma-separated allowlist, no wildcards)         |
 | JWT cookies | `JWT_COOKIE_DOMAIN`, `JWT_COOKIE_SAMESITE`, `JWT_COOKIE_SECURE`            | Production (cross-subdomain auth)                        |
+| Sign-in lifetime | `REFRESH_TOKEN_DAYS` (30, "Keep me signed in"), `SHORT_SESSION_HOURS` (24, without it), `ACCESS_TOKEN_MINUTES` (15) | Optional; both lifetimes count from the sign-in, not from the last visit |
 | Frontend    | `FRONTEND_BASE_URL`                                                        | Production (email link generation — points at the SPA)   |
 | API origin  | `API_PUBLIC_URL`                                                           | Production with outside services (callback URLs they call, e.g. `https://api.hubra.club`) |
 | Manage      | `MANAGE_BASE_URL`                                                          | Optional fallback for the platform setting `alerts.manage_url` (the "Open alerts" button in alert mails) |

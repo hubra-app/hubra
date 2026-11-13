@@ -26,6 +26,7 @@ from flask_jwt_extended import (
 from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 
+from hubra.core.auth import lifetime
 from hubra.core.auth.account_token import require_step_up
 from hubra.core.permissions import (
     CLUB_LIMITED_KEYS,
@@ -980,11 +981,10 @@ def stop_impersonation():
     additional_claims = {"user_id": admin_user.id}
     restore_identity = f"user:{admin_user.id}"
 
+    # The impersonation token does not carry the admin's own sign-in, so
+    # the restored session starts a new one (as before, now capped).
+    additional_claims.update(lifetime.start_claims(True))
     access_token = create_access_token(
-        identity=restore_identity,
-        additional_claims=additional_claims,
-    )
-    refresh_token = create_refresh_token(
         identity=restore_identity,
         additional_claims=additional_claims,
     )
@@ -1020,7 +1020,7 @@ def stop_impersonation():
         200,
     )
     set_access_cookies(response, access_token)
-    set_refresh_cookies(response, refresh_token, max_age=30 * 24 * 3600)
+    lifetime.set_refresh(response, restore_identity, additional_claims)
     return response
 
 

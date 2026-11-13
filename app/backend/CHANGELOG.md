@@ -13,6 +13,10 @@ section and position, or the apps show that version in English.
 - **Migrations from parallel pull requests no longer need a merge migration**: `flask db upgrade` (and the deploy, `flask seed` and new clubs) applies every Alembic head, and `flask db migrate` bases a new migration on all of them. A test fails when two unjoined heads change the same table. Operators: Compose runs `flask db upgrade heads`; a deploy that calls `flask db upgrade head` itself must say `heads`. docs/migrations.md. <!-- for: staff -->
 - **Texts in one file per feature**: the club app's built-in texts are in `app/frontend/src/locales/<language>/<feature>.json` and the shipped seed texts in `seed_data/translations/<locale>/<feature>.json`, instead of one big file per language, so pull requests that add texts to different features no longer clash. Nothing changes in the apps. <!-- for: staff -->
 
+### Fixed
+
+- **Signing in no longer lasts for ever**: a sign-in now ends a fixed time after the sign-in itself: 30 days with "Keep me signed in", 24 hours without, even while the person keeps using Hubra. Before, every token refresh started a new 30 days, so a browser that opened Hubra at least once a month never had to sign in again, and opening a club or manage gave 30-day cookies even with "Keep me signed in" left off. Operators set the two lifetimes with `REFRESH_TOKEN_DAYS` (default 30) and the new `SHORT_SESSION_HOURS` (default 24). Browsers signed in before this release get one more full lifetime. docs/configuration.md.
+
 ## [0.2.6] - 2026-11-13
 
 ### Added

@@ -28,6 +28,7 @@ from datetime import datetime, timedelta, timezone
 from flask import current_app, g, request
 from flask_jwt_extended import create_access_token, decode_token
 
+from hubra.core.auth import lifetime
 from hubra.core.errors import raise_error
 from hubra.core.extensions import db
 from hubra.core.models.user import User
@@ -35,24 +36,30 @@ from hubra.core.models.user import User
 ACCOUNT_COOKIE = "account_token"
 ACCOUNT_CSRF_COOKIE = "csrf_account_token"
 ACCOUNT_CSRF_HEADER = "X-Account-CSRF"
-_LIFETIME = timedelta(days=30)
 
 
-def issue(response, user: User, account_sid: int | None) -> None:
-    """Set the account token (and its CSRF twin) on *response*."""
+def issue(response, user: User, sign_in: dict) -> None:
+    """Set the account token (and its CSRF twin) on *response*.
+
+    *sign_in* holds the sign-in's claims (``account_sid``, ``keep``,
+    ``signed_in_at``): the token ends when that sign-in does, so "keep me
+    signed in" left off ends manage and SSO as well, not only the club app.
+    """
     claims: dict = {"user_id": user.id, "acct": True}
-    if account_sid is not None:
-        claims["account_sid"] = account_sid
+    if sign_in.get("account_sid") is not None:
+        claims["account_sid"] = sign_in["account_sid"]
+    lifetime.carry(sign_in, claims)
+    left = timedelta(seconds=max(60, lifetime.seconds_left(claims)))
     token = create_access_token(
         identity=f"user:{user.id}",
         additional_claims=claims,
-        expires_delta=_LIFETIME,
+        expires_delta=left,
     )
     csrf = decode_token(token).get("csrf") or ""
     secure = bool(current_app.config.get("JWT_COOKIE_SECURE", False))
     domain = current_app.config.get("JWT_COOKIE_DOMAIN") or None
     samesite = current_app.config.get("JWT_COOKIE_SAMESITE", "Lax")
-    max_age = int(_LIFETIME.total_seconds())
+    max_age = int(left.total_seconds())
     response.set_cookie(
         ACCOUNT_COOKIE,
         value=token,
