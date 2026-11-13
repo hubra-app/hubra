@@ -64,8 +64,8 @@ The repository layout is described in the [README](README.md#project-structure).
    `feat(club-app): page tabs wrap on phones`. Write the subject so it says
    what changes for the person using Hubra.
 4. **Database changes** need an Alembic migration in
-   `app/backend/migrations/` (`flask db migrate`). Check that there is only
-   one head after merging `main`.
+   `app/backend/migrations/` (`flask db migrate`). Several heads after
+   merging `main` are fine; see [docs/migrations.md](docs/migrations.md).
 5. **Changelog.** Anything a user or operator would notice gets an entry
    under `## [Unreleased]` in `app/backend/CHANGELOG.md` **and** the same
    entry, in German, in the same place in `app/backend/CHANGELOG.de.md`.

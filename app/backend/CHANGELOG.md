@@ -7,6 +7,10 @@ section and position, or the apps show that version in English.
 
 ## [Unreleased]
 
+### Changed
+
+- **Migrations from parallel pull requests no longer need a merge migration**: `flask db upgrade` (and the deploy, `flask seed` and new clubs) applies every Alembic head, and `flask db migrate` bases a new migration on all of them. A test fails when two unjoined heads change the same table. Operators: Compose runs `flask db upgrade heads`; a deploy that calls `flask db upgrade head` itself must say `heads`. docs/migrations.md. <!-- for: staff -->
+
 ## [0.2.6] - 2026-11-13
 
 ### Added

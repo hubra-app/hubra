@@ -9,6 +9,10 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ## [Unreleased]
 
+### Changed
+
+- **Migrationen aus parallelen Pull Requests brauchen keine Merge-Migration mehr**: `flask db upgrade` (und das Deployment, `flask seed` und neue Vereine) wendet jeden Alembic-Head an, und `flask db migrate` setzt eine neue Migration auf alle. Ein Test schlägt fehl, wenn zwei nicht zusammengeführte Heads dieselbe Tabelle ändern. Betrieb: Compose ruft `flask db upgrade heads` auf; ein Deployment, das selbst `flask db upgrade head` aufruft, muss `heads` verwenden. docs/migrations.md. <!-- for: staff -->
+
 ## [0.2.6] - 2026-11-13
 
 ### Added
