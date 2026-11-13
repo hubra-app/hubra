@@ -7,6 +7,10 @@ section and position, or the apps show that version in English.
 
 ## [Unreleased]
 
+### Changed
+
+- **manage: one file per page and per settings group**: each manage page is its own file in `app/admin-frontend/src/nav/pages/`, and settings groups that are only fields are their own files in `screens/platform/settings/`, instead of one shared list each, so pull requests that add pages or settings no longer clash. Nothing changes in manage. docs/settings/structure.md. <!-- for: staff -->
+
 ## [0.2.6] - 2026-11-13
 
 ### Added

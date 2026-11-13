@@ -9,6 +9,10 @@ Apps für diese Version den englischen Text, bis die Übersetzung nachgeführt i
 
 ## [Unreleased]
 
+### Changed
+
+- **manage: eine Datei pro Seite und pro Einstellungsgruppe**: jede Seite von manage ist eine eigene Datei in `app/admin-frontend/src/nav/pages/`, und Einstellungsgruppen, die nur aus Feldern bestehen, sind eigene Dateien in `screens/platform/settings/`, statt je einer gemeinsamen Liste, damit Pull Requests, die Seiten oder Einstellungen ergänzen, nicht mehr kollidieren. In manage ändert sich nichts. docs/settings/structure.md. <!-- for: staff -->
+
 ## [0.2.6] - 2026-11-13
 
 ### Added
