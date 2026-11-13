@@ -102,8 +102,8 @@ current.
   `flask db migrate`, never by hand: hand-written migrations cause
   PostgreSQL/SQLite differences (boolean defaults, casts, idempotency) that
   only show up in production. If `flask db migrate` cannot produce one, ask
-  before writing it by hand. Check that there is one head after merging
-  `main`.
+  before writing it by hand. Several heads after merging `main` are fine,
+  as long as they change different tables ([docs/migrations.md](docs/migrations.md)).
 - **Plugins never depend on other plugins.** Shared data goes through the
   core API or hooks and events. A plugin may extend a core module, and an
   add-on names its parent with `requires:`/`depends:` (see

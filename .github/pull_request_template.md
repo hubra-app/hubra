@@ -13,6 +13,8 @@ Delete this section otherwise. -->
 
 - [ ] Agreed in an issue first and CLA signed (outside contributors, see CONTRIBUTING.md)
 - [ ] Tests added or updated, and the tests for what I touched pass locally
+- [ ] Migration added in `app/backend/migrations/` (if the database changes); several heads are fine ([docs/migrations.md](https://github.com/hubra-app/hubra/blob/main/docs/migrations.md))
+- [ ] `CHANGELOG.md` **and** `CHANGELOG.de.md` updated (if users or operators will notice)
 - [ ] Migration added in `app/backend/migrations/` (if the database changes), with one head
 - [ ] Changelog entry in `app/backend/changes/<topic>.md`, English and German (if users or operators will notice)
 - [ ] Docs in `docs/` updated (if behaviour, settings or setup change)

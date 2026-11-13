@@ -28,7 +28,7 @@ def apply_migrations_to_tenant(tenant_id: int) -> None:
 
     from flask_migrate import upgrade as _upgrade
 
-    _upgrade()
+    _upgrade(revision="heads")
 
     reset_search_path()
     db.session.commit()
