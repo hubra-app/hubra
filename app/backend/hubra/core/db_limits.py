@@ -13,6 +13,11 @@ and every connection gets TCP keepalives (``ProductionConfig``), so a
 connection whose peer vanished fails within about a minute instead of
 waiting forever.
 
+API and worker connections also name their process in ``application_name``
+(``hubra-api``, ``hubra-platform-worker``, ...; the rest show ``hubra``), so
+``pg_stat_activity`` says which process holds them. :func:`pool_options`
+sizes each process's pool.
+
 The CLI (``flask db upgrade``, seeds, ``flask backups``) has no limits: it is
 the process kind until gunicorn's ``post_worker_init`` or Celery's
 ``worker_process_init`` calls :func:`use`. Values are milliseconds; 0 turns a
@@ -96,6 +101,8 @@ def _on_connect(dbapi_conn, _record) -> None:
         return  # SQLite in tests and development
     try:
         cur = dbapi_conn.cursor()
+        # Names are letters, digits and dashes only (roles.build_component).
+        cur.execute(f"SET application_name = '{application_name(_kind)}'")
         cur.execute(f"SET statement_timeout = {int(lim['statement'])}")
         cur.execute(
             f"SET idle_in_transaction_session_timeout = {int(lim['idle_in_tx'])}"
@@ -106,6 +113,49 @@ def _on_connect(dbapi_conn, _record) -> None:
         dbapi_conn.commit()
     except Exception:  # a limit is a guard rail, never a reason not to connect
         _log.warning("could not set the %s database limits", _kind, exc_info=True)
+
+
+# Connections each process keeps open while idle, and how many more it may
+# open for a moment. Every gunicorn worker, Celery child, beat and Celery
+# parent has its own pool, and SQLAlchemy keeps up to pool_size connections
+# open for good once a burst has used them (pool_recycle only replaces them
+# on the next checkout, it never closes an idle one). The overflow ones are
+# closed when they come back, so a small pool_size caps what sits idle
+# without capping how many a busy worker can use. Celery children need two
+# at most (the task, plus the lock of a scheduled job), so 2 fits them.
+POOL_DEFAULTS = {"pool_size": 2, "max_overflow": 8}
+
+
+def pool_options() -> dict[str, int]:
+    """``pool_size`` and ``max_overflow``, with ``DB_POOL_SIZE`` and
+    ``DB_MAX_OVERFLOW`` overriding the defaults."""
+    out = {}
+    for key, env in (
+        ("pool_size", "DB_POOL_SIZE"),
+        ("max_overflow", "DB_MAX_OVERFLOW"),
+    ):
+        raw = os.environ.get(env, "").strip()
+        try:
+            out[key] = max(0, int(raw)) if raw else POOL_DEFAULTS[key]
+        except ValueError:
+            out[key] = POOL_DEFAULTS[key]
+    if out["pool_size"] == 0:
+        out["pool_size"] = 1  # SQLAlchemy reads 0 as "no limit"
+    return out
+
+
+def application_name(kind: str | None) -> str:
+    """What pg_stat_activity shows for this process's connections, e.g.
+    ``hubra-api``, ``hubra-platform-worker``, so idle connections can be
+    told apart by process."""
+    if not kind:
+        return "hubra"
+    try:
+        from hubra.core.roles import build_component
+
+        return f"hubra-{build_component(kind)}"[:63]
+    except Exception:
+        return f"hubra-{kind}"
 
 
 # Keepalives for psycopg2 connections: probe after 30 s idle, every 10 s,
