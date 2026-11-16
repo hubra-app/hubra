@@ -312,6 +312,9 @@ class BaseConfig:
 
 
 from hubra.core.db_limits import KEEPALIVES as _KEEPALIVES  # noqa: E402
+from hubra.core.db_limits import pool_options as _pool_options  # noqa: E402
+
+_POOL = _pool_options()
 
 
 class DevelopmentConfig(BaseConfig):
@@ -324,11 +327,10 @@ class DevelopmentConfig(BaseConfig):
         **BaseConfig.SQLALCHEMY_ENGINE_OPTIONS,
         "pool_recycle": 300,
         "pool_timeout": 10,
-        "pool_size": 5,
-        "max_overflow": 10,
+        **_POOL,
         # A connection whose peer vanished fails in about a minute
         # (hubra.core.db_limits).
-        "connect_args": dict(_KEEPALIVES),
+        "connect_args": {**_KEEPALIVES, "application_name": "hubra"},
     }
 
 
@@ -339,11 +341,10 @@ class ProductionConfig(BaseConfig):
         **BaseConfig.SQLALCHEMY_ENGINE_OPTIONS,
         "pool_recycle": 300,
         "pool_timeout": 10,
-        "pool_size": 5,
-        "max_overflow": 10,
+        **_POOL,
         # A connection whose peer vanished fails in about a minute
         # (hubra.core.db_limits).
-        "connect_args": dict(_KEEPALIVES),
+        "connect_args": {**_KEEPALIVES, "application_name": "hubra"},
     }
 
     @classmethod

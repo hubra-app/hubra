@@ -185,8 +185,24 @@ same `request_id`; a 500 answer includes it as `requestId`.
 - **No transaction-mode pooler** (PgBouncer `pool_mode=transaction`) in
   front of the backend: session-level advisory locks and `search_path` per
   club need a real session. Session mode, or connecting directly, is fine.
-- Connections: each scheduled job holds one extra connection while it runs
-  (for its lock). Size `max_connections` for roughly
-  `(gunicorn workers × API pods + worker concurrency × worker pods) × pool size`
-  plus a few for beat, the init step and backups, and check it against
-  Postgres' `max_connections` (100 by default).
+- Connections: every process has its own pool: each gunicorn worker, each
+  Celery child and the Celery parent, beat, the Discord gateway. A pool keeps
+  up to `DB_POOL_SIZE` connections (default 2) open while idle, once it has
+  needed that many, and may open `DB_MAX_OVERFLOW` more (default 8) for a
+  moment; those close when they come back. So expect about
+  `(gunicorn workers × API pods + (worker concurrency + 1) × worker pods + beat + gateway) × DB_POOL_SIZE`
+  idle connections, up to `DB_POOL_SIZE + DB_MAX_OVERFLOW` per process under
+  load, and check that against Postgres' `max_connections` (100 by default,
+  minus 3 kept for superusers) together with everything else on the server.
+  Each scheduled job holds one extra connection while it runs (for its lock),
+  which a pool of 2 already covers.
+- To see who holds them: API and worker connections are named after their
+  process in `application_name` (`hubra-api`, `hubra-global-api`,
+  `hubra-platform-api`, `hubra-worker`, `hubra-platform-worker`), the others
+  show `hubra`:
+
+  ```sql
+  select application_name, client_addr, state, count(*)
+  from pg_stat_activity where usename = 'hubra'
+  group by 1, 2, 3 order by 4 desc;
+  ```

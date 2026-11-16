@@ -93,6 +93,7 @@ def test_db_limits_set_on_postgres_connections_only(monkeypatch):
     assert calls == []
     db_limits._on_connect(PgConn(), None)
     assert calls == [
+        "SET application_name = 'hubra-api'",
         "SET statement_timeout = 60000",
         "SET idle_in_transaction_session_timeout = 120000",
         "commit",
@@ -101,6 +102,25 @@ def test_db_limits_set_on_postgres_connections_only(monkeypatch):
     monkeypatch.setattr(db_limits, "_kind", None)  # the CLI
     db_limits._on_connect(PgConn(), None)
     assert calls == []
+
+
+def test_db_pool_options(monkeypatch):
+    monkeypatch.delenv("DB_POOL_SIZE", raising=False)
+    monkeypatch.delenv("DB_MAX_OVERFLOW", raising=False)
+    assert db_limits.pool_options() == {"pool_size": 2, "max_overflow": 8}
+    monkeypatch.setenv("DB_POOL_SIZE", "4")
+    monkeypatch.setenv("DB_MAX_OVERFLOW", "nope")
+    assert db_limits.pool_options() == {"pool_size": 4, "max_overflow": 8}
+    monkeypatch.setenv("DB_POOL_SIZE", "0")  # 0 would mean "no limit"
+    assert db_limits.pool_options()["pool_size"] == 1
+
+
+def test_application_name_per_process(monkeypatch):
+    monkeypatch.delenv("HUBRA_ROLE", raising=False)
+    assert db_limits.application_name(None) == "hubra"
+    assert db_limits.application_name("api") == "hubra-api"
+    monkeypatch.setenv("HUBRA_ROLE", "platform")
+    assert db_limits.application_name("worker") == "hubra-platform-worker"
 
 
 def test_an_unregistered_job_counts_as_failed(monkeypatch):
