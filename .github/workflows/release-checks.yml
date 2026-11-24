@@ -30,7 +30,6 @@ concurrency:
 
 jobs:
   ci:
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     uses: ./.github/workflows/ci.yml
     with:
       full: true
@@ -39,7 +38,6 @@ jobs:
   # also runs the tests SQLite skips (club schemas, row and advisory locks,
   # the real pg_dump). One database per xdist worker (tests/xdist_postgres.py).
   backend-postgres:
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -81,7 +79,6 @@ jobs:
   # Known vulnerabilities in the locked dependencies. Every step runs even
   # when an earlier one failed, so one run shows all findings.
   audit:
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -112,7 +109,6 @@ jobs:
   # The browser tests run like in ci.yml (browser-tests): three workers, each
   # with its own club and account.
   compose-smoke:
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     env:
       COMPOSE_FILE: docker-compose.yml:.github/e2e/docker-compose.e2e.yml
@@ -168,7 +164,7 @@ jobs:
   # images.yml waits for. Passes only when every job above passed.
   release-checks:
     needs: [ci, backend-postgres, audit, compose-smoke]
-    if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - env:

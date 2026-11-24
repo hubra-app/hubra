@@ -122,8 +122,8 @@ that fails without it.
 ## Pull requests
 
 - Fill in the [pull request template](.github/pull_request_template.md).
-- Open it as a **draft** while you are still working. CI does not run on
-  drafts; mark it ready for review when you want the checks.
+- Open it as a **draft** while you are still working; CI runs on drafts
+  too. Mark it ready for review when the work is done and the checks pass.
 - The one required check is `CI passed`, which waits on `lint` and `tests`. Which jobs run depends on the
   paths you changed; [docs/ci.md](docs/ci.md) explains it.
 - Keep your branch up to date by merging `main` into it.
