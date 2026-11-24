@@ -1,0 +1,25 @@
+# Who reviews what. The handbook (core/security.md) routes keys, signing,
+# sign-in and the plugin sandbox to a security review: a pull request that
+# touches the paths below says so in its description.
+*    @reykimedev
+
+# Sign-in, sessions, MFA, OAuth/OIDC, API tokens
+/app/backend/hubra/core/auth/          @reykimedev
+/app/backend/hubra/api/auth/           @reykimedev
+/app/backend/hubra/api/oauth/          @reykimedev
+/app/backend/hubra/api/api_tokens/     @reykimedev
+/app/sso-frontend/                     @reykimedev
+
+# Permissions and roles
+/app/backend/hubra/core/permissions.py @reykimedev
+/app/backend/hubra/api/permissions.py  @reykimedev
+/app/backend/hubra/core/roles.py       @reykimedev
+
+# Encryption, plugin trust keys, plugin loader and limits
+/app/backend/hubra/core/crypto.py      @reykimedev
+/app/backend/hubra/core/plugins/       @reykimedev
+
+# Release, signing and image workflows
+/.github/workflows/release*.yml        @reykimedev
+/.github/workflows/images.yml          @reykimedev
+/.mason/rulesets/                      @reykimedev
