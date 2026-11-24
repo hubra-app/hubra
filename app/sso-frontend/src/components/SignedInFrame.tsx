@@ -6,7 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { clearTokens } from '@hubra/api-client'
 import * as authApi from '@/api/auth'
 import { ThemeToggle } from '@hubra/ui'
-import { themeLabels, useLang } from '@/lang'
+import { useLang } from '@/lang'
 
 async function signOut() {
   await authApi.logout()
@@ -113,7 +113,7 @@ export function SignedInFrame({
                 <IconBell size={18} style={{ display: 'block' }} />
               </Indicator>
             </ActionIcon>
-            <ThemeToggle labels={themeLabels(tr)} />
+            <ThemeToggle />
             <ActionIcon
               variant="subtle"
               color="gray"

@@ -30,7 +30,6 @@ import {
 } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import { FilterBar, type FilterGroup } from '@hubra/ui'
-import { filterLabels } from './filterLabels'
 import { legacyFilterGroups, type DataTableFilter, type DataTableFilterSlot } from './legacyFilters'
 export type { DataTableFilter, DataTableFilterSlot } from './legacyFilters'
 import { LoadingSpinner, EmptyState } from './feedback'
@@ -573,7 +572,6 @@ export function DataTable<T>({
         searchPlaceholder={searchPlaceholder ?? i18n.t('common.searchPlaceholder', 'Suchen …')}
         groups={groups}
         actions={actions}
-        labels={filterLabels()}
       />
 
       {/* Above the list only when there is more than one page to move through. */}

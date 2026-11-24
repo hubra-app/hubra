@@ -1,331 +1,106 @@
+import { type MantineColorsTuple, type MantineThemeOverride, type VariantColorsResolver } from '@mantine/core'
 import {
-  Badge,
-  createTheme,
-  defaultVariantColorsResolver,
-  DEFAULT_THEME,
-  parseThemeColor,
-  rem,
-  v8CssVariablesResolver,
-  type CSSVariablesResolver,
-  type VariantColorsResolver,
-} from '@mantine/core'
-import {
-  accColors,
-  goldColors,
-  grayColors,
-  greenColors,
-  orangeColors,
-  pinkColors,
-  redColors,
-} from './colors'
-import { readableOn, textOn, WHITE } from './contrast'
+  accentScale,
+  createBnbTheme,
+  variantColorResolver as bnbVariantColorResolver,
+  type Accent,
+} from '@bitsandbricks/ui'
+import tokens, { readableOn, WHITE } from '@bitsandbricks/tokens'
+import { goldColors, pinkColors } from './colors'
 
-// Filled buttons, badges and checkboxes: Mantine picks their text from the
-// light-mode shade and as var(--mantine-color-black), which ui.css turns
-// light in dark mode, so a yellow club got light text on a yellow button in
-// dark mode. Use the per-scheme --mantine-color-<name>-contrast instead,
-// which cssVariablesResolver below works out from the shade actually shown.
+// Hubra on the shared BitsAndBricks theme (@bitsandbricks/ui): the tokens
+// give the greys, status colours, radii and controls; Hubra brings its
+// accent, its fonts and the few colours only Hubra has (gold, pink, the
+// club's own colours). The same theme serves the club app, manage, sign-in
+// and support, so the four look like one product.
+
+/** Hubra Violet: the light one reads on white, the dark one on the dark page. */
+export const HUBRA_ACCENT = { light: '#7441e0', dark: '#9f7cf8' } as const
+
+/** Hubra's own faces, self-hosted in ./fonts (fonts.css). */
+export const HUBRA_FONTS = {
+  sans: '"Hanken Grotesk", system-ui, sans-serif',
+  mono: '"JetBrains Mono", ui-monospace, monospace',
+  headings: '"Bricolage Grotesque", "Hanken Grotesk", system-ui, sans-serif',
+}
+
+const { light: LIGHT, dark: DARK } = tokens.neutrals
+
+/**
+ * A colour a club picked, as an accent for both schemes: unchanged where it
+ * already reads as text (4.5:1) on the page and on cards, otherwise darkened
+ * (light scheme) or lightened (dark scheme) just enough. A yellow club gets
+ * ochre on white, a navy one light blue on the dark page.
+ */
+export function clubAccent(hex: string): { light: string; dark: string } {
+  return {
+    light: readableOn(hex, [WHITE, LIGHT.bg, LIGHT.surface]),
+    dark: readableOn(hex, [DARK.bg, DARK.surface, DARK.raised]),
+  }
+}
+
+const asVar = (value: string) => Array(10).fill(value) as unknown as MantineColorsTuple
+
+// Hubra's code and its plugins (built and published separately) name
+// colours the way Hubra always did: acc, green, orange, red. They now mean
+// the shared accent and status colours, so screens and plugins keep working
+// and get the shared look; new code uses accent, ok, warn and err.
+const ALIASES: Record<string, string> = { acc: 'accent', green: 'ok', orange: 'warn', red: 'err' }
+
 const variantColorResolver: VariantColorsResolver = (input) => {
-  const result = defaultVariantColorsResolver(input)
-  if (input.variant !== 'filled' || input.autoContrast === false) return result
-  const parsed = parseThemeColor({
-    color: input.color || input.theme.primaryColor,
-    theme: input.theme,
+  const name = typeof input.color === 'string' ? ALIASES[input.color] : undefined
+  return bnbVariantColorResolver(name ? { ...input, color: name } : input)
+}
+
+/** The Hubra theme, in Hubra violet or in the club's own colour. */
+export function hubraTheme(accent: Accent = HUBRA_ACCENT): MantineThemeOverride {
+  return createBnbTheme({
+    accent,
+    fonts: HUBRA_FONTS,
+    overrides: {
+      variantColorResolver,
+      colors: {
+        acc: accentScale(accent),
+        green: asVar('var(--bnb-ok)'),
+        orange: asVar('var(--bnb-warn)'),
+        red: asVar('var(--bnb-err)'),
+        // Hubra's older names for the neutrals, kept for plugins.
+        ink: [
+          'var(--bnb-raised)',
+          'var(--bnb-raised)',
+          'var(--bnb-line)',
+          'var(--bnb-muted)',
+          'var(--bnb-muted)',
+          'var(--bnb-muted)',
+          'var(--bnb-fg)',
+          'var(--bnb-fg)',
+          'var(--bnb-fg)',
+          'var(--bnb-fg)',
+        ],
+        surface: [
+          'var(--bnb-surface)',
+          'var(--bnb-raised)',
+          'var(--bnb-raised)',
+          'var(--bnb-line)',
+          'var(--bnb-line)',
+          'var(--bnb-faint)',
+          'var(--bnb-faint)',
+          'var(--bnb-muted)',
+          'var(--bnb-muted)',
+          'var(--bnb-fg)',
+        ],
+        line: asVar('var(--bnb-line)'),
+        bg: asVar('var(--bnb-bg)'),
+        // Signal Gold (the logo dot, 'new' and 'due' markers) and pink: Hubra's own.
+        gold: goldColors as unknown as MantineColorsTuple,
+        pink: pinkColors as unknown as MantineColorsTuple,
+      },
+      components: {
+        Tabs: { defaultProps: { color: 'accent' } },
+      },
+    },
   })
-  if (!parsed.isThemeColor) return { ...result, color: textOn(parsed.value) }
-  if (parsed.shade === undefined)
-    return { ...result, color: `var(--mantine-color-${parsed.color}-contrast)` }
-  return { ...result, color: textOn(parsed.value) }
 }
 
-// Hubra brand theme (brand/README.md). The same file is used by the club app,
-// the manager portal and the sign-in portal so the three look like one product.
-const BADGE_FZ: Record<string, string> = {
-  xs: rem(12),
-  sm: rem(13),
-  md: rem(13),
-  lg: rem(14),
-  xl: rem(16),
-}
-
-export const theme = createTheme({
-  primaryColor: 'acc',
-  primaryShade: { light: 6, dark: 4 },
-  // Text on filled buttons and badges: dark or white, whichever has more
-  // contrast (0.179 is where the two are equal), the same rule as avatars.
-  autoContrast: true,
-  luminanceThreshold: 0.179,
-  variantColorResolver,
-  black: '#1a1625',
-
-  breakpoints: {
-    xs: '36em',
-    sm: '48em',
-    md: '62em',
-    lg: '75em',
-    xl: '90em',
-    tab: '54.375em',
-    nav: '68.75em',
-  },
-
-  colors: {
-    // Dark mode: neutral greys, so only the club colour carries colour.
-    dark: [
-      '#ededef',
-      '#c8c8ce',
-      '#a8a8b0',
-      '#7c7c85',
-      '#45454c',
-      '#2f2f34',
-      '#222226',
-      '#19191c',
-      '#151517',
-      '#111113',
-    ],
-    acc: accColors,
-    gold: goldColors,
-    // Status colours (docs/design-spec.md): success, warning, danger.
-    green: greenColors,
-    orange: orangeColors,
-    red: redColors,
-    pink: pinkColors,
-    // Brand neutrals with a violet tint. Mantine uses gray for borders,
-    // hover fills and dimmed text, so this one scale restyles all of them.
-    gray: grayColors,
-    bg: Array(10).fill('#f7f6fb') as unknown as typeof accColors,
-    surface: [
-      '#ffffff',
-      '#f4f2f9',
-      '#ebe8f2',
-      '#dfdbe9',
-      '#c8c1d8',
-      '#b7b0c9',
-      '#9d95b3',
-      '#827a99',
-      '#625a7a',
-      '#2e2940',
-    ],
-    line: [
-      '#e6e3ef',
-      '#e6e3ef',
-      '#e6e3ef',
-      '#d6d2e3',
-      '#d6d2e3',
-      '#b7b0c9',
-      '#b7b0c9',
-      '#b7b0c9',
-      '#b7b0c9',
-      '#b7b0c9',
-    ],
-    ink: [
-      '#f4f2f9',
-      '#ebe8f2',
-      '#dfdbe9',
-      // Muted text: 4.6:1 on white and on the light greys (WCAG AA).
-      '#706a85',
-      '#5e5873',
-      '#5e5873',
-      '#2e2940',
-      '#2e2940',
-      '#1a1625',
-      '#1a1625',
-    ],
-  },
-
-  fontFamily: '"Hanken Grotesk", system-ui, sans-serif',
-  fontFamilyMonospace: '"JetBrains Mono", ui-monospace, monospace',
-
-  fontSizes: {
-    // One step above Mantine's defaults: the apps are mostly forms, tables and
-    // log lines set in sm/xs, and those read too small at 14/13 px (settings
-    // pages, Discord logs). Body text is 16 px, forms and tables 15 px,
-    // captions and log lines 14 px.
-    xs: rem(14),
-    sm: rem(15),
-    md: rem(16),
-    lg: rem(18),
-    xl: rem(21),
-  },
-
-  headings: {
-    fontFamily: `"Bricolage Grotesque", "Hanken Grotesk", ${DEFAULT_THEME.fontFamily}`,
-    fontWeight: '700',
-    sizes: {
-      h1: { fontSize: rem(30), lineHeight: '1.15' },
-      h2: { fontSize: rem(22), lineHeight: '1.25' },
-      h3: { fontSize: rem(20), lineHeight: '1.3' },
-      h4: { fontSize: rem(17), lineHeight: '1.35' },
-    },
-  },
-
-  radius: {
-    xs: '6px',
-    sm: '8px',
-    md: '10px',
-    lg: '16px',
-    xl: '20px',
-  },
-
-  shadows: {
-    xs: '0 1px 2px rgba(26,22,37,.05)',
-    sm: '0 1px 2px rgba(26,22,37,.05), 0 4px 12px -6px rgba(26,22,37,.08)',
-    md: '0 2px 4px rgba(26,22,37,.04), 0 12px 28px -12px rgba(26,22,37,.16)',
-    lg: '0 26px 64px -22px rgba(26,22,37,.28), 0 4px 14px -6px rgba(26,22,37,.15)',
-    xl: '0 26px 64px -22px rgba(26,22,37,.28), 0 4px 14px -6px rgba(26,22,37,.15)',
-  },
-
-  defaultRadius: 'md',
-  focusRing: 'auto',
-  cursorType: 'pointer',
-
-  components: {
-    Button: {
-      defaultProps: { radius: 'md', size: 'sm' },
-      // Icons passed as children (not leftSection) still get breathing room.
-      styles: { root: { fontWeight: 600 }, label: { gap: 6 } },
-    },
-    ActionIcon: {
-      defaultProps: { radius: 'md', color: 'gray', variant: 'subtle' },
-    },
-    TextInput: { defaultProps: { radius: 'md', size: 'sm' } },
-    PasswordInput: { defaultProps: { radius: 'md', size: 'sm' } },
-    NumberInput: { defaultProps: { radius: 'md', size: 'sm' } },
-    Textarea: { defaultProps: { radius: 'md', size: 'sm' } },
-    Select: {
-      // Clicking the chosen entry again keeps it. Mantine's default empties
-      // the field, which blanked required fields (status, type) and set the
-      // page size to 0; an optional field gets an × (clearable) instead.
-      defaultProps: { radius: 'md', size: 'sm', checkIconPosition: 'right', allowDeselect: false },
-    },
-    MultiSelect: { defaultProps: { radius: 'md', size: 'sm' } },
-    InputWrapper: {
-      styles: {
-        label: { fontWeight: 600, marginBottom: 4 },
-        description: { marginBottom: 6 },
-      },
-    },
-    Modal: {
-      defaultProps: {
-        radius: 'lg',
-        centered: true,
-        padding: 'lg',
-        overlayProps: { backgroundOpacity: 0.4, blur: 2 },
-      },
-      styles: {
-        title: {
-          fontFamily: `"Bricolage Grotesque", "Hanken Grotesk", sans-serif`,
-          fontWeight: 700,
-          fontSize: rem(20),
-        },
-      },
-    },
-    Drawer: {
-      styles: {
-        title: {
-          fontFamily: `"Bricolage Grotesque", "Hanken Grotesk", sans-serif`,
-          fontWeight: 700,
-          fontSize: rem(20),
-        },
-      },
-    },
-    Paper: {
-      defaultProps: { radius: 'lg', shadow: 'xs' },
-    },
-    Card: {
-      defaultProps: { radius: 'lg', shadow: 'xs', withBorder: true },
-    },
-    Badge: Badge.extend({
-      defaultProps: { radius: 'sm', size: 'md', variant: 'light' },
-      styles: { root: { fontWeight: 600, textTransform: 'none' } },
-      // Mantine's badge text is 9/10/11 px for xs/sm/md, made for uppercase
-      // labels. Ours are words in sentence case, so one step larger each.
-      vars: (_theme, props) => ({
-        root: { '--badge-fz': BADGE_FZ[String(props.size ?? 'md')] ?? BADGE_FZ.md },
-      }),
-    }),
-    Tabs: {
-      defaultProps: { color: 'acc' },
-      styles: { tab: { fontWeight: 600 } },
-    },
-    SegmentedControl: {
-      defaultProps: { radius: 'md' },
-      styles: { label: { fontWeight: 600 } },
-    },
-    Table: {
-      defaultProps: {
-        verticalSpacing: 'sm',
-        horizontalSpacing: 'md',
-        fontSize: 'sm',
-        highlightOnHover: true,
-      },
-      styles: {
-        th: {
-          fontSize: rem(14),
-          fontWeight: 600,
-          color: 'var(--mantine-color-gray-7)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.04em',
-          whiteSpace: 'nowrap',
-        },
-      },
-    },
-    Tooltip: {
-      defaultProps: { radius: 'sm', color: 'dark' },
-    },
-    Menu: {
-      defaultProps: { radius: 'md', shadow: 'md' },
-    },
-    Popover: {
-      defaultProps: { radius: 'md', shadow: 'md' },
-    },
-    Notification: {
-      defaultProps: { radius: 'md' },
-    },
-    Alert: {
-      defaultProps: { radius: 'md' },
-      styles: { title: { fontWeight: 700 } },
-    },
-    Switch: {
-      // Mantine 8+ puts a dot in the thumb; keep the plain thumb.
-      defaultProps: { withThumbIndicator: false },
-      styles: { label: { fontWeight: 500 } },
-    },
-  },
-})
-
-// Mantine 9 made the light variant solid colours, which turned avatars and
-// light buttons grey on our tinted backgrounds. Keep the 8.x see-through tints.
-//
-// On top of that, text in the club colours (links, light and outline
-// buttons, badges) gets a shade that is readable on the page: Mantine uses
-// shade 6 as is, so a yellow club colour gave yellow text on white. The fill
-// itself stays the club's colour; autoContrast picks its text.
-export const cssVariablesResolver: CSSVariablesResolver = (t) => {
-  const result = v8CssVariablesResolver(t)
-  const shade = t.primaryShade as { light: number; dark: number }
-  for (const [name, scale] of Object.entries(t.colors)) {
-    if (!Array.isArray(scale) || !/^#[0-9a-f]{6}$/i.test(scale[shade.light])) continue
-    result.light[`--mantine-color-${name}-contrast`] = textOn(scale[shade.light])
-    result.dark[`--mantine-color-${name}-contrast`] = textOn(scale[shade.dark])
-  }
-  result.light['--mantine-primary-color-contrast'] =
-    `var(--mantine-color-${t.primaryColor}-contrast)`
-  result.dark['--mantine-primary-color-contrast'] =
-    `var(--mantine-color-${t.primaryColor}-contrast)`
-  // Text in these colours (light buttons, badges, alerts, links) must read
-  // on white and on the colour's own light tint; the warning orange and
-  // gold would not, so they get a deeper shade for text.
-  for (const name of ['acc', 'gold', 'green', 'orange', 'red']) {
-    const scale = t.colors[name]
-    if (!scale) continue
-    const ink = readableOn(scale[6], [WHITE, scale[1]])
-    result.light[`--mantine-color-${name}-text`] = ink
-    result.light[`--mantine-color-${name}-light-color`] = ink
-    result.light[`--mantine-color-${name}-outline`] = ink
-    // Dark mode: Mantine draws outline buttons in shade 0, which ui.css
-    // turns into a dark tint, so they vanished. Use the light text shade.
-    result.dark[`--mantine-color-${name}-outline`] = `var(--mantine-color-${name}-3)`
-  }
-  result.light['--mantine-color-anchor'] = 'var(--mantine-color-acc-text)'
-  return result
-}
+/** Hubra violet, for the apps that don't take a club's colours. */
+export const theme = hubraTheme()

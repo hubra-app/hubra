@@ -16,7 +16,7 @@ import {
   Textarea,
 } from '@mantine/core'
 import { IconArrowLeft, IconBug, IconBulb, IconMessage, IconMessageCircle } from '@tabler/icons-react'
-import { EmptyState } from '@hubra/ui'
+import { EmptyState } from '@bitsandbricks/ui'
 import { Page } from '@/components/Layout'
 import { SignInNeeded } from '@/components/SignInNeeded'
 import { useAuth } from '@/auth'

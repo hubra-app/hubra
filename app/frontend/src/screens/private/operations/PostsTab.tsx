@@ -2,7 +2,6 @@ import { lazy, Suspense, useState, useCallback } from 'react'
 import { ActionIcon, Alert, Anchor, Badge, Button, Checkbox, Group, Loader, Menu, SimpleGrid, Text, TextInput, Paper } from '@mantine/core'
 import { Link } from 'react-router-dom'
 import { DateTimeField, FilterBar } from '@hubra/ui'
-import { filterLabels } from '@/components/filterLabels'
 import { useForm } from '@mantine/form'
 import { zod4Resolver } from 'mantine-form-zod-resolver'
 import { z } from 'zod'
@@ -540,7 +539,6 @@ export function PostsTab() {
           search={search}
           onSearchChange={setSearch}
           searchPlaceholder={t('posts.search', 'Beiträge durchsuchen …')}
-          labels={filterLabels()}
           groups={[
             {
               key: 'show',

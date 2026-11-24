@@ -1,57 +1,30 @@
 @import "./fonts/fonts.css";
 
-/* The base every portal shares: colour tokens, page, brand marks. */
-
-/* Colour tokens, the same on every portal (club app, manage, sign-in,
-   join). Screens use these instead of hex values so they work in light and
-   dark mode; packages/ui/theme.js picks the scheme before the first paint. */
+/* Hubra on the shared tokens. Load after Mantine's styles,
+   @bitsandbricks/tokens/tokens.css and @bitsandbricks/ui/styles.css. The
+   greys, status colours and the light/dark switch come from the tokens;
+   the accent from hubraTheme() (theme.ts). */
 :root {
-  color-scheme: light;
-  --hb-page: #f7f6fb;
-  --hb-surface: #ffffff;
-  --hb-surface-2: #f4f2f9;
-  --hb-border: #e6e3ef;
-  --hb-text: #1a1625;
-  --hb-text-2: #5e5873;
-  --hb-text-3: #8c86a0;
+  /* Hubra's faces for the shared components too. */
+  --bnb-font-sans: "Hanken Grotesk", system-ui, sans-serif;
+  --bnb-font-mono: "JetBrains Mono", ui-monospace, monospace;
+  /* Hubra's older names for the tokens: screens and plugins use them. */
+  --hb-page: var(--bnb-bg);
+  --hb-surface: var(--bnb-surface);
+  --hb-surface-2: var(--bnb-raised);
+  --hb-border: var(--bnb-line);
+  --hb-text: var(--bnb-fg);
+  --hb-text-2: var(--bnb-muted);
+  --hb-text-3: var(--bnb-faint);
   /* The sidebar takes a light tint of the club colour. */
-  --hb-sidebar: color-mix(in srgb, var(--mantine-color-acc-0) 55%, #ffffff);
-  /* Announcement banner: a tint of the accent colour under normal text. */
-  --hb-notice-bg: var(--mantine-color-gold-0);
-  --hb-notice-border: var(--mantine-color-gold-3);
+  --hb-sidebar: color-mix(in srgb, var(--bnb-accent) 6%, var(--bnb-surface));
+  /* Announcement banner: a tint of the club's second colour (gold). */
+  --hb-notice-bg: color-mix(in srgb, var(--mantine-color-gold-6) 14%, var(--bnb-surface));
+  --hb-notice-border: color-mix(in srgb, var(--mantine-color-gold-6) 40%, var(--bnb-surface));
 }
 
 html:root[data-mantine-color-scheme="dark"] {
-  color-scheme: dark;
-  /* Neutral greys: the club colour only marks buttons, links and the
-     active page. */
-  --hb-page: #111113;
-  --hb-surface: #19191c;
-  --hb-surface-2: #222226;
-  --hb-border: #2f2f34;
-  --hb-text: #ededef;
-  --hb-text-2: #a8a8b0;
-  --hb-text-3: #7c7c85;
-  --hb-sidebar: #151517;
-  --hb-notice-bg: color-mix(in srgb, var(--mantine-color-gold-6) 14%, #19191c);
-  --hb-notice-border: color-mix(in srgb, var(--mantine-color-gold-6) 35%, #19191c);
-  --mantine-color-body: var(--hb-surface);
-  --mantine-color-text: var(--hb-text);
-  --mantine-color-dimmed: var(--hb-text-3);
-  --mantine-color-default-border: var(--hb-border);
-  --mantine-color-ink-3: var(--hb-text-3);
-  --mantine-color-ink-4: var(--hb-text-2);
-  --mantine-color-ink-8: var(--hb-text);
-  --mantine-color-line-0: var(--hb-border);
-  --mantine-color-surface-1: var(--hb-surface-2);
-  --mantine-color-acc-0: color-mix(in srgb, var(--mantine-color-acc-6) 12%, #19191c);
-  --mantine-color-acc-1: color-mix(in srgb, var(--mantine-color-acc-6) 20%, #19191c);
-  --mantine-color-acc-7: color-mix(in srgb, var(--mantine-color-acc-4) 85%, #ffffff);
-  --mantine-color-acc-8: color-mix(in srgb, var(--mantine-color-acc-3) 80%, #ffffff);
-  /* Light buttons and badges: Mantine takes their text from acc-0, which is
-     a dark tint here, so give them a light shade instead. */
-  --mantine-color-acc-light-color: var(--mantine-color-acc-3);
-  --mantine-color-black: var(--hb-text);
+  --hb-sidebar: var(--bnb-surface);
   scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
 }
 
@@ -86,13 +59,10 @@ html:root[data-mantine-color-scheme="dark"] ::-webkit-scrollbar-thumb {
 
 body {
   margin: 0;
-  background: var(--hb-page);
-  font-family: "Hanken Grotesk", system-ui, sans-serif;
-  color: var(--hb-text);
 }
 
 ::selection {
-  background: var(--mantine-color-acc-2);
+  background: color-mix(in srgb, var(--bnb-accent) 28%, transparent);
   color: var(--hb-text);
 }
 
@@ -155,9 +125,9 @@ body {
 }
 
 .chip.on {
-  border-color: var(--mantine-color-acc-3);
-  background: var(--mantine-color-acc-1);
-  color: var(--mantine-color-acc-8);
+  border-color: color-mix(in srgb, var(--bnb-accent) 45%, transparent);
+  background: var(--bnb-accent-soft);
+  color: var(--bnb-accent-text);
   font-weight: 600;
 }
 
@@ -284,129 +254,13 @@ body {
   }
 }
 
-/* Styles for the shared page blocks in layout.tsx. */
-
-/* Big figures in stat tiles: brand heading face, digits lined up. */
-.stat-value {
-  font-family: "Bricolage Grotesque", "Hanken Grotesk", system-ui, sans-serif;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-  overflow-wrap: anywhere;
-}
-
+/* A small line above a title, as in the shared PageHead. */
 .eyebrow {
   font-size: var(--mantine-font-size-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--mantine-color-acc-7);
-}
-
-/* Page tabs. On wide screens a single underlined row; on phones the tabs
-   wrap into rows of pills, so every tab is in view without a sideways scroll. */
-.hubra-tabs .mantine-Tabs-list {
-  flex-wrap: nowrap;
-  gap: 4px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.hubra-tabs .mantine-Tabs-list::-webkit-scrollbar {
-  display: none;
-}
-
-.hubra-tabs .mantine-Tabs-tab {
-  padding: 12px 14px;
-  font-size: var(--mantine-font-size-sm);
-  color: var(--hb-text-2, #5e5873);
-  font-weight: 600;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.hubra-tabs .mantine-Tabs-tab:hover {
-  background: transparent;
-  color: var(--hb-text, #1a1625);
-}
-
-.hubra-tabs .mantine-Tabs-tab[data-active] {
-  color: var(--mantine-color-acc-8);
-}
-
-@media (max-width: 47.99em) {
-  .hubra-tabs .mantine-Tabs-list {
-    flex-wrap: wrap;
-    gap: 6px;
-    overflow: visible;
-  }
-
-  /* The underline row makes no sense once the tabs wrap. */
-  .hubra-tabs .mantine-Tabs-list::before {
-    display: none;
-  }
-
-  .hubra-tabs .mantine-Tabs-tab {
-    padding: 7px 12px;
-    margin: 0;
-    min-height: 36px;
-    border: 1px solid var(--hb-border, #e4e1ec);
-    border-radius: 999px;
-    background: var(--hb-surface, transparent);
-  }
-
-  .hubra-tabs .mantine-Tabs-tab:hover {
-    background: var(--hb-surface-2, transparent);
-  }
-
-  .hubra-tabs .mantine-Tabs-tab[data-active] {
-    border-color: var(--mantine-color-acc-filled);
-    background: var(--mantine-color-acc-light);
-    color: var(--mantine-color-acc-light-color);
-  }
-}
-
-/* Sub-tabs (SubTabs): the parts of one page tab, as a row of small pills
-   that wraps on narrow screens. */
-.hubra-subtabs .mantine-Tabs-list {
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.hubra-subtabs .mantine-Tabs-tab {
-  padding: 6px 14px;
-  min-height: 34px;
-  font-size: var(--mantine-font-size-sm);
-  font-weight: 600;
-  color: var(--hb-text-2, #5e5873);
-  border: 1px solid var(--hb-border, #e4e1ec);
-  background: var(--hb-surface, transparent);
-}
-
-.hubra-subtabs .mantine-Tabs-tab:hover {
-  background: var(--hb-surface-2, transparent);
-  color: var(--hb-text, #1a1625);
-}
-
-.hubra-subtabs .mantine-Tabs-tab[data-active] {
-  border-color: var(--mantine-color-acc-filled);
-  background: var(--mantine-color-acc-light);
-  color: var(--mantine-color-acc-light-color);
-}
-
-/* On phones the page tabs are pills too, so the sub-tabs sit under a line
-   and drop their border: two rows of the same pills read as one list. */
-@media (max-width: 47.99em) {
-  .hubra-subtabs {
-    border-top: 1px solid var(--hb-border, #e4e1ec);
-    padding-top: 12px;
-  }
-
-  .hubra-subtabs .mantine-Tabs-tab {
-    padding: 4px 12px;
-    min-height: 32px;
-    border-color: transparent;
-    background: transparent;
-  }
+  color: var(--bnb-accent-text);
 }
 
 /* Build commit in the lower right corner (BuildBadge): there to look up,

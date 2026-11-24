@@ -27,7 +27,10 @@
       "@mantine/dates": ["./node_modules/@mantine/dates"],
       "dayjs": ["./node_modules/dayjs"],
       "dayjs/*": ["./node_modules/dayjs/*"],
-      "@tabler/icons-react": ["./node_modules/@tabler/icons-react"]
+      "@tabler/icons-react": ["./node_modules/@tabler/icons-react"],
+      "@mantine/hooks": ["./node_modules/@mantine/hooks"],
+      "@bitsandbricks/tokens": ["./node_modules/@bitsandbricks/tokens/dist/index.d.ts"],
+      "@bitsandbricks/ui": ["./node_modules/@bitsandbricks/ui/dist/index.d.ts"]
     }
   },
   "include": ["src", "../../packages/api-client/src", "../../packages/ui/src"]

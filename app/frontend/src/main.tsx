@@ -2,12 +2,13 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { Notifications } from '@mantine/notifications'
 import '@mantine/core/styles.css'
 import '@mantine/dates/styles.css'
 import '@mantine/notifications/styles.css'
 import '@mantine/tiptap/styles.css'
-// Before the app's own styles, so those win.
+import '@bitsandbricks/tokens/tokens.css'
+import '@bitsandbricks/ui/styles.css'
+// After the shared styles and before the app's own, so those win.
 import '@hubra/ui/ui.css'
 import { BuildBadge } from '@hubra/ui'
 import './index.css'
@@ -23,7 +24,6 @@ setupPwa()
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrandedMantineProvider>
-      <Notifications position="bottom-right" />
       <BuildBadge />
       <BrowserRouter basename={ROUTER_BASENAME}>
         <QueryClientProvider client={queryClient}>

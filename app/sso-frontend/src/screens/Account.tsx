@@ -35,11 +35,12 @@ import {
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useSso } from '@/context/SsoContext'
 import { SignedInFrame } from '@/components/SignedInFrame'
-import { DateField, ThemeSwitch } from '@hubra/ui'
+import { ThemeSwitch } from '@bitsandbricks/ui'
+import { DateField } from '@hubra/ui'
 import { LoadFailed } from '@/components/LoadFailed'
 import { MemberBadgeCard } from '@/components/MemberBadgeCard'
 import { CalendarFeedCard } from '@/components/CalendarFeedCard'
-import { getLang, setLang, themeLabels, tr, useLang } from '@/lang'
+import { getLang, setLang, tr, useLang } from '@/lang'
 import * as authApi from '@/api/auth'
 import { TwoFactorTab } from './TwoFactor'
 import { NotificationsTab } from './NotificationsTab'
@@ -633,7 +634,7 @@ function SettingsTab({ profile }: { profile: authApi.Profile }) {
           )}
         </Text>
         <Group mt="xs">
-          <ThemeSwitch labels={themeLabels(tr)} />
+          <ThemeSwitch />
         </Group>
       </Stack>
     </Paper>

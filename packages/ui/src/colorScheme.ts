@@ -1,4 +1,9 @@
-import type { MantineColorScheme, MantineColorSchemeManager } from '@mantine/core'
+import { useEffect } from 'react'
+import { useMantineColorScheme, type MantineColorScheme } from '@mantine/core'
+import {
+  createColorSchemeManager,
+  readColorScheme as readSharedColorScheme,
+} from '@bitsandbricks/ui'
 import { BASE, getCookie, hasTokens } from '@hubra/api-client'
 
 /**
@@ -6,35 +11,15 @@ import { BASE, getCookie, hasTokens } from '@hubra/api-client'
  *
  * The choice lives on the account (users.theme) and in the `hubra_theme`
  * cookie on the shared domain (.hubra.club): sign-in sets the cookie from
- * the account, and public/theme.js reads it before the first paint, so the
- * club app, manage, sign-in and join all open in the same scheme.
+ * the account, and the theme script (index.html, from @bitsandbricks/ui)
+ * reads it before the first paint, so the club app, manage, sign-in and
+ * support all open in the same scheme.
  */
-const COOKIE = 'hubra_theme'
-const SCHEMES: readonly MantineColorScheme[] = ['light', 'dark', 'auto']
-
-function parse(value: string): MantineColorScheme | null {
-  return (SCHEMES as readonly string[]).includes(value) ? (value as MantineColorScheme) : null
-}
+export const THEME_COOKIE = 'hubra_theme'
 
 /** The scheme in the cookie, or null when none was chosen yet. */
 export function readColorScheme(): MantineColorScheme | null {
-  const fromCookie = parse(getCookie(COOKIE))
-  if (fromCookie) return fromCookie
-  // Before the cookie, the club app kept it in Mantine's localStorage key.
-  try {
-    return parse(localStorage.getItem('mantine-color-scheme-value') ?? '')
-  } catch {
-    return null
-  }
-}
-
-function writeCookie(value: MantineColorScheme) {
-  // The parent of the portal hosts (.hubra.club for app.hubra.club), as the
-  // API sets it; host-only on localhost and bare domains.
-  const labels = window.location.hostname.split('.')
-  const parent = labels.length > 2 ? `; domain=.${labels.slice(1).join('.')}` : ''
-  const secure = window.location.protocol === 'https:' ? '; Secure' : ''
-  document.cookie = `${COOKIE}=${value}; Max-Age=31536000; path=/; SameSite=Lax${parent}${secure}`
+  return readSharedColorScheme(THEME_COOKIE)
 }
 
 /** Saves the choice on the account too, so other devices follow. */
@@ -53,27 +38,22 @@ function saveOnAccount(value: MantineColorScheme) {
   })
 }
 
-let onFocus: (() => void) | null = null
-
 /** Mantine's colour scheme store, backed by the shared cookie. */
-export const colorSchemeManager: MantineColorSchemeManager = {
-  get: (defaultValue) => readColorScheme() ?? defaultValue,
-  set: (value) => {
-    if (parse(getCookie(COOKIE)) === value) return
-    writeCookie(value)
-    saveOnAccount(value)
-  },
-  // Another portal may have changed it while this tab was in the background.
-  subscribe: (onUpdate) => {
-    onFocus = () => {
-      const value = readColorScheme()
-      if (value) onUpdate(value)
-    }
-    window.addEventListener('focus', onFocus)
-  },
-  unsubscribe: () => {
-    if (onFocus) window.removeEventListener('focus', onFocus)
-    onFocus = null
-  },
-  clear: () => writeCookie('auto'),
+export const colorSchemeManager = createColorSchemeManager({
+  cookie: THEME_COOKIE,
+  parentDomain: true,
+  onSave: saveOnAccount,
+})
+
+/**
+ * Sign-in sets the cookie from the account without a page load: take it
+ * over when a page frame mounts.
+ */
+export function useSavedColorScheme() {
+  const { colorScheme, setColorScheme } = useMantineColorScheme()
+  useEffect(() => {
+    const saved = readColorScheme()
+    if (saved && saved !== colorScheme) setColorScheme(saved)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per frame, on mount
+  }, [])
 }

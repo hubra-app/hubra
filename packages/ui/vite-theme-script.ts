@@ -1,14 +1,19 @@
 import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { createRequire } from 'node:module'
+import { join } from 'node:path'
 import type { Plugin } from 'vite'
 
 /**
- * Serves packages/ui/theme.js as /theme.js (dev) and ships it next to
- * index.html (build). index.html loads it in <head>, before the app: an
- * inline script would be blocked by the portals' CSP (script-src 'self').
+ * Serves @bitsandbricks/ui's theme script as /theme.js (dev) and ships it
+ * next to index.html (build). index.html loads it in <head>, before the app,
+ * with data-cookie="hubra_theme": an inline script would be blocked by the
+ * portals' CSP (script-src 'self'). Resolved from the app being built.
  */
 export function themeScript(): Plugin {
-  const source = () => readFileSync(resolve(__dirname, 'theme.js'), 'utf8')
+  const file = createRequire(join(process.cwd(), 'package.json')).resolve(
+    '@bitsandbricks/ui/theme-script.js',
+  )
+  const source = () => readFileSync(file, 'utf8')
   return {
     name: 'hubra-theme-script',
     configureServer(server) {

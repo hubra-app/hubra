@@ -45,7 +45,6 @@ import { listFunctions } from "@/api/functions";
 import { ProxyPanel } from "./ProxyPanel";
 import { PollCard } from "./PollCard";
 import { FilterBar } from "@hubra/ui";
-import { filterLabels } from "@/components/filterLabels";
 import { toLocalInput } from "./localInput";
 
 /* -- Polls ------------------------------------ */
@@ -292,7 +291,6 @@ export function PollsTab() {
             search={search}
             onSearchChange={setSearch}
             searchPlaceholder={t("polls.search", "Umfragen durchsuchen …")}
-            labels={filterLabels()}
             groups={[
               {
                 key: "status",
