@@ -1,0 +1,33 @@
+# Checks the pull request title against Conventional Commits (handbook
+# core/git-and-prs.md, decision 0009): main is squash-merged, so the title
+# becomes the commit on main. Commits on the branch are checked by the
+# conventional-pre-commit hook.
+name: PR title
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions: {}
+
+jobs:
+  pr-title:
+    name: PR title
+    runs-on: ubuntu-latest
+    steps:
+      # The title is untrusted text: it reaches the script only through env.
+      - env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          types='feat|fix|docs|refactor|perf|test|build|ci|chore|revert'
+          pattern="^(${types})(\([a-z0-9._/-]+\))?!?: [^A-Z].*[^.]$"
+          if ! printf '%s' "$TITLE" | grep -Eq "$pattern"; then
+            echo "::error::PR title must be '<type>(<scope>): <subject>' with type one of ${types//|/, }, subject lower case, no full stop."
+            exit 1
+          fi
+          if [ "${#TITLE}" -ge 72 ]; then
+            echo "::error::PR title is ${#TITLE} characters; keep it under 72."
+            exit 1
+          fi
+          echo "OK: $TITLE"
