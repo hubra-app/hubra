@@ -17,3 +17,11 @@ tag = "v{version}"
 [handbook]
 profile = "web-app"
 version = "v1"
+
+# What `mason check` looks at offline. The web-app profile expects changelog.d
+# and one migration head; Hubra keeps fragments next to the backend changelog
+# and allows several heads (handbook decision 0006), which
+# app/backend/tests/test_migrations_heads.py checks instead (see AGENTS.md).
+[check]
+fragments = "app/backend/changes"
+migrations = false
