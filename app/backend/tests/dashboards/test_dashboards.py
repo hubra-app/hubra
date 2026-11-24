@@ -66,6 +66,12 @@ def test_widgets_are_checked(client, plain_member_token):  # noqa: F811
         [{"id": "a", "type": "note", "h": 25}],
         [{"id": "a", "type": "note", "h": 2.5}],
         [{"id": "a", "type": "note", "w": True}],
+        [{"id": "a", "type": "note", "x": 0}],
+        [{"id": "a", "type": "note", "x": -1, "y": 0}],
+        [{"id": "a", "type": "note", "x": 0, "y": -1}],
+        [{"id": "a", "type": "note", "x": 0, "y": 10_000}],
+        [{"id": "a", "type": "note", "w": 4, "x": 9, "y": 0}],
+        [{"id": "a", "type": "note", "size": "l", "x": 2, "y": 0}],
         "nope",
     ]
     for widgets in bad:
@@ -89,6 +95,22 @@ def test_widgets_keep_their_place_on_the_grid(client, plain_member_token):  # no
         ("s", 3, None),
         ("l", 12, None),
         ("l", None, None),  # an old widget without a grid size stays as it was
+    ]
+
+
+def test_widgets_keep_their_spot_on_the_grid(client, plain_member_token):  # noqa: F811
+    widgets = [
+        {"id": "a", "type": "note", "w": 8, "h": 5, "x": 4, "y": 0},
+        {"id": "b", "type": "note", "w": 4, "x": 0, "y": 3},
+        {"id": "c", "type": "note", "size": "l", "x": 0, "y": 9},
+    ]
+    resp = _create(client, plain_member_token, widgets=widgets)
+    assert resp.status_code == 201, resp.get_json()
+    saved = resp.get_json()["widgets"]
+    assert [(w["id"], w.get("x"), w.get("y")) for w in saved] == [
+        ("a", 4, 0),
+        ("b", 0, 3),
+        ("c", 0, 9),
     ]
 
 

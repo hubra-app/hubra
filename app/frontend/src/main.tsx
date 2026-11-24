@@ -8,6 +8,7 @@ import '@mantine/notifications/styles.css'
 import '@mantine/tiptap/styles.css'
 import '@bitsandbricks/tokens/tokens.css'
 import '@bitsandbricks/ui/styles.css'
+import '@bitsandbricks/widgets/styles.css'
 // After the shared styles and before the app's own, so those win.
 import '@hubra/ui/ui.css'
 import { BuildBadge } from '@hubra/ui'

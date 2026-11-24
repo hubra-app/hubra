@@ -1,16 +1,21 @@
+import { compactGrid, flowGrid, freeSpot, type GridBox } from '@bitsandbricks/ui'
 import type { DashboardWidget, WidgetSize } from '@/api/dashboards'
 
 /**
- * The dashboard grid: 12 columns, rows of ROW px with GAP px between them.
- * A widget spans `w` columns and `h` rows; without `h` it is as tall as its
- * content (rounded up to whole rows). Widgets fill the grid in their order,
- * a later small one moving up into a gap left by a wide one.
+ * Hubra's side of the shared dashboard grid (DashboardGrid in
+ * @bitsandbricks/ui): 12 columns, rows of ROW px with GAP px between them.
+ * A widget has a spot (x, y) and spans `w` columns and `h` rows; without `h`
+ * it is as tall as its content, measured and rounded up to whole rows.
+ * Dashboards saved before the spot existed are laid out in their order once
+ * (flowGrid) and keep the spot from their next save on.
  */
 export const COLS = 12
 export const ROW = 40
 export const GAP = 16
 export const MIN_W = 2
 export const MAX_H = 24
+/** Rows a widget takes before its content was measured. */
+export const START_ROWS = 4
 
 const WIDTH: Record<WidgetSize, number> = { s: 4, m: 6, l: 12 }
 
@@ -22,11 +27,6 @@ export function widthOf(widget: Pick<DashboardWidget, 'w' | 'size'>): number {
 /** The size a widget component is told, so it can show more when wide. */
 export function sizeFor(w: number): WidgetSize {
   return w <= 4 ? 's' : w <= 8 ? 'm' : 'l'
-}
-
-/** Columns on a tablet (12 there too): a narrow widget half, the rest whole. */
-export function tabletWidth(w: number): number {
-  return w <= 4 ? 6 : COLS
 }
 
 export function clampW(w: number): number {
@@ -47,42 +47,83 @@ export function heightOf(rows: number): number {
   return rows * ROW + (rows - 1) * GAP
 }
 
-/** *widgets* with the one at *from* moved to *to*. */
-export function move<T>(widgets: T[], from: number, to: number): T[] {
-  if (from === to || from < 0 || to < 0 || from >= widgets.length || to >= widgets.length) {
-    return widgets
+/** A widget on the grid: its box, and whether its height is its content's. */
+export type Placed = GridBox & { widget: DashboardWidget; auto: boolean }
+
+/**
+ * Where *widgets* sit: their saved spot, or (saved before spots) in their
+ * order. *rows* are the measured content heights of widgets without `h`;
+ * a widget measured empty (0) is left out. Every box floats up as far as
+ * it goes, so a widget that grows pushes the ones below it down.
+ */
+export function layout(widgets: DashboardWidget[], rows: ReadonlyMap<string, number>): Placed[] {
+  const shown = widgets.filter((wd) => rows.get(wd.id) !== 0)
+  const box = (wd: DashboardWidget) => ({
+    widget: wd,
+    auto: wd.h === undefined,
+    w: widthOf(wd),
+    h: wd.h === undefined ? (rows.get(wd.id) ?? START_ROWS) : clampH(wd.h),
+  })
+  if (shown.every((wd) => wd.x === undefined || wd.y === undefined)) {
+    return flowGrid(shown.map(box), COLS)
   }
-  const next = [...widgets]
-  const [item] = next.splice(from, 1)
-  next.splice(to, 0, item)
-  return next
+  // Placed ones keep their spot; any without one goes into the first gap.
+  const placed: Placed[] = []
+  for (const wd of shown) {
+    if (wd.x !== undefined && wd.y !== undefined) placed.push({ ...box(wd), x: wd.x, y: wd.y })
+  }
+  for (const wd of shown) {
+    if (wd.x !== undefined && wd.y !== undefined) continue
+    const b = box(wd)
+    placed.push({ ...b, ...freeSpot(placed, b.w, b.h, COLS) })
+  }
+  return compactGrid(placed, COLS)
 }
 
 /**
- * The size a resize ends at: the start size plus how far the pointer moved
- * (*dx*, *dy* in px) on a grid *gridWidth* px wide, in whole columns and rows.
+ * The widgets to save from the grid's new *items*: spot and width for all,
+ * the height only where it was set, or where the move changed it from what
+ * was shown (a resize). In reading order, so older apps keep the order.
  */
-export function resized(
-  start: { w: number; h: number },
-  dx: number,
-  dy: number,
-  gridWidth: number,
-  /** Off on a tablet or phone, where widths don't follow the 12 columns. */
-  changeWidth = true,
-): { w: number; h: number } {
-  const colStep = (gridWidth - (COLS - 1) * GAP) / COLS + GAP
-  const w = changeWidth ? clampW(start.w + dx / colStep) : start.w
-  return { w, h: clampH(start.h + dy / (ROW + GAP)) }
+export function toWidgets(items: Placed[], before: Placed[]): DashboardWidget[] {
+  const was = new Map(before.map((p) => [p.widget.id, p]))
+  const sane = compactGrid(
+    items.map((p) => ({ ...p, w: clampW(p.w), h: clampH(p.h) })),
+    COLS,
+  )
+  return [...sane]
+    .sort((a, b) => a.y - b.y || a.x - b.x)
+    .map((p) => {
+      const old = was.get(p.widget.id)
+      const keepAuto = p.auto && old !== undefined && old.h === p.h
+      return withBox(p.widget, p, keepAuto ? undefined : p.h)
+    })
 }
 
-/** *widget* with its grid size stored (and `size` kept for older apps). */
-export function withSize(
+/** *widget* at *box*, with its height *h* (undefined: its content's). */
+export function withBox(
   widget: DashboardWidget,
-  w: number,
+  box: Pick<GridBox, 'x' | 'y' | 'w'>,
   h: number | undefined,
 ): DashboardWidget {
-  const next: DashboardWidget = { ...widget, w: clampW(w), size: sizeFor(clampW(w)) }
+  const w = clampW(box.w)
+  const next: DashboardWidget = {
+    ...widget,
+    x: Math.max(0, Math.min(COLS - w, box.x)),
+    y: Math.max(0, box.y),
+    w,
+    size: sizeFor(w),
+  }
   if (h === undefined) delete next.h
   else next.h = clampH(h)
   return next
+}
+
+/** Every widget with the spot it has in *placed* (hidden ones keep theirs). */
+export function withSpots(widgets: DashboardWidget[], placed: Placed[]): DashboardWidget[] {
+  const at = new Map(placed.map((p) => [p.widget.id, p]))
+  return widgets.map((wd) => {
+    const p = at.get(wd.id)
+    return p ? withBox(wd, p, wd.h) : wd
+  })
 }
