@@ -263,6 +263,114 @@ body {
   color: var(--bnb-accent-text);
 }
 
+/* Page tabs (Tabs and SubTabs in shared.tsx, the shared PageTabs, and a few
+   Mantine Tabs that take the class). On wide screens a single underlined row; on phones the tabs
+   wrap into rows of pills, so every tab is in view without a sideways scroll. */
+.hubra-tabs .mantine-Tabs-list {
+  flex-wrap: nowrap;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.hubra-tabs .mantine-Tabs-list::-webkit-scrollbar {
+  display: none;
+}
+
+.hubra-tabs .mantine-Tabs-tab {
+  padding: 12px 14px;
+  font-size: var(--mantine-font-size-sm);
+  color: var(--bnb-muted);
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.hubra-tabs .mantine-Tabs-tab:hover {
+  background: transparent;
+  color: var(--bnb-fg);
+}
+
+.hubra-tabs .mantine-Tabs-tab[data-active] {
+  color: var(--bnb-accent-text);
+}
+
+@media (max-width: 47.99em) {
+  .hubra-tabs .mantine-Tabs-list {
+    flex-wrap: wrap;
+    gap: 6px;
+    overflow: visible;
+  }
+
+  /* The underline row makes no sense once the tabs wrap. */
+  .hubra-tabs .mantine-Tabs-list::before {
+    display: none;
+  }
+
+  .hubra-tabs .mantine-Tabs-tab {
+    padding: 7px 12px;
+    margin: 0;
+    min-height: 36px;
+    border: 1px solid var(--bnb-line);
+    border-radius: 999px;
+    background: var(--bnb-surface);
+  }
+
+  .hubra-tabs .mantine-Tabs-tab:hover {
+    background: var(--bnb-raised);
+  }
+
+  .hubra-tabs .mantine-Tabs-tab[data-active] {
+    border-color: var(--bnb-accent);
+    background: var(--bnb-accent-soft);
+    color: var(--bnb-accent-text);
+  }
+}
+
+/* Sub-tabs (SubTabs): the parts of one page tab, as a row of small pills
+   that wraps on narrow screens. */
+.hubra-subtabs .mantine-Tabs-list {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hubra-subtabs .mantine-Tabs-tab {
+  padding: 6px 14px;
+  min-height: 34px;
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+  color: var(--bnb-muted);
+  border: 1px solid var(--bnb-line);
+  background: var(--bnb-surface);
+}
+
+.hubra-subtabs .mantine-Tabs-tab:hover {
+  background: var(--bnb-raised);
+  color: var(--bnb-fg);
+}
+
+.hubra-subtabs .mantine-Tabs-tab[data-active] {
+  border-color: var(--bnb-accent);
+  background: var(--bnb-accent-soft);
+  color: var(--bnb-accent-text);
+}
+
+/* On phones the page tabs are pills too, so the sub-tabs sit under a line
+   and drop their border: two rows of the same pills read as one list. */
+@media (max-width: 47.99em) {
+  .hubra-subtabs {
+    border-top: 1px solid var(--bnb-line);
+    padding-top: 12px;
+  }
+
+  .hubra-subtabs .mantine-Tabs-tab {
+    padding: 4px 12px;
+    min-height: 32px;
+    border-color: transparent;
+    background: transparent;
+  }
+}
+
 /* Build commit in the lower right corner (BuildBadge): there to look up,
    not to be noticed. Under notifications and dialogs, gone on phones. */
 .hubra-build {

@@ -39,7 +39,7 @@ export function Tabs({
   mb?: number
 }) {
   return (
-    <Box mb={mb}>
+    <Box mb={mb} className="hubra-tabs">
       <PageTabs tabs={tabs} active={activeTab} onChange={onTabChange} label={label} />
     </Box>
   )
@@ -59,7 +59,7 @@ export function SubTabs({
   label: string
 }) {
   return (
-    <Box mb={20}>
+    <Box mb={20} className="hubra-subtabs">
       <PageTabs tabs={tabs} active={activeTab} onChange={onTabChange} label={label} sub />
     </Box>
   )
