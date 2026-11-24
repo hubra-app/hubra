@@ -11,7 +11,7 @@ moved. As a file, the same code runs on pull requests (ci.yml, job
         The tag is vX.Y.Z or vX.Y.Z-<pre>, matches app/backend/pyproject.toml,
         and a release (not a pre-release) has a non-empty [X.Y.Z] section in
         app/backend/CHANGELOG.md. With --no-fragments (always on a tag
-        push) app/backend/changes/ must be empty: its entries belong in the
+        push) app/backend/changelog.d/ must be empty: its entries belong in the
         changelog before the version bump. Writes version, prerelease and
         minor to $GITHUB_OUTPUT (or prints them).
 
@@ -44,7 +44,7 @@ import tomllib
 import urllib.request
 
 CHANGELOG = "app/backend/CHANGELOG.md"
-CHANGES = "app/backend/changes"
+CHANGES = "app/backend/changelog.d"
 FRAGMENTS = "app/backend/hubra/core/changelog_fragments.py"
 PYPROJECT = "app/backend/pyproject.toml"
 TAG_RE = re.compile(r"v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)(?P<pre>-[0-9A-Za-z.-]+)?")
@@ -247,7 +247,7 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument(
         "--no-fragments",
         action="store_true",
-        help="fail while app/backend/changes/ has entries (always on for a tag push)",
+        help="fail while app/backend/changelog.d/ has entries (always on for a tag push)",
     )
     n = sub.add_parser("notes", help="write the release's CHANGELOG.md and notes.md")
     n.add_argument("tag")

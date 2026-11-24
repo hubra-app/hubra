@@ -1,4 +1,4 @@
-"""Changelog entries in app/backend/changes/ (hubra.core.changelog_fragments)."""
+"""Changelog entries in app/backend/changelog.d/ (hubra.core.changelog_fragments)."""
 
 import pytest
 
@@ -44,7 +44,7 @@ FRAGMENT = """### Added
 
 
 def test_shipped_fragments_are_valid():
-    # Every file in app/backend/changes/ has English and German in the same shape.
+    # Every file in app/backend/changelog.d/ has English and German in the same shape.
     for path in cf.files():
         cf.read(path)
 

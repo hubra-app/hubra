@@ -136,6 +136,8 @@ Settings > Rules > Rulesets > New ruleset > Import a ruleset.
   "Require branches to be up to date" is off: it makes every open pull
   request rerun after each merge. The push to `main` runs the checks again
   on the merged result.
+- Squash merge only, so `main` reads one commit per pull request and the
+  pull request title becomes that commit (checked by `PR title`).
 - Block force pushes and deletion.
 - No bypass list, so a red pull request cannot be merged from the API
   either. To get around the rules in an emergency, set the ruleset to

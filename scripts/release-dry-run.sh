@@ -11,7 +11,7 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 echo "== check $tag"
 # A pull request that bumps the version (RELEASE_BUMP=true from ci.yml) must
-# have folded app/backend/changes/ into the changelog, like the tag push.
+# have folded app/backend/changelog.d/ into the changelog, like the tag push.
 strict=()
 if [ "${RELEASE_BUMP:-}" = true ]; then strict=(--no-fragments); fi
 GITHUB_OUTPUT="" python3 scripts/release_check.py check "$tag" "${strict[@]}"

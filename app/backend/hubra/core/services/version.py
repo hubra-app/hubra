@@ -18,7 +18,7 @@ _CHANGELOG_PATH = _BACKEND_ROOT / "CHANGELOG.md"
 _CHANGELOG_DE_PATH = _BACKEND_ROOT / "CHANGELOG.de.md"
 # Entries of pull requests merged since the last release, one file each
 # (hubra.core.changelog_fragments); shown under [Unreleased].
-_CHANGES_DIR = _BACKEND_ROOT / "changes"
+_CHANGES_DIR = _BACKEND_ROOT / "changelog.d"
 _ROADMAP_PATH = _BACKEND_ROOT / "ROADMAP.yaml"
 
 # Roadmap columns, in the order the apps show them.
