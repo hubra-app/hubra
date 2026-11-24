@@ -69,7 +69,7 @@ install the backend with `pip install -r app/backend/requirements-dev.txt`
 
 - Branch from `main`. `main` is protected; every change goes through a pull
   request on GitHub. Open it as a draft; CI starts when it is marked ready
-  for review. The required checks are `lint` and `tests`.
+  for review. The one required check is `CI passed`, which waits on `lint` and `tests`.
 - One logical change per commit, in
   [Conventional Commits](https://www.conventionalcommits.org/) form with the
   area as scope (`fix(manage): ...`, `feat(club-app): ...`). The

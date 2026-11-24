@@ -124,7 +124,7 @@ that fails without it.
 - Fill in the [pull request template](.github/pull_request_template.md).
 - Open it as a **draft** while you are still working. CI does not run on
   drafts; mark it ready for review when you want the checks.
-- The required checks are `lint` and `tests`. Which jobs run depends on the
+- The one required check is `CI passed`, which waits on `lint` and `tests`. Which jobs run depends on the
   paths you changed; [docs/ci.md](docs/ci.md) explains it.
 - Keep your branch up to date by merging `main` into it.
 - A maintainer reviews and merges. Please be patient: Hubra is maintained by

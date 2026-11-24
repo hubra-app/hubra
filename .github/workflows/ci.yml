@@ -518,3 +518,21 @@ jobs:
           for r in $RESULTS; do
             case "$r" in success|skipped) ;; *) exit 1 ;; esac
           done
+
+  # The one check branch protection requires (handbook core/github.md), so
+  # the ruleset never needs editing when jobs change. It passes when lint
+  # and tests passed or were skipped.
+  ci-passed:
+    name: CI passed
+    needs: [lint, tests]
+    if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "$RESULTS"
+          for r in $RESULTS; do
+            case "$r" in success|skipped) ;; *) exit 1 ;; esac
+          done

@@ -131,7 +131,8 @@ Settings > Rules > Rulesets > New ruleset > Import a ruleset.
 
 - Require a pull request before merging, 0 approvals (one maintainer, and a
   pull request author cannot approve their own pull request).
-- Required status checks `lint` and `tests`, from GitHub Actions only.
+- Required status check `CI passed` (it waits on `lint` and `tests`, so the
+  ruleset never changes when jobs do), from GitHub Actions only.
   "Require branches to be up to date" is off: it makes every open pull
   request rerun after each merge. The push to `main` runs the checks again
   on the merged result.
