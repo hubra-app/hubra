@@ -11,8 +11,8 @@
     "test": "node --test tests/*.test.ts"
   },
   "dependencies": {
-    "@bitsandbricks/tokens": "0.1.0",
-    "@bitsandbricks/ui": "0.1.0",
+    "@bitsandbricks/tokens": "0.3.0",
+    "@bitsandbricks/ui": "0.3.0",
     "@mantine/core": "^9.7.4",
     "@mantine/dates": "^9.7.4",
     "@mantine/hooks": "^9.7.4",

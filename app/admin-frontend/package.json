@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@bitsandbricks/tokens": "0.1.0",
-    "@bitsandbricks/ui": "0.1.0",
+    "@bitsandbricks/tokens": "0.3.0",
+    "@bitsandbricks/ui": "0.3.0",
     "@mantine/core": "^9.7.4",
     "@mantine/dates": "^9.7.4",
     "@mantine/form": "^9.7.4",
