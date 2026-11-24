@@ -127,19 +127,21 @@ current.
 
 ## Where Hubra differs from the handbook
 
-Follow the left column here; the handbook rule on the right does not apply
-to this repo.
+Follow the Hubra column here; the handbook rule does not apply to this repo.
+The handbook ([core/changing-the-handbook.md](https://github.com/bitsandbricks-ch/handbook))
+asks for a written reason for each difference; rows marked TODO still need one
+from the maintainer.
 
-| Topic | Hubra | Handbook (v1) |
-| --- | --- | --- |
-| Branch names | `feat/...`, `fix/...` (Conventional Commits prefix) | `claude/<topic>` for agents |
-| Commit messages | Conventional Commits with the area as scope | Imperative subject, body says why |
-| Migrations | `flask db migrate`; several heads are fine if they touch different tables | Timestamped revisions; CI fails on two heads |
-| Changelog | One file per change in `app/backend/changes/`, English and German | `changelog.d/` or `changes/` |
-| Required checks | `lint` and `tests` | One `CI passed` check |
-| CI on drafts | Runs only once the pull request is ready for review | Done = checks green, then ready |
-| Request validation | Marshmallow schemas | Pydantic, zod |
-| Configuration | Platform settings (manage); environment only before the database is reachable | Environment variables through one settings object |
+| Topic | Hubra | Handbook (v1) | Why |
+| --- | --- | --- | --- |
+| Branch names | `feat/...`, `fix/...` (Conventional Commits prefix) | `claude/<topic>` for agents | TODO |
+| Commit messages | Conventional Commits with the area as scope | Imperative subject, body says why | The `conventional-pre-commit` hook enforces it |
+| Migrations | `flask db migrate`; several heads are fine if they touch different tables | Timestamped revisions; CI fails on two heads | Parallel pull requests merge without a merge migration; `tests/test_migrations_heads.py` checks the tables ([docs/migrations.md](docs/migrations.md)) |
+| Changelog | One file per change in `app/backend/changes/`, English and German | `changelog.d/` or `changes/` | The handbook's `changes/` option, next to the backend changelog it is folded into |
+| Required checks | `lint` and `tests` | One `CI passed` check | TODO |
+| CI on drafts | Runs only once the pull request is ready for review ([docs/ci.md](docs/ci.md)) | Done = checks green, then ready | TODO |
+| Request validation | Marshmallow schemas | Pydantic, zod | The existing schemas use it; TODO whether new code should too |
+| Configuration | Platform settings (manage); environment only before the database is reachable | Environment variables through one settings object | Admins change settings in manage; each one starts from its env variable ([docs/configuration.md](docs/configuration.md)) |
 
 ## Code style
 
