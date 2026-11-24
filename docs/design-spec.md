@@ -9,18 +9,33 @@ Read this before you build a screen. When the code and this page disagree,
 the page wins for new code; the [open differences](#open-differences) list
 says what still has to be brought in line.
 
+Hubra is built on the shared BitsAndBricks UI
+([bitsandbricks-ch/ui](https://github.com/bitsandbricks-ch/ui)):
+`@bitsandbricks/tokens` (the `--bnb-*` CSS variables: greys, status
+colours, radii, light and dark) and `@bitsandbricks/ui` (the Mantine theme
+and the shared components), both from npm, pinned in each frontend's
+`package.json`. Hubra brings its accent, its fonts and the pieces only
+Hubra has; `packages/ui` (`@hubra/ui`) holds those.
+
 Where things live:
 
 | What | Where |
 | --- | --- |
-| Mantine theme (colours, type, radius, shadows, component defaults) | `packages/ui/src/theme.ts`, `colors.ts` |
-| CSS tokens (`--hb-*`), page base, brand marks, chips, tabs | `packages/ui/src/ui.css` |
-| Shared page blocks: `PageHead`, `StatTile`, `StatGrid`, `Tabs`, `Pagination` | `packages/ui/src/layout.tsx` |
-| Dialogs, side panels, cards, empty / error / loading states | `packages/ui/src/feedback.tsx` (each app wraps them with its texts) |
+| Tokens (`--bnb-*`), base styles of Mantine's controls | `@bitsandbricks/tokens/tokens.css`, `@bitsandbricks/ui/styles.css` |
+| Mantine theme: `createBnbTheme` with Hubra's accent and fonts, the club's colours | `packages/ui/src/theme.ts` (`hubraTheme`), `app/frontend/src/branding.ts` |
+| Provider (theme, colour scheme, the shared components' language, toasts) | `HubraProvider` in `packages/ui/src/HubraProvider.tsx` |
+| Hubra's colours (gold, pink, category colours) | `packages/ui/src/colors.ts` |
+| Hubra's names for the tokens (`--hb-*`), page base, brand marks, chips | `packages/ui/src/ui.css` |
+| Page blocks, dialogs, side panel, filters, pager, empty / error / loading states | `@bitsandbricks/ui` (`PageHead`, `StatGrid`, `ConfirmModal`, `EmptyState`, `ErrorBanner`, `PanelSection`, `PanelField`, …) |
+| The same with Hubra's prop names, for screens and plugins: `Tabs`, `SubTabs`, `Pagination`, `StatTile`, `SlideOver`, `FilterBar`, `LoadingSpinner` | `packages/ui/src/shared.tsx` |
+| Hubra's `Card`, `CardGrid`, form `Modal` (no shared counterpart yet) | `packages/ui/src/feedback.tsx` |
 | Fonts (self-hosted woff2, SIL OFL) | `packages/ui/src/fonts/` |
-| Text colour on any fill (WCAG) | `packages/ui/src/contrast.ts` (`textOn`, `readableOn`) |
-| Light / dark / auto | `packages/ui/src/colorScheme.ts`, `ThemeSwitch.tsx`, `theme.js` |
+| Text colour on any fill (WCAG) | `packages/ui/src/contrast.ts` (`textOn`, `colorText`, `tagStyle`, on the tokens' maths) |
+| Light / dark / auto | `packages/ui/src/colorScheme.ts`, `ThemeToggle` (`ThemeSwitch.tsx`), `@bitsandbricks/ui`'s `ThemeSwitch` and `theme-script.js` |
 | Logo files and brand rules | `brand/README.md` |
+
+A component the shared packages lack or get wrong is fixed in
+bitsandbricks-ch/ui, not copied into `packages/ui`.
 
 If a value is in the theme or in a token, use it. Don't write a hex value,
 a pixel radius or a shadow into a screen.
@@ -54,40 +69,44 @@ a gold dot inside. Files and sizes are in `brand/README.md`.
 
 ### Colour
 
-**Primary – Hubra Violet** (Mantine `acc`). Shade 6 is the primary in light
-mode, shade 4 in dark mode.
+**Primary – Hubra Violet**, the theme's accent (Mantine `accent`, and
+Hubra's older name `acc`): `#7441e0` in light mode, `#9f7cf8` in dark mode
+(`HUBRA_ACCENT`). In CSS: `var(--bnb-accent)` for fills, `var(--bnb-accent-text)`
+for text, `var(--bnb-on-accent)` for text on a fill.
 
 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `#f5f1ff` | `#ebe3ff` | `#d6c7ff` | `#bba3fd` | `#9f7cf8` | `#8758f0` | `#7441e0` | `#6131c4` | `#4d27a0` | `#3a1e78` |
 
-`acc` is the **club colour**: a club can set its own (club branding), and
-the whole `acc` scale then follows it. So:
+The accent is the **club colour**: a club can set its own (club branding),
+and the accent then follows it, darkened or lightened just enough to read
+as text in each scheme (`clubAccent`). So:
 
-- Use `acc` (or `var(--mantine-color-acc-*)`) for anything that should take
+- Use `accent` (or `var(--bnb-accent)`) for anything that should take
   the club's colour: primary buttons, links, the active page, focus rings.
 - Never write `violet`, `indigo` or a violet hex in the club app. They stay
   violet when the club is green.
 - Manage, sign-in and the website are Hubra's own and always violet, but
-  they still use `acc` so the code is the same everywhere.
+  they still use the accent so the code is the same everywhere.
 
 **Accent – Signal Gold** (Mantine `gold`, `#fece2b`): the logo dot and small
 markers for "new", "due" and "highlighted". Always dark ink text on it.
 Never a large area, never a button fill.
 
-**Neutrals** (Mantine `gray`, violet-tinted in light mode). Use the tokens,
-which switch with the colour scheme:
+**Neutrals** come from the shared tokens and switch with the colour scheme.
+Hubra's `--hb-*` names point at them, so screens and plugins that use them
+keep working; new code may use either:
 
-| Token | Use | Light | Dark |
-| --- | --- | --- | --- |
-| `--hb-page` | Page background | `#f7f6fb` | `#111113` |
-| `--hb-surface` | Cards, dialogs, top bar | `#ffffff` | `#19191c` |
-| `--hb-surface-2` | Hover fills, inset areas | `#f4f2f9` | `#222226` |
-| `--hb-border` | Lines and card borders | `#e6e3ef` | `#2f2f34` |
-| `--hb-text` | Body text, headings | `#1a1625` | `#ededef` |
-| `--hb-text-2` | Secondary text | `#5e5873` | `#a8a8b0` |
-| `--hb-text-3` | Hints, placeholders, meta | `#8c86a0` | `#7c7c85` |
-| `--hb-sidebar` | Sidebar | tint of `acc-0` | `#151517` |
+| Token | Shared token | Use |
+| --- | --- | --- |
+| `--hb-page` | `--bnb-bg` | Page background |
+| `--hb-surface` | `--bnb-surface` | Cards, dialogs, top bar |
+| `--hb-surface-2` | `--bnb-raised` | Hover fills, inset areas |
+| `--hb-border` | `--bnb-line` | Lines and card borders |
+| `--hb-text` | `--bnb-fg` | Body text, headings |
+| `--hb-text-2` | `--bnb-muted` | Secondary text |
+| `--hb-text-3` | `--bnb-faint` | Hints, placeholders, meta |
+| `--hb-sidebar` | | Sidebar: a light tint of the accent, the surface in dark mode |
 | `--hb-notice-bg` / `--hb-notice-border` | Announcement banner | gold 0 / 3 | gold mixed into surface |
 
 Dark mode is neutral grey on purpose (Mike, 2026-10-30): the club colour is
@@ -98,21 +117,22 @@ the only colour on the page, and only on accents.
 
 | Meaning | Mantine colour | Examples |
 | --- | --- | --- |
-| Success, paid, active | `green` | Paid invoice, active member, check passed |
-| Warning, due, needs a look | `orange` | Unpaid, trial ends, quota near |
-| Danger, error, delete | `red` | Overdue, failed, delete buttons |
-| Information, neutral notice | `acc` | Hints, "how this works" boxes |
+| Success, paid, active | `ok` (older name `green`) | Paid invoice, active member, check passed |
+| Warning, due, needs a look | `warn` (older name `orange`) | Unpaid, trial ends, quota near |
+| Danger, error, delete | `err` (older name `red`) | Overdue, failed, delete buttons |
+| Information, neutral notice | `accent` (older name `acc`) | Hints, "how this works" boxes |
 | Off, archived, unknown | `gray` | Inactive, archived, draft |
 
 `yellow` is not a status colour (yellow text fails contrast on white). `gold`
 is only for the small "new/due" marker. `blue`, `cyan`, `indigo`, `violet`
 are not used for status.
 
-The theme's `green`, `orange` and `red` scales are built from the brand
-values (shade 6 = `#18794e`, `#e8a317`, `#c73550`), and text in them uses
-`--mantine-color-<name>-text`, which is darkened where needed to pass AA.
-In inline styles use `var(--mantine-color-<name>-text)` for text and
-`var(--mantine-color-<name>-6)` for dots and bars.
+The status colours are the shared tokens (`--bnb-ok`, `--bnb-warn`,
+`--bnb-err`), which pass AA as text in both schemes (the token tests in
+bitsandbricks-ch/ui). Hubra's `green`, `orange` and `red` are the same
+colours under their older names, so `color="red"` and
+`var(--mantine-color-red-text)` still work. In new inline styles use
+`var(--bnb-err)` for text, dots and bars, `var(--bnb-err-soft)` for a fill.
 
 **Category colours** (tags, tiers, event and inventory types, search result
 types, finance categories) come from `categoryColors` in `@hubra/ui` (the
@@ -123,8 +143,8 @@ Don't keep a local map of hex values.
 
 **Contrast.** Every text/background pair meets WCAG AA (4.5 : 1, 3 : 1 for
 large text and icons). The theme does this for filled buttons and badges
-(`autoContrast`, `--mantine-color-*-contrast`) and for `acc` text
-(`--mantine-color-acc-text`). For your own fills, use `textOn(bg)`.
+and for accent text (the shared theme's variant colours and
+`--bnb-on-accent`). For your own fills, use `textOn(bg)`.
 
 ### Type
 
@@ -234,12 +254,14 @@ shadows are barely visible there and that is fine.
 ### Dark mode
 
 - Every screen works in light and dark. Users pick light / dark / auto
-  (`users.theme`, cookie `hubra_theme`); `packages/ui/theme.js` sets it
-  before the first paint on every portal.
+  (`users.theme`, cookie `hubra_theme`); the shared theme script
+  (`/theme.js`, from `@bitsandbricks/ui`, `data-cookie="hubra_theme"`) sets
+  it before the first paint on every portal.
 - Use tokens and Mantine colour names only. A hex value in a screen is a
   dark-mode bug waiting to happen.
 - Don't override `--mantine-color-gray-N`: it breaks Mantine's dark subtle
-  variants. Change tokens in `ui.css` instead.
+  variants. Colours of the family come from the shared tokens; Hubra's own
+  additions go in `ui.css`.
 - Test every new screen in both schemes before the PR (screenshots in the
   PR, see `docs/screenshots/`).
 
@@ -308,8 +330,8 @@ the content.
 
 ### Tabs
 
-- Page tabs are `Tabs` from `@hubra/ui` (the `.hubra-tabs` style): an
-  underlined row on desktop, wrapping pills on phones. Tabs change the URL.
+- Page tabs are `Tabs` from `@hubra/ui` (the shared `PageTabs`): an
+  underlined row, `SubTabs` for the pills under a tab. Tabs change the URL.
 - Settings-like pages with many sections (SSO account) may use the side
   list from tablet width.
 - `SegmentedControl` is for switching a view of the same data (month /
@@ -371,16 +393,16 @@ in `packages/ui` when a second app needs it.
 | Figures | `StatTile` in `StatGrid` | `.stat-value` 28 px |
 | Table | `DataTable` (club app) | sorting, paging, card view on phones; plain `Table` only for small fixed tables |
 | Key/value list | `KVTable` | |
-| Paging | `Pagination` from `@hubra/ui` | |
+| Paging | `Pagination` from `@hubra/ui` (the shared `Pager`) | |
 | Page head | `PageHead` | |
-| Tabs | `Tabs` from `@hubra/ui` | |
+| Tabs | `Tabs`, `SubTabs` from `@hubra/ui` (the shared `PageTabs`) | |
 | Card | `Card`, `Card.Header`, `CardGrid` (`@hubra/ui`), `CardItem` (club app) | |
-| Dialog | `Modal`, `ConfirmModal` (`@hubra/ui`); manage: `useConfirm()` | see §3 |
-| Side panel | `SlideOver`, `PanelSection`, `PanelField` (`@hubra/ui`) | |
+| Dialog | `Modal` (`@hubra/ui`), `ConfirmModal` (`@bitsandbricks/ui`, through each app's wrapper); manage: `useConfirm()` | see §3 |
+| Side panel | `SlideOver` (`@hubra/ui`, the shared `SidePanel`), `PanelSection`, `PanelField` (`@bitsandbricks/ui`) | |
 | Toast | `notify()` | `success` / `error` / `info` |
 | Notice | `Alert` | `light`, icon 18 px |
-| Empty | `EmptyState` (`@hubra/ui`) | |
-| Load error | `ErrorBanner` (`@hubra/ui`) | with retry |
+| Empty | `EmptyState` (`@bitsandbricks/ui`) | |
+| Load error | `ErrorBanner` (`@bitsandbricks/ui`) | with retry |
 | Theme switch | `ThemeSwitch` / `ThemeToggle` | |
 | Rich text | `RichTextEditor` (Tiptap, stores Markdown), `MarkdownRenderer` | |
 | Logs, terminal output | `.terminal-block` | mono, dark in both schemes |
