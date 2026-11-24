@@ -2,7 +2,7 @@
 
 Every pull request used to add its entries under ``## [Unreleased]`` at the
 top of CHANGELOG.md and CHANGELOG.de.md, so any two open pull requests
-clashed there. Now each adds ``app/backend/changes/<topic>.md`` instead:
+clashed there. Now each adds ``app/backend/changelog.d/<topic>.md`` instead:
 
     ### Added
 
@@ -19,7 +19,7 @@ and as many items each. The apps show them under [Unreleased]; before a
 release, ``python -m hubra.core.changelog_fragments fold`` (or ``python
 app/backend/hubra/core/changelog_fragments.py fold`` from the repository)
 moves them into the two changelogs and deletes the files. See
-app/backend/changes/README.md.
+app/backend/changelog.d/README.md.
 
 Standard library only: scripts/release_check.py loads this file directly.
 """
@@ -32,7 +32,7 @@ import sys
 from pathlib import Path
 
 BACKEND = Path(__file__).resolve().parents[2]
-CHANGES = BACKEND / "changes"
+CHANGES = BACKEND / "changelog.d"
 CHANGELOGS = {"en": BACKEND / "CHANGELOG.md", "de": BACKEND / "CHANGELOG.de.md"}
 
 GERMAN = re.compile(r"^\s*<!--\s*de\s*-->\s*$", re.M | re.I)

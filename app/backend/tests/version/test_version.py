@@ -15,7 +15,7 @@ _PYPROJECT = Path(__file__).resolve().parents[2] / "pyproject.toml"
 
 @pytest.fixture(autouse=True)
 def _no_fragments(tmp_path_factory, monkeypatch):
-    # The sample changelogs below must not pick up app/backend/changes/.
+    # The sample changelogs below must not pick up app/backend/changelog.d/.
     monkeypatch.setattr(
         "hubra.core.services.version._CHANGES_DIR", tmp_path_factory.mktemp("changes")
     )

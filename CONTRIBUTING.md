@@ -67,9 +67,9 @@ The repository layout is described in the [README](README.md#project-structure).
    `app/backend/migrations/` (`flask db migrate`). Several heads after
    merging `main` are fine; see [docs/migrations.md](docs/migrations.md).
 5. **Changelog.** Anything a user or operator would notice gets an entry in
-   a new file `app/backend/changes/<topic>.md`: English, then the same
+   a new file `app/backend/changelog.d/<topic>.md`: English, then the same
    entry in German after a `<!-- de -->` line (see
-   [app/backend/changes/README.md](app/backend/changes/README.md)). The apps
+   [app/backend/changelog.d/README.md](app/backend/changelog.d/README.md)). The apps
    show these under "What's new"; the release moves them into
    `CHANGELOG.md` and `CHANGELOG.de.md`.
 6. **Docs.** Update the page in `docs/` that describes what you changed, and

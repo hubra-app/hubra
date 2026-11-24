@@ -102,7 +102,7 @@ FRAGMENT = "### Added\n\n- From a fragment.\n\n<!-- de -->\n\n### Added\n\n- Aus
 
 
 class FragmentRepo(Repo):
-    """A Repo with app/backend/changes/ and the real fragment module."""
+    """A Repo with app/backend/changelog.d/ and the real fragment module."""
 
     def __init__(self, version: str, log: str = LOG):
         super().__init__(version, log)

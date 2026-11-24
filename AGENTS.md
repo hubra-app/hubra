@@ -91,8 +91,8 @@ install the backend with `pip install -r app/backend/requirements-dev.txt`
   a change you can see, commit screenshots under `docs/screenshots/<topic>/`
   and embed them in the pull request.
 - Anything a user or operator would notice gets a changelog entry: a new
-  file `app/backend/changes/<topic>.md`, English then German after
-  `<!-- de -->` ([app/backend/changes/README.md](app/backend/changes/README.md)).
+  file `app/backend/changelog.d/<topic>.md`, English then German after
+  `<!-- de -->` ([app/backend/changelog.d/README.md](app/backend/changelog.d/README.md)).
   Don't edit `CHANGELOG.md`/`CHANGELOG.de.md` in a feature pull request:
   every open pull request clashes there; the release folds the files in.
   Mark who it is for (`<!-- for: events -->`, `admins`, `staff`) as in
@@ -136,7 +136,7 @@ asks for a written reason for each difference.
 | --- | --- | --- | --- |
 | Commit messages | Conventional Commits with the area as scope | Imperative subject, body says why | The `conventional-pre-commit` hook enforces it |
 | Migrations | `flask db migrate`; several heads are fine if they touch different tables | Timestamped revisions; CI fails on two heads | Parallel pull requests merge without a merge migration; `tests/test_migrations_heads.py` checks the tables ([docs/migrations.md](docs/migrations.md)); handbook [decision 0006](https://github.com/bitsandbricks-ch/handbook/blob/main/decisions/0006-several-migration-heads.md) |
-| Changelog | One file per change in `app/backend/changes/`, English and German | `changelog.d/` or `changes/` | The handbook's `changes/` option, next to the backend changelog it is folded into |
+| Changelog folder | `app/backend/changelog.d/`, English and German in each file | `changelog.d/` | Inside `app/backend` because the backend image reads the entries for What's new (`hubra/core/services/version.py`) |
 | Request validation | Marshmallow schemas | Pydantic, zod | The existing schemas use it; handbook [decision 0007](https://github.com/bitsandbricks-ch/handbook/blob/main/decisions/0007-validation-library-per-app.md) |
 | Configuration | Platform settings (manage); environment only before the database is reachable | Environment variables through one settings object | Admins change settings in manage; each one starts from its env variable ([docs/configuration.md](docs/configuration.md)); handbook [decision 0008](https://github.com/bitsandbricks-ch/handbook/blob/main/decisions/0008-runtime-settings-in-the-app.md) |
 
