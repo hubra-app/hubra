@@ -136,11 +136,11 @@ from the maintainer.
 | --- | --- | --- | --- |
 | Branch names | `feat/...`, `fix/...` (Conventional Commits prefix) | `claude/<topic>` for agents | TODO |
 | Commit messages | Conventional Commits with the area as scope | Imperative subject, body says why | The `conventional-pre-commit` hook enforces it |
-| Migrations | `flask db migrate`; several heads are fine if they touch different tables | Timestamped revisions; CI fails on two heads | Parallel pull requests merge without a merge migration; `tests/test_migrations_heads.py` checks the tables ([docs/migrations.md](docs/migrations.md)); handbook decision 0006 (proposed) |
+| Migrations | `flask db migrate`; several heads are fine if they touch different tables | Timestamped revisions; CI fails on two heads | Parallel pull requests merge without a merge migration; `tests/test_migrations_heads.py` checks the tables ([docs/migrations.md](docs/migrations.md)); handbook [decision 0006](https://github.com/bitsandbricks-ch/handbook/blob/main/decisions/0006-several-migration-heads.md) |
 | Changelog | One file per change in `app/backend/changes/`, English and German | `changelog.d/` or `changes/` | The handbook's `changes/` option, next to the backend changelog it is folded into |
 | CI on drafts | Runs only once the pull request is ready for review ([docs/ci.md](docs/ci.md)) | Done = checks green, then ready | TODO |
-| Request validation | Marshmallow schemas | Pydantic, zod | The existing schemas use it; handbook decision 0007 (proposed) |
-| Configuration | Platform settings (manage); environment only before the database is reachable | Environment variables through one settings object | Admins change settings in manage; each one starts from its env variable ([docs/configuration.md](docs/configuration.md)); handbook decision 0008 (proposed) |
+| Request validation | Marshmallow schemas | Pydantic, zod | The existing schemas use it; handbook [decision 0007](https://github.com/bitsandbricks-ch/handbook/blob/main/decisions/0007-validation-library-per-app.md) |
+| Configuration | Platform settings (manage); environment only before the database is reachable | Environment variables through one settings object | Admins change settings in manage; each one starts from its env variable ([docs/configuration.md](docs/configuration.md)); handbook [decision 0008](https://github.com/bitsandbricks-ch/handbook/blob/main/decisions/0008-runtime-settings-in-the-app.md) |
 
 ## Code style
 
