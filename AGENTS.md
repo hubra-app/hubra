@@ -5,10 +5,11 @@ These rules are for AI coding agents (Claude Code, Codex, Copilot, opencode,
 
 This repo follows the [BitsAndBricks handbook](https://github.com/bitsandbricks-ch/handbook),
 profile **web-app** (see `.mason.toml`). Read its README, the `core/`
-chapters, the blocks the web-app profile lists and `decisions/`. Where this
-file differs from the handbook, this file wins for this repo; the known
-differences are listed under
-[Where Hubra differs from the handbook](#where-hubra-differs-from-the-handbook).
+chapters, the blocks the web-app profile lists and `decisions/`, always
+from `main`. Where this file and the handbook disagree, the handbook wins.
+The only exceptions are the ones listed, each with its reason, under
+[Where Hubra differs from the handbook](#where-hubra-differs-from-the-handbook);
+if you find another disagreement, say so and fix whichever is out of date.
 
 ## General rules
 
@@ -83,7 +84,9 @@ install the backend with `pip install -r app/backend/requirements-dev.txt`
 - One logical change per commit, in
   [Conventional Commits](https://www.conventionalcommits.org/) form with the
   area as scope (`fix(manage): ...`, `feat(club-app): ...`). The
-  `conventional-pre-commit` hook checks this.
+  `conventional-pre-commit` hook checks this. `main` is squash-merged, so
+  the pull request title becomes the commit: it follows the same form, under
+  72 characters, and the `PR title` workflow checks it.
 - Branch names: prefix + kebab-case, for example `feat/member-export` or
   `fix/auth-token-refresh`. Coding agents use `claude/<topic>`, as the
   handbook asks.
@@ -128,13 +131,13 @@ current.
 
 ## Where Hubra differs from the handbook
 
-Follow the Hubra column here; the handbook rule does not apply to this repo.
-The handbook ([core/changing-the-handbook.md](https://github.com/bitsandbricks-ch/handbook))
-asks for a written reason for each difference.
+These are the only places where Hubra does not follow the handbook. The
+handbook allows a difference with a written reason in `AGENTS.md`
+([core/changing-the-handbook.md](https://github.com/bitsandbricks-ch/handbook/blob/main/core/changing-the-handbook.md));
+everything not listed here follows the handbook.
 
 | Topic | Hubra | Handbook (v1) | Why |
 | --- | --- | --- | --- |
-| Commit messages | Conventional Commits with the area as scope | Imperative subject, body says why | The `conventional-pre-commit` hook enforces it |
 | Migrations | `flask db migrate`; several heads are fine if they touch different tables | Timestamped revisions; CI fails on two heads | Parallel pull requests merge without a merge migration; `tests/test_migrations_heads.py` checks the tables ([docs/migrations.md](docs/migrations.md)); handbook [decision 0006](https://github.com/bitsandbricks-ch/handbook/blob/main/decisions/0006-several-migration-heads.md) |
 | Changelog | One file per change in `app/backend/changes/`, English and German | `changelog.d/` or `changes/` | The handbook's `changes/` option, next to the backend changelog it is folded into |
 | Request validation | Marshmallow schemas | Pydantic, zod | The existing schemas use it; handbook [decision 0007](https://github.com/bitsandbricks-ch/handbook/blob/main/decisions/0007-validation-library-per-app.md) |
