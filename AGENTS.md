@@ -1,5 +1,15 @@
 # Agent configuration for Hubra
 
+These rules are for AI coding agents (Claude Code, Codex, Copilot, opencode,
+...) working on Hubra. `CLAUDE.md` imports this file.
+
+This repo follows the [BitsAndBricks handbook](https://github.com/bitsandbricks-ch/handbook),
+profile **web-app** (see `.mason.toml`). Read its README, the `core/`
+chapters, the blocks the web-app profile lists and `decisions/`. Where this
+file differs from the handbook, this file wins for this repo; the known
+differences are listed under
+[Where Hubra differs from the handbook](#where-hubra-differs-from-the-handbook).
+
 ## General rules
 
 - Never create files outside the project directory.
@@ -114,6 +124,22 @@ current.
   database is reachable.
 - Clubs never create or change accounts; members join by invite link.
 - Translations are managed on the platform; clubs can only suggest changes.
+
+## Where Hubra differs from the handbook
+
+Follow the left column here; the handbook rule on the right does not apply
+to this repo.
+
+| Topic | Hubra | Handbook (v1) |
+| --- | --- | --- |
+| Branch names | `feat/...`, `fix/...` (Conventional Commits prefix) | `claude/<topic>` for agents |
+| Commit messages | Conventional Commits with the area as scope | Imperative subject, body says why |
+| Migrations | `flask db migrate`; several heads are fine if they touch different tables | Timestamped revisions; CI fails on two heads |
+| Changelog | One file per change in `app/backend/changes/`, English and German | `changelog.d/` or `changes/` |
+| Required checks | `lint` and `tests` | One `CI passed` check |
+| CI on drafts | Runs only once the pull request is ready for review | Done = checks green, then ready |
+| Request validation | Marshmallow schemas | Pydantic, zod |
+| Configuration | Platform settings (manage); environment only before the database is reachable | Environment variables through one settings object |
 
 ## Code style
 
