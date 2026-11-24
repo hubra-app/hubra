@@ -1,0 +1,6 @@
+# Generated files: collapsed in diffs and left out of language stats.
+# Only the dependency bot and release tooling change them (handbook core/code.md).
+**/package-lock.json   linguist-generated=true
+**/uv.lock             linguist-generated=true
+**/requirements.lock   linguist-generated=true
+skills-lock.json       linguist-generated=true
