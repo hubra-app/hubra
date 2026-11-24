@@ -172,6 +172,7 @@ Marketplace README and the hubra.club Modules page stay current.
 | Environment & settings config          | [docs/configuration.md](docs/configuration.md)           |
 | Early access per club (feature flags)  | [docs/feature-flags.md](docs/feature-flags.md)           |
 | Architecture & request flow            | [docs/architecture.md](docs/architecture.md)             |
+| Threat model, ways in                  | [docs/threat-model.md](docs/threat-model.md)             |
 | API endpoints, auth, permissions       | [docs/api-overview.md](docs/api-overview.md)             |
 | Full API reference                     | [app/backend/API.md](app/backend/API.md)                 |
 | API tokens                             | [docs/api-tokens.md](docs/api-tokens.md)                 |
