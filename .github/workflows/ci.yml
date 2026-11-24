@@ -72,7 +72,6 @@ jobs:
   # nothing: "lint" and "tests" then report as skipped, which branch
   # protection counts as passed.
   changes:
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     outputs:
       backend: ${{ steps.diff.outputs.backend }}
@@ -194,7 +193,6 @@ jobs:
     needs: changes
     if: >-
       !cancelled()
-      && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
       && needs.changes.outputs.lint != 'false'
     runs-on: ubuntu-latest
     steps:
@@ -486,7 +484,6 @@ jobs:
     needs: changes
     if: >-
       !cancelled()
-      && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
       && needs.changes.outputs.release != 'false'
     runs-on: ubuntu-latest
     steps:
@@ -508,7 +505,7 @@ jobs:
   # cancelled. New test jobs go into its needs list.
   tests:
     needs: [changes, backend-tests, backend-postgres, mcp-tests, frontend-tests, browser-tests, release-check]
-    if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - env:
@@ -525,7 +522,7 @@ jobs:
   ci-passed:
     name: CI passed
     needs: [lint, tests]
-    if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
+    if: always()
     runs-on: ubuntu-latest
     permissions: {}
     steps:
