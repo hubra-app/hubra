@@ -33,7 +33,8 @@ import {
 } from '@tabler/icons-react'
 import { useAdmin } from '@/context/AdminContext'
 import { getProfile } from '@/api/auth'
-import { LegalFooter, textOn as contrastColor, ThemeSwitch } from '@hubra/ui'
+import { ThemeSwitch } from '@bitsandbricks/ui'
+import { LegalFooter, textOn as contrastColor } from '@hubra/ui'
 import { useLang, type Lang } from '@/lang'
 import { navSections, visibleTabs, type NavPage, type PageTab } from '@/nav'
 
@@ -299,13 +300,7 @@ function UserCard() {
         </Menu.Item>
         <Group justify="space-between" px={12} py={6} wrap="nowrap">
           <Text fz="sm">{tr('Darstellung', 'Appearance')}</Text>
-          <ThemeSwitch
-            labels={{
-              light: tr('Hell', 'Light'),
-              dark: tr('Dunkel', 'Dark'),
-              system: tr('Wie Gerät', 'Like device'),
-            }}
-          />
+          <ThemeSwitch />
         </Group>
         <Menu.Divider />
         <Menu.Item color="red" leftSection={<IconLogout size={16} />} onClick={logout}>

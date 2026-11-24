@@ -1,6 +1,11 @@
 import { useSyncExternalStore } from 'react'
-import { mergeThemeOverrides, type MantineColorsTuple, type MantineThemeOverride } from '@mantine/core'
-import { mix, readableOn } from '@hubra/ui'
+import {
+  mergeThemeOverrides,
+  type MantineColorsTuple,
+  type MantineThemeOverride,
+} from '@mantine/core'
+import tokens from '@bitsandbricks/tokens'
+import { clubAccent, hubraTheme, mix, readableOn } from '@hubra/ui'
 import { URL_CLUB } from '@/clubBase'
 
 const WHITE = '#ffffff'
@@ -11,7 +16,8 @@ const WHITE = '#ffffff'
  * Mantine theme from them, so buttons, links and the active menu item take
  * the club's colour instead of Hubra violet.
  *
- * primary → the `acc` scale (Mantine's primary colour)
+ * primary → the theme's accent (Mantine's primary colour, `accent`, and
+ *   Hubra's older name for it, `acc`)
  * accent → the `gold` scale (announcement banner, highlights)
  * secondary → the `club2` scale (the stripe under the top bar)
  */
@@ -67,20 +73,18 @@ export function useClubColors(): ClubColors {
   return useSyncExternalStore(subscribe, () => colors)
 }
 
-// The surfaces the club colour sits on as text: white cards and the page
-// in light mode, the dark surface and its club-tinted fills (ui.css mixes
-// 12% and 20% of shade 6 into it) in dark mode.
-const DARK_SURFACE = '#19191c'
-const DARK_SURFACE_2 = '#222226'
+// The surfaces a club colour sits on as text in the dark scheme: the card,
+// the raised fill, and a tint of the colour itself (light buttons, badges).
+const DARK_SURFACE = tokens.neutrals.dark.surface
+const DARK_SURFACE_2 = tokens.neutrals.dark.raised
 
 /**
- * A ten-shade Mantine scale with `hex` as shade 6, the shade the theme uses
- * for filled buttons in light mode (lighter shades towards 0, darker to 9).
+ * A ten-shade Mantine scale with `hex` as shade 6, for the club's second
+ * and third colours (gold, club2): lighter shades towards 0, darker to 9.
  *
- * Shades 7 to 9 are the club colour as text in light mode (active menu
- * item, tabs, eyebrows) and shades 3 and 4 in dark mode, so those are
- * pushed darker or lighter until they read at 4.5:1, whatever colour the
- * club picked. A yellow club gets ochre text, a navy one light blue.
+ * Shades 7 to 9 are the colour as text in light mode and shades 3 and 4 in
+ * dark mode, so those are pushed darker or lighter until they read at
+ * 4.5:1, whatever colour the club picked.
  */
 export function colorScale(hex: string): MantineColorsTuple {
   const base = hex.toLowerCase()
@@ -99,10 +103,14 @@ export function colorScale(hex: string): MantineColorsTuple {
   return scale as unknown as MantineColorsTuple
 }
 
-/** The Hubra theme with the club's colours laid over it. */
-export function brandTheme(base: MantineThemeOverride, club: ClubColors): MantineThemeOverride {
+/**
+ * The Hubra theme in the club's colours: its primary colour is the accent
+ * (made readable as text in both schemes, see clubAccent), the other two
+ * replace the gold and club2 scales. Hubra violet when the club has none.
+ */
+export function brandTheme(club: ClubColors): MantineThemeOverride {
+  const base = hubraTheme(club.primary ? clubAccent(club.primary) : undefined)
   const scales: Record<string, MantineColorsTuple> = {}
-  if (club.primary) scales.acc = colorScale(club.primary)
   if (club.accent) scales.gold = colorScale(club.accent)
   if (club.secondary) scales.club2 = colorScale(club.secondary)
   if (Object.keys(scales).length === 0) return base

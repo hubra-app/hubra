@@ -3,7 +3,8 @@ import type { ComponentProps, ReactNode } from 'react'
 import { Pagination as SharedPagination } from '@hubra/ui'
 import { useT } from '@/locales/i18n'
 import { clickableProps } from './hooks'
-export { PageHead, StatGrid, StatTile } from '@hubra/ui'
+export { PageHead, StatGrid } from '@bitsandbricks/ui'
+export { StatTile } from '@hubra/ui'
 
 export { Card, CardGrid } from '@hubra/ui'
 
@@ -73,13 +74,6 @@ export function Pagination(props: ComponentProps<typeof SharedPagination>) {
       rangeLabel={(start, end, total) =>
         t('common.rangeOf', '{{start}}–{{end}} von {{total}}', { start, end, total })
       }
-      labels={{
-        perPage: t('common.perPage', 'Einträge pro Seite'),
-        first: t('common.pageFirst', 'Erste Seite'),
-        previous: t('common.pagePrevious', 'Vorherige Seite'),
-        next: t('common.pageNext', 'Nächste Seite'),
-        last: t('common.pageLast', 'Letzte Seite'),
-      }}
       {...props}
     />
   )

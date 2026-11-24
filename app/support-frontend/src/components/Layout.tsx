@@ -28,7 +28,7 @@ import {
 import { LegalFooter, ThemeToggle } from '@hubra/ui'
 import { useAuth } from '@/auth'
 import { ACCOUNT_URL, APP_URL } from '@/urls'
-import { themeLabels, useLang, type Lang } from '@/lang'
+import { useLang, type Lang } from '@/lang'
 import { useNavItems } from '@/lib/nav'
 
 function LangSwitch() {
@@ -206,7 +206,7 @@ export function Layout() {
           </Group>
           <Group gap={6} wrap="nowrap">
             <Group gap={4} wrap="nowrap" visibleFrom="sm">
-              <ThemeToggle labels={themeLabels(tr)} />
+              <ThemeToggle />
               <LangSwitch />
             </Group>
             <AccountButton />
@@ -247,7 +247,7 @@ export function Layout() {
           </NavLink>
           <Divider my="sm" />
           <Group gap={6}>
-            <ThemeToggle labels={themeLabels(tr)} />
+            <ThemeToggle />
             <LangSwitch />
           </Group>
         </Stack>

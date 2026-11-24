@@ -1,31 +1,38 @@
-// Shared by the club app, manage and sign-in, so the three look and behave
-// like one product. Wired into each app by path alias, like @hubra/api-client.
+// Hubra's own frontend pieces, shared by the club app, manage, sign-in and
+// support; wired into each app by path alias, like @hubra/api-client.
+// Everything else comes from @bitsandbricks/ui and @bitsandbricks/tokens.
+export { categoryColors, goldColors, pinkColors } from './colors'
+export { clubAccent, HUBRA_ACCENT, HUBRA_FONTS, hubraTheme, theme } from './theme'
 export {
-  accColors,
-  categoryColors,
-  goldColors,
-  grayColors,
-  greenColors,
-  orangeColors,
-  pinkColors,
-  redColors,
-} from './colors'
-export { cssVariablesResolver, theme } from './theme'
-export { colorText, contrastRatio, luminance, mix, readableOn, tagStyle, textOn } from './contrast'
+  colorText,
+  contrastRatio,
+  luminance,
+  mix,
+  readableOn,
+  tagStyle,
+  textOn,
+} from './contrast'
 export { createLang, type Lang } from './lang'
-export { PageHead, Pagination, StatGrid, StatTile, SubTabs, Tabs, type TabDef } from './layout'
-export { colorSchemeManager, readColorScheme } from './colorScheme'
-export { ThemeSwitch, ThemeToggle } from './ThemeSwitch'
-export { BuildBadge } from './BuildBadge'
 export {
-  ActiveFilterChips,
+  colorSchemeManager,
+  readColorScheme,
+  THEME_COOKIE,
+  useSavedColorScheme,
+} from './colorScheme'
+export { ThemeToggle } from './ThemeSwitch'
+export { BuildBadge } from './BuildBadge'
+export { HubraProvider } from './HubraProvider'
+export {
   FilterBar,
-  FilterButton,
-  activeFilters,
+  LoadingSpinner,
+  Pagination,
+  SlideOver,
+  StatTile,
+  SubTabs,
+  Tabs,
   type FilterGroup,
-  type FilterLabels,
-  type FilterOption,
-} from './filters'
+  type TabDef,
+} from './shared'
 export {
   fillNotificationText,
   notificationMessageText,
@@ -45,18 +52,7 @@ export {
   type RoadmapStatus,
   type RoadmapVoting,
 } from './releases'
-export {
-  Card,
-  CardGrid,
-  ConfirmModal,
-  EmptyState,
-  ErrorBanner,
-  LoadingSpinner,
-  Modal,
-  PanelField,
-  PanelSection,
-  SlideOver,
-} from './feedback'
+export { Card, CardGrid, Modal } from './feedback'
 export {
   browserOf,
   collectDeviceInfo,

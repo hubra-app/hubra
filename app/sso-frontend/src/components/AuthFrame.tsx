@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Box, Group, SegmentedControl, Stack, Text, Title } from '@mantine/core'
 import { LegalFooter, ThemeToggle } from '@hubra/ui'
-import { themeLabels, useLang, type Lang } from '@/lang'
+import { useLang, type Lang } from '@/lang'
 
 /**
  * Signed-out pages: the form on the left, the Hubra brand panel on the right
@@ -21,7 +21,7 @@ export function AuthFrame({ children, wide = false }: { children: ReactNode; wid
               </Text>
             </Group>
             <Group gap={4} wrap="nowrap">
-              <ThemeToggle labels={themeLabels(tr)} />
+              <ThemeToggle />
               <SegmentedControl
                 size="xs"
                 radius="md"

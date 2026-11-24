@@ -27,7 +27,8 @@ meet them yet (listed below).
   (4.5 : 1 for text, 3 : 1 for large text and controls), in light and dark
   mode. Text on a club's own colours (buttons, links, banner, avatars) is
   picked automatically so it stays readable whatever colours the club sets
-  (`packages/ui/src/contrast.ts`).
+  (`packages/ui/src/contrast.ts`, on the contrast-tested shared tokens
+  from `@bitsandbricks/tokens`).
 - **Dark mode** and the system setting for it, per person.
 - **Reduced motion.** With "reduce motion" switched on in the operating
   system, animations and transitions are turned off.
@@ -77,7 +78,7 @@ plain text), ask your club or write to us, and we will help.
 ## For contributors
 
 UI changes should keep to this statement: use the components and tokens in
-`packages/ui`, give every control a label, check the contrast in both
+`@bitsandbricks/ui` and `packages/ui`, give every control a label, check the contrast in both
 themes, and try the change with the keyboard alone. See
 [CONTRIBUTING.md](../CONTRIBUTING.md) and
 [docs/design-spec.md](design-spec.md).

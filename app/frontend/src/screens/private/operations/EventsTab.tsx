@@ -56,7 +56,6 @@ import {
 import { CalendarSubscribeButton } from './CalendarSubscribeButton'
 import { EventCard, MonthHeading } from './EventCard'
 import { fromLocalInput, toLocalInput } from './localInput'
-import { filterLabels } from '@/components/filterLabels'
 import { PendingSignUpsModal } from './PendingSignUpsModal'
 import { AttendanceModal } from './AttendanceModal'
 import { CancelEventModal } from './CancelEventModal'
@@ -773,7 +772,6 @@ export function EventsTab() {
           search={search}
           onSearchChange={setSearch}
           searchPlaceholder={t('events.search', 'Suchen …')}
-          labels={filterLabels()}
           groups={[
             {
               key: 'when',

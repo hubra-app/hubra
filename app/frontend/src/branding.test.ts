@@ -11,12 +11,14 @@ describe('club colours', () => {
     expect(parseInt(scale[9].slice(3, 5), 16)).toBeLessThan(0x7c)
   })
 
-  it('replaces the primary and accent scales only when set', () => {
-    const base = { primaryColor: 'acc', colors: { acc: colorScale('#7441e0') } }
-    expect(brandTheme(base, {})).toBe(base)
-    const branded = brandTheme(base, { primary: '#0a7c3e', accent: '#ff0000' })
-    expect(branded.colors?.acc?.[6]).toBe('#0a7c3e')
+  it('takes the club colours only when set', () => {
+    const plain = brandTheme({})
+    expect(plain.other?.bnbAccent).toEqual({ light: '#7441e0', dark: '#9f7cf8' })
+    expect(plain.colors?.gold?.[6]).toBe('#ecbb00')
+    const branded = brandTheme({ primary: '#0a7c3e', accent: '#ff0000', secondary: '#1a237e' })
+    expect(branded.other?.bnbAccent.light).toBe('#0a7c3e')
     expect(branded.colors?.gold?.[6]).toBe('#ff0000')
-    expect(branded.primaryColor).toBe('acc')
+    expect(branded.colors?.club2?.[6]).toBe('#1a237e')
+    expect(branded.primaryColor).toBe('accent')
   })
 })

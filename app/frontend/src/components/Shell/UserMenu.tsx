@@ -8,7 +8,8 @@ import {
   IconBulb,
   IconLifebuoy,
 } from '@tabler/icons-react'
-import { LegalFooter, ThemeSwitch } from '@hubra/ui'
+import { ThemeSwitch } from '@bitsandbricks/ui'
+import { LegalFooter } from '@hubra/ui'
 import { useT } from '@/locales/i18n'
 import { useAuth, useNav } from '@/context/AppContext'
 import { useInstance } from '@/context/InstanceContext'
@@ -174,13 +175,7 @@ export function UserMenu({
             <IconPalette size={16} />
             <Text fz="sm">{t('shell.userMenu.appearance', 'Darstellung')}</Text>
           </Group>
-          <ThemeSwitch
-            labels={{
-              light: t('shell.userMenu.light', 'Hell'),
-              dark: t('shell.userMenu.dark', 'Dunkel'),
-              system: t('shell.userMenu.system', 'Wie Gerät'),
-            }}
-          />
+          <ThemeSwitch />
         </Group>
         <Divider my={6} />
         <UnstyledButton
