@@ -57,8 +57,10 @@ MAX_DASHBOARDS = 20  # per member
 MAX_WIDGETS = 24
 MAX_CONFIG = 4000  # characters of a widget's config as JSON
 SIZES = ("s", "m", "l")
+SIZE_COLS = {"s": 4, "m": 6, "l": 12}  # the width of a widget without w
 COLS = 12  # the grid's columns; a widget spans 2 to 12
 MAX_ROWS = 24  # a widget's set height in rows; none: as tall as its content
+MAX_Y = MAX_WIDGETS * MAX_ROWS  # the lowest row a widget can start on
 SHARE_PERM = "dashboards.dashboards.share"
 HOME_PERM = "dashboards.home.update"
 # Built-in types are camelCase (polls.voteNeeded, stat.openInvoices).
@@ -169,13 +171,22 @@ def _widgets(value):
         if size not in SIZES:
             return None, f"widgets[{i}].size is one of {', '.join(SIZES)}"
         grid = {}
-        for key, low, high in (("w", 2, COLS), ("h", 1, MAX_ROWS)):
+        for key, low, high in (
+            ("w", 2, COLS),
+            ("h", 1, MAX_ROWS),
+            ("x", 0, COLS - 2),
+            ("y", 0, MAX_Y),
+        ):
             n = w.get(key)
             if n is None:
                 continue
             if isinstance(n, bool) or not isinstance(n, int) or not low <= n <= high:
                 return None, f"widgets[{i}].{key} is a whole number from {low} to {high}"
             grid[key] = n
+        if ("x" in grid) != ("y" in grid):
+            return None, f"widgets[{i}] needs both x and y, or neither"
+        if "x" in grid and grid["x"] + grid.get("w", SIZE_COLS[size]) > COLS:
+            return None, f"widgets[{i}] reaches past column {COLS}"
         if "w" in grid and "size" not in w:
             size = "s" if grid["w"] <= 4 else "m" if grid["w"] <= 8 else "l"
         config = w.get("config") or {}

@@ -35,30 +35,36 @@ if that member is deleted, the club gets the built-in layout back.
 
 ## Building one
 
-Widgets sit on a grid of 12 columns and 40 px rows, like tiles. **Bearbeiten**
-turns on edit mode, which shows the columns:
+Widgets sit on a grid of 12 columns and 40 px rows, like tiles: the shared
+dashboard grid of `@bitsandbricks/ui` (`DashboardGrid`), the same one
+Floorbit uses. Each widget has its own spot. **Bearbeiten** turns on edit
+mode, which shows the columns:
 
 * **Widget hinzufügen** opens the widget list. A widget with settings asks
-  for them before it is added; the cog changes them later.
-* Drag the **grip** (⠿, left of the widget's name) onto another widget to
-  move it there. Focused, the arrow keys move it one place.
+  for them before it is added; the cog changes them later. A new widget goes
+  into the first gap from the top.
+* Drag the **grip** (⠿, top right) to move the widget anywhere on the grid;
+  the widgets it lands on make room. Focused, the arrow keys move it one
+  column or row.
 * Drag the **corner** (bottom right) to change the width in columns (2 to 12)
-  and the height in rows (1 to 24). Focused, ←/→ change the width and ↑/↓
-  the height. A widget without a set height is as tall as its content; once
-  it has one it keeps it and scrolls inside. **Höhe nach Inhalt** (the icon
-  next to the cog) goes back to the content's height.
+  and the height in rows (1 to 24). Focused, Shift+←/→ on the grip change the
+  width and Shift+↑/↓ the height. A widget without a set height is as tall as
+  its content; once it has one it keeps it and scrolls inside. **Höhe nach
+  Inhalt** (the icon next to the cog) goes back to the content's height.
 * The bin removes it.
 
-Widgets fill the grid in their order, and a later small widget moves up into
-a gap a wide one left. On a tablet a widget up to 4 columns wide takes half
-the row and a wider one the whole row (the corner then only changes the
-height); on a phone every widget takes the whole row.
+Widgets float up as far as they can, so a gap closes by itself, and a widget
+whose content grows pushes the ones below it down. A widget with nothing to
+show right now (no open payment, no poll to vote in) takes no room until it
+has something. On a phone the widgets stack in reading order, each the whole
+width. Dashboards saved before widgets had a spot are laid out in their order
+and keep that layout from their next change on.
 
 **Fertig** leaves edit mode; every change is saved as it is made. The `⋯`
 menu opens **Name und Sichtbarkeit** (rename and who sees it) or deletes
 the dashboard.
 
-![Edit mode](screenshots/dashboard-grid/2-edit-desktop.png)
+![Edit mode](screenshots/shared-dashboard-grid/2-edit-desktop.png)
 
 ### Templates
 
@@ -136,10 +142,13 @@ shared ones. Changes to a shared dashboard are written to the audit log.
 | `PUT /home/me` / `DELETE /home/me` | the member's own start page |
 
 A dashboard is `{id, name, shared, widgets, owner: {id, name}, mine, canEdit,
-updatedAt}`. A widget is `{id, type, size, w?, h?, config}`: `id` is unique on the
+updatedAt}`. A widget is `{id, type, size, w?, h?, x?, y?, config}`: `id` is unique on the
 dashboard (`[A-Za-z0-9_-]`, up to 40), `type` names the widget (letters,
 digits and `_.:-`, up to 80), `w` the columns it spans (2 to 12), `h` its
-height in rows (1 to 24; missing: as tall as its content), `size` (`s`, `m`
+height in rows (1 to 24; missing: as tall as its content), `x` and `y` its
+spot (the column 0 to 10 and the row it starts at; both or neither, and the
+widget must fit in the 12 columns; missing: laid out in the list's order),
+`size` (`s`, `m`
 or `l`) the width before the grid, which the app still sends (and the server
 fills from `w` when it is missing) so older apps keep working; a widget
 without `w` is 4, 6 or 12 columns wide by its `size`. `config` is an object of at most

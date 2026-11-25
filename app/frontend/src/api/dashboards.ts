@@ -12,6 +12,10 @@ export interface DashboardWidget {
   w?: number
   /** Rows of the grid it is high, 1 to 24; missing: as tall as its content. */
   h?: number
+  /** Its spot: the column (0 to 10) and the row it starts at. Missing on
+   *  dashboards saved before spots: they are laid out in their order. */
+  x?: number
+  y?: number
   config: Record<string, unknown>
 }
 

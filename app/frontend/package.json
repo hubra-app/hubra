@@ -16,6 +16,7 @@
   "dependencies": {
     "@bitsandbricks/tokens": "0.3.0",
     "@bitsandbricks/ui": "0.3.0",
+    "@bitsandbricks/widgets": "0.3.0",
     "@mantine/core": "^9.7.4",
     "@mantine/dates": "^9.7.4",
     "@mantine/form": "^9.7.4",

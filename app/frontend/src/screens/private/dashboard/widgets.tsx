@@ -1,7 +1,9 @@
 /* eslint-disable react-refresh/only-export-components -- the catalogue hooks sit with the widgets they list */
 import { useMemo, type ComponentType, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Anchor, Group, Paper, Stack, Text, UnstyledButton } from '@mantine/core'
+import { Anchor, Group, Stack, Text } from '@mantine/core'
+import type { Widget } from '@bitsandbricks/ui'
+import { TileCard, WidgetBody } from '@bitsandbricks/widgets'
 import { useT } from '@/locales/i18n'
 import { useAuth, useNav } from '@/context/AppContext'
 import { useModules } from '@/modules/useModules'
@@ -56,7 +58,7 @@ export interface WidgetDef {
   render: ComponentType<{ config: Config; size: WidgetSize }>
 }
 
-/** A titled box with the widget's content. */
+/** A titled box with the widget's content (the shared TileCard), as tall as its cell. */
 export function WidgetFrame({
   title,
   action,
@@ -67,15 +69,11 @@ export function WidgetFrame({
   children: ReactNode
 }) {
   return (
-    <Paper withBorder p="md" style={{ height: '100%' }}>
-      <Group justify="space-between" mb="xs" wrap="nowrap">
-        <Text fw={700} fz="sm" style={{ minWidth: 0 }} truncate>
-          {title}
-        </Text>
-        {action}
-      </Group>
-      {children}
-    </Paper>
+    <div className="hb-dash-frame">
+      <TileCard title={title} action={action}>
+        {children}
+      </TileCard>
+    </div>
   )
 }
 
@@ -87,27 +85,35 @@ function Empty({ children }: { children: ReactNode }) {
   )
 }
 
-function Row({ title, sub, onClick }: { title: string; sub?: string; onClick?: () => void }) {
-  return (
-    <UnstyledButton
-      onClick={onClick}
-      style={{
-        display: 'block',
-        width: '100%',
-        padding: '6px 0',
-        borderBottom: '1px solid var(--mantine-color-line-0)',
-      }}
-    >
-      <Text fz="sm" fw={600} truncate>
-        {title}
-      </Text>
-      {sub && (
-        <Text fz="xs" c="dimmed" truncate>
-          {sub}
-        </Text>
-      )}
-    </UnstyledButton>
-  )
+/** A row of a list widget: what it says, a line under it, where it leads. */
+interface ListRow {
+  label: string
+  sub?: string
+  /** A page of the app (`/app/...`) or an http(s) address. */
+  link?: string
+}
+
+/** Rows drawn as the shared list widget; *empty* when there are none. */
+function ListBody({ rows, total, empty }: { rows: ListRow[]; total?: number; empty: ReactNode }) {
+  if (rows.length === 0) return <Empty>{empty}</Empty>
+  const widget: Widget = {
+    type: 'list',
+    id: '',
+    label: '',
+    size: 'm',
+    refresh: 0,
+    sub: '',
+    link: '',
+    items: rows.map((r) => ({ label: r.label, value: '', tone: '', sub: r.sub, link: r.link })),
+    total,
+  }
+  return <WidgetBody widget={widget} />
+}
+
+/** Plain text drawn as the shared text widget (line breaks kept). */
+function TextBody({ text }: { text: string }) {
+  const widget: Widget = { type: 'text', id: '', label: '', size: 's', refresh: 0, sub: '', link: '', text }
+  return <WidgetBody widget={widget} />
 }
 
 const num = (config: Config, key: string, fallback: number, max = 20) => {
@@ -212,7 +218,6 @@ function FinanceStat() {
 
 function UpcomingEvents({ config }: { config: Config }) {
   const { t, i18n } = useT()
-  const { go } = useNav()
   const { currentUser } = useAuth()
   const { events } = useEvents()
   const count = num(config, 'count', 5)
@@ -232,60 +237,50 @@ function UpcomingEvents({ config }: { config: Config }) {
           : t('dashboard.upcomingEvents.title'))
       }
     >
-      {list.length === 0 ? (
-        <Empty>{t('dashboard.noUpcomingEvents')}</Empty>
-      ) : (
-        list.map((e) => (
-          <Row
-            key={e.id}
-            title={e.title}
-            sub={[
-              new Date(`${e.date}T00:00:00`).toLocaleDateString(i18n.language, {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short',
-              }),
-              e.time,
-              e.location,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-            onClick={() => go(`/app/operations/events?event=${e.id}`)}
-          />
-        ))
-      )}
+      <ListBody
+        empty={t('dashboard.noUpcomingEvents')}
+        rows={list.map((e) => ({
+          label: e.title,
+          sub: [
+            new Date(`${e.date}T00:00:00`).toLocaleDateString(i18n.language, {
+              weekday: 'short',
+              day: 'numeric',
+              month: 'short',
+            }),
+            e.time,
+            e.location,
+          ]
+            .filter(Boolean)
+            .join(' · '),
+          link: `/app/operations/events?event=${e.id}`,
+        }))}
+      />
     </WidgetFrame>
   )
 }
 
 function RecentPosts({ config }: { config: Config }) {
   const { t } = useT()
-  const { go } = useNav()
   const { posts } = usePosts()
   const list = [...posts]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, num(config, 'count', 5))
   return (
     <WidgetFrame title={str(config, 'title') || t('dashboard.recentPosts.title')}>
-      {list.length === 0 ? (
-        <Empty>{t('dashboards.w.noPosts', 'Noch keine Beiträge.')}</Empty>
-      ) : (
-        list.map((p) => (
-          <Row
-            key={p.id}
-            title={p.title}
-            sub={p.summary || p.author}
-            onClick={() => go(`/app/operations/posts/${p.id}`)}
-          />
-        ))
-      )}
+      <ListBody
+        empty={t('dashboards.w.noPosts', 'Noch keine Beiträge.')}
+        rows={list.map((p) => ({
+          label: p.title,
+          sub: p.summary || p.author,
+          link: `/app/operations/posts/${p.id}`,
+        }))}
+      />
     </WidgetFrame>
   )
 }
 
 function OpenPolls({ config }: { config: Config }) {
   const { t, i18n } = useT()
-  const { go } = useNav()
   const { polls } = usePolls()
   const list = polls
     .filter((p) => p.status === 'open' && p.myVote == null && p.mayVote !== false)
@@ -294,24 +289,18 @@ function OpenPolls({ config }: { config: Config }) {
     <WidgetFrame
       title={str(config, 'title') || t('dashboards.w.openPolls', 'Offene Abstimmungen für mich')}
     >
-      {list.length === 0 ? (
-        <Empty>{t('dashboards.w.noPolls', 'Keine offenen Abstimmungen.')}</Empty>
-      ) : (
-        list.map((p) => (
-          <Row
-            key={p.id}
-            title={p.question}
-            sub={
-              p.closesAt
-                ? t('dashboards.w.closes', 'endet am {{date}}', {
-                    date: new Date(p.closesAt).toLocaleDateString(i18n.language),
-                  })
-                : undefined
-            }
-            onClick={() => go(`/app/operations/polls?poll=${p.id}`)}
-          />
-        ))
-      )}
+      <ListBody
+        empty={t('dashboards.w.noPolls', 'Keine offenen Abstimmungen.')}
+        rows={list.map((p) => ({
+          label: p.question,
+          sub: p.closesAt
+            ? t('dashboards.w.closes', 'endet am {{date}}', {
+                date: new Date(p.closesAt).toLocaleDateString(i18n.language),
+              })
+            : undefined,
+          link: `/app/operations/polls?poll=${p.id}`,
+        }))}
+      />
     </WidgetFrame>
   )
 }
@@ -382,10 +371,13 @@ function Note({ config }: { config: Config }) {
   const text = str(config, 'text')
   return (
     <WidgetFrame title={str(config, 'title') || t('dashboards.w.note', 'Notiz')}>
-      <Text fz="sm" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-        {text ||
-          t('dashboards.w.noteEmpty', 'Noch leer. Bearbeite das Widget, um Text einzufügen.')}
-      </Text>
+      {text.trim() ? (
+        <TextBody text={text} />
+      ) : (
+        <Empty>
+          {t('dashboards.w.noteEmpty', 'Noch leer. Bearbeite das Widget, um Text einzufügen.')}
+        </Empty>
+      )}
     </WidgetFrame>
   )
 }
@@ -449,7 +441,6 @@ function ContractStat({ widget, config }: { widget: ContractWidget; config: Conf
 
 function ContractList({ widget, config }: { widget: ContractWidget; config: Config }) {
   const { t } = useT()
-  const { go } = useNav()
   const { data, isError } = useWidgetData<ListWidgetData>(widget.name, config)
   const title = str(config, 'title') || t(widget.label, widget.label)
   const items = data?.items ?? []
@@ -457,25 +448,17 @@ function ContractList({ widget, config }: { widget: ContractWidget; config: Conf
     <WidgetFrame title={title}>
       {isError ? (
         <Empty>{t('dashboards.widgetFailed', 'Konnte nicht geladen werden')}</Empty>
-      ) : data && items.length === 0 ? (
-        <Empty>{t('dashboards.nothing', 'Nichts anzuzeigen')}</Empty>
-      ) : (
-        <Stack gap={0}>
-          {items.map((row, i) => (
-            <Row
-              key={i}
-              title={row.label}
-              sub={row.sub ?? undefined}
-              onClick={row.path ? () => go(row.path as string) : undefined}
-            />
-          ))}
-          {data?.total != null && data.total > items.length && (
-            <Text fz="xs" c="dimmed" pt={4}>
-              {t('dashboards.more', '{{count}} weitere', { count: data.total - items.length })}
-            </Text>
-          )}
-        </Stack>
-      )}
+      ) : data ? (
+        <ListBody
+          empty={t('dashboards.nothing', 'Nichts anzuzeigen')}
+          rows={items.map((row) => ({
+            label: row.label,
+            sub: row.sub ?? undefined,
+            link: row.path ?? undefined,
+          }))}
+          total={data.total ?? undefined}
+        />
+      ) : null}
     </WidgetFrame>
   )
 }
